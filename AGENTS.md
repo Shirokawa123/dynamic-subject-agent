@@ -34,6 +34,8 @@
 ## Module 与测试
 
 - 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。
+- 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
+- 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。
 - 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
 - Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
 - 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。
@@ -49,7 +51,7 @@
 
 ## Credential
 
-- DeepSeek key 只存入 Windows Credential Manager，固定 service/username 由 credential Module 拥有。
+- 远程 Provider key 按 `{provider_id, account_id}` slot 存入 Windows Credential Manager；固定命名由 credential Module 拥有。
 - UI 只显示 configured/verified 状态，不回显 key；保存、验证、替换和删除必须由用户明确操作触发。
 - key 只用于 HTTPS Bearer 鉴权，不进入源码、配置、SQLite、Timeline、日志、错误、模型消息或测试 fixture。
 - secure backend 不可用时返回 typed unavailable；不使用仓库文件、环境变量持久化或明文 fallback。

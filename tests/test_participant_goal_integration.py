@@ -72,10 +72,16 @@ class _ScriptedParticipantGoalProvider:
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
     test_only = False
 
-    def __init__(self, *, fail_reply: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        fail_reply: bool = False,
+        fail_classify: bool = False,
+    ) -> None:
         self.classification_requests = []
         self.reply_requests = []
         self.fail_reply = fail_reply
+        self.fail_classify = fail_classify
 
     def classify(self, request):
         from dynamic_subject_agent.participant_goal_cognition import (
@@ -86,6 +92,8 @@ class _ScriptedParticipantGoalProvider:
         )
 
         self.classification_requests.append(request)
+        if self.fail_classify:
+            raise RuntimeError("participant goal classification unavailable")
         message = request.current_user_message
         candidate = None
         selected = ()
@@ -140,6 +148,29 @@ class _ScriptedParticipantGoalProvider:
         return ParticipantGoalReplyResult(reply_text=text, language="zh")
 
 
+def _goal_gateway(provider: _ScriptedParticipantGoalProvider):
+    from dynamic_subject_agent.model_gateway import (
+        ModelGateway,
+        ProviderCapabilities,
+        StructuredOutputMode,
+    )
+    from dynamic_subject_agent.participant_goal_cognition import (
+        ParticipantGoalProviderAdapter,
+    )
+
+    return ModelGateway(
+        ParticipantGoalProviderAdapter(
+            provider=provider,
+            capabilities=ProviderCapabilities(
+                provider_id=DEEPSEEK_PROVIDER_AUTHORITY_ID,
+                model_id="scripted-test-model",
+                local=True,
+                structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+            ),
+        )
+    )
+
+
 def _composition(tmp_path: Path, provider: _ScriptedParticipantGoalProvider):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.composite import ControlledCompositeCognition
@@ -151,7 +182,7 @@ def _composition(tmp_path: Path, provider: _ScriptedParticipantGoalProvider):
         memory_provider=_NoopMemoryProvider(),
         knowledge_provider=_NoopKnowledgeProvider(),
         relationship_provider=_NoopRelationshipProvider(),
-        participant_goal_provider=provider,
+        participant_goal_gateway=_goal_gateway(provider),
     )
     prepared, qri = _publish_deepseek_qri(tmp_path)
     timeline_id = str(uuid4())
@@ -254,7 +285,7 @@ def test_participant_goal_create_recall_revise_transition_and_restart(
             memory_provider=_NoopMemoryProvider(),
             knowledge_provider=_NoopKnowledgeProvider(),
             relationship_provider=_NoopRelationshipProvider(),
-            participant_goal_provider=restarted_provider,
+            participant_goal_gateway=_goal_gateway(restarted_provider),
         ),
         relationship_mode="dynamic",
     )
@@ -273,25 +304,20 @@ def test_participant_goal_create_recall_revise_transition_and_restart(
         ("明年通过 N1", "achieved"),
         ("今年通过 N1", "superseded"),
     ]
-    classification = restarted_provider.classification_requests[0]
-    assert classification.active_records[0].turn_ref == "target-1"
-    assert not hasattr(classification.active_records[0], "record_id")
-    reply = restarted_provider.reply_requests[0]
-    assert [(r.kind, r.terms, r.status) for r in reply.selected_records] == [
-        ("goal", "今年通过 N1", "active")
-    ]
-    assert not hasattr(reply.selected_records[0], "turn_ref")
+    assert restarted_provider.classification_requests == []
+    assert restarted_provider.reply_requests == []
 
 
 def test_participant_goal_provider_failure_leaves_no_partial_record(
     tmp_path: Path,
 ) -> None:
-    provider = _ScriptedParticipantGoalProvider(fail_reply=True)
+    provider = _ScriptedParticipantGoalProvider(fail_classify=True)
     _, qri, timeline_id, composition = _composition(tmp_path, provider)
     try:
-        failed = _submit(composition, qri, timeline_id, "我的目标是今年通过 N1。")
-        assert failed.status.value == "failed-closed"
-        assert failed.projection.failure_code == "participant-goal-reply-failed"
+        failed = _submit(composition, qri, timeline_id, "最近我想认真准备 N1 了。")
+        assert failed.status.value == "terminal"
+        assert failed.projection.participant_goal_commitment_status == "failed-closed"
+        assert failed.projection.expression_text
         assert _query(composition, qri, timeline_id) == ()
     finally:
         composition.close()

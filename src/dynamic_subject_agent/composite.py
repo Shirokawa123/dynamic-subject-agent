@@ -64,7 +64,7 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_provider: object,
         knowledge_provider: object,
         relationship_provider: object,
-        participant_goal_provider: object | None = None,
+        participant_goal_gateway: object | None = None,
     ) -> None:
         from dynamic_subject_agent.knowledge import ControlledKnowledgeCognition
         from dynamic_subject_agent.living_memory import (
@@ -80,13 +80,13 @@ class ControlledCompositeCognition(CognitionEngine):
             provider=relationship_provider
         )
         self._participant_goals = None
-        if participant_goal_provider is not None:
+        if participant_goal_gateway is not None:
             from dynamic_subject_agent.participant_goal_cognition import (
                 ControlledParticipantGoalCognition,
             )
 
             self._participant_goals = ControlledParticipantGoalCognition(
-                provider=participant_goal_provider
+                gateway=participant_goal_gateway
             )
         authorities = {
             self._memory.provider_authority,
@@ -109,32 +109,6 @@ class ControlledCompositeCognition(CognitionEngine):
                 self._participant_goals,
             )
             if sub is not None
-        )
-
-    @classmethod
-    def for_profile(
-        cls,
-        profile: str,
-        *,
-        deepseek_transport: object | None = None,
-        credential_ref: object | None = None,
-    ) -> "ControlledCompositeCognition":
-        from dynamic_subject_agent.deepseek import (
-            DeepSeekKnowledgeProvider,
-            DeepSeekRelationshipProvider,
-            DeepSeekLivingMemoryProvider,
-            DeepSeekParticipantGoalProvider,
-        )
-
-        kwargs = {
-            "transport": deepseek_transport,
-            "credential_ref": credential_ref,
-        }
-        return cls(
-            memory_provider=DeepSeekLivingMemoryProvider(**kwargs),
-            knowledge_provider=DeepSeekKnowledgeProvider(**kwargs),
-            relationship_provider=DeepSeekRelationshipProvider(**kwargs),
-            participant_goal_provider=DeepSeekParticipantGoalProvider(**kwargs),
         )
 
     def propose(
@@ -181,11 +155,15 @@ class ControlledCompositeCognition(CognitionEngine):
             else ""
         )
         participant_goal_relevant = False
+        participant_goal_expression_priority = False
         if participant_goal_proposal is not None:
             participant_request = participant_goal_proposal.impact_envelope.experience
             participant_goal_relevant = bool(
                 participant_request.candidates
                 or participant_request.selected_participant_goal_record_ids
+            )
+            participant_goal_expression_priority = (
+                participant_request.participant_goal_expression_priority
             )
             experience_request = replace(
                 experience_request,
@@ -201,14 +179,23 @@ class ControlledCompositeCognition(CognitionEngine):
                 selected_participant_goal_record_ids=(
                     participant_request.selected_participant_goal_record_ids
                 ),
+                participant_goal_failure_code=(
+                    participant_request.participant_goal_failure_code
+                ),
+                participant_goal_expression_priority=(
+                    participant_goal_expression_priority
+                ),
             )
         if relationship_event == "relationship_claim":
             experience_request = replace(
                 experience_request,
                 candidates=(),
                 selected_participant_goal_record_ids=(),
+                participant_goal_failure_code=None,
+                participant_goal_expression_priority=False,
             )
             participant_goal_relevant = False
+            participant_goal_expression_priority = False
             memory_proposal = replace(
                 memory_proposal,
                 experience_summary=(
@@ -264,7 +251,9 @@ class ControlledCompositeCognition(CognitionEngine):
             goal_text = _supported_clauses(
                 participant_goal_proposal.expression_candidate.text
             )
-            if knowledge_cited or memory_recalled:
+            if participant_goal_expression_priority:
+                expression = participant_goal_proposal.expression_candidate
+            elif knowledge_cited or memory_recalled:
                 expression = ExpressionCandidate(
                     text=f"{_supported_clauses(expression.text)}\n\n{goal_text}",
                     language=expression.language,

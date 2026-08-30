@@ -3,16 +3,41 @@
 from __future__ import annotations
 
 import socket
+import re
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from enum import Enum
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 
-DEEPSEEK_CREDENTIAL_SERVICE = "DynamicSubjectAgent.DeepSeek"
-DEEPSEEK_CREDENTIAL_USERNAME = "default"
 DEEPSEEK_MODELS_ENDPOINT = "https://api.deepseek.com/models"
 _MAX_KEY_CHARACTERS = 4_096
+_SLOT_PART = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
+@dataclass(frozen=True)
+class CredentialSlot:
+    provider_id: str
+    account_id: str = "default"
+
+    def __post_init__(self) -> None:
+        if (
+            not isinstance(self.provider_id, str)
+            or not _SLOT_PART.fullmatch(self.provider_id)
+            or not isinstance(self.account_id, str)
+            or not _SLOT_PART.fullmatch(self.account_id)
+        ):
+            raise ValueError("credential slot identity is invalid")
+
+    @property
+    def service_name(self) -> str:
+        if self.provider_id == "deepseek":
+            return "DynamicSubjectAgent.DeepSeek"
+        return f"DynamicSubjectAgent.{self.provider_id}"
+
+
+DEEPSEEK_CREDENTIAL_SLOT = CredentialSlot("deepseek", "default")
 
 
 class CredentialStoreUnavailable(RuntimeError):
@@ -33,19 +58,19 @@ class CredentialStore(ABC):
     """Small Interface for one local DeepSeek credential."""
 
     @abstractmethod
-    def load(self) -> str | None:
+    def load(self, slot: CredentialSlot) -> str | None:
         raise NotImplementedError
 
     @abstractmethod
-    def save(self, api_key: str) -> None:
+    def save(self, slot: CredentialSlot, api_key: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def delete(self) -> bool:
+    def delete(self, slot: CredentialSlot) -> bool:
         raise NotImplementedError
 
-    def configured(self) -> bool:
-        return self.load() is not None
+    def configured(self, slot: CredentialSlot) -> bool:
+        return self.load(slot) is not None
 
 
 def _validated_key(value: object) -> str:
@@ -65,18 +90,22 @@ class InMemoryCredentialStore(CredentialStore):
     """Local-substitutable Adapter used by behavior tests."""
 
     def __init__(self) -> None:
-        self._secret: str | None = None
+        self._secrets: dict[CredentialSlot, str] = {}
 
-    def load(self) -> str | None:
-        return self._secret
+    def load(self, slot: CredentialSlot) -> str | None:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
+        return self._secrets.get(slot)
 
-    def save(self, api_key: str) -> None:
-        self._secret = _validated_key(api_key)
+    def save(self, slot: CredentialSlot, api_key: str) -> None:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
+        self._secrets[slot] = _validated_key(api_key)
 
-    def delete(self) -> bool:
-        existed = self._secret is not None
-        self._secret = None
-        return existed
+    def delete(self, slot: CredentialSlot) -> bool:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
+        return self._secrets.pop(slot, None) is not None
 
 
 class WindowsCredentialStore(CredentialStore):
@@ -98,12 +127,14 @@ class WindowsCredentialStore(CredentialStore):
             raise CredentialStoreUnavailable("secure-backend-unavailable")
         return keyring, (KeyringError, NoKeyringError), PasswordDeleteError
 
-    def load(self) -> str | None:
+    def load(self, slot: CredentialSlot) -> str | None:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
         keyring, read_errors, _ = self._keyring_module()
         try:
             value = keyring.get_password(
-                DEEPSEEK_CREDENTIAL_SERVICE,
-                DEEPSEEK_CREDENTIAL_USERNAME,
+                slot.service_name,
+                slot.account_id,
             )
         except read_errors:
             raise CredentialStoreUnavailable("credential-read-failed") from None
@@ -111,13 +142,15 @@ class WindowsCredentialStore(CredentialStore):
             return None
         return _validated_key(value)
 
-    def save(self, api_key: str) -> None:
+    def save(self, slot: CredentialSlot, api_key: str) -> None:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
         key = _validated_key(api_key)
         keyring, write_errors, _ = self._keyring_module()
         try:
             keyring.set_password(
-                DEEPSEEK_CREDENTIAL_SERVICE,
-                DEEPSEEK_CREDENTIAL_USERNAME,
+                slot.service_name,
+                slot.account_id,
                 key,
             )
         except write_errors:
@@ -125,20 +158,22 @@ class WindowsCredentialStore(CredentialStore):
         finally:
             key = ""
 
-    def delete(self) -> bool:
+    def delete(self, slot: CredentialSlot) -> bool:
+        if not isinstance(slot, CredentialSlot):
+            raise TypeError("slot must be CredentialSlot")
         keyring, read_errors, delete_error = self._keyring_module()
         try:
             if (
                 keyring.get_password(
-                    DEEPSEEK_CREDENTIAL_SERVICE,
-                    DEEPSEEK_CREDENTIAL_USERNAME,
+                    slot.service_name,
+                    slot.account_id,
                 )
                 is None
             ):
                 return False
             keyring.delete_password(
-                DEEPSEEK_CREDENTIAL_SERVICE,
-                DEEPSEEK_CREDENTIAL_USERNAME,
+                slot.service_name,
+                slot.account_id,
             )
             return True
         except delete_error:
@@ -185,9 +220,9 @@ class DeepSeekCredentialVerifier:
 __all__ = [
     "CredentialStore",
     "CredentialStoreUnavailable",
+    "CredentialSlot",
     "CredentialVerificationStatus",
-    "DEEPSEEK_CREDENTIAL_SERVICE",
-    "DEEPSEEK_CREDENTIAL_USERNAME",
+    "DEEPSEEK_CREDENTIAL_SLOT",
     "DeepSeekCredentialVerifier",
     "InMemoryCredentialStore",
     "WindowsCredentialStore",

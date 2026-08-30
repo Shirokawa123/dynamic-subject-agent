@@ -66,6 +66,8 @@ class ExperienceAdjudicationRequest:
     source_user_message_id: str = ""
     knowledge_candidates: tuple[KnowledgeEntry, ...] = ()
     selected_participant_goal_record_ids: tuple[str, ...] = ()
+    participant_goal_failure_code: str | None = None
+    participant_goal_expression_priority: bool = False
 
 
 class ExperienceDomain:
@@ -216,10 +218,36 @@ class ExperienceDomain:
                 "participant-goal-selection-invalid",
                 "reply selection must name at most five active records",
             )
+        participant_goal_failure = request.participant_goal_failure_code
+        if not isinstance(request.participant_goal_expression_priority, bool):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "participant-goal-expression-priority-invalid",
+                "participant goal expression priority must be bool",
+            )
+        if participant_goal_failure is not None and (
+            not isinstance(participant_goal_failure, str)
+            or participant_goal_failure
+            not in {
+                "participant-goal-classification-failed",
+                "participant-goal-classification-invalid",
+                "participant-goal-selection-invalid",
+                "participant-goal-reply-failed",
+                "participant-goal-reply-invalid",
+            }
+            or participant_goal_candidate is not None
+            or selected_ids
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "participant-goal-failure-invalid",
+                "participant goal failure must be typed and carry no candidate",
+            )
         if (
             memory_candidate is None
             and knowledge_candidate is None
             and participant_goal_candidate is None
+            and participant_goal_failure is None
         ):
             return ExperienceDomainOutcome(
                 outcome_id=stable_id(basis, "experience-outcome"),
@@ -273,6 +301,13 @@ class ExperienceDomain:
                     tuple(participant_records),
                 )
             )
+        elif participant_goal_failure is not None:
+            participant_goal_code = participant_goal_failure
+            participant_goal_payload = {
+                "status": "failed-closed",
+                "action": "noop",
+                "reason_code": participant_goal_failure,
+            }
         reason: dict[str, object] = {
             "code": (
                 memory_code

@@ -14,6 +14,7 @@ from pathlib import Path
 
 from dynamic_subject_agent.credentials import (
     DeepSeekCredentialVerifier,
+    DEEPSEEK_CREDENTIAL_SLOT,
     WindowsCredentialStore,
 )
 from server import DesktopState, build_handler
@@ -45,6 +46,7 @@ def _open_window(url: str) -> None:
 def main() -> int:
     state = DesktopState(
         credential_store=WindowsCredentialStore(),
+        credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
         verifier=DeepSeekCredentialVerifier(),
     )
 

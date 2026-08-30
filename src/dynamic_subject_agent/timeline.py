@@ -944,7 +944,11 @@ class ExperienceDomainOutcome:
                 "participant_goal_commitment",
                 {},
             ).get("status")
-            return value if value in {"accepted", "rejected", "no-update"} else None
+            return (
+                value
+                if value in {"accepted", "rejected", "no-update", "failed-closed"}
+                else None
+            )
         except (AttributeError, TypeError, json.JSONDecodeError):
             return None
 

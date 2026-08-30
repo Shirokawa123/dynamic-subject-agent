@@ -105,7 +105,7 @@ def _validate_reasoned_noop(
         if (
             not isinstance(participant_goal, dict)
             or participant_goal.get("status")
-            not in {"accepted", "rejected", "no-update"}
+            not in {"accepted", "rejected", "no-update", "failed-closed"}
             or participant_goal.get("action")
             not in {"create", "revise", "transition", "noop"}
             or not isinstance(participant_goal.get("reason_code"), str)

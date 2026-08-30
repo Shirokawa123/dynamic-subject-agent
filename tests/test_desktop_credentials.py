@@ -8,6 +8,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from dynamic_subject_agent.credentials import (
+    DEEPSEEK_CREDENTIAL_SLOT,
     DeepSeekCredentialVerifier,
     InMemoryCredentialStore,
 )
@@ -58,12 +59,14 @@ def test_desktop_starts_in_setup_mode_without_credential() -> None:
     server = _server_module()
     state = server.DesktopState(
         credential_store=InMemoryCredentialStore(),
+        credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
         verifier=DeepSeekCredentialVerifier(_opener=_valid_opener),
         product_factory=lambda key: _FakeProduct(),
     )
     try:
         assert state.setup_snapshot() == {
             "configured": False,
+            "provider_id": "deepseek",
             "product_ready": False,
             "verification": "not-run",
             "problem": None,
@@ -89,6 +92,7 @@ def test_save_verify_replace_and_delete_never_return_secret() -> None:
 
     state = server.DesktopState(
         credential_store=store,
+        credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
         verifier=DeepSeekCredentialVerifier(_opener=_valid_opener),
         product_factory=factory,
     )
@@ -97,6 +101,7 @@ def test_save_verify_replace_and_delete_never_return_secret() -> None:
         assert saved == {
             "ok": True,
             "configured": True,
+            "provider_id": "deepseek",
             "product_ready": True,
             "verification": "valid",
             "problem": None,
@@ -129,6 +134,7 @@ def test_invalid_or_unavailable_verification_does_not_store_key() -> None:
         store = InMemoryCredentialStore()
         state = server.DesktopState(
             credential_store=store,
+            credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
             verifier=DeepSeekCredentialVerifier(_opener=opener),
             product_factory=lambda key: _FakeProduct(),
         )
@@ -136,7 +142,7 @@ def test_invalid_or_unavailable_verification_does_not_store_key() -> None:
             result = state.save_and_verify(_dummy_key())
             assert result["ok"] is False
             assert result["problem"] == expected
-            assert store.load() is None
+            assert store.load(DEEPSEEK_CREDENTIAL_SLOT) is None
             assert result["product_ready"] is False
             assert _dummy_key() not in str(result)
         finally:
@@ -165,6 +171,7 @@ def test_loopback_credential_endpoints_save_status_and_delete_without_echo() -> 
     store = InMemoryCredentialStore()
     state = server_module.DesktopState(
         credential_store=store,
+        credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
         verifier=DeepSeekCredentialVerifier(_opener=_valid_opener),
         product_factory=lambda key: _FakeProduct(),
     )

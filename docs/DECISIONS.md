@@ -15,3 +15,7 @@
 ## D-004：软件内管理 DeepSeek credential
 
 2026-08-30，用户确认由桌面软件配置 key。生产只使用 Windows Credential Manager，不使用仓库文件、SQLite、环境变量持久化或明文 fallback；“保存并验证”只对 DeepSeek `/models` 发 Bearer 鉴权请求。
+
+## D-005：模型能力与产品语义解耦
+
+2026-08-30，用户要求未来可接入其他云端或本地模型。所有含糊任务经 provider-neutral ModelGateway 和能力声明进入 Adapter；明确产品语法由 Python 直接处理。JSON mode 不被视为 schema 保证，只有无语义差异的 action-aware 规范化可在 Adapter 内执行；Provider 单项失败不再自动终止整轮。

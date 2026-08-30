@@ -4,6 +4,8 @@
 
 Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果和查询投影。`open_local_product(config, cognition=...)` 是唯一 production composition root，负责隐藏身份创建、Studio、QRI、RuntimeHost、provider Adapter、恢复和关闭顺序。
 
+模型任务通过 `ModelGateway.execute(ModelTask)` 进入 provider-neutral seam。`ProviderAdapter` 声明 provider/model identity、本地/远程与 strict-schema/tool-call/json-object/text 能力；DeepSeek 只是当前生产 Adapter。运行中不做隐式 provider fallback。
+
 ## 深 Module
 
 - `SubjectRuntime`：一次 SubjectCommand 的唯一编排和写入授权者。
@@ -22,10 +24,12 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 
 模型输出只能成为候选。Domain 独立返回 accepted、rejected、NoOp 或 FailedClosed；完整 Outcome 全可见或全不可见。effect 只消费已提交引用，失败不会重跑经历。
 
+明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。单项 provider 失败形成该能力的 FailedClosed，不阻断无依赖的其他 Domain 与表达。
+
 ## 数据
 
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
 
 ## Credential seam
 
-`CredentialStore` 是 Host 侧深 Module Interface；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。用户触发的验证只访问 DeepSeek `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
+`CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。

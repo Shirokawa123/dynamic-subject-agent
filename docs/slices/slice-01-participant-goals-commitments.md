@@ -29,6 +29,8 @@
 4. `ApplicationFacade` 增加 typed query/projection，桌面轮次注释和侧栏显示目标/承诺状态。
 5. 随迁行为测试，并覆盖原子失败、provider 越界、重启恢复和现有能力同轮不回归。
 6. 用户于 2026-08-30 明确批准验收前置：桌面内配置 DeepSeek key，保存到 Windows Credential Manager，支持保存并验证、替换和删除；key 只用于 HTTPS Bearer 鉴权。
+7. 用户于 2026-08-30 要求修复结构化输出脆弱与 DeepSeek 耦合：明确目标查询/变化由 Python 优先处理；含糊输入通过 provider-neutral `ModelGateway`；JSON 只在 Adapter 内规范化，单项失败不得杀死整轮聊天。
+8. CredentialStore 改为 provider/account slot；DeepSeek 仅为当前生产 Adapter，未来云端或本地 Adapter 不得修改 Domain、Timeline 或产品业务 Interface。
 
 ## 范围外
 
@@ -41,6 +43,7 @@
 - fake provider 全链：create → query → revise/transition → restart，逐字证据和不可变历史可见。
 - 既有 Memory、Knowledge、Relationship、原子 Publication 与恢复测试全绿。
 - 用户在桌面入口真实完成一次创建与重启查询后转 done；本会话若未进行真实调用则保持 in_progress。
+- 回归场景“我的目标是什么？”不得调用结构化 provider；DeepSeek `noop + null` 形状必须被安全规范化；含糊分类失败只形成目标能力 FailedClosed，其他回复仍完成。
 
 ## 2026-08-30 会话 1
 
@@ -62,3 +65,16 @@
 - 验证只 GET DeepSeek `/models` 并发送 Bearer header；无用户消息、角色状态、持久 ID 或数据库内容，401/403 与网络不可用分开显示。
 - UI 使用 password input，不使用 localStorage/sessionStorage；server 不读环境变量或 key 文件，响应不回显 secret。
 - 无 key 真实进程烟测通过；凭据定向 20 passed，全量 188 passed；未使用真实 key、未发真实网络请求。
+
+## 2026-08-30 结构化输出与 provider-neutral 修复批准
+
+- 用户明确要求不把产品限定于 DeepSeek；允许建立 provider-neutral ModelGateway、能力声明与 provider/account credential slot。
+- 当前不启用 DeepSeek strict-tool Beta：官方 JSON mode 只保证合法 JSON，strict schema 仍属 `/beta`；先以 Python 确定性路径、action-aware canonicalizer 和 Adapter capability 资格化机制保证正确性。
+
+## 2026-08-30 会话 3
+
+- 新增 provider-neutral `ModelGateway.execute(ModelTask)`、`ProviderAdapter` 与 strict-schema/tool-call/json-object/text 能力声明；composite/goal cognition 不再 import DeepSeek。
+- “我的目标是什么？”及明确 create/revise/transition 由 Python 直接处理，测试确认零结构化模型调用；用户截图中的现有 active 目标无需迁移。
+- 真实诊断响应 `noop + evidence_quote:null + experience_summary:null` 已成为回归：Adapter 仅在 noop 时规范化为空字符串，状态变化候选仍严格验证。
+- 含糊分类/reply 失败只在 Experience 中记录 participant goal `failed-closed`，Memory/Knowledge/Relationship 回复仍可原子完成且不产生目标部分写入。
+- CredentialStore 已按 provider/account slot 泛化并保持现有 DeepSeek vault 兼容；定向 26 passed，全量 192 passed，未再次发送真实 provider 请求。

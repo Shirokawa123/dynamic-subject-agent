@@ -16,8 +16,10 @@ from dynamic_subject_agent.deepseek import (
 from dynamic_subject_agent.participant_goal_cognition import (
     ParticipantGoalClassificationRequest,
     ParticipantGoalProviderRecord,
+    ParticipantGoalOutputRejected,
     ParticipantGoalReplyRecord,
     ParticipantGoalReplyRequest,
+    canonicalize_participant_goal_output,
 )
 
 
@@ -194,3 +196,64 @@ def test_classification_rejects_extra_provider_field() -> None:
                 active_records=(),
             )
         )
+
+
+def test_noop_null_fields_are_canonicalized_without_weakening_state_changes() -> None:
+    request = ParticipantGoalClassificationRequest(
+        current_user_message="我的目标是什么？",
+        active_records=(
+            ParticipantGoalProviderRecord(
+                turn_ref="target-1",
+                kind="goal",
+                terms="今年通过 N1",
+                status="active",
+            ),
+        ),
+    )
+    result = canonicalize_participant_goal_output(
+        {
+            "action": "noop",
+            "kind": None,
+            "terms": None,
+            "target_ref": None,
+            "next_status": None,
+            "evidence_quote": None,
+            "selected_turn_refs": [],
+            "experience_summary": None,
+            "language": "zh",
+        },
+        request=request,
+    )
+    assert result.candidate is None
+    assert result.selected_turn_refs == ()
+    assert result.experience_summary == ""
+
+    transport = _ScriptedTransport(
+        {
+            "action": "noop",
+            "kind": None,
+            "terms": None,
+            "target_ref": None,
+            "next_status": None,
+            "evidence_quote": None,
+            "selected_turn_refs": [],
+            "experience_summary": None,
+            "language": "zh",
+        }
+    )
+    adapter_result = _provider(transport).classify(request)
+    assert adapter_result == result
+
+    unsafe = {
+        "action": "create",
+        "kind": "goal",
+        "terms": "今年通过 N1",
+        "target_ref": None,
+        "next_status": "active",
+        "evidence_quote": None,
+        "selected_turn_refs": [],
+        "experience_summary": None,
+        "language": "zh",
+    }
+    with pytest.raises(ParticipantGoalOutputRejected):
+        canonicalize_participant_goal_output(unsafe, request=request)

@@ -15,8 +15,22 @@ from dynamic_subject_agent.composite import ControlledCompositeCognition
 from dynamic_subject_agent.deepseek import (
     DEEPSEEK_CREDENTIAL_BACKEND_ID,
     DEEPSEEK_CREDENTIAL_KEY_ID,
+    DEEPSEEK_MODEL,
+    DEEPSEEK_PROVIDER_AUTHORITY_ID,
     DeepSeekCredentialResolver,
+    DeepSeekKnowledgeProvider,
+    DeepSeekLivingMemoryProvider,
+    DeepSeekParticipantGoalProvider,
+    DeepSeekRelationshipProvider,
     DeepSeekUrlLibTransport,
+)
+from dynamic_subject_agent.model_gateway import (
+    ModelGateway,
+    ProviderCapabilities,
+    StructuredOutputMode,
+)
+from dynamic_subject_agent.participant_goal_cognition import (
+    ParticipantGoalProviderAdapter,
 )
 from dynamic_subject_agent.host import RuntimeHost, RuntimeHostRootRef
 from dynamic_subject_agent.runtime import CognitionEngine
@@ -289,10 +303,26 @@ def open_deepseek_local_product(
         backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,
         key_id=DEEPSEEK_CREDENTIAL_KEY_ID,
     )
-    cognition = ControlledCompositeCognition.for_profile(
-        "default",
-        deepseek_transport=transport,
-        credential_ref=credential_ref,
+    provider_kwargs = {
+        "transport": transport,
+        "credential_ref": credential_ref,
+    }
+    participant_goal_gateway = ModelGateway(
+        ParticipantGoalProviderAdapter(
+            provider=DeepSeekParticipantGoalProvider(**provider_kwargs),
+            capabilities=ProviderCapabilities(
+                provider_id=DEEPSEEK_PROVIDER_AUTHORITY_ID,
+                model_id=DEEPSEEK_MODEL,
+                local=False,
+                structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+            ),
+        )
+    )
+    cognition = ControlledCompositeCognition(
+        memory_provider=DeepSeekLivingMemoryProvider(**provider_kwargs),
+        knowledge_provider=DeepSeekKnowledgeProvider(**provider_kwargs),
+        relationship_provider=DeepSeekRelationshipProvider(**provider_kwargs),
+        participant_goal_gateway=participant_goal_gateway,
     )
     return open_local_product(config, cognition=cognition)
 

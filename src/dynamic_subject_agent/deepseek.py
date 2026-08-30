@@ -64,16 +64,16 @@ from dynamic_subject_agent.participant_goal_cognition import (
     ParticipantGoalReplyRecord,
     ParticipantGoalReplyRequest,
     ParticipantGoalReplyResult,
+    ParticipantGoalOutputRejected,
+    canonicalize_participant_goal_output,
 )
 from dynamic_subject_agent.participant_goals import (
     ACTIVE_RECORD_LIMIT,
-    MAX_EVIDENCE_QUOTE_CHARS,
     MAX_TERMS_CHARS,
     POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
     POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
     POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
     REPLY_RECORD_LIMIT,
-    ParticipantGoalCommitmentCandidate,
 )
 
 
@@ -1136,105 +1136,10 @@ class DeepSeekParticipantGoalProvider:
     ) -> ParticipantGoalClassificationResult:
         body = self.classification_outbound_bytes(request)
         content = self._post_and_decode(body)
-        expected = {
-            "action",
-            "kind",
-            "terms",
-            "target_ref",
-            "next_status",
-            "evidence_quote",
-            "selected_turn_refs",
-            "experience_summary",
-            "language",
-        }
-        projected_refs = {record.turn_ref for record in request.active_records}
-        if (
-            set(content) != expected
-            or content.get("action") not in {"create", "revise", "transition", "noop"}
-            or content.get("kind") not in {None, "goal", "commitment"}
-            or content.get("terms") is not None
-            and not isinstance(content.get("terms"), str)
-            or content.get("target_ref") is not None
-            and not isinstance(content.get("target_ref"), str)
-            or content.get("target_ref") is not None
-            and content.get("target_ref") not in projected_refs
-            or content.get("next_status")
-            not in {None, "active", "achieved", "abandoned", "fulfilled", "released"}
-            or not isinstance(content.get("evidence_quote"), str)
-            or len(content.get("evidence_quote", "")) > MAX_EVIDENCE_QUOTE_CHARS
-            or content.get("evidence_quote")
-            and content["evidence_quote"] not in request.current_user_message
-            or not isinstance(content.get("selected_turn_refs"), list)
-            or len(content.get("selected_turn_refs", [])) > REPLY_RECORD_LIMIT
-            or any(
-                not isinstance(turn_ref, str)
-                for turn_ref in content.get("selected_turn_refs", [])
-            )
-            or len(set(content.get("selected_turn_refs", [])))
-            != len(content.get("selected_turn_refs", []))
-            or any(
-                turn_ref not in projected_refs
-                for turn_ref in content.get("selected_turn_refs", [])
-            )
-            or not isinstance(content.get("experience_summary"), str)
-            or len(content.get("experience_summary", "")) > _MAX_SUMMARY_CHARACTERS
-            or content.get("language") != "zh"
-        ):
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
-        terms = content["terms"]
-        if isinstance(terms, str) and len(terms) > MAX_TERMS_CHARS:
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
-        action = content["action"]
-        shape_valid = (
-            action == "noop"
-            and content["kind"] is None
-            and terms is None
-            and content["target_ref"] is None
-            and content["next_status"] is None
-            and content["evidence_quote"] == ""
-        ) or (
-            action == "create"
-            and content["kind"] in {"goal", "commitment"}
-            and isinstance(terms, str)
-            and bool(terms.strip())
-            and content["target_ref"] is None
-            and content["next_status"] == "active"
-            and bool(content["evidence_quote"])
-        ) or (
-            action == "revise"
-            and content["kind"] in {"goal", "commitment"}
-            and isinstance(terms, str)
-            and bool(terms.strip())
-            and isinstance(content["target_ref"], str)
-            and content["next_status"] == "active"
-            and bool(content["evidence_quote"])
-        ) or (
-            action == "transition"
-            and content["kind"] is None
-            and terms is None
-            and isinstance(content["target_ref"], str)
-            and content["next_status"]
-            in {"achieved", "abandoned", "fulfilled", "released"}
-            and bool(content["evidence_quote"])
-        )
-        if not shape_valid:
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
-        candidate = None
-        if action != "noop":
-            candidate = ParticipantGoalCommitmentCandidate(
-                action=action,
-                kind=content["kind"],
-                terms=terms,
-                target_ref=content["target_ref"],
-                next_status=content["next_status"],
-                evidence_quote=content["evidence_quote"],
-            )
-        return ParticipantGoalClassificationResult(
-            candidate=candidate,
-            selected_turn_refs=tuple(content["selected_turn_refs"]),
-            experience_summary=content["experience_summary"],
-            language="zh",
-        )
+        try:
+            return canonicalize_participant_goal_output(content, request=request)
+        except ParticipantGoalOutputRejected:
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
 
     def reply(self, request: ParticipantGoalReplyRequest) -> ParticipantGoalReplyResult:
         body = self.reply_outbound_bytes(request)

@@ -11,9 +11,11 @@ from uuid import uuid4
 
 from dynamic_subject_agent.credentials import (
     CredentialStore,
+    CredentialSlot,
     CredentialStoreUnavailable,
     CredentialVerificationStatus,
     DeepSeekCredentialVerifier,
+    DEEPSEEK_CREDENTIAL_SLOT,
     WindowsCredentialStore,
 )
 from dynamic_subject_agent.local_product import (
@@ -215,6 +217,7 @@ class DesktopState:
         self,
         *,
         credential_store: CredentialStore,
+        credential_slot: CredentialSlot,
         verifier: DeepSeekCredentialVerifier,
         product_factory: Callable[[str], OpenedLocalProduct] = build_product,
     ) -> None:
@@ -222,7 +225,10 @@ class DesktopState:
             raise TypeError("credential_store must satisfy CredentialStore")
         if not isinstance(verifier, DeepSeekCredentialVerifier):
             raise TypeError("verifier must be DeepSeekCredentialVerifier")
+        if not isinstance(credential_slot, CredentialSlot):
+            raise TypeError("credential_slot must be CredentialSlot")
         self._credential_store = credential_store
+        self._credential_slot = credential_slot
         self._verifier = verifier
         self._product_factory = product_factory
         self._product: OpenedLocalProduct | None = None
@@ -235,7 +241,7 @@ class DesktopState:
     def _open_existing(self) -> None:
         key = ""
         try:
-            key = self._credential_store.load() or ""
+            key = self._credential_store.load(self._credential_slot) or ""
             if key:
                 self._replace_product(self._product_factory(key))
         except CredentialStoreUnavailable as error:
@@ -255,12 +261,13 @@ class DesktopState:
     def setup_snapshot(self) -> dict:
         with self._lock:
             try:
-                configured = self._credential_store.configured()
+                configured = self._credential_store.configured(self._credential_slot)
             except CredentialStoreUnavailable as error:
                 configured = False
                 self._problem = error.code
             return {
                 "configured": configured,
+                "provider_id": self._credential_slot.provider_id,
                 "product_ready": self._app is not None,
                 "verification": self._verification,
                 "problem": self._problem,
@@ -283,7 +290,7 @@ class DesktopState:
                 return {"ok": False, **self.setup_snapshot()}
             key = str(api_key)
             try:
-                self._credential_store.save(key)
+                self._credential_store.save(self._credential_slot, key)
                 self._replace_product(None)
                 product = self._product_factory(key)
                 self._replace_product(product)
@@ -302,7 +309,7 @@ class DesktopState:
         with self._lock:
             self._replace_product(None)
             try:
-                deleted = self._credential_store.delete()
+                deleted = self._credential_store.delete(self._credential_slot)
                 self._problem = None
                 self._verification = "not-run"
             except CredentialStoreUnavailable as error:
@@ -413,6 +420,7 @@ def build_handler(state: DesktopState):
 def main() -> int:
     state = DesktopState(
         credential_store=WindowsCredentialStore(),
+        credential_slot=DEEPSEEK_CREDENTIAL_SLOT,
         verifier=DeepSeekCredentialVerifier(),
     )
     server = ThreadingHTTPServer(("127.0.0.1", 0), build_handler(state))
