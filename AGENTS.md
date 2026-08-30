@@ -21,7 +21,7 @@
 
 ## 产品顺序
 
-当前已有 Memory、Knowledge、Relationship、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：目标与承诺 → Situated State → Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
+当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：Situated State → Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
 
 ## 永久不变量
 

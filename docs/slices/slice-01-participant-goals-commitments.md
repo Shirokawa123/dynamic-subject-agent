@@ -1,6 +1,6 @@
 # Slice-01：参与者目标与承诺迁移
 
-状态：in_progress（2026-08-30 用户明确要求继续推进）。规模预算：≤ 2 个工作会话。
+状态：done（2026-08-30 用户真实桌面验收通过并收口）。规模预算：≤ 2 个工作会话。
 
 ## 目标
 
@@ -78,3 +78,8 @@
 - 真实诊断响应 `noop + evidence_quote:null + experience_summary:null` 已成为回归：Adapter 仅在 noop 时规范化为空字符串，状态变化候选仍严格验证。
 - 含糊分类/reply 失败只在 Experience 中记录 participant goal `failed-closed`，Memory/Knowledge/Relationship 回复仍可原子完成且不产生目标部分写入。
 - CredentialStore 已按 provider/account slot 泛化并保持现有 DeepSeek vault 兼容；定向 26 passed，全量 192 passed，未再次发送真实 provider 请求。
+
+## 真实用户收口
+
+- 用户完全重启 Avery 后再次询问“我的目标是什么？”，现有 active 目标由 Python 确定性路径正确回答；原 `participant-goal-classification-failed` 不再出现。
+- Slice-01 的真实创建、持久化、重启查询与失败修复验收完成，参与者目标与承诺从 INTEGRATED 提升为 STABLE。
