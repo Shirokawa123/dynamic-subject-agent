@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>Avery</title>
+<style>
+  body { margin:0; background:#f3efe6; color:#26221c; font-family:"Noto Serif SC","Songti SC",Georgia,serif; }
+  .app { display:flex; max-width:860px; margin:0 auto; min-height:100vh; }
+  .chat { flex:1; padding:24px 26px 130px; }
+  .rail { width:230px; border-left:1px solid #d5cdbb; padding:24px 18px; font-size:12px; color:#7d7462; }
+  .rail h2 { font-size:13px; font-weight:normal; letter-spacing:2px; margin:0 0 10px; color:#5f5645; }
+  .card { background:#faf7ef; border:1px solid #ddd3bf; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-family:ui-monospace,Consolas,monospace; font-size:11px; line-height:1.7; }
+  .card .k { color:#9a7b3f; }
+  header { margin-bottom:22px; }
+  h1 { font-size:20px; font-weight:normal; letter-spacing:2px; margin:0; }
+  .turn { margin-bottom:24px; }
+  .user { color:#6b6152; margin-bottom:6px; text-align:right; }
+  .user::before { content:"▸ "; color:#b0a488; }
+  .say { font-size:16px; line-height:2; white-space:pre-wrap; }
+  .notes { margin-top:8px; border-left:2px solid #d5cdbb; padding-left:12px; font-size:12px; color:#8d8371; line-height:1.9; }
+  .notes .tag { display:inline-block; border:1px solid #c9bda4; border-radius:3px; padding:0 6px; margin-right:6px; font-size:11px; color:#7a6d55; background:#eee8d8; }
+  .notes .cite { color:#9a7b3f; border-bottom:1px dotted #c9b98f; }
+  .failed { color:#a04b3a; font-size:13px; margin-top:8px; }
+  .inputbar { position:fixed; bottom:0; left:230px; right:0; background:#f3efe6; border-top:1px solid #d5cdbb; }
+  .inputbar .inner { max-width:600px; margin:0 auto; padding:14px 26px; display:flex; gap:10px; }
+  input[type=text] { flex:1; border:1px solid #cfc5ae; background:#fbf8f0; border-radius:4px; padding:10px 14px; font:inherit; color:inherit; }
+  button { border:1px solid #5f5645; background:none; color:#5f5645; border-radius:4px; padding:10px 20px; font:inherit; cursor:pointer; }
+  button:disabled { opacity:0.5; cursor:default; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="chat">
+    <header><h1>Avery</h1></header>
+    <div id="log"></div>
+  </div>
+  <div class="rail">
+    <h2>记 忆</h2>
+    <div id="rail-memories"></div>
+    <h2 style="margin-top:18px">知 识 来 源</h2>
+    <div class="card"><span class="k">4 entries</span> · project-original</div>
+    <h2 style="margin-top:18px">立 场</h2>
+    <div class="card" id="rail-stance"><span class="k">尚无立场互动</span></div>
+  </div>
+</div>
+<div class="inputbar"><div class="inner">
+  <input type="text" id="text" placeholder="说点什么……" autocomplete="off">
+  <button id="send">寄出</button>
+</div></div>
+<script>
+const log = document.getElementById("log");
+const sendBtn = document.getElementById("send");
+const textBox = document.getElementById("text");
+const knownMemories = new Map();
+let stanceAccepted = 0;
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+async function refreshState() {
+  const res = await fetch("/api/state");
+  const state = await res.json();
+  stanceAccepted = state.relationship_accepted_count || 0;
+  const rail = document.getElementById("rail-memories");
+  rail.innerHTML = "";
+  for (const m of state.memories) {
+    if (!knownMemories.has(m.memory_id)) {
+      knownMemories.set(m.memory_id, m);
+      if (log.children.length > 0) return renderRail(state); // 首载不标新
+    }
+  }
+  renderRail(state);
+}
+
+function renderRail(state) {
+  const rail = document.getElementById("rail-memories");
+  rail.innerHTML = "";
+  for (const m of state.memories) {
+    const card = el("div", "card");
+    const kindTag = el("span", "k", m.status === "superseded"
+      ? "【已更正】"
+      : (m.memory_kind === "plan" ? "【打算】" : "【长期】"));
+    card.appendChild(kindTag);
+    card.appendChild(el("span", "k", m.memory_id.slice(0, 8)));
+    card.appendChild(document.createElement("br"));
+    card.appendChild(document.createTextNode("「" + m.content + "」"));
+    rail.appendChild(card);
+  }
+  const stance = document.getElementById("rail-stance");
+  stance.innerHTML = stanceAccepted > 0
+    ? `<span class="k">${stanceAccepted} accepted</span> · ${state.relationship_latest_event || "互动"}`
+    : '<span class="k">尚无立场互动</span>';
+}
+
+async function send() {
+  const text = textBox.value.trim();
+  if (!text || sendBtn.disabled) return;
+  textBox.value = "";
+  sendBtn.disabled = true;
+  const userTurn = el("div", "turn user");
+  userTurn.textContent = text;
+  log.appendChild(userTurn);
+  const aiTurn = el("div", "turn ai");
+  const say = el("div", "say", "……");
+  aiTurn.appendChild(say);
+  log.appendChild(aiTurn);
+  try {
+    const res = await fetch("/api/turn", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({text}),
+    });
+    const turn = await res.json();
+    if (!turn.ok) {
+      say.remove();
+      aiTurn.appendChild(el("div", "failed",
+        `本轮失败关闭: ${turn.stage || "unknown"}:${turn.code}`));
+    } else {
+      say.textContent = turn.expression;
+      const notes = el("div", "notes");
+      if (turn.citations.length) {
+        for (const c of turn.citations) {
+          const span = el("span");
+          span.appendChild(el("span", "tag", "引用"));
+          const link = el("span", "cite", c.title);
+          span.appendChild(link);
+          span.appendChild(document.createTextNode(" · " + c.source));
+          notes.appendChild(span);
+        }
+      }
+      if (turn.recalled_ids.length) {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "召回"));
+        span.appendChild(document.createTextNode(
+          turn.recalled_ids.length + " 条记忆"));
+        notes.appendChild(span);
+      }
+      if (turn.living_memory_status === "accepted") {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "记忆更新"));
+        notes.appendChild(span);
+      }
+      if (turn.new_memory_kind) {
+        const span = el("span");
+        span.appendChild(document.createTextNode(
+          turn.new_memory_kind === "plan" ? "【打算】" : "【长期】"));
+        notes.appendChild(span);
+      }
+      if (turn.relationship_event) {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "立场"));
+        span.appendChild(document.createTextNode(turn.relationship_event));
+        notes.appendChild(span);
+        if (turn.relationship_event === "stable_positive_interaction") {
+          stanceAccepted += 1;
+        }
+      }
+      if (notes.children.length) aiTurn.appendChild(notes);
+      await refreshState();
+      if (turn.living_memory_status === "accepted") {
+        const latest = [...knownMemories.values()].at(-1);
+        if (latest) {
+          const hint = el("span");
+          hint.appendChild(document.createTextNode(
+            "「" + latest.content + "」"));
+          notes.appendChild(hint);
+        }
+      }
+    }
+  } catch (error) {
+    say.remove();
+    aiTurn.appendChild(el("div", "failed", "连接失败: " + error));
+  } finally {
+    sendBtn.disabled = false;
+    textBox.focus();
+    window.scrollTo(0, document.body.scrollHeight);
+  }
+}
+
+sendBtn.addEventListener("click", send);
+textBox.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") send();
+});
+refreshState();
+textBox.focus();
+</script>
+</body>
+</html>

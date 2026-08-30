@@ -1,0 +1,34 @@
+# Dynamic Subject Agent
+
+一个本地优先、具有持续身份和可验证变化过程的主体型陪伴 Agent。角色的记忆、知识使用、关系状态与后续主体变化来自有来源的经历；模型只提出候选，Python 负责裁决和原子提交。
+
+当前产品支持：
+
+- Windows 本地聊天入口；
+- 跨进程持久身份与对话时间线；
+- Living Memory 创建、修订、召回与长期/打算标签；
+- 有来源的 Knowledge 检索与引用；
+- Relationship Subject Stance 事件；
+- Memory、Knowledge、Relationship 同轮组合。
+
+尚未实现：目标与承诺、Situated State、Medium State、完整 Agency 与 committed effect。下一步严格按此顺序推进。
+
+## 安装与测试
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python -m pip install -e ".[dev,desktop]"
+powershell -ExecutionPolicy Bypass -File scripts\test.ps1
+```
+
+## 启动
+
+在当前进程设置 `DEEPSEEK_API_KEY` 后运行：
+
+```powershell
+.\.venv\Scripts\python app\desktop\shell.py
+```
+
+也可双击 `启动Avery.bat`。默认运行数据位于 `%LOCALAPPDATA%\DynamicSubjectAgent`，不写入源码仓库。旧救援仓库与既有正式身份不会被自动读取、迁移或回退。
+
+产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

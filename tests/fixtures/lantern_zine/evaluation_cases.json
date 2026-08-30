@@ -1,0 +1,113 @@
+{
+  "contract_version": "M0-EVALUATION-CASESET-1.0",
+  "fixture_id": "lantern-zine-m0-14-v1",
+  "test_only": true,
+  "provenance": {
+    "kind": "project-original",
+    "statement": "This M0 evaluation case set extends the original fictional Lantern Zine test scenario without private, retired, or externally licensed source material.",
+    "source_assets": [],
+    "uses_private_or_retired_material": false,
+    "network_required": false,
+    "real_provider_required": false
+  },
+  "cases": [
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "normal-complete-cycle",
+      "kind": "normal-complete-cycle",
+      "required_checks": [
+        "sealed-genesis-and-published-qri",
+        "runtime-binding-active",
+        "canonical-operation-completed",
+        "single-timeline-outcome",
+        "effect-dispatch-zero"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "duplicate-retry-follow",
+      "kind": "duplicate-retry-follow",
+      "required_checks": [
+        "stable-operation-ref",
+        "idempotent-outcome-reused",
+        "follow-authorized-projection",
+        "duplicate-effect-reference-zero"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "unavailable-capability",
+      "kind": "unavailable-capability",
+      "required_checks": [
+        "real-provider-unavailable",
+        "belief-memory-relationship-unavailable",
+        "unavailable-remains-typed"
+      ],
+      "unavailable_capabilities": [
+        "real-provider-unavailable",
+        "belief-memory-relationship-unavailable"
+      ]
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "cognition-invalid-output",
+      "kind": "cognition-invalid-output",
+      "required_checks": [
+        "invalid-cognition-failed-closed",
+        "timeline-outcome-absent-for-failure",
+        "pending-operation-owned"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "domain-technical-failure",
+      "kind": "domain-technical-failure",
+      "required_checks": [
+        "domain-failure-failed-closed",
+        "timeline-outcome-absent-for-failure",
+        "pending-operation-owned"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "publication-crash-conflict",
+      "kind": "publication-crash-conflict",
+      "required_checks": [
+        "publication-crash-recovered",
+        "publication-conflict-failed-closed",
+        "single-timeline-outcome",
+        "duplicate-effect-reference-zero"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "runtime-host-build-drain-restart",
+      "kind": "runtime-host-build-drain-restart",
+      "required_checks": [
+        "build-then-swap",
+        "drain-fences-new-lease",
+        "restart-reuses-binding",
+        "restart-reuses-operation"
+      ],
+      "unavailable_capabilities": []
+    },
+    {
+      "contract_version": "M0-EVALUATION-CASE-1.0",
+      "case_id": "export-clear-concurrent-admission",
+      "kind": "export-clear-concurrent-admission",
+      "required_checks": [
+        "typed-export-valid",
+        "replay-authority-zero",
+        "clear-fences-admission",
+        "clear-recovery-idempotent",
+        "concurrent-admission-no-partial-outcome"
+      ],
+      "unavailable_capabilities": []
+    }
+  ]
+}

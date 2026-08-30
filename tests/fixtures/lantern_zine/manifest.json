@@ -1,0 +1,13 @@
+{
+  "fixture_id": "lantern-zine-m0-05-v1",
+  "test_only": true,
+  "usage_scope": "Mature Runtime M0 architecture and isolation verification",
+  "provenance": {
+    "kind": "project-original",
+    "created_for": "M0 05 fresh-root guard verification",
+    "statement": "Names, setting, and utterance were written as an original fictional test scenario for this project.",
+    "source_assets": [],
+    "uses_private_or_retired_material": false
+  },
+  "content_file": "scenario.json"
+}

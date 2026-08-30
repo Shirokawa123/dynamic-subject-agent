@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=82", "wheel>=0.47"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dynamic-subject-agent"
+version = "0.0.0"
+description = "Local-first subject-oriented companion Agent."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+desktop = ["pywebview>=5,<6"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dynamic_subject_agent", "dynamic_subject_agent.*"]
+namespaces = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

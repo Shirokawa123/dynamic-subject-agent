@@ -1,0 +1,47 @@
+# 仓库协作规则
+
+默认使用中文与用户沟通。
+
+## 权威顺序
+
+1. `docs/PRODUCT.md`：产品目标、v1 和非目标。
+2. `docs/ARCHITECTURE.md`：Module、Interface、持久化与失败语义。
+3. `docs/DECISIONS.md`：少量当前决定。
+4. `docs/STATUS.md`：已实现能力与当前缺口。
+5. `docs/slices/current.md`：唯一可执行工作。
+
+发现冲突时停止实现并向用户报告。旧救援仓库仅在当前切片明确要求迁移既有行为时按具体文件查阅，不是运行依赖或默认上下文。
+
+## 会话协议
+
+- 开工前必须存在 `docs/slices/current.md` 任务书；任务书外发现记入收尾，不扩权处理。
+- 同一时刻只有一个执行切片；每张切片以用户可体验结果收口。
+- 每个工作会话以 git commit 结束；`docs/STATUS.md` 只追加或更新不超过 5 行的当前事实。
+- 删除、不可逆数据迁移、新 credential 用途、新 provider 数据用途必须先获用户批准。
+
+## 产品顺序
+
+当前已有 Memory、Knowledge、Relationship、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：目标与承诺 → Situated State → Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
+
+## 永久不变量
+
+1. 一条 RuntimeTimeline 只有一个写入者与一个 canonical store。
+2. Publication 原子且具有崩溃恢复语义。
+3. `unavailable`、typed `NoOp`、`FailedClosed` 严格区分。
+4. 模型只提议，Python 裁决；模型输出不能直接成为持久状态。
+5. Provider 只接收当前能力获授权的最小投影，并由行为测试守护。
+
+## Module 与测试
+
+- 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。
+- 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
+- Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
+- 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。
+
+## Provider 数据边界
+
+- Living Memory：当前消息 1 条 + 最多 20 条 active `{memory_id, content, source_user_message_id}`。
+- Knowledge：当前消息 1 条 + 最多 6 条 sealed `{entry_id, title, content}`。
+- Relationship：当前消息 1 条 + 当前立场摘要 + 固定策略版本。
+- 三类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
+- `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。

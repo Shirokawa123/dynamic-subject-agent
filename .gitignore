@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+.venv/
+.venv-*/
+.env
+
+# Runtime authority and private user data live outside the repository.
+data/
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+
+# Local models, sources and generated artifacts are never source.
+models/
+.local_sources/
+.local_indexes/
+.artifacts/
+.scratch/
+*.srt
+*.ass
+*.vtt
