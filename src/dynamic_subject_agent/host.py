@@ -94,6 +94,7 @@ from dynamic_subject_agent.timeline import (
     _read_admission_gate as _read_timeline_admission_gate,
     _read_timeline_basis,
 )
+from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -3247,6 +3248,20 @@ class RuntimeLease:
         self._host._require_binding_permit(self.binding)
         return self._lane.worker.call(
             "list_relationship_interactions",
+            limit=limit,
+        )
+
+    def list_participant_goal_commitments(
+        self,
+        *,
+        active_only: bool = False,
+        limit: int = 100,
+    ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call(
+            "list_participant_goal_commitments",
+            active_only=active_only,
             limit=limit,
         )
 

@@ -41,6 +41,8 @@
     <div class="card"><span class="k">4 entries</span> · project-original</div>
     <h2 style="margin-top:18px">立 场</h2>
     <div class="card" id="rail-stance"><span class="k">尚无立场互动</span></div>
+    <h2 style="margin-top:18px">目 标 与 承 诺</h2>
+    <div id="rail-goals"><div class="card"><span class="k">尚无明确记录</span></div></div>
   </div>
 </div>
 <div class="inputbar"><div class="inner">
@@ -94,6 +96,25 @@ function renderRail(state) {
   stance.innerHTML = stanceAccepted > 0
     ? `<span class="k">${stanceAccepted} accepted</span> · ${state.relationship_latest_event || "互动"}`
     : '<span class="k">尚无立场互动</span>';
+  const goals = document.getElementById("rail-goals");
+  goals.innerHTML = "";
+  const statusLabels = {
+    active: "进行中", achieved: "已达成", abandoned: "已放弃",
+    fulfilled: "已履行", released: "已解除", superseded: "已修订",
+  };
+  for (const record of state.participant_goals || []) {
+    const card = el("div", "card");
+    card.appendChild(el("span", "k",
+      record.kind === "goal" ? "【目标】" : "【承诺】"));
+    card.appendChild(document.createTextNode(
+      " " + (statusLabels[record.status] || record.status)));
+    card.appendChild(document.createElement("br"));
+    card.appendChild(document.createTextNode("「" + record.terms + "」"));
+    goals.appendChild(card);
+  }
+  if (!goals.children.length) {
+    goals.appendChild(el("div", "card", "尚无明确记录"));
+  }
 }
 
 async function send() {
@@ -158,6 +179,13 @@ async function send() {
         if (turn.relationship_event === "stable_positive_interaction") {
           stanceAccepted += 1;
         }
+      }
+      if (turn.participant_goal_status) {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "目标/承诺"));
+        span.appendChild(document.createTextNode(
+          `${turn.participant_goal_action || "noop"} · ${turn.participant_goal_status}`));
+        notes.appendChild(span);
       }
       if (notes.children.length) aiTurn.appendChild(notes);
       await refreshState();

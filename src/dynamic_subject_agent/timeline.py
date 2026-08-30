@@ -22,6 +22,13 @@ from time import time_ns
 from typing import Any
 from uuid import UUID, uuid4
 
+from dynamic_subject_agent.participant_goals import (
+    POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
+    POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
+    POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
+    ParticipantGoalCommitmentRecord,
+)
+
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
 PERSISTENCE_VERSION = "M0-PERSISTENCE-1.0"
@@ -929,6 +936,28 @@ class ExperienceDomainOutcome:
             )
         except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
             return ()
+
+    @property
+    def participant_goal_commitment_status(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get(
+                "participant_goal_commitment",
+                {},
+            ).get("status")
+            return value if value in {"accepted", "rejected", "no-update"} else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def participant_goal_commitment_action(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get(
+                "participant_goal_commitment",
+                {},
+            ).get("action")
+            return value if value in {"create", "revise", "transition", "noop"} else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
 
 
 
@@ -5749,6 +5778,173 @@ class TimelineEngine:
                 )
             positions[record.memory_id] = len(records)
             records.append(record)
+        selected = [
+            record
+            for record in reversed(records)
+            if not active_only or record.status == "active"
+        ]
+        return tuple(selected[:limit])
+
+    def list_participant_goal_commitments(
+        self,
+        *,
+        active_only: bool = False,
+        limit: int = 20,
+    ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
+        if not isinstance(active_only, bool):
+            raise TypeError("active_only must be bool")
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("limit must be between 1 and 100")
+        rows = self._writer.execute(
+            """
+            SELECT decision.decision_id, outcome.head_sequence
+            FROM candidate_decision_record AS decision
+            JOIN timeline_outcome AS outcome ON outcome.plan_id = decision.plan_id
+            WHERE decision.scope = 'experience'
+            ORDER BY outcome.head_sequence ASC
+            """
+        ).fetchall()
+        records: list[ParticipantGoalCommitmentRecord] = []
+        positions: dict[str, int] = {}
+        for row in rows:
+            decision = self._read_decision(bytes(row[0]))
+            head_sequence = int(row[1])
+            try:
+                payload = json.loads(decision.reason)["participant_goal_commitment"]
+            except (KeyError, TypeError, json.JSONDecodeError):
+                continue
+            if payload.get("status") != "accepted":
+                continue
+            try:
+                action = str(payload["action"])
+                source_id = str(UUID(str(payload["source_user_message_id"])))
+                evidence_quote = str(payload["evidence_quote"])
+                policy_id = str(payload["policy_id"])
+                policy_version = int(payload["policy_version"])
+                policy_hash = str(payload["policy_hash"])
+                record_id = str(UUID(str(payload["record_id"])))
+                target_id = (
+                    None
+                    if payload.get("target_record_id") is None
+                    else str(UUID(str(payload["target_record_id"])))
+                )
+            except (KeyError, TypeError, ValueError):
+                raise PublicationFailedClosed(
+                    "canonical-participant-goal-invalid",
+                    "accepted participant goal decision is malformed",
+                )
+            if (
+                policy_id != PARTICIPANT_GOAL_POLICY_ID
+                or policy_version != PARTICIPANT_GOAL_POLICY_VERSION
+                or policy_hash != PARTICIPANT_GOAL_POLICY_HASH
+                or not evidence_quote
+            ):
+                raise PublicationFailedClosed(
+                    "canonical-participant-goal-policy-invalid",
+                    "participant goal policy identity or evidence is invalid",
+                )
+            if action in {"revise", "transition"}:
+                target_position = positions.get(target_id or "")
+                if (
+                    target_position is None
+                    or records[target_position].status != "active"
+                ):
+                    raise PublicationFailedClosed(
+                        "canonical-participant-goal-lineage-invalid",
+                        "participant goal change must name one active record",
+                    )
+            if action == "create":
+                kind = str(payload["kind"])
+                terms = str(payload["terms"])
+                next_status = str(payload["next_status"])
+                if (
+                    target_id is not None
+                    or kind not in {"goal", "commitment"}
+                    or not terms
+                    or next_status != "active"
+                    or record_id in positions
+                ):
+                    raise PublicationFailedClosed(
+                        "canonical-participant-goal-create-invalid",
+                        "participant goal creation is invalid",
+                    )
+                record = ParticipantGoalCommitmentRecord(
+                    record_id=record_id,
+                    kind=kind,
+                    terms=terms,
+                    status="active",
+                    source_user_message_id=source_id,
+                    evidence_quote=evidence_quote,
+                    created_head_sequence=head_sequence,
+                    policy_id=policy_id,
+                    policy_version=policy_version,
+                    policy_hash=policy_hash,
+                )
+                positions[record_id] = len(records)
+                records.append(record)
+            elif action == "revise":
+                target_position = positions[target_id or ""]
+                target = records[target_position]
+                kind = str(payload["kind"])
+                terms = str(payload["terms"])
+                if (
+                    record_id in positions
+                    or kind != target.kind
+                    or not terms
+                    or payload.get("next_status") != "active"
+                ):
+                    raise PublicationFailedClosed(
+                        "canonical-participant-goal-revision-invalid",
+                        "participant goal revision is invalid",
+                    )
+                records[target_position] = replace(
+                    target,
+                    status="superseded",
+                    status_changed_head_sequence=head_sequence,
+                )
+                record = ParticipantGoalCommitmentRecord(
+                    record_id=record_id,
+                    kind=kind,
+                    terms=terms,
+                    status="active",
+                    source_user_message_id=source_id,
+                    evidence_quote=evidence_quote,
+                    created_head_sequence=head_sequence,
+                    revision_of_record_id=target.record_id,
+                    policy_id=policy_id,
+                    policy_version=policy_version,
+                    policy_hash=policy_hash,
+                )
+                positions[record_id] = len(records)
+                records.append(record)
+            elif action == "transition":
+                target_position = positions[target_id or ""]
+                target = records[target_position]
+                next_status = str(payload["next_status"])
+                allowed = (
+                    {"achieved", "abandoned"}
+                    if target.kind == "goal"
+                    else {"fulfilled", "released"}
+                )
+                if record_id != target.record_id or next_status not in allowed:
+                    raise PublicationFailedClosed(
+                        "canonical-participant-goal-transition-invalid",
+                        "participant goal terminal transition is invalid",
+                    )
+                records[target_position] = replace(
+                    target,
+                    status=next_status,
+                    status_changed_head_sequence=head_sequence,
+                )
+            else:
+                raise PublicationFailedClosed(
+                    "canonical-participant-goal-action-invalid",
+                    "accepted participant goal action is not recognized",
+                )
         selected = [
             record
             for record in reversed(records)

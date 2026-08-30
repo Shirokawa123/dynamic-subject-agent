@@ -37,6 +37,7 @@ from dynamic_subject_agent.timeline import (
     RelationshipStanceInteraction,
     SubjectCommand,
 )
+from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 
 
 class ApplicationOperationStatus(str, Enum):
@@ -58,6 +59,7 @@ class ApplicationQueryKind(str, Enum):
     TIMELINE = "timeline"
     LIVING_MEMORY = "living-memory"
     RELATIONSHIP = "relationship"
+    PARTICIPANT_GOALS = "participant-goals"
 
 
 class ApplicationQueryStatus(str, Enum):
@@ -133,6 +135,8 @@ class AuthorizedOperationProjection:
     living_memory_recalled_ids: tuple[str, ...] = ()
     knowledge_citation_ids: tuple[str, ...] = ()
     relationship_event: str | None = None
+    participant_goal_commitment_status: str | None = None
+    participant_goal_commitment_action: str | None = None
 
 
 @dataclass(frozen=True)
@@ -194,12 +198,18 @@ class RelationshipApplicationProjection:
     interactions: tuple[RelationshipStanceInteraction, ...]
 
 
+@dataclass(frozen=True)
+class ParticipantGoalCommitmentApplicationProjection:
+    records: tuple[ParticipantGoalCommitmentRecord, ...]
+
+
 ApplicationProjection: TypeAlias = (
     CurrentApplicationProjection
     | RuntimeApplicationProjection
     | TimelineApplicationProjection
     | LivingMemoryApplicationProjection
     | RelationshipApplicationProjection
+    | ParticipantGoalCommitmentApplicationProjection
 )
 
 
@@ -513,6 +523,11 @@ class _ApplicationRouter:
                 if query.kind is not ApplicationQueryKind.RELATIONSHIP
                 else self._list_relationship_interactions()
             )
+            participant_goal_commitments = (
+                None
+                if query.kind is not ApplicationQueryKind.PARTICIPANT_GOALS
+                else self._list_participant_goal_commitments()
+            )
         except RuntimeHostRejected:
             return _query_not_found_or_not_authorized()
         except Exception:
@@ -523,6 +538,7 @@ class _ApplicationRouter:
             health,
             memories=memories,
             relationship_interactions=relationship_interactions,
+            participant_goal_commitments=participant_goal_commitments,
         )
 
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
@@ -534,6 +550,15 @@ class _ApplicationRouter:
     ) -> tuple[RelationshipStanceInteraction, ...]:
         with self._lease() as lease:
             return lease.list_relationship_interactions(limit=100)
+
+    def _list_participant_goal_commitments(
+        self,
+    ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
+        with self._lease() as lease:
+            return lease.list_participant_goal_commitments(
+                active_only=False,
+                limit=100,
+            )
 
     def close(self) -> None:
         with self._lock:
@@ -639,6 +664,12 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             ),
             relationship_event=(
                 result.outcome.relationship_outcome.relationship_event or None
+            ),
+            participant_goal_commitment_status=(
+                result.outcome.experience_outcome.participant_goal_commitment_status
+            ),
+            participant_goal_commitment_action=(
+                result.outcome.experience_outcome.participant_goal_commitment_action
             ),
         )
         return ApplicationOperationResponse(
@@ -837,6 +868,8 @@ def _from_query(
     *,
     memories: tuple[LivingMemoryRecord, ...] | None = None,
     relationship_interactions: tuple[RelationshipStanceInteraction, ...] | None = None,
+    participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...]
+    | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
@@ -869,6 +902,13 @@ def _from_query(
     ):
         projection = RelationshipApplicationProjection(
             interactions=relationship_interactions
+        )
+    elif (
+        kind is ApplicationQueryKind.PARTICIPANT_GOALS
+        and participant_goal_commitments is not None
+    ):
+        projection = ParticipantGoalCommitmentApplicationProjection(
+            records=participant_goal_commitments
         )
     else:
         return _query_unavailable("query-kind-unavailable")
@@ -919,6 +959,7 @@ __all__ = [
     "ApplicationQueryStatus",
     "LivingMemoryApplicationProjection",
     "RelationshipApplicationProjection",
+    "ParticipantGoalCommitmentApplicationProjection",
     "AuthorizedOperationProjection",
     "CurrentApplicationProjection",
     "RuntimeApplicationProjection",

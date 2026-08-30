@@ -10,8 +10,9 @@
 - 有来源的 Knowledge 检索与引用；
 - Relationship Subject Stance 事件；
 - Memory、Knowledge、Relationship 同轮组合。
+- 参与者目标/承诺的创建、修订、终态变化与重启恢复（已集成，待真实用户验收）。
 
-尚未实现：目标与承诺、Situated State、Medium State、完整 Agency 与 committed effect。下一步严格按此顺序推进。
+尚未实现：Situated State、Medium State、完整 Agency 与 committed effect。目标与承诺完成真实验收后再进入下一能力。
 
 ## 安装与测试
 

@@ -62,6 +62,7 @@ from dynamic_subject_agent.timeline import (
     _HOST_TIMELINE_TOKEN,
     _RuntimeBindingAuthority,
 )
+from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -324,6 +325,7 @@ class CognitionRuntimeView:
     active_memories: tuple[LivingMemoryRecord, ...] = ()
     living_memory_history: tuple[LivingMemoryRecord, ...] = ()
     relationship_stance_summary: str = ""
+    participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -921,6 +923,10 @@ class SubjectRuntime:
             active_only=False,
             limit=100,
         )
+        participant_goals = self._engine.list_participant_goal_commitments(
+            active_only=True,
+            limit=20,
+        )
         if interactions:
             accepted = [i for i in interactions if i.status == "accepted"]
             stance_summary = (
@@ -936,6 +942,7 @@ class SubjectRuntime:
             )[:20],
             living_memory_history=memory_history,
             relationship_stance_summary=stance_summary,
+            participant_goal_commitments=participant_goals,
         )
 
     def list_living_memories(
@@ -955,6 +962,17 @@ class SubjectRuntime:
         limit: int = 100,
     ) -> tuple[RelationshipStanceInteraction, ...]:
         return self._engine.list_relationship_interactions(limit=limit)
+
+    def list_participant_goal_commitments(
+        self,
+        *,
+        active_only: bool = False,
+        limit: int = 100,
+    ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
+        return self._engine.list_participant_goal_commitments(
+            active_only=active_only,
+            limit=limit,
+        )
 
     def _activate_binding_gate(self, *, _host_token: object) -> None:
         if _host_token is not _HOST_RUNTIME_TOKEN:

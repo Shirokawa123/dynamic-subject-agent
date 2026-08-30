@@ -43,5 +43,6 @@
 - Living Memory：当前消息 1 条 + 最多 20 条 active `{memory_id, content, source_user_message_id}`。
 - Knowledge：当前消息 1 条 + 最多 6 条 sealed `{entry_id, title, content}`。
 - Relationship：当前消息 1 条 + 当前立场摘要 + 固定策略版本。
-- 三类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
+- 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
+- 四类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。

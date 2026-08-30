@@ -108,7 +108,41 @@ class AppState:
             "knowledge_count": 4,
             "relationship_accepted_count": len(accepted),
             "relationship_latest_event": accepted[0].event if accepted else None,
+            "participant_goals": self._participant_goals(),
         }
+
+    def _participant_goals(self) -> list[dict]:
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            ApplicationQueryStatus,
+            ParticipantGoalCommitmentApplicationProjection,
+        )
+
+        response = self.product.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.PARTICIPANT_GOALS,
+                target_profile_id=self.product.profile_id,
+                target_timeline_id=self.product.timeline_id,
+            )
+        )
+        if (
+            response.status is ApplicationQueryStatus.AVAILABLE
+            and isinstance(
+                response.projection,
+                ParticipantGoalCommitmentApplicationProjection,
+            )
+        ):
+            return [
+                {
+                    "kind": record.kind,
+                    "terms": record.terms,
+                    "status": record.status,
+                    "evidence_quote": record.evidence_quote,
+                }
+                for record in response.projection.records
+            ]
+        return []
 
     def submit_turn(self, text: str) -> dict:
         from dynamic_subject_agent.knowledge_entries import knowledge_entry_by_id
@@ -159,6 +193,12 @@ class AppState:
             "living_memory_status": projection.living_memory_status,
             "recalled_ids": list(projection.living_memory_recalled_ids),
             "relationship_event": projection.relationship_event,
+            "participant_goal_status": (
+                projection.participant_goal_commitment_status
+            ),
+            "participant_goal_action": (
+                projection.participant_goal_commitment_action
+            ),
             "citations": citations,
         }
 

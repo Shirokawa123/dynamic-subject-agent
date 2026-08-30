@@ -1,0 +1,336 @@
+from __future__ import annotations
+
+from pathlib import Path
+import importlib.util
+from uuid import uuid4
+
+from dynamic_subject_agent.deepseek import DEEPSEEK_PROVIDER_AUTHORITY_ID
+
+
+class _NoopMemoryProvider:
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def analyze(self, request):
+        from dynamic_subject_agent.living_memory import (
+            LivingMemoryAction,
+            LivingMemoryProposal,
+            LivingMemoryProviderResult,
+        )
+
+        return LivingMemoryProviderResult(
+            proposal=LivingMemoryProposal(
+                action=LivingMemoryAction.NONE,
+                evidence_quote="",
+            ),
+            experience_summary="无记忆变化。",
+            reply_text="（无记忆相关内容）",
+            language="zh",
+        )
+
+
+class _NoopKnowledgeProvider:
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def analyze(self, request):
+        from dynamic_subject_agent.knowledge import (
+            KnowledgeProposal,
+            KnowledgeProviderResult,
+        )
+
+        return KnowledgeProviderResult(
+            proposal=KnowledgeProposal(citation_ids=()),
+            experience_summary="无知识引用。",
+            reply_text="（无知识相关内容）",
+            language="zh",
+        )
+
+
+class _NoopRelationshipProvider:
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def analyze(self, request):
+        from dynamic_subject_agent.relationship import (
+            RelationshipProposal,
+            RelationshipProviderResult,
+        )
+
+        return RelationshipProviderResult(
+            proposal=RelationshipProposal(
+                event="no_persistent_evidence",
+                evidence_quote="",
+            ),
+            experience_summary="",
+            reply_text="（关系分类不发言）",
+            language="zh",
+        )
+
+
+class _ScriptedParticipantGoalProvider:
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def __init__(self, *, fail_reply: bool = False) -> None:
+        self.classification_requests = []
+        self.reply_requests = []
+        self.fail_reply = fail_reply
+
+    def classify(self, request):
+        from dynamic_subject_agent.participant_goal_cognition import (
+            ParticipantGoalClassificationResult,
+        )
+        from dynamic_subject_agent.participant_goals import (
+            ParticipantGoalCommitmentCandidate,
+        )
+
+        self.classification_requests.append(request)
+        message = request.current_user_message
+        candidate = None
+        selected = ()
+        if message == "我的目标是今年通过 N1。":
+            candidate = ParticipantGoalCommitmentCandidate(
+                "create",
+                "goal",
+                "今年通过 N1",
+                None,
+                "active",
+                "我的目标是今年通过 N1",
+            )
+        elif message == "我的目标改为明年通过 N1。":
+            candidate = ParticipantGoalCommitmentCandidate(
+                "revise",
+                "goal",
+                "明年通过 N1",
+                request.active_records[0].turn_ref,
+                "active",
+                "我的目标改为明年通过 N1",
+            )
+        elif message == "我的目标已达成。":
+            candidate = ParticipantGoalCommitmentCandidate(
+                "transition",
+                None,
+                None,
+                request.active_records[0].turn_ref,
+                "achieved",
+                "我的目标已达成",
+            )
+        elif message == "我的目标是什么？" and request.active_records:
+            selected = (request.active_records[0].turn_ref,)
+        return ParticipantGoalClassificationResult(
+            candidate=candidate,
+            selected_turn_refs=selected,
+            experience_summary="参与者目标分类完成。",
+            language="zh",
+        )
+
+    def reply(self, request):
+        from dynamic_subject_agent.participant_goal_cognition import (
+            ParticipantGoalReplyResult,
+        )
+
+        self.reply_requests.append(request)
+        if self.fail_reply:
+            raise RuntimeError("participant goal reply unavailable")
+        if request.selected_records:
+            text = f"你当前的目标是：{request.selected_records[0].terms}。"
+        else:
+            text = "我会按你明确说出的内容记录这项目标变化。"
+        return ParticipantGoalReplyResult(reply_text=text, language="zh")
+
+
+def _composition(tmp_path: Path, provider: _ScriptedParticipantGoalProvider):
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.host import RuntimeHost
+    from test_deepseek_controlled_route import _publish_deepseek_qri
+
+    cognition = ControlledCompositeCognition(
+        memory_provider=_NoopMemoryProvider(),
+        knowledge_provider=_NoopKnowledgeProvider(),
+        relationship_provider=_NoopRelationshipProvider(),
+        participant_goal_provider=provider,
+    )
+    prepared, qri = _publish_deepseek_qri(tmp_path)
+    timeline_id = str(uuid4())
+    dormant_host = RuntimeHost.create(
+        prepared.experiment_base,
+        studio_location=prepared.location,
+        cognition=DormantDeepSeekCognition(),
+    )
+    try:
+        dormant_host.open_runtime(qri, timeline_id=timeline_id)
+        host_location = dormant_host.location
+    finally:
+        dormant_host.close()
+    composition = compose_application(
+        m0_root=prepared.experiment_base,
+        studio_location=prepared.location,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+        host_location=host_location,
+        _cognition=cognition,
+        relationship_mode="dynamic",
+    )
+    return prepared, qri, timeline_id, composition
+
+
+def _submit(composition, qri, timeline_id: str, text: str):
+    from dynamic_subject_agent.timeline import SubjectCommand
+
+    command = SubjectCommand.contribute_utterance(
+        target_profile_id=qri.profile_id,
+        target_timeline_id=timeline_id,
+        declared_intent="ask-collaborator-status",
+        utterance=text,
+        language="zh",
+        provenance="project-original",
+    )
+    submitted = composition.application.submit(
+        command,
+        idempotency_key=f"participant-goal-{uuid4().hex}",
+    )
+    return composition.application.wait(submitted.operation_ref, timeout_seconds=30)
+
+
+def _query(composition, qri, timeline_id: str):
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        ApplicationQueryStatus,
+        ParticipantGoalCommitmentApplicationProjection,
+    )
+
+    response = composition.application.query(
+        ApplicationQuery(
+            kind=ApplicationQueryKind.PARTICIPANT_GOALS,
+            target_profile_id=qri.profile_id,
+            target_timeline_id=timeline_id,
+        )
+    )
+    assert response.status is ApplicationQueryStatus.AVAILABLE
+    assert isinstance(
+        response.projection,
+        ParticipantGoalCommitmentApplicationProjection,
+    )
+    return response.projection.records
+
+
+def test_participant_goal_create_recall_revise_transition_and_restart(
+    tmp_path: Path,
+) -> None:
+    provider = _ScriptedParticipantGoalProvider()
+    prepared, qri, timeline_id, composition = _composition(tmp_path, provider)
+    try:
+        created = _submit(composition, qri, timeline_id, "我的目标是今年通过 N1。")
+        assert created.projection is not None, (created.status, created.problem)
+        assert created.status.value == "terminal", (
+            created.projection.failure_stage,
+            created.projection.failure_code,
+        )
+        assert created.projection.participant_goal_commitment_status == "accepted"
+        assert created.projection.participant_goal_commitment_action == "create"
+        records = _query(composition, qri, timeline_id)
+        assert [(r.kind, r.terms, r.status) for r in records] == [
+            ("goal", "今年通过 N1", "active")
+        ]
+        host_location = composition.host_location
+    finally:
+        composition.close()
+
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+
+    restarted_provider = _ScriptedParticipantGoalProvider()
+    restarted = compose_application(
+        m0_root=prepared.experiment_base,
+        studio_location=prepared.location,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+        host_location=host_location,
+        _cognition=ControlledCompositeCognition(
+            memory_provider=_NoopMemoryProvider(),
+            knowledge_provider=_NoopKnowledgeProvider(),
+            relationship_provider=_NoopRelationshipProvider(),
+            participant_goal_provider=restarted_provider,
+        ),
+        relationship_mode="dynamic",
+    )
+    try:
+        recalled = _submit(restarted, qri, timeline_id, "我的目标是什么？")
+        assert recalled.projection.expression_text == "你当前的目标是：今年通过 N1。"
+        revision = _submit(restarted, qri, timeline_id, "我的目标改为明年通过 N1。")
+        assert revision.projection.participant_goal_commitment_action == "revise"
+        transitioned = _submit(restarted, qri, timeline_id, "我的目标已达成。")
+        assert transitioned.projection.participant_goal_commitment_action == "transition"
+        records = _query(restarted, qri, timeline_id)
+    finally:
+        restarted.close()
+
+    assert [(r.terms, r.status) for r in records] == [
+        ("明年通过 N1", "achieved"),
+        ("今年通过 N1", "superseded"),
+    ]
+    classification = restarted_provider.classification_requests[0]
+    assert classification.active_records[0].turn_ref == "target-1"
+    assert not hasattr(classification.active_records[0], "record_id")
+    reply = restarted_provider.reply_requests[0]
+    assert [(r.kind, r.terms, r.status) for r in reply.selected_records] == [
+        ("goal", "今年通过 N1", "active")
+    ]
+    assert not hasattr(reply.selected_records[0], "turn_ref")
+
+
+def test_participant_goal_provider_failure_leaves_no_partial_record(
+    tmp_path: Path,
+) -> None:
+    provider = _ScriptedParticipantGoalProvider(fail_reply=True)
+    _, qri, timeline_id, composition = _composition(tmp_path, provider)
+    try:
+        failed = _submit(composition, qri, timeline_id, "我的目标是今年通过 N1。")
+        assert failed.status.value == "failed-closed"
+        assert failed.projection.failure_code == "participant-goal-reply-failed"
+        assert _query(composition, qri, timeline_id) == ()
+    finally:
+        composition.close()
+
+
+def test_desktop_state_exposes_participant_goal_without_internal_ids(
+    tmp_path: Path,
+) -> None:
+    provider = _ScriptedParticipantGoalProvider()
+    _, qri, timeline_id, composition = _composition(tmp_path, provider)
+    from dynamic_subject_agent.local_product import OpenedLocalProduct
+
+    product = OpenedLocalProduct(
+        composition=composition,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+    )
+    server_path = Path(__file__).resolve().parents[1] / "app" / "desktop" / "server.py"
+    spec = importlib.util.spec_from_file_location("participant_goal_desktop", server_path)
+    assert spec is not None and spec.loader is not None
+    server = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(server)
+    state = server.AppState(product)
+    try:
+        turn = state.submit_turn("我的目标是今年通过 N1。")
+        snapshot = state.snapshot()
+    finally:
+        product.close()
+
+    assert turn["participant_goal_status"] == "accepted"
+    assert turn["participant_goal_action"] == "create"
+    assert snapshot["participant_goals"] == [
+        {
+            "kind": "goal",
+            "terms": "今年通过 N1",
+            "status": "active",
+            "evidence_quote": "我的目标是今年通过 N1",
+        }
+    ]
+    serialized = str(snapshot["participant_goals"])
+    assert "record_id" not in serialized
+    assert "source_user_message_id" not in serialized

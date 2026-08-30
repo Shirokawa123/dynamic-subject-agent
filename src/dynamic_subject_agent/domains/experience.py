@@ -23,6 +23,16 @@ from dynamic_subject_agent.domains._shared import (
     validate_basis,
 )
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+from dynamic_subject_agent.participant_goals import (
+    MAX_TERMS_CHARS,
+    POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
+    POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
+    POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
+    ParticipantGoalCommitmentCandidate,
+    ParticipantGoalCommitmentEngine,
+    ParticipantGoalCommitmentRecord,
+    active_targets,
+)
 
 
 @dataclass(frozen=True)
@@ -36,6 +46,7 @@ class ExperienceChangeCandidate:
     recalled_memory_ids: tuple[str, ...] = ()
     knowledge_citation_ids: tuple[str, ...] = ()
     memory_kind: str = "durable"
+    participant_goal_candidate: ParticipantGoalCommitmentCandidate | None = None
 
 
 @dataclass(frozen=True)
@@ -43,6 +54,7 @@ class ExperienceReadView:
     verified_prefix_digest: str
     memory_trace_refs: tuple[str, ...]
     active_memories: tuple[LivingMemoryRecord, ...] = ()
+    participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -53,6 +65,7 @@ class ExperienceAdjudicationRequest:
     current_user_message: str = ""
     source_user_message_id: str = ""
     knowledge_candidates: tuple[KnowledgeEntry, ...] = ()
+    selected_participant_goal_record_ids: tuple[str, ...] = ()
 
 
 class ExperienceDomain:
@@ -90,6 +103,7 @@ class ExperienceDomain:
         )
         memory_candidate: ExperienceChangeCandidate | None = None
         knowledge_candidate: ExperienceChangeCandidate | None = None
+        participant_goal_candidate: ExperienceChangeCandidate | None = None
         for candidate in candidates:
             if not isinstance(candidate, ExperienceChangeCandidate):
                 raise DomainAdjudicationFailedClosed(
@@ -105,13 +119,16 @@ class ExperienceDomain:
                 )
             is_memory = candidate.memory_action is not None
             is_knowledge = (
-                candidate.memory_action is None and candidate.knowledge_citation_ids
+                candidate.memory_action is None
+                and bool(candidate.knowledge_citation_ids)
+                and candidate.participant_goal_candidate is None
             )
-            if is_memory and is_knowledge:
+            is_participant_goal = candidate.participant_goal_candidate is not None
+            if sum(bool(value) for value in (is_memory, is_knowledge, is_participant_goal)) != 1:
                 raise DomainAdjudicationFailedClosed(
                     "experience",
                     "mixed-kind-candidate",
-                    "one candidate may not carry both memory and knowledge changes",
+                    "one candidate must carry exactly one Experience change kind",
                 )
             if is_memory:
                 if memory_candidate is not None:
@@ -129,13 +146,81 @@ class ExperienceDomain:
                         "one turn may propose at most one knowledge citation",
                     )
                 knowledge_candidate = candidate
+            elif is_participant_goal:
+                if participant_goal_candidate is not None:
+                    raise DomainAdjudicationFailedClosed(
+                        "experience",
+                        "multiple-participant-goal-candidates",
+                        "one turn may propose at most one participant goal change",
+                    )
+                participant_goal_candidate = candidate
             else:
                 raise DomainAdjudicationFailedClosed(
                     "experience",
                     "material-change-capability-unavailable",
-                    "only Living Memory and knowledge citation changes are available",
+                    "only current Experience capabilities are available",
                 )
-        if memory_candidate is None and knowledge_candidate is None:
+        participant_records = require_tuple(
+            request.current_state.participant_goal_commitments,
+            domain="experience",
+            field="participant_goal_commitments",
+        )
+        if any(
+            not isinstance(record, ParticipantGoalCommitmentRecord)
+            for record in participant_records
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "invalid-participant-goal-read-view",
+                "participant goals must be typed records",
+            )
+        for record in participant_records:
+            try:
+                UUID(record.record_id)
+                UUID(record.source_user_message_id)
+            except (AttributeError, TypeError, ValueError):
+                raise DomainAdjudicationFailedClosed(
+                    "experience",
+                    "participant-goal-read-identity-invalid",
+                    "participant goal read records require canonical identities",
+                ) from None
+            if (
+                record.kind not in {"goal", "commitment"}
+                or record.status != "active"
+                or not record.terms.strip()
+                or len(record.terms) > MAX_TERMS_CHARS
+                or record.policy_id != PARTICIPANT_GOAL_POLICY_ID
+                or record.policy_version != PARTICIPANT_GOAL_POLICY_VERSION
+                or record.policy_hash != PARTICIPANT_GOAL_POLICY_HASH
+            ):
+                raise DomainAdjudicationFailedClosed(
+                    "experience",
+                    "participant-goal-read-record-invalid",
+                    "participant goal read records violate current policy",
+                )
+        selected_ids = require_tuple(
+            request.selected_participant_goal_record_ids,
+            domain="experience",
+            field="selected_participant_goal_record_ids",
+        )
+        active_record_ids = {
+            record.record_id for record in participant_records if record.status == "active"
+        }
+        if (
+            len(selected_ids) > 5
+            or len(set(selected_ids)) != len(selected_ids)
+            or any(record_id not in active_record_ids for record_id in selected_ids)
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "participant-goal-selection-invalid",
+                "reply selection must name at most five active records",
+            )
+        if (
+            memory_candidate is None
+            and knowledge_candidate is None
+            and participant_goal_candidate is None
+        ):
             return ExperienceDomainOutcome(
                 outcome_id=stable_id(basis, "experience-outcome"),
                 decision=noop_decision(
@@ -177,14 +262,32 @@ class ExperienceDomain:
                 request,
                 knowledge_candidate,
             )
+        participant_goal_code: str | None = None
+        participant_goal_payload: dict[str, object] | None = None
+        if participant_goal_candidate is not None:
+            participant_goal_code, participant_goal_payload = (
+                self._participant_goal_fragment(
+                    basis,
+                    request,
+                    participant_goal_candidate,
+                    tuple(participant_records),
+                )
+            )
         reason: dict[str, object] = {
-            "code": memory_code or knowledge_code or "experience.accepted",
+            "code": (
+                memory_code
+                or knowledge_code
+                or participant_goal_code
+                or "experience.accepted"
+            ),
             "provenance": basis.source_provenance,
         }
         if memory_payload is not None:
             reason["living_memory"] = memory_payload
         if knowledge_payload is not None:
             reason["knowledge"] = knowledge_payload
+        if participant_goal_payload is not None:
+            reason["participant_goal_commitment"] = participant_goal_payload
         decision = CandidateDecisionRecord(
             decision_id=stable_id(basis, "experience-decision"),
             scope="experience",
@@ -323,6 +426,57 @@ class ExperienceDomain:
                 "cited_entry_ids": list(candidate.knowledge_citation_ids),
             },
         )
+
+    def _participant_goal_fragment(
+        self,
+        basis: ExperienceBasis,
+        request: ExperienceAdjudicationRequest,
+        change: ExperienceChangeCandidate,
+        records: tuple[ParticipantGoalCommitmentRecord, ...],
+    ) -> tuple[str, dict[str, object]]:
+        raw_candidate = change.participant_goal_candidate
+        if raw_candidate is None:
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "participant-goal-candidate-absent",
+                "participant goal change requires a typed candidate",
+            )
+        try:
+            UUID(change.candidate_id)
+            UUID(request.source_user_message_id)
+        except (AttributeError, TypeError, ValueError):
+            return (
+                "participant-goal.identity-invalid",
+                {"status": "rejected", "action": "noop", "reason_code": "identity_invalid"},
+            )
+        plan = ParticipantGoalCommitmentEngine().evaluate(
+            source_user_message_id=request.source_user_message_id,
+            message_text=request.current_user_message,
+            current_records=active_targets(records),
+            candidate=raw_candidate,
+        )
+        payload: dict[str, object] = {
+            "status": plan.decision.replace("_", "-"),
+            "action": plan.action,
+            "reason_code": plan.reason_code,
+            "kind": plan.kind,
+            "terms": plan.terms,
+            "next_status": plan.next_status,
+            "source_user_message_id": plan.source_user_message_id,
+            "evidence_quote": plan.evidence_quote,
+            "target_record_id": plan.target_record_id,
+            "policy_id": plan.policy_id,
+            "policy_version": plan.policy_version,
+            "policy_hash": plan.policy_hash,
+        }
+        if plan.decision == "accepted":
+            payload["record_id"] = (
+                change.candidate_id
+                if plan.action in {"create", "revise"}
+                else plan.target_record_id
+            )
+            return "participant-goal.accepted", payload
+        return f"participant-goal.{plan.reason_code}", payload
 
 
 __all__ = [

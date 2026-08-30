@@ -57,6 +57,24 @@ from dynamic_subject_agent.living_memory import (
     LivingMemoryProviderRequest,
     LivingMemoryProviderResult,
 )
+from dynamic_subject_agent.participant_goal_cognition import (
+    ParticipantGoalClassificationRequest,
+    ParticipantGoalClassificationResult,
+    ParticipantGoalProviderRecord,
+    ParticipantGoalReplyRecord,
+    ParticipantGoalReplyRequest,
+    ParticipantGoalReplyResult,
+)
+from dynamic_subject_agent.participant_goals import (
+    ACTIVE_RECORD_LIMIT,
+    MAX_EVIDENCE_QUOTE_CHARS,
+    MAX_TERMS_CHARS,
+    POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
+    POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
+    POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
+    REPLY_RECORD_LIMIT,
+    ParticipantGoalCommitmentCandidate,
+)
 
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
@@ -78,6 +96,28 @@ _KNOWLEDGE_MAX_REQUEST_BYTES = 32_768
 _KNOWLEDGE_MAX_OUTPUT_TOKENS = 600
 _RELATIONSHIP_MAX_REQUEST_BYTES = 32_768
 _RELATIONSHIP_MAX_OUTPUT_TOKENS = 600
+_PARTICIPANT_GOAL_MAX_REQUEST_BYTES = 32_768
+_PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS = 700
+_PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (
+    "你只负责对现实参与者自己的目标与承诺进行闭集分类。只可使用 user JSON 的"
+    " current_user_message、active_records 和固定 policy identity；不得使用或推断历史消息、"
+    "Memory、Knowledge、Relationship、主体状态、profile、timeline、session、数据库 ID、"
+    "隐藏推理或 API key。action 只能是 create、revise、transition、noop。"
+    "goal create 必须有明确『我的目标是/我的目标』；commitment create 必须有明确『我承诺』。"
+    "愿望、普通计划、提醒请求、要求 Avery 承诺、双方共同承诺都必须 noop。"
+    "非 noop 的 evidence_quote 和 terms 必须逐字来自 current_user_message。"
+    "target_ref 与 selected_turn_refs 只能来自 active_records 的 turn_ref；selected_turn_refs 最多 5 条。"
+    "goal 终态仅 achieved/abandoned；commitment 终态仅 fulfilled/released。"
+    "输出字段必须恰为 action、kind、terms、target_ref、next_status、evidence_quote、"
+    "selected_turn_refs、experience_summary、language；language 必须为 zh。"
+)
+_PARTICIPANT_GOAL_REPLY_SYSTEM_MESSAGE = (
+    "你负责基于当前用户消息和 Python 已验证、已选中的参与者目标/承诺生成简洁自然中文回复。"
+    "只可使用 user JSON 的 current_user_message 与 selected_records；selected_records 最多 5 条，"
+    "且只含 kind、terms、status。不得推断历史、提醒能力、后台执行、主体承诺、共同承诺、"
+    "其他 Domain、内部 ID、隐藏推理或 API key。输出字段必须恰为 reply_text、language；"
+    "language 必须为 zh。"
+)
 _RELATIONSHIP_SYSTEM_MESSAGE = (
     "你是 Relationship 事件分类与回复 provider。只可使用 user JSON 中的"
     " current_user_message 和 stance_summary；不得推断或输出 profile、timeline、"
@@ -948,6 +988,316 @@ class DeepSeekRelationshipProvider:
         )
 
 
+class DeepSeekParticipantGoalProvider:
+    """Two-stage default-profile adapter for participant goals and commitments."""
+
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def __init__(
+        self,
+        *,
+        transport: object,
+        credential_ref: object,
+    ) -> None:
+        if not isinstance(transport, DeepSeekTransport):
+            raise TypeError("transport must implement DeepSeekTransport")
+        if not isinstance(credential_ref, CredentialRef) or (
+            credential_ref.backend_id != DEEPSEEK_CREDENTIAL_BACKEND_ID
+            or credential_ref.key_id != DEEPSEEK_CREDENTIAL_KEY_ID
+        ):
+            raise TypeError("credential_ref must name the DeepSeek credential")
+        self._transport = transport
+        self._credential_ref = credential_ref
+
+    @classmethod
+    def classification_outbound_bytes(
+        cls,
+        request: ParticipantGoalClassificationRequest,
+    ) -> bytes:
+        if (
+            not isinstance(request, ParticipantGoalClassificationRequest)
+            or not isinstance(request.current_user_message, str)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or not isinstance(request.active_records, tuple)
+            or len(request.active_records) > ACTIVE_RECORD_LIMIT
+            or request.policy_id != PARTICIPANT_GOAL_POLICY_ID
+            or request.policy_version != PARTICIPANT_GOAL_POLICY_VERSION
+            or request.policy_hash != PARTICIPANT_GOAL_POLICY_HASH
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        records = []
+        refs: set[str] = set()
+        for record in request.active_records:
+            if (
+                not isinstance(record, ParticipantGoalProviderRecord)
+                or not isinstance(record.turn_ref, str)
+                or not record.turn_ref
+                or record.turn_ref in refs
+                or record.kind not in {"goal", "commitment"}
+                or not isinstance(record.terms, str)
+                or not record.terms.strip()
+                or len(record.terms) > MAX_TERMS_CHARS
+                or record.status != "active"
+            ):
+                raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            refs.add(record.turn_ref)
+            records.append(
+                {
+                    "turn_ref": record.turn_ref,
+                    "kind": record.kind,
+                    "terms": record.terms,
+                    "status": record.status,
+                }
+            )
+        return cls._bounded_body(
+            system_message=_PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "active_records": records,
+                "policy": {
+                    "id": request.policy_id,
+                    "version": request.policy_version,
+                    "hash": request.policy_hash,
+                },
+            },
+            max_tokens=_PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS,
+        )
+
+    @classmethod
+    def reply_outbound_bytes(cls, request: ParticipantGoalReplyRequest) -> bytes:
+        if (
+            not isinstance(request, ParticipantGoalReplyRequest)
+            or not isinstance(request.current_user_message, str)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or not isinstance(request.selected_records, tuple)
+            or len(request.selected_records) > REPLY_RECORD_LIMIT
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        records = []
+        for record in request.selected_records:
+            if (
+                not isinstance(record, ParticipantGoalReplyRecord)
+                or record.kind not in {"goal", "commitment"}
+                or not isinstance(record.terms, str)
+                or not record.terms.strip()
+                or len(record.terms) > MAX_TERMS_CHARS
+                or record.status != "active"
+            ):
+                raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            records.append(
+                {"kind": record.kind, "terms": record.terms, "status": record.status}
+            )
+        return cls._bounded_body(
+            system_message=_PARTICIPANT_GOAL_REPLY_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "selected_records": records,
+            },
+            max_tokens=_PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS,
+        )
+
+    @classmethod
+    def _bounded_body(
+        cls,
+        *,
+        system_message: str,
+        projection: dict[str, object],
+        max_tokens: int,
+    ) -> bytes:
+        body = _canonical_json_bytes(
+            {
+                "model": DEEPSEEK_MODEL,
+                "messages": [
+                    {"role": "system", "content": system_message},
+                    {
+                        "role": "user",
+                        "content": _canonical_json_bytes(projection).decode("utf-8"),
+                    },
+                ],
+                "thinking": {"type": "disabled"},
+                "response_format": {"type": "json_object"},
+                "max_tokens": max_tokens,
+                "temperature": 0.2,
+                "stream": False,
+                "tools": [],
+                "tool_choice": "none",
+            }
+        )
+        if len(body) > _PARTICIPANT_GOAL_MAX_REQUEST_BYTES:
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return body
+
+    def classify(
+        self,
+        request: ParticipantGoalClassificationRequest,
+    ) -> ParticipantGoalClassificationResult:
+        body = self.classification_outbound_bytes(request)
+        content = self._post_and_decode(body)
+        expected = {
+            "action",
+            "kind",
+            "terms",
+            "target_ref",
+            "next_status",
+            "evidence_quote",
+            "selected_turn_refs",
+            "experience_summary",
+            "language",
+        }
+        projected_refs = {record.turn_ref for record in request.active_records}
+        if (
+            set(content) != expected
+            or content.get("action") not in {"create", "revise", "transition", "noop"}
+            or content.get("kind") not in {None, "goal", "commitment"}
+            or content.get("terms") is not None
+            and not isinstance(content.get("terms"), str)
+            or content.get("target_ref") is not None
+            and not isinstance(content.get("target_ref"), str)
+            or content.get("target_ref") is not None
+            and content.get("target_ref") not in projected_refs
+            or content.get("next_status")
+            not in {None, "active", "achieved", "abandoned", "fulfilled", "released"}
+            or not isinstance(content.get("evidence_quote"), str)
+            or len(content.get("evidence_quote", "")) > MAX_EVIDENCE_QUOTE_CHARS
+            or content.get("evidence_quote")
+            and content["evidence_quote"] not in request.current_user_message
+            or not isinstance(content.get("selected_turn_refs"), list)
+            or len(content.get("selected_turn_refs", [])) > REPLY_RECORD_LIMIT
+            or any(
+                not isinstance(turn_ref, str)
+                for turn_ref in content.get("selected_turn_refs", [])
+            )
+            or len(set(content.get("selected_turn_refs", [])))
+            != len(content.get("selected_turn_refs", []))
+            or any(
+                turn_ref not in projected_refs
+                for turn_ref in content.get("selected_turn_refs", [])
+            )
+            or not isinstance(content.get("experience_summary"), str)
+            or len(content.get("experience_summary", "")) > _MAX_SUMMARY_CHARACTERS
+            or content.get("language") != "zh"
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        terms = content["terms"]
+        if isinstance(terms, str) and len(terms) > MAX_TERMS_CHARS:
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        action = content["action"]
+        shape_valid = (
+            action == "noop"
+            and content["kind"] is None
+            and terms is None
+            and content["target_ref"] is None
+            and content["next_status"] is None
+            and content["evidence_quote"] == ""
+        ) or (
+            action == "create"
+            and content["kind"] in {"goal", "commitment"}
+            and isinstance(terms, str)
+            and bool(terms.strip())
+            and content["target_ref"] is None
+            and content["next_status"] == "active"
+            and bool(content["evidence_quote"])
+        ) or (
+            action == "revise"
+            and content["kind"] in {"goal", "commitment"}
+            and isinstance(terms, str)
+            and bool(terms.strip())
+            and isinstance(content["target_ref"], str)
+            and content["next_status"] == "active"
+            and bool(content["evidence_quote"])
+        ) or (
+            action == "transition"
+            and content["kind"] is None
+            and terms is None
+            and isinstance(content["target_ref"], str)
+            and content["next_status"]
+            in {"achieved", "abandoned", "fulfilled", "released"}
+            and bool(content["evidence_quote"])
+        )
+        if not shape_valid:
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        candidate = None
+        if action != "noop":
+            candidate = ParticipantGoalCommitmentCandidate(
+                action=action,
+                kind=content["kind"],
+                terms=terms,
+                target_ref=content["target_ref"],
+                next_status=content["next_status"],
+                evidence_quote=content["evidence_quote"],
+            )
+        return ParticipantGoalClassificationResult(
+            candidate=candidate,
+            selected_turn_refs=tuple(content["selected_turn_refs"]),
+            experience_summary=content["experience_summary"],
+            language="zh",
+        )
+
+    def reply(self, request: ParticipantGoalReplyRequest) -> ParticipantGoalReplyResult:
+        body = self.reply_outbound_bytes(request)
+        content = self._post_and_decode(body)
+        if (
+            set(content) != {"reply_text", "language"}
+            or content.get("language") != "zh"
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        try:
+            reply_text = _bounded_text(
+                content["reply_text"],
+                maximum=_MAX_EXPRESSION_CHARACTERS,
+            )
+        except (KeyError, TypeError, ProviderFailure):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        return ParticipantGoalReplyResult(reply_text=reply_text, language="zh")
+
+    def _post_and_decode(self, body: bytes) -> dict[str, object]:
+        try:
+            response = self._transport.post_json(
+                endpoint=DEEPSEEK_ENDPOINT,
+                body=body,
+                credential_ref=self._credential_ref,
+                timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
+            )
+        except ProviderFailure:
+            raise
+        except TimeoutError:
+            raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
+        except Exception:
+            raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
+        if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
+            if isinstance(response, DeepSeekHttpResponse) and response.status_code == 429:
+                raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        try:
+            payload = json.loads(response.body.decode("utf-8"))
+            choices = payload["choices"]
+            message = choices[0]["message"]
+            content = json.loads(message["content"])
+            usage = payload["usage"]
+            prompt_tokens = int(usage["prompt_tokens"])
+            completion_tokens = int(usage["completion_tokens"])
+        except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        if (
+            payload.get("model") != DEEPSEEK_MODEL
+            or not isinstance(choices, list)
+            or len(choices) != 1
+            or not isinstance(message, dict)
+            or message.get("role") != "assistant"
+            or message.get("reasoning_content") not in (None, "")
+            or message.get("tool_calls") not in (None, [])
+            or not isinstance(content, dict)
+            or prompt_tokens < 0
+            or completion_tokens < 0
+            or completion_tokens > _PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        return content
+
+
 class ApprovedDeepSeekCognition(ControlledCognition):
     """The sole external-provider Cognition adapter permitted by this ticket."""
 
@@ -990,6 +1340,7 @@ __all__ = [
     "DeepSeekCredentialResolver",
     "DeepSeekHttpResponse",
     "DeepSeekKnowledgeProvider",
+    "DeepSeekParticipantGoalProvider",
     "DeepSeekRelationshipProvider",
     "DeepSeekLivingMemoryProvider",
     "DeepSeekTransport",

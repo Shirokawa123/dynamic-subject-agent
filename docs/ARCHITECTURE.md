@@ -9,7 +9,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 - `SubjectRuntime`：一次 SubjectCommand 的唯一编排和写入授权者。
 - `TimelineEngine`：Admission、幂等、Timeline head 与原子 Publication。
 - `CognitionEngine`：有界输入、结构化候选与最终表达；没有持久写权。
-- `Experience`：Observation、Claim、Evidence、Belief、Memory。
+- `Experience`：Observation、Claim、Evidence、Belief、Memory，以及现实参与者自己明确报告的目标/承诺；后者不是主体 Agency。
 - `SubjectState`：Situated、Medium 与长期主体状态。
 - `Agency`：Motive、Intention、Project、Commitment、ActionRequest。
 - `Relationship`：Subject Stance、Interaction Norms、Mutual Commitment、Relationship Narrative。

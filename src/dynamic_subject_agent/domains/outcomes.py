@@ -64,6 +64,8 @@ def _validate_reasoned_noop(
         allowed_keys.add("living_memory")
     if expected_scope == "experience" and "knowledge" in reason:
         allowed_keys.add("knowledge")
+    if expected_scope == "experience" and "participant_goal_commitment" in reason:
+        allowed_keys.add("participant_goal_commitment")
     if expected_scope == "relationship" and "relationship" in reason:
         allowed_keys.add("relationship")
     if (
@@ -97,6 +99,20 @@ def _validate_reasoned_noop(
             raise DomainOutcomeSetRejected(
                 "invalid-knowledge-reason",
                 "Experience knowledge reason requires a typed status and cited ids",
+            )
+    if "participant_goal_commitment" in reason:
+        participant_goal = reason["participant_goal_commitment"]
+        if (
+            not isinstance(participant_goal, dict)
+            or participant_goal.get("status")
+            not in {"accepted", "rejected", "no-update"}
+            or participant_goal.get("action")
+            not in {"create", "revise", "transition", "noop"}
+            or not isinstance(participant_goal.get("reason_code"), str)
+        ):
+            raise DomainOutcomeSetRejected(
+                "invalid-participant-goal-reason",
+                "Experience participant goal reason requires typed status and action",
             )
     if "relationship" in reason:
         relationship = reason["relationship"]
