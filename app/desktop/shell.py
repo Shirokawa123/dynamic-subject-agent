@@ -12,7 +12,11 @@ import threading
 import webbrowser
 from pathlib import Path
 
-from server import AppState, build_handler, build_product
+from dynamic_subject_agent.credentials import (
+    DeepSeekCredentialVerifier,
+    WindowsCredentialStore,
+)
+from server import DesktopState, build_handler
 
 
 def _open_window(url: str) -> None:
@@ -39,11 +43,13 @@ def _open_window(url: str) -> None:
 
 
 def main() -> int:
-    product = build_product(relationship_mode="dynamic")
+    state = DesktopState(
+        credential_store=WindowsCredentialStore(),
+        verifier=DeepSeekCredentialVerifier(),
+    )
 
     from http.server import ThreadingHTTPServer
 
-    state = AppState(product)
     server = ThreadingHTTPServer(("127.0.0.1", 0), build_handler(state))
     port = server.server_address[1]
     url = f"http://127.0.0.1:{port}/"
@@ -57,7 +63,7 @@ def main() -> int:
     except KeyboardInterrupt:
         pass
     finally:
-        product.close()
+        state.close()
         server.server_close()
     return 0
 

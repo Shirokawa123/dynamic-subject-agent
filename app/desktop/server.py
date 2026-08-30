@@ -3,11 +3,19 @@
 from __future__ import annotations
 
 import json
-import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import RLock
+from collections.abc import Callable
 from uuid import uuid4
 
+from dynamic_subject_agent.credentials import (
+    CredentialStore,
+    CredentialStoreUnavailable,
+    CredentialVerificationStatus,
+    DeepSeekCredentialVerifier,
+    WindowsCredentialStore,
+)
 from dynamic_subject_agent.local_product import (
     LocalProductConfig,
     OpenedLocalProduct,
@@ -21,19 +29,16 @@ STATE_PATH = _DEFAULT_CONFIG.state_path
 PERSISTENT_PARENT = _DEFAULT_CONFIG.product_parent
 
 
-def _resolve_key() -> str:
-    """Read the process credential without a repository-local fallback."""
-
-    return os.environ.get("DEEPSEEK_API_KEY", "").strip()
-
-
-def build_product(relationship_mode: str = "dynamic") -> OpenedLocalProduct:
+def build_product(
+    api_key: str,
+    relationship_mode: str = "dynamic",
+) -> OpenedLocalProduct:
     config = LocalProductConfig(
         product_parent=PERSISTENT_PARENT,
         state_path=STATE_PATH,
         relationship_mode=relationship_mode,
     )
-    return open_deepseek_local_product(config, api_key=_resolve_key())
+    return open_deepseek_local_product(config, api_key=api_key)
 
 
 class AppState:
@@ -203,7 +208,126 @@ class AppState:
         }
 
 
-def build_handler(state: AppState):
+class DesktopState:
+    """Own credential setup and the optional opened product lifecycle."""
+
+    def __init__(
+        self,
+        *,
+        credential_store: CredentialStore,
+        verifier: DeepSeekCredentialVerifier,
+        product_factory: Callable[[str], OpenedLocalProduct] = build_product,
+    ) -> None:
+        if not isinstance(credential_store, CredentialStore):
+            raise TypeError("credential_store must satisfy CredentialStore")
+        if not isinstance(verifier, DeepSeekCredentialVerifier):
+            raise TypeError("verifier must be DeepSeekCredentialVerifier")
+        self._credential_store = credential_store
+        self._verifier = verifier
+        self._product_factory = product_factory
+        self._product: OpenedLocalProduct | None = None
+        self._app: AppState | None = None
+        self._problem: str | None = None
+        self._verification = "not-run"
+        self._lock = RLock()
+        self._open_existing()
+
+    def _open_existing(self) -> None:
+        key = ""
+        try:
+            key = self._credential_store.load() or ""
+            if key:
+                self._replace_product(self._product_factory(key))
+        except CredentialStoreUnavailable as error:
+            self._problem = error.code
+        except Exception:
+            self._problem = "product-open-failed"
+        finally:
+            key = ""
+
+    def _replace_product(self, product: OpenedLocalProduct | None) -> None:
+        previous = self._product
+        self._product = product
+        self._app = None if product is None else AppState(product)
+        if previous is not None and previous is not product:
+            previous.close()
+
+    def setup_snapshot(self) -> dict:
+        with self._lock:
+            try:
+                configured = self._credential_store.configured()
+            except CredentialStoreUnavailable as error:
+                configured = False
+                self._problem = error.code
+            return {
+                "configured": configured,
+                "product_ready": self._app is not None,
+                "verification": self._verification,
+                "problem": self._problem,
+            }
+
+    def save_and_verify(self, api_key: object) -> dict:
+        with self._lock:
+            try:
+                verification = self._verifier.verify(api_key)  # type: ignore[arg-type]
+            except CredentialStoreUnavailable as error:
+                self._problem = error.code
+                return {"ok": False, **self.setup_snapshot()}
+            self._verification = verification.value
+            if verification is not CredentialVerificationStatus.VALID:
+                self._problem = (
+                    "credential-invalid"
+                    if verification is CredentialVerificationStatus.INVALID
+                    else "credential-verification-unavailable"
+                )
+                return {"ok": False, **self.setup_snapshot()}
+            key = str(api_key)
+            try:
+                self._credential_store.save(key)
+                self._replace_product(None)
+                product = self._product_factory(key)
+                self._replace_product(product)
+                self._problem = None
+            except CredentialStoreUnavailable as error:
+                self._problem = error.code
+                return {"ok": False, **self.setup_snapshot()}
+            except Exception:
+                self._problem = "product-open-failed"
+                return {"ok": False, **self.setup_snapshot()}
+            finally:
+                key = ""
+            return {"ok": True, **self.setup_snapshot()}
+
+    def delete_credential(self) -> dict:
+        with self._lock:
+            self._replace_product(None)
+            try:
+                deleted = self._credential_store.delete()
+                self._problem = None
+                self._verification = "not-run"
+            except CredentialStoreUnavailable as error:
+                deleted = False
+                self._problem = error.code
+            return {"ok": self._problem is None, "deleted": deleted, **self.setup_snapshot()}
+
+    def snapshot(self) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {"ok": False, "error": "credential-setup-required"}
+            return {"ok": True, **self._app.snapshot()}
+
+    def submit_turn(self, text: str) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {"ok": False, "stage": "credential", "code": "setup-required"}
+            return self._app.submit_turn(text)
+
+    def close(self) -> None:
+        with self._lock:
+            self._replace_product(None)
+
+
+def build_handler(state: DesktopState):
     class Handler(BaseHTTPRequestHandler):
         def _send(self, status: int, body: bytes, content_type: str) -> None:
             self.send_response(status)
@@ -219,6 +343,15 @@ def build_handler(state: AppState):
                 "application/json; charset=utf-8",
             )
 
+        def _read_json(self, *, maximum: int = 8_192) -> dict:
+            length = int(self.headers.get("Content-Length", "0"))
+            if length <= 0 or length > maximum:
+                raise ValueError("request-size-invalid")
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("request-body-invalid")
+            return payload
+
         def do_GET(self) -> None:  # noqa: N802
             path = self.path.split("?")[0]
             if path in ("/", "/index.html"):
@@ -228,21 +361,48 @@ def build_handler(state: AppState):
                     "text/html; charset=utf-8",
                 )
             elif path == "/api/state":
-                self._json(200, state.snapshot())
+                payload = state.snapshot()
+                self._json(200 if payload.get("ok") else 409, payload)
+            elif path == "/api/setup":
+                self._json(200, state.setup_snapshot())
             else:
                 self._json(404, {"error": "not-found"})
 
         def do_POST(self) -> None:  # noqa: N802
+            if self.path == "/api/credential":
+                try:
+                    payload = self._read_json(maximum=8_192)
+                    api_key = payload.pop("api_key", None)
+                    if payload:
+                        raise ValueError("unexpected-fields")
+                    try:
+                        result = state.save_and_verify(api_key)
+                    finally:
+                        api_key = None
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                self._json(200 if result["ok"] else 422, result)
+                return
             if self.path != "/api/turn":
                 self._json(404, {"error": "not-found"})
                 return
-            length = int(self.headers.get("Content-Length", "0"))
-            body = json.loads(self.rfile.read(length).decode("utf-8"))
+            try:
+                body = self._read_json()
+            except (UnicodeError, ValueError, json.JSONDecodeError):
+                self._json(400, {"error": "invalid-request"})
+                return
             text = str(body.get("text", "")).strip()
             if not text:
                 self._json(400, {"error": "empty-text"})
                 return
             self._json(200, state.submit_turn(text))
+
+        def do_DELETE(self) -> None:  # noqa: N802
+            if self.path != "/api/credential":
+                self._json(404, {"error": "not-found"})
+                return
+            self._json(200, state.delete_credential())
 
         def log_message(self, *args: object) -> None:
             del args
@@ -251,8 +411,10 @@ def build_handler(state: AppState):
 
 
 def main() -> int:
-    product = build_product()
-    state = AppState(product)
+    state = DesktopState(
+        credential_store=WindowsCredentialStore(),
+        verifier=DeepSeekCredentialVerifier(),
+    )
     server = ThreadingHTTPServer(("127.0.0.1", 0), build_handler(state))
     port = server.server_address[1]
     print(f"Avery 已就绪：http://127.0.0.1:{port}（Ctrl+C 退出）")
@@ -261,7 +423,7 @@ def main() -> int:
     except KeyboardInterrupt:
         pass
     finally:
-        product.close()
+        state.close()
         server.server_close()
     return 0
 

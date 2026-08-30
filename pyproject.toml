@@ -8,7 +8,7 @@ version = "0.0.0"
 description = "Local-first subject-oriented companion Agent."
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["keyring>=25"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<9"]

@@ -11,6 +11,7 @@
 - Relationship Subject Stance 事件；
 - Memory、Knowledge、Relationship 同轮组合。
 - 参与者目标/承诺的创建、修订、终态变化与重启恢复（已集成，待真实用户验收）。
+- 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
 
 尚未实现：Situated State、Medium State、完整 Agency 与 committed effect。目标与承诺完成真实验收后再进入下一能力。
 
@@ -24,12 +25,14 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 ## 启动
 
-在当前进程设置 `DEEPSEEK_API_KEY` 后运行：
+直接运行：
 
 ```powershell
 .\.venv\Scripts\python app\desktop\shell.py
 ```
 
 也可双击 `启动Avery.bat`。默认运行数据位于 `%LOCALAPPDATA%\DynamicSubjectAgent`，不写入源码仓库。旧救援仓库与既有正式身份不会被自动读取、迁移或回退。
+
+首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

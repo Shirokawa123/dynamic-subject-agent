@@ -114,9 +114,7 @@ def test_desktop_first_start_uses_the_production_local_product_identity(
     app_dir = tmp_path / "state"
     monkeypatch.setattr(server, "STATE_PATH", app_dir / "state.json")
     monkeypatch.setattr(server, "PERSISTENT_PARENT", tmp_path / "product")
-    monkeypatch.setattr(server, "_resolve_key", lambda: "test-only-key")
-
-    product = server.build_product(relationship_mode="off")
+    product = server.build_product("test-only-key", relationship_mode="off")
     try:
         assert product.publication_key == "local-product-deepseek-qri-v1"
         assert product.timeline_id

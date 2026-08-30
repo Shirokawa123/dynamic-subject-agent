@@ -46,3 +46,10 @@
 - 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
 - 四类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
+
+## Credential
+
+- DeepSeek key 只存入 Windows Credential Manager，固定 service/username 由 credential Module 拥有。
+- UI 只显示 configured/verified 状态，不回显 key；保存、验证、替换和删除必须由用户明确操作触发。
+- key 只用于 HTTPS Bearer 鉴权，不进入源码、配置、SQLite、Timeline、日志、错误、模型消息或测试 fixture。
+- secure backend 不可用时返回 typed unavailable；不使用仓库文件、环境变量持久化或明文 fallback。

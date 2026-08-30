@@ -28,12 +28,13 @@
 3. 增加 DeepSeek Adapter 的严格两阶段投影，并接入 composite；各能力 provider 投影继续分开发送。
 4. `ApplicationFacade` 增加 typed query/projection，桌面轮次注释和侧栏显示目标/承诺状态。
 5. 随迁行为测试，并覆盖原子失败、provider 越界、重启恢复和现有能力同轮不回归。
+6. 用户于 2026-08-30 明确批准验收前置：桌面内配置 DeepSeek key，保存到 Windows Credential Manager，支持保存并验证、替换和删除；key 只用于 HTTPS Bearer 鉴权。
 
 ## 范围外
 
 - Subject Agency、MutualCommitment、提醒、计划调度、后台执行、effect。
 - Situated State、Medium State、Belief、历史消息投影、跨能力合并投影。
-- 正式身份迁移、真实 credential 读取、真实网络调用、新测试类别或治理机制。
+- 正式身份迁移、自动真实调用、新测试类别或治理机制；真实 key 的保存/验证只由用户在桌面明确操作触发。
 
 ## 验收
 
@@ -48,3 +49,16 @@
 - Facade fake 全链完成 create → query → restart recall → revise → achieved；旧记录保留 superseded，新记录终态为 achieved，provider failure 无部分写入。
 - Windows state/turn JSON 与侧栏已显示 goal/commitment、状态和动作，不暴露 record/source ID；全量回归 174 passed。
 - 未读取真实 credential、未发网络请求、未触碰正式身份；切片保持 in_progress，等待用户真实桌面验收。
+
+## 2026-08-30 凭据设置批准
+
+- 用户明确确认软件内配置 DeepSeek API key；允许写入 Windows Credential Manager，并在用户点击“保存并验证”时调用 DeepSeek `/models` 进行无聊天内容的 Bearer 鉴权验证。
+- 仓库、SQLite、Timeline、state.json、日志、错误文本和 provider 消息不得保存或回显 key；无 Windows secure backend 时保持 typed unavailable，不使用文件或明文 fallback。
+
+## 2026-08-30 会话 2
+
+- 新增 `CredentialStore` Interface、Windows Credential Manager 与内存 Adapter；`keyring 25.7.0` 的 secure backend 实机可用，当前 configured=false。
+- 首次启动无 key 不再崩溃，直接进入设置页；保存并验证、替换、删除均为用户显式操作，删除凭据不删除对话数据。
+- 验证只 GET DeepSeek `/models` 并发送 Bearer header；无用户消息、角色状态、持久 ID 或数据库内容，401/403 与网络不可用分开显示。
+- UI 使用 password input，不使用 localStorage/sessionStorage；server 不读环境变量或 key 文件，响应不回显 secret。
+- 无 key 真实进程烟测通过；凭据定向 20 passed，全量 188 passed；未使用真实 key、未发真实网络请求。

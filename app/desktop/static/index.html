@@ -26,12 +26,36 @@
   input[type=text] { flex:1; border:1px solid #cfc5ae; background:#fbf8f0; border-radius:4px; padding:10px 14px; font:inherit; color:inherit; }
   button { border:1px solid #5f5645; background:none; color:#5f5645; border-radius:4px; padding:10px 20px; font:inherit; cursor:pointer; }
   button:disabled { opacity:0.5; cursor:default; }
+  header { display:flex; justify-content:space-between; align-items:center; }
+  .quiet-button { padding:5px 10px; border-color:#c9bda4; font-size:12px; }
+  .setup-screen { position:fixed; inset:0; z-index:10; display:flex; align-items:center; justify-content:center; background:rgba(243,239,230,.96); }
+  .setup-screen[hidden] { display:none; }
+  .setup-card { width:min(470px,calc(100vw - 48px)); padding:30px; border:1px solid #cfc5ae; border-radius:6px; background:#faf7ef; box-shadow:0 18px 60px rgba(62,51,32,.12); }
+  .setup-card h2 { margin:0 0 14px; font-size:20px; font-weight:normal; letter-spacing:2px; }
+  .setup-card p { color:#756b5a; line-height:1.8; font-size:13px; }
+  .setup-card input { box-sizing:border-box; width:100%; margin:8px 0 14px; }
+  .setup-actions { display:flex; flex-wrap:wrap; gap:8px; }
+  .setup-status { min-height:22px; margin-top:12px; font-size:13px; color:#7a6d55; }
+  .setup-status.error { color:#a04b3a; }
 </style>
 </head>
 <body>
+<div class="setup-screen" id="setup-screen" hidden>
+  <div class="setup-card">
+    <h2>连 接 DeepSeek</h2>
+    <p>API key 只保存到 Windows Credential Manager，并仅用于 HTTPS Bearer 鉴权。它不会进入聊天、记忆、Timeline、SQLite 或日志。</p>
+    <input type="password" id="api-key" placeholder="粘贴 DeepSeek API key" autocomplete="new-password" spellcheck="false">
+    <div class="setup-actions">
+      <button id="save-key">保存并验证</button>
+      <button id="delete-key" class="quiet-button">删除已保存凭据</button>
+      <button id="close-setup" class="quiet-button">返回聊天</button>
+    </div>
+    <div class="setup-status" id="setup-status"></div>
+  </div>
+</div>
 <div class="app">
   <div class="chat">
-    <header><h1>Avery</h1></header>
+    <header><h1>Avery</h1><button id="open-setup" class="quiet-button">连接设置</button></header>
     <div id="log"></div>
   </div>
   <div class="rail">
@@ -55,6 +79,23 @@ const sendBtn = document.getElementById("send");
 const textBox = document.getElementById("text");
 const knownMemories = new Map();
 let stanceAccepted = 0;
+let productReady = false;
+const setupScreen = document.getElementById("setup-screen");
+const setupStatus = document.getElementById("setup-status");
+const keyInput = document.getElementById("api-key");
+const saveKeyButton = document.getElementById("save-key");
+const deleteKeyButton = document.getElementById("delete-key");
+const closeSetupButton = document.getElementById("close-setup");
+
+const setupProblemLabels = {
+  "credential-invalid": "验证失败：API key 无效。",
+  "credential-verification-unavailable": "暂时无法连接 DeepSeek，请检查网络后重试。",
+  "secure-backend-unavailable": "Windows Credential Manager 当前不可用，未保存明文替代。",
+  "credential-read-failed": "无法读取 Windows Credential Manager。",
+  "credential-write-failed": "无法写入 Windows Credential Manager。",
+  "credential-delete-failed": "无法删除 Windows Credential Manager 中的凭据。",
+  "product-open-failed": "凭据已处理，但本地主体运行时启动失败。",
+};
 
 function el(tag, cls, text) {
   const node = document.createElement(tag);
@@ -66,6 +107,11 @@ function el(tag, cls, text) {
 async function refreshState() {
   const res = await fetch("/api/state");
   const state = await res.json();
+  if (!res.ok || !state.ok) {
+    productReady = false;
+    await refreshSetup();
+    return;
+  }
   stanceAccepted = state.relationship_accepted_count || 0;
   const rail = document.getElementById("rail-memories");
   rail.innerHTML = "";
@@ -76,6 +122,78 @@ async function refreshState() {
     }
   }
   renderRail(state);
+}
+
+function showSetup(snapshot, message="") {
+  productReady = Boolean(snapshot && snapshot.product_ready);
+  setupScreen.hidden = false;
+  closeSetupButton.hidden = !productReady;
+  deleteKeyButton.hidden = !(snapshot && snapshot.configured);
+  setupStatus.className = "setup-status" + (snapshot && snapshot.problem ? " error" : "");
+  setupStatus.textContent = message || (
+    snapshot && snapshot.problem
+      ? (setupProblemLabels[snapshot.problem] || "凭据操作失败。")
+      : (snapshot && snapshot.configured ? "凭据已安全保存。" : "尚未配置凭据。")
+  );
+}
+
+async function refreshSetup() {
+  try {
+    const res = await fetch("/api/setup");
+    const snapshot = await res.json();
+    productReady = Boolean(snapshot.product_ready);
+    if (productReady) {
+      setupScreen.hidden = true;
+    } else {
+      showSetup(snapshot);
+    }
+    return snapshot;
+  } catch (error) {
+    showSetup({configured:false, product_ready:false, problem:null}, "本地设置服务不可用。 ");
+    return null;
+  }
+}
+
+async function saveCredential() {
+  let apiKey = keyInput.value.trim();
+  if (!apiKey || saveKeyButton.disabled) return;
+  saveKeyButton.disabled = true;
+  setupStatus.className = "setup-status";
+  setupStatus.textContent = "正在安全保存并验证……";
+  try {
+    const res = await fetch("/api/credential", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({api_key: apiKey}),
+    });
+    const result = await res.json();
+    keyInput.value = "";
+    if (result.ok) {
+      productReady = true;
+      setupScreen.hidden = true;
+      await refreshState();
+    } else {
+      showSetup(result);
+    }
+  } catch (error) {
+    keyInput.value = "";
+    showSetup({configured:false, product_ready:false, problem:null}, "连接本地设置服务失败。 ");
+  } finally {
+    apiKey = "";
+    saveKeyButton.disabled = false;
+  }
+}
+
+async function deleteCredential() {
+  deleteKeyButton.disabled = true;
+  try {
+    const res = await fetch("/api/credential", {method:"DELETE"});
+    const result = await res.json();
+    keyInput.value = "";
+    showSetup(result, result.ok ? "凭据已从 Windows Credential Manager 删除；对话数据未删除。" : "删除失败。 ");
+  } finally {
+    deleteKeyButton.disabled = false;
+  }
 }
 
 function renderRail(state) {
@@ -213,7 +331,22 @@ sendBtn.addEventListener("click", send);
 textBox.addEventListener("keydown", (e) => {
   if (e.key === "Enter") send();
 });
-refreshState();
+saveKeyButton.addEventListener("click", saveCredential);
+deleteKeyButton.addEventListener("click", deleteCredential);
+document.getElementById("open-setup").addEventListener("click", async () => {
+  const snapshot = await refreshSetup();
+  if (snapshot) showSetup(snapshot);
+});
+closeSetupButton.addEventListener("click", () => {
+  if (productReady) setupScreen.hidden = true;
+});
+keyInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") saveCredential();
+});
+(async () => {
+  const snapshot = await refreshSetup();
+  if (snapshot && snapshot.product_ready) await refreshState();
+})();
 textBox.focus();
 </script>
 </body>

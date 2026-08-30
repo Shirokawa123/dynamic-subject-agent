@@ -25,3 +25,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 ## 数据
 
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
+
+## Credential seam
+
+`CredentialStore` 是 Host 侧深 Module Interface；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。用户触发的验证只访问 DeepSeek `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。

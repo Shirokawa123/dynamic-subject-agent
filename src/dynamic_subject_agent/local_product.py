@@ -277,7 +277,7 @@ def open_deepseek_local_product(
 
     key = api_key.strip() if isinstance(api_key, str) else ""
     if not key:
-        raise RuntimeError("DEEPSEEK_API_KEY is required")
+        raise RuntimeError("DeepSeek API key is required")
 
     class _Resolver(DeepSeekCredentialResolver):
         def resolve(self, credential_ref: CredentialRef) -> str:

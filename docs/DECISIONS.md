@@ -11,3 +11,7 @@
 ## D-003：按产品缺口推进
 
 当前已有能力冻结维护；下一顺序为目标与承诺、Situated State、Medium State、五能力整合、Agency、低风险 effect。历史治理流程、学习计划和证据生成体系不进入新仓库。
+
+## D-004：软件内管理 DeepSeek credential
+
+2026-08-30，用户确认由桌面软件配置 key。生产只使用 Windows Credential Manager，不使用仓库文件、SQLite、环境变量持久化或明文 fallback；“保存并验证”只对 DeepSeek `/models` 发 Bearer 鉴权请求。
