@@ -314,9 +314,7 @@ def test_outcome_collection_is_order_independent_and_deterministic(
     assert ExperienceDomain.material_change_capability is (
         DomainCapabilityState.AVAILABLE
     )
-    assert SubjectStateDomain.material_change_capability is (
-        DomainCapabilityState.UNAVAILABLE
-    )
+    assert SubjectStateDomain.material_change_capability is DomainCapabilityState.AVAILABLE
     assert AgencyDomain.material_change_capability is DomainCapabilityState.UNAVAILABLE
     assert RelationshipDomain.material_change_capability is (
         DomainCapabilityState.UNAVAILABLE

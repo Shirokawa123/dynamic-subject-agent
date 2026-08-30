@@ -75,6 +75,21 @@ from dynamic_subject_agent.participant_goals import (
     POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
     REPLY_RECORD_LIMIT,
 )
+from dynamic_subject_agent.situated_state import (
+    POLICY_HASH as SITUATED_POLICY_HASH,
+    POLICY_ID as SITUATED_POLICY_ID,
+    POLICY_VERSION as SITUATED_POLICY_VERSION,
+    POSTURES as SITUATED_POSTURES,
+    SituatedStateTarget,
+)
+from dynamic_subject_agent.situated_cognition import (
+    SituatedClassificationRequest,
+    SituatedClassificationResult,
+    SituatedOutputRejected,
+    SituatedReplyRequest,
+    SituatedReplyResult,
+    canonicalize_situated_output,
+)
 
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
@@ -98,6 +113,24 @@ _RELATIONSHIP_MAX_REQUEST_BYTES = 32_768
 _RELATIONSHIP_MAX_OUTPUT_TOKENS = 600
 _PARTICIPANT_GOAL_MAX_REQUEST_BYTES = 32_768
 _PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS = 700
+_SITUATED_MAX_OUTPUT_TOKENS = 500
+_SITUATED_CLASSIFICATION_SYSTEM_MESSAGE = (
+    "你只负责短时 Situated State 分类。只可使用 user JSON 中的 current_user_message、"
+    "至多一个 active_state 和固定 policy；不得使用历史消息、Memory、Knowledge、"
+    "Relationship、目标承诺、用户画像、内部 ID、数据库、隐藏推理或 API key。"
+    "action 只能是 noop 或 set；posture 只能是 focused、gentle、cautious。"
+    "set 的 evidence_quote 必须逐字来自 current_user_message。用户使用『必须』直接命令"
+    "角色状态时必须 noop。无合格证据时 action=noop、posture=null、evidence_quote=空字符串。"
+    "只返回 JSON 对象，字段必须恰为 action、posture、evidence_quote、experience_summary、language；"
+    "language 必须为 zh。示例 JSON："
+    '{"action":"noop","posture":null,"evidence_quote":"",'
+    '"experience_summary":"","language":"zh"}。'
+)
+_SITUATED_REPLY_SYSTEM_MESSAGE = (
+    "你只根据当前用户消息和 Python 已验证的一个 posture 生成简洁自然中文回复。"
+    "不得提及模块、分类、内部状态、历史、其他 Domain 或隐藏推理。"
+    "只返回 JSON 对象，字段必须恰为 reply_text、language；language 必须为 zh。"
+)
 _PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (
     "你只负责对现实参与者自己的目标与承诺进行闭集分类。只可使用 user JSON 的"
     " current_user_message、active_records 和固定 policy identity；不得使用或推断历史消息、"
@@ -1203,6 +1236,111 @@ class DeepSeekParticipantGoalProvider:
         return content
 
 
+class DeepSeekSituatedProvider:
+    """DeepSeek Adapter for provider-neutral Situated tasks."""
+
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def __init__(self, *, transport: object, credential_ref: object) -> None:
+        self._wire = DeepSeekParticipantGoalProvider(
+            transport=transport,
+            credential_ref=credential_ref,
+        )
+
+    @classmethod
+    def classification_outbound_bytes(
+        cls,
+        request: SituatedClassificationRequest,
+    ) -> bytes:
+        if (
+            not isinstance(request, SituatedClassificationRequest)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or len(request.active_state) > 1
+            or request.policy_id != SITUATED_POLICY_ID
+            or request.policy_version != SITUATED_POLICY_VERSION
+            or request.policy_hash != SITUATED_POLICY_HASH
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        active = []
+        for state in request.active_state:
+            if (
+                not isinstance(state, SituatedStateTarget)
+                or state.posture not in SITUATED_POSTURES
+                or state.remaining_turns != 1
+                or state.expires_in_seconds <= 0
+                or state.expires_in_seconds > 1_800
+            ):
+                raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            active.append(
+                {
+                    "posture": state.posture,
+                    "remaining_turns": state.remaining_turns,
+                    "expires_in_seconds": state.expires_in_seconds,
+                }
+            )
+        return DeepSeekParticipantGoalProvider._bounded_body(
+            system_message=_SITUATED_CLASSIFICATION_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "active_state": active,
+                "policy": {
+                    "id": request.policy_id,
+                    "version": request.policy_version,
+                    "hash": request.policy_hash,
+                },
+            },
+            max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
+        )
+
+    @classmethod
+    def reply_outbound_bytes(cls, request: SituatedReplyRequest) -> bytes:
+        if (
+            not isinstance(request, SituatedReplyRequest)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or request.posture not in SITUATED_POSTURES
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return DeepSeekParticipantGoalProvider._bounded_body(
+            system_message=_SITUATED_REPLY_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "selected_state": {"posture": request.posture},
+            },
+            max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
+        )
+
+    def classify(
+        self,
+        request: SituatedClassificationRequest,
+    ) -> SituatedClassificationResult:
+        content = self._wire._post_and_decode(
+            self.classification_outbound_bytes(request)
+        )
+        try:
+            return canonicalize_situated_output(content, request=request)
+        except SituatedOutputRejected:
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+
+    def reply(self, request: SituatedReplyRequest) -> SituatedReplyResult:
+        content = self._wire._post_and_decode(self.reply_outbound_bytes(request))
+        if (
+            set(content) != {"reply_text", "language"}
+            or content.get("language") != "zh"
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        try:
+            reply = _bounded_text(
+                content["reply_text"],
+                maximum=_MAX_EXPRESSION_CHARACTERS,
+            )
+        except (KeyError, TypeError, ProviderFailure):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        return SituatedReplyResult(reply_text=reply, language="zh")
+
+
 class ApprovedDeepSeekCognition(ControlledCognition):
     """The sole external-provider Cognition adapter permitted by this ticket."""
 
@@ -1247,6 +1385,7 @@ __all__ = [
     "DeepSeekKnowledgeProvider",
     "DeepSeekParticipantGoalProvider",
     "DeepSeekRelationshipProvider",
+    "DeepSeekSituatedProvider",
     "DeepSeekLivingMemoryProvider",
     "DeepSeekTransport",
     "DeepSeekUrlLibTransport",

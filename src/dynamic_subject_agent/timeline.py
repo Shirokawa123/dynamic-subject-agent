@@ -28,6 +28,13 @@ from dynamic_subject_agent.participant_goals import (
     POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
     ParticipantGoalCommitmentRecord,
 )
+from dynamic_subject_agent.situated_state import (
+    POLICY_HASH as SITUATED_POLICY_HASH,
+    POLICY_ID as SITUATED_POLICY_ID,
+    POLICY_VERSION as SITUATED_POLICY_VERSION,
+    POSTURES as SITUATED_POSTURES,
+    SituatedStateRecord,
+)
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -1002,6 +1009,40 @@ class SubjectStateDomainOutcome:
     decision: CandidateDecisionRecord
     subject_core: SubjectCoreOutcome
     development: DevelopmentOutcome
+
+    @property
+    def situated_state_status(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "situated_state", {}
+            ).get("status")
+            return (
+                value
+                if value in {"accepted", "rejected", "no-update", "failed-closed"}
+                else None
+            )
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def situated_state_action(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "situated_state", {}
+            ).get("action")
+            return value if value in {"set", "carry", "consume", "noop"} else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def situated_state_posture(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "situated_state", {}
+            ).get("posture")
+            return value if value in SITUATED_POSTURES else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
 
 
 @dataclass(frozen=True)
@@ -5948,6 +5989,146 @@ class TimelineEngine:
                 raise PublicationFailedClosed(
                     "canonical-participant-goal-action-invalid",
                     "accepted participant goal action is not recognized",
+                )
+        selected = [
+            record
+            for record in reversed(records)
+            if not active_only or record.status == "active"
+        ]
+        return tuple(selected[:limit])
+
+    def list_situated_states(
+        self,
+        *,
+        active_only: bool = False,
+        limit: int = 20,
+    ) -> tuple[SituatedStateRecord, ...]:
+        if not isinstance(active_only, bool):
+            raise TypeError("active_only must be bool")
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("limit must be between 1 and 100")
+        rows = self._writer.execute(
+            """
+            SELECT core.decision_id, outcome.head_sequence
+            FROM subject_core_outcome AS core
+            JOIN timeline_outcome AS outcome ON outcome.plan_id = core.plan_id
+            ORDER BY outcome.head_sequence ASC
+            """
+        ).fetchall()
+        records: list[SituatedStateRecord] = []
+        positions: dict[str, int] = {}
+        for row in rows:
+            decision = self._read_decision(bytes(row[0]))
+            head_sequence = int(row[1])
+            try:
+                payload = json.loads(decision.reason)["situated_state"]
+            except (KeyError, TypeError, json.JSONDecodeError):
+                continue
+            action = payload.get("action")
+            target_id = payload.get("target_state_id")
+            if target_id is not None:
+                try:
+                    target_id = str(UUID(str(target_id)))
+                except (TypeError, ValueError):
+                    raise PublicationFailedClosed(
+                        "canonical-situated-target-invalid",
+                        "Situated target identity is malformed",
+                    ) from None
+            if action == "set" and payload.get("status") == "accepted":
+                try:
+                    state_id = str(UUID(str(payload["state_id"])))
+                    source_id = str(UUID(str(payload["source_user_message_id"])))
+                    posture = str(payload["posture"])
+                    evidence = str(payload["evidence_quote"])
+                    remaining = int(payload["remaining_turns"])
+                    expires_at_us = int(payload["expires_at_us"])
+                    policy_id = str(payload["policy_id"])
+                    policy_version = int(payload["policy_version"])
+                    policy_hash = str(payload["policy_hash"])
+                except (KeyError, TypeError, ValueError):
+                    raise PublicationFailedClosed(
+                        "canonical-situated-set-invalid",
+                        "Accepted Situated set is malformed",
+                    ) from None
+                if (
+                    posture not in SITUATED_POSTURES
+                    or not evidence
+                    or remaining != 1
+                    or expires_at_us <= 0
+                    or policy_id != SITUATED_POLICY_ID
+                    or policy_version != SITUATED_POLICY_VERSION
+                    or policy_hash != SITUATED_POLICY_HASH
+                    or state_id in positions
+                ):
+                    raise PublicationFailedClosed(
+                        "canonical-situated-set-invalid",
+                        "Accepted Situated set violates policy",
+                    )
+                if target_id is not None:
+                    target_position = positions.get(target_id)
+                    if (
+                        target_position is None
+                        or records[target_position].status != "active"
+                    ):
+                        raise PublicationFailedClosed(
+                            "canonical-situated-replacement-invalid",
+                            "Situated replacement must name the active record",
+                        )
+                    records[target_position] = replace(
+                        records[target_position],
+                        status="ended",
+                        ended_head_sequence=head_sequence,
+                        end_reason="replaced",
+                    )
+                elif any(record.status == "active" for record in records):
+                    raise PublicationFailedClosed(
+                        "canonical-situated-cardinality-invalid",
+                        "Situated set would create a second active record",
+                    )
+                record = SituatedStateRecord(
+                    state_id=state_id,
+                    posture=posture,
+                    source_user_message_id=source_id,
+                    evidence_quote=evidence,
+                    remaining_turns=remaining,
+                    expires_at_us=expires_at_us,
+                    created_head_sequence=head_sequence,
+                    policy_id=policy_id,
+                    policy_version=policy_version,
+                    policy_hash=policy_hash,
+                )
+                positions[state_id] = len(records)
+                records.append(record)
+            elif action in {"carry", "consume"}:
+                target_position = positions.get(target_id or "")
+                if (
+                    target_position is None
+                    or records[target_position].status != "active"
+                ):
+                    raise PublicationFailedClosed(
+                        "canonical-situated-consume-invalid",
+                        "Situated carry/consume must name the active record",
+                    )
+                reason = "consumed" if action == "carry" else str(
+                    payload.get("reason_code", "consumed")
+                )
+                records[target_position] = replace(
+                    records[target_position],
+                    remaining_turns=0,
+                    status="ended",
+                    ended_head_sequence=head_sequence,
+                    end_reason=reason,
+                )
+            elif action == "noop":
+                continue
+            else:
+                raise PublicationFailedClosed(
+                    "canonical-situated-action-invalid",
+                    "Situated action is not recognized",
                 )
         selected = [
             record

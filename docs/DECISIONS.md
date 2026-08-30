@@ -19,3 +19,7 @@
 ## D-005：模型能力与产品语义解耦
 
 2026-08-30，用户要求未来可接入其他云端或本地模型。所有含糊任务经 provider-neutral ModelGateway 和能力声明进入 Adapter；明确产品语法由 Python 直接处理。JSON mode 不被视为 schema 保证，只有无语义差异的 action-aware 规范化可在 Adapter 内执行；Provider 单项失败不再自动终止整轮。
+
+## D-006：Situated State 为一次 carry 的短时姿态
+
+2026-08-31，迁移 focused/gentle/cautious 闭集：set 当轮使用并保留 1 次下一完成轮 carry，绝对 TTL 30 分钟；replacement、consume 与 expiry 只向前记录。Provider 只提议，包含“必须”的直接命令不能成为证据，失败消费旧状态但不终止整轮。

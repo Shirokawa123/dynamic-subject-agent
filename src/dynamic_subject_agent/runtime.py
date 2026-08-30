@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 from enum import Enum
 from hashlib import sha256
 from pathlib import Path
-from time import monotonic, sleep
+from time import monotonic, sleep, time_ns
 from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.domains import (
@@ -63,6 +63,7 @@ from dynamic_subject_agent.timeline import (
     _RuntimeBindingAuthority,
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
+from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -326,6 +327,8 @@ class CognitionRuntimeView:
     living_memory_history: tuple[LivingMemoryRecord, ...] = ()
     relationship_stance_summary: str = ""
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
+    situated_state: SituatedStateRecord | None = None
+    observed_at_us: int = 0
 
 
 @dataclass(frozen=True)
@@ -918,6 +921,7 @@ class SubjectRuntime:
         return self._engine.location
 
     def _cognition_view(self) -> CognitionRuntimeView:
+        observed_at_us = time_ns() // 1_000
         interactions = self._engine.list_relationship_interactions(limit=20)
         memory_history = self._engine.list_living_memories(
             active_only=False,
@@ -926,6 +930,15 @@ class SubjectRuntime:
         participant_goals = self._engine.list_participant_goal_commitments(
             active_only=True,
             limit=20,
+        )
+        situated_records = self._engine.list_situated_states(
+            active_only=True,
+            limit=1,
+        )
+        situated_state = (
+            usable_state(situated_records[0], now_us=observed_at_us)
+            if situated_records
+            else None
         )
         if interactions:
             accepted = [i for i in interactions if i.status == "accepted"]
@@ -943,6 +956,8 @@ class SubjectRuntime:
             living_memory_history=memory_history,
             relationship_stance_summary=stance_summary,
             participant_goal_commitments=participant_goals,
+            situated_state=situated_state,
+            observed_at_us=observed_at_us,
         )
 
     def list_living_memories(
@@ -970,6 +985,17 @@ class SubjectRuntime:
         limit: int = 100,
     ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
         return self._engine.list_participant_goal_commitments(
+            active_only=active_only,
+            limit=limit,
+        )
+
+    def list_situated_states(
+        self,
+        *,
+        active_only: bool = False,
+        limit: int = 100,
+    ) -> tuple[SituatedStateRecord, ...]:
+        return self._engine.list_situated_states(
             active_only=active_only,
             limit=limit,
         )

@@ -16,12 +16,13 @@
 
 - 开工前必须存在 `docs/slices/current.md` 任务书；任务书外发现记入收尾，不扩权处理。
 - 同一时刻只有一个执行切片；每张切片以用户可体验结果收口。
-- 每个工作会话以 git commit 结束；`docs/STATUS.md` 只追加或更新不超过 5 行的当前事实。
+- 每个工作会话以 git commit 结束；每个切片收口后必须 push 已配置远端。无 remote 时保留完成提交并请求用户提供地址，不擅自创建远端。
+- `docs/STATUS.md` 只追加或更新不超过 5 行的当前事实。
 - 删除、不可逆数据迁移、新 credential 用途、新 provider 数据用途必须先获用户批准。
 
 ## 产品顺序
 
-当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：Situated State → Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
+当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
 
 ## 永久不变量
 
@@ -46,7 +47,8 @@
 - Knowledge：当前消息 1 条 + 最多 6 条 sealed `{entry_id, title, content}`。
 - Relationship：当前消息 1 条 + 当前立场摘要 + 固定策略版本。
 - 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
-- 四类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
+- Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；回复使用当前消息且只附加本轮选中的 `{posture}`。
+- 五类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
 
 ## Credential

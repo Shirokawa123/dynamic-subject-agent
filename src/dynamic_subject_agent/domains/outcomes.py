@@ -68,6 +68,8 @@ def _validate_reasoned_noop(
         allowed_keys.add("participant_goal_commitment")
     if expected_scope == "relationship" and "relationship" in reason:
         allowed_keys.add("relationship")
+    if expected_scope == "subject-core" and "situated_state" in reason:
+        allowed_keys.add("situated_state")
     if (
         set(reason) != allowed_keys
         or not isinstance(reason["code"], str)
@@ -124,6 +126,20 @@ def _validate_reasoned_noop(
             raise DomainOutcomeSetRejected(
                 "invalid-relationship-reason",
                 "Relationship reason requires a typed status and event",
+            )
+    if "situated_state" in reason:
+        situated = reason["situated_state"]
+        if (
+            not isinstance(situated, dict)
+            or situated.get("status")
+            not in {"accepted", "rejected", "no-update", "failed-closed"}
+            or situated.get("action") not in {"set", "carry", "consume", "noop"}
+            or not isinstance(situated.get("reason_code"), str)
+            or not isinstance(situated.get("used_for_reply"), bool)
+        ):
+            raise DomainOutcomeSetRejected(
+                "invalid-situated-state-reason",
+                "SubjectCore Situated State reason is not typed",
             )
     return decision
 

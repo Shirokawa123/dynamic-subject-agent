@@ -38,6 +38,8 @@ class ProviderCapabilities:
 class ModelTaskKind(str, Enum):
     PARTICIPANT_GOAL_CLASSIFICATION = "participant-goal-classification"
     PARTICIPANT_GOAL_REPLY = "participant-goal-reply"
+    SITUATED_STATE_CLASSIFICATION = "situated-state-classification"
+    SITUATED_STATE_REPLY = "situated-state-reply"
 
 
 @dataclass(frozen=True)

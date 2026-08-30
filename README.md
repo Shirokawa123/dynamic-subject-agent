@@ -13,9 +13,10 @@
 - Relationship Subject Stance 事件；
 - Memory、Knowledge、Relationship 同轮组合。
 - 参与者目标/承诺的创建、修订、终态变化与重启恢复（STABLE）。
+- Situated State 的 focused/gentle/cautious、一次 carry、30 分钟绝对过期与重启恢复（STABLE）。
 - 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
 
-尚未实现：Situated State、Medium State、完整 Agency 与 committed effect。下一能力为 Situated State。
+尚未实现：Medium State、完整 Agency 与 committed effect。下一能力为 Medium State。
 
 ## 安装与测试
 

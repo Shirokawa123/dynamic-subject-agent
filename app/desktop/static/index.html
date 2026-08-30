@@ -67,6 +67,8 @@
     <div class="card" id="rail-stance"><span class="k">尚无立场互动</span></div>
     <h2 style="margin-top:18px">目 标 与 承 诺</h2>
     <div id="rail-goals"><div class="card"><span class="k">尚无明确记录</span></div></div>
+    <h2 style="margin-top:18px">当 前 姿 态</h2>
+    <div id="rail-situated"><div class="card"><span class="k">neutral</span></div></div>
   </div>
 </div>
 <div class="inputbar"><div class="inner">
@@ -233,6 +235,19 @@ function renderRail(state) {
   if (!goals.children.length) {
     goals.appendChild(el("div", "card", "尚无明确记录"));
   }
+  const situated = document.getElementById("rail-situated");
+  situated.innerHTML = "";
+  if (state.situated_state) {
+    const s = state.situated_state;
+    const card = el("div", "card");
+    card.appendChild(el("span", "k", `【${s.posture}】`));
+    card.appendChild(document.createElement("br"));
+    card.appendChild(document.createTextNode(
+      `剩余 ${s.remaining_turns} 轮 · ${s.expires_in_seconds} 秒`));
+    situated.appendChild(card);
+  } else {
+    situated.appendChild(el("div", "card", "neutral"));
+  }
 }
 
 async function send() {
@@ -303,6 +318,14 @@ async function send() {
         span.appendChild(el("span", "tag", "目标/承诺"));
         span.appendChild(document.createTextNode(
           `${turn.participant_goal_action || "noop"} · ${turn.participant_goal_status}`));
+        notes.appendChild(span);
+      }
+      if (turn.situated_state_status) {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "短时姿态"));
+        span.appendChild(document.createTextNode(
+          `${turn.situated_state_action || "noop"} · ${turn.situated_state_status}`
+          + (turn.situated_state_posture ? ` · ${turn.situated_state_posture}` : "")));
         notes.appendChild(span);
       }
       if (notes.children.length) aiTurn.appendChild(notes);

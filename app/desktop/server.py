@@ -7,6 +7,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import RLock
 from collections.abc import Callable
+from time import time_ns
 from uuid import uuid4
 
 from dynamic_subject_agent.credentials import (
@@ -116,6 +117,7 @@ class AppState:
             "relationship_accepted_count": len(accepted),
             "relationship_latest_event": accepted[0].event if accepted else None,
             "participant_goals": self._participant_goals(),
+            "situated_state": self._situated_state(),
         }
 
     def _participant_goals(self) -> list[dict]:
@@ -150,6 +152,35 @@ class AppState:
                 for record in response.projection.records
             ]
         return []
+
+    def _situated_state(self) -> dict | None:
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            ApplicationQueryStatus,
+            SituatedStateApplicationProjection,
+        )
+
+        response = self.product.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.SITUATED_STATE,
+                target_profile_id=self.product.profile_id,
+                target_timeline_id=self.product.timeline_id,
+            )
+        )
+        if (
+            response.status is not ApplicationQueryStatus.AVAILABLE
+            or not isinstance(response.projection, SituatedStateApplicationProjection)
+            or response.projection.state is None
+        ):
+            return None
+        state = response.projection.state
+        expires_in = max(0, (state.expires_at_us - time_ns() // 1_000) // 1_000_000)
+        return {
+            "posture": state.posture,
+            "remaining_turns": state.remaining_turns,
+            "expires_in_seconds": int(expires_in),
+        }
 
     def submit_turn(self, text: str) -> dict:
         from dynamic_subject_agent.knowledge_entries import knowledge_entry_by_id
@@ -206,6 +237,9 @@ class AppState:
             "participant_goal_action": (
                 projection.participant_goal_commitment_action
             ),
+            "situated_state_status": projection.situated_state_status,
+            "situated_state_action": projection.situated_state_action,
+            "situated_state_posture": projection.situated_state_posture,
             "citations": citations,
         }
 

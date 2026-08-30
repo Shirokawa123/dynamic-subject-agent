@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 from threading import RLock
+from time import time_ns
 from collections.abc import Callable
 from typing import TypeAlias
 
@@ -38,6 +39,7 @@ from dynamic_subject_agent.timeline import (
     SubjectCommand,
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
+from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 
 
 class ApplicationOperationStatus(str, Enum):
@@ -60,6 +62,7 @@ class ApplicationQueryKind(str, Enum):
     LIVING_MEMORY = "living-memory"
     RELATIONSHIP = "relationship"
     PARTICIPANT_GOALS = "participant-goals"
+    SITUATED_STATE = "situated-state"
 
 
 class ApplicationQueryStatus(str, Enum):
@@ -137,6 +140,9 @@ class AuthorizedOperationProjection:
     relationship_event: str | None = None
     participant_goal_commitment_status: str | None = None
     participant_goal_commitment_action: str | None = None
+    situated_state_status: str | None = None
+    situated_state_action: str | None = None
+    situated_state_posture: str | None = None
 
 
 @dataclass(frozen=True)
@@ -203,6 +209,11 @@ class ParticipantGoalCommitmentApplicationProjection:
     records: tuple[ParticipantGoalCommitmentRecord, ...]
 
 
+@dataclass(frozen=True)
+class SituatedStateApplicationProjection:
+    state: SituatedStateRecord | None
+
+
 ApplicationProjection: TypeAlias = (
     CurrentApplicationProjection
     | RuntimeApplicationProjection
@@ -210,6 +221,7 @@ ApplicationProjection: TypeAlias = (
     | LivingMemoryApplicationProjection
     | RelationshipApplicationProjection
     | ParticipantGoalCommitmentApplicationProjection
+    | SituatedStateApplicationProjection
 )
 
 
@@ -528,6 +540,11 @@ class _ApplicationRouter:
                 if query.kind is not ApplicationQueryKind.PARTICIPANT_GOALS
                 else self._list_participant_goal_commitments()
             )
+            situated_state = (
+                None
+                if query.kind is not ApplicationQueryKind.SITUATED_STATE
+                else self._current_situated_state()
+            )
         except RuntimeHostRejected:
             return _query_not_found_or_not_authorized()
         except Exception:
@@ -539,6 +556,7 @@ class _ApplicationRouter:
             memories=memories,
             relationship_interactions=relationship_interactions,
             participant_goal_commitments=participant_goal_commitments,
+            situated_state=situated_state,
         )
 
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
@@ -559,6 +577,15 @@ class _ApplicationRouter:
                 active_only=False,
                 limit=100,
             )
+
+    def _current_situated_state(self) -> SituatedStateRecord | None:
+        with self._lease() as lease:
+            states = lease.list_situated_states(active_only=True, limit=1)
+        return (
+            usable_state(states[0], now_us=time_ns() // 1_000)
+            if states
+            else None
+        )
 
     def close(self) -> None:
         with self._lock:
@@ -670,6 +697,15 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             ),
             participant_goal_commitment_action=(
                 result.outcome.experience_outcome.participant_goal_commitment_action
+            ),
+            situated_state_status=(
+                result.outcome.subject_state_outcome.situated_state_status
+            ),
+            situated_state_action=(
+                result.outcome.subject_state_outcome.situated_state_action
+            ),
+            situated_state_posture=(
+                result.outcome.subject_state_outcome.situated_state_posture
             ),
         )
         return ApplicationOperationResponse(
@@ -870,6 +906,7 @@ def _from_query(
     relationship_interactions: tuple[RelationshipStanceInteraction, ...] | None = None,
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...]
     | None = None,
+    situated_state: SituatedStateRecord | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
@@ -910,6 +947,8 @@ def _from_query(
         projection = ParticipantGoalCommitmentApplicationProjection(
             records=participant_goal_commitments
         )
+    elif kind is ApplicationQueryKind.SITUATED_STATE:
+        projection = SituatedStateApplicationProjection(state=situated_state)
     else:
         return _query_unavailable("query-kind-unavailable")
     return ApplicationQueryResponse(
@@ -960,6 +999,7 @@ __all__ = [
     "LivingMemoryApplicationProjection",
     "RelationshipApplicationProjection",
     "ParticipantGoalCommitmentApplicationProjection",
+    "SituatedStateApplicationProjection",
     "AuthorizedOperationProjection",
     "CurrentApplicationProjection",
     "RuntimeApplicationProjection",
