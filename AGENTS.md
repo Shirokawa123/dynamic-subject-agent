@@ -22,7 +22,7 @@
 
 ## 产品顺序
 
-当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、同轮组合、Windows UI 和持久身份。下一能力顺序固定为：Medium State → 五能力整合 → Agency → 一个低风险 committed effect。
+当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、Windows UI 和持久身份。当前只推进六项既有能力的同轮整合与隔离身份长链验收；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
 
 ## 永久不变量
 
@@ -48,7 +48,8 @@
 - Relationship：当前消息 1 条 + 当前立场摘要 + 固定策略版本。
 - 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
 - Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；回复使用当前消息且只附加本轮选中的 `{posture}`。
-- 五类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
+- Medium State：分类只发送当前消息 + 固定版本策略；回复使用当前消息且只附加本轮选中的 `{baseline}`。
+- 六类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
 
 ## Credential

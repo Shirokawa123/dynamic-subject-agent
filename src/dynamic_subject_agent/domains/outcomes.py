@@ -70,6 +70,8 @@ def _validate_reasoned_noop(
         allowed_keys.add("relationship")
     if expected_scope == "subject-core" and "situated_state" in reason:
         allowed_keys.add("situated_state")
+    if expected_scope == "subject-core" and "medium_state" in reason:
+        allowed_keys.add("medium_state")
     if (
         set(reason) != allowed_keys
         or not isinstance(reason["code"], str)
@@ -140,6 +142,23 @@ def _validate_reasoned_noop(
             raise DomainOutcomeSetRejected(
                 "invalid-situated-state-reason",
                 "SubjectCore Situated State reason is not typed",
+            )
+    if "medium_state" in reason:
+        medium = reason["medium_state"]
+        if (
+            not isinstance(medium, dict)
+            or medium.get("status")
+            not in {"accepted", "rejected", "no-update", "failed-closed"}
+            or medium.get("action") not in {"transition", "noop"}
+            or medium.get("before_baseline")
+            not in {"settled", "concerned", "encouraged"}
+            or medium.get("after_baseline")
+            not in {"settled", "concerned", "encouraged"}
+            or not isinstance(medium.get("used_for_reply"), bool)
+        ):
+            raise DomainOutcomeSetRejected(
+                "invalid-medium-state-reason",
+                "SubjectCore Medium State reason is not typed",
             )
     return decision
 

@@ -12,7 +12,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 - `TimelineEngine`：Admission、幂等、Timeline head 与原子 Publication。
 - `CognitionEngine`：有界输入、结构化候选与最终表达；没有持久写权。
 - `Experience`：Observation、Claim、Evidence、Belief、Memory，以及现实参与者自己明确报告的目标/承诺；后者不是主体 Agency。
-- `SubjectState`：已实现一次 carry、30 分钟绝对过期的 Situated State；Medium 与长期主体状态仍分层且不可自动晋升。
+- `SubjectState`：Situated State 是一次 carry、30 分钟绝对过期的短时姿态；Medium State 是由最近 7 个已完成 Experience、双独立证据、2 轮冷却和闭集状态机裁决的中期基线。两层独立投影、独立持久化且不可自动晋升。
 - `Agency`：Motive、Intention、Project、Commitment、ActionRequest。
 - `Relationship`：Subject Stance、Interaction Norms、Mutual Commitment、Relationship Narrative。
 - `SubjectStudio`：Genesis、Knowledge、封存和 QualifiedRuntimeInput。

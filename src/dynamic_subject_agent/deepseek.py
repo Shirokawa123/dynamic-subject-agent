@@ -90,6 +90,20 @@ from dynamic_subject_agent.situated_cognition import (
     SituatedReplyResult,
     canonicalize_situated_output,
 )
+from dynamic_subject_agent.medium_state import (
+    BASELINES as MEDIUM_BASELINES,
+    POLICY_HASH as MEDIUM_POLICY_HASH,
+    POLICY_ID as MEDIUM_POLICY_ID,
+    POLICY_VERSION as MEDIUM_POLICY_VERSION,
+)
+from dynamic_subject_agent.medium_cognition import (
+    MediumClassificationRequest,
+    MediumClassificationResult,
+    MediumOutputRejected,
+    MediumReplyRequest,
+    MediumReplyResult,
+    canonicalize_medium_output,
+)
 
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
@@ -130,6 +144,22 @@ _SITUATED_REPLY_SYSTEM_MESSAGE = (
     "你只根据当前用户消息和 Python 已验证的一个 posture 生成简洁自然中文回复。"
     "不得提及模块、分类、内部状态、历史、其他 Domain 或隐藏推理。"
     "只返回 JSON 对象，字段必须恰为 reply_text、language；language 必须为 zh。"
+)
+_MEDIUM_CLASSIFICATION_SYSTEM_MESSAGE = (
+    "你只负责从当前用户消息提议 Medium State signal。只可使用 user JSON 中的"
+    " current_user_message 和固定 policy；不得使用消息历史、assistant 文本、Memory、"
+    "Knowledge、Relationship、目标承诺、Situated State、用户画像、CharacterPack、"
+    "profile、内部 ID、数据库、隐藏推理或 API key。action 只能 noop/signal；signal 只能"
+    " concern/encouragement/settling。signal 的 evidence_quote 必须逐字来自当前消息。"
+    "用户直接命令角色担心、高兴、平静或振奋时必须 noop。只返回 JSON 对象，字段必须恰为"
+    " action、signal、evidence_quote、experience_summary、language；language=zh。"
+    '示例 JSON：{"action":"noop","signal":null,"evidence_quote":"",'
+    '"experience_summary":"","language":"zh"}。'
+)
+_MEDIUM_REPLY_SYSTEM_MESSAGE = (
+    "你只根据当前用户消息和 Python 已验证的 baseline 生成简洁自然中文回复。"
+    "不得输出诊断、模块、内部状态、其他 Domain 或隐藏推理。只返回 JSON 对象，"
+    "字段必须恰为 reply_text、language；language=zh。"
 )
 _PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (
     "你只负责对现实参与者自己的目标与承诺进行闭集分类。只可使用 user JSON 的"
@@ -1341,6 +1371,77 @@ class DeepSeekSituatedProvider:
         return SituatedReplyResult(reply_text=reply, language="zh")
 
 
+class DeepSeekMediumProvider:
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+
+    def __init__(self, *, transport: object, credential_ref: object) -> None:
+        self._wire = DeepSeekParticipantGoalProvider(
+            transport=transport,
+            credential_ref=credential_ref,
+        )
+
+    @classmethod
+    def classification_outbound_bytes(cls, request: MediumClassificationRequest) -> bytes:
+        if (
+            not isinstance(request, MediumClassificationRequest)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or request.policy_id != MEDIUM_POLICY_ID
+            or request.policy_version != MEDIUM_POLICY_VERSION
+            or request.policy_hash != MEDIUM_POLICY_HASH
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return DeepSeekParticipantGoalProvider._bounded_body(
+            system_message=_MEDIUM_CLASSIFICATION_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "policy": {
+                    "id": request.policy_id,
+                    "version": request.policy_version,
+                    "hash": request.policy_hash,
+                },
+            },
+            max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
+        )
+
+    @classmethod
+    def reply_outbound_bytes(cls, request: MediumReplyRequest) -> bytes:
+        if (
+            not isinstance(request, MediumReplyRequest)
+            or not request.current_user_message.strip()
+            or request.baseline not in MEDIUM_BASELINES
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return DeepSeekParticipantGoalProvider._bounded_body(
+            system_message=_MEDIUM_REPLY_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "selected_state": {"baseline": request.baseline},
+            },
+            max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
+        )
+
+    def classify(self, request: MediumClassificationRequest) -> MediumClassificationResult:
+        content = self._wire._post_and_decode(
+            self.classification_outbound_bytes(request)
+        )
+        try:
+            return canonicalize_medium_output(content, request=request)
+        except MediumOutputRejected:
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+
+    def reply(self, request: MediumReplyRequest) -> MediumReplyResult:
+        content = self._wire._post_and_decode(self.reply_outbound_bytes(request))
+        if set(content) != {"reply_text", "language"} or content.get("language") != "zh":
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        try:
+            reply = _bounded_text(content["reply_text"], maximum=_MAX_EXPRESSION_CHARACTERS)
+        except (KeyError, TypeError, ProviderFailure):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        return MediumReplyResult(reply, "zh")
+
+
 class ApprovedDeepSeekCognition(ControlledCognition):
     """The sole external-provider Cognition adapter permitted by this ticket."""
 
@@ -1386,6 +1487,7 @@ __all__ = [
     "DeepSeekParticipantGoalProvider",
     "DeepSeekRelationshipProvider",
     "DeepSeekSituatedProvider",
+    "DeepSeekMediumProvider",
     "DeepSeekLivingMemoryProvider",
     "DeepSeekTransport",
     "DeepSeekUrlLibTransport",

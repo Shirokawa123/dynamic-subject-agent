@@ -40,6 +40,8 @@ class ModelTaskKind(str, Enum):
     PARTICIPANT_GOAL_REPLY = "participant-goal-reply"
     SITUATED_STATE_CLASSIFICATION = "situated-state-classification"
     SITUATED_STATE_REPLY = "situated-state-reply"
+    MEDIUM_STATE_CLASSIFICATION = "medium-state-classification"
+    MEDIUM_STATE_REPLY = "medium-state-reply"
 
 
 @dataclass(frozen=True)

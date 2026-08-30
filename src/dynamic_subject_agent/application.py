@@ -40,6 +40,7 @@ from dynamic_subject_agent.timeline import (
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
+from dynamic_subject_agent.medium_state import MediumStateRecord
 
 
 class ApplicationOperationStatus(str, Enum):
@@ -63,6 +64,7 @@ class ApplicationQueryKind(str, Enum):
     RELATIONSHIP = "relationship"
     PARTICIPANT_GOALS = "participant-goals"
     SITUATED_STATE = "situated-state"
+    MEDIUM_STATE = "medium-state"
 
 
 class ApplicationQueryStatus(str, Enum):
@@ -143,6 +145,8 @@ class AuthorizedOperationProjection:
     situated_state_status: str | None = None
     situated_state_action: str | None = None
     situated_state_posture: str | None = None
+    medium_state_status: str | None = None
+    medium_state_baseline: str | None = None
 
 
 @dataclass(frozen=True)
@@ -214,6 +218,11 @@ class SituatedStateApplicationProjection:
     state: SituatedStateRecord | None
 
 
+@dataclass(frozen=True)
+class MediumStateApplicationProjection:
+    state: MediumStateRecord
+
+
 ApplicationProjection: TypeAlias = (
     CurrentApplicationProjection
     | RuntimeApplicationProjection
@@ -222,6 +231,7 @@ ApplicationProjection: TypeAlias = (
     | RelationshipApplicationProjection
     | ParticipantGoalCommitmentApplicationProjection
     | SituatedStateApplicationProjection
+    | MediumStateApplicationProjection
 )
 
 
@@ -545,6 +555,11 @@ class _ApplicationRouter:
                 if query.kind is not ApplicationQueryKind.SITUATED_STATE
                 else self._current_situated_state()
             )
+            medium_state = (
+                None
+                if query.kind is not ApplicationQueryKind.MEDIUM_STATE
+                else self._current_medium_state()
+            )
         except RuntimeHostRejected:
             return _query_not_found_or_not_authorized()
         except Exception:
@@ -557,6 +572,7 @@ class _ApplicationRouter:
             relationship_interactions=relationship_interactions,
             participant_goal_commitments=participant_goal_commitments,
             situated_state=situated_state,
+            medium_state=medium_state,
         )
 
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
@@ -586,6 +602,10 @@ class _ApplicationRouter:
             if states
             else None
         )
+
+    def _current_medium_state(self) -> MediumStateRecord:
+        with self._lease() as lease:
+            return lease.current_medium_state()
 
     def close(self) -> None:
         with self._lock:
@@ -706,6 +726,12 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             ),
             situated_state_posture=(
                 result.outcome.subject_state_outcome.situated_state_posture
+            ),
+            medium_state_status=(
+                result.outcome.subject_state_outcome.medium_state_status
+            ),
+            medium_state_baseline=(
+                result.outcome.subject_state_outcome.medium_state_baseline
             ),
         )
         return ApplicationOperationResponse(
@@ -907,6 +933,7 @@ def _from_query(
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...]
     | None = None,
     situated_state: SituatedStateRecord | None = None,
+    medium_state: MediumStateRecord | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
@@ -949,6 +976,8 @@ def _from_query(
         )
     elif kind is ApplicationQueryKind.SITUATED_STATE:
         projection = SituatedStateApplicationProjection(state=situated_state)
+    elif kind is ApplicationQueryKind.MEDIUM_STATE and medium_state is not None:
+        projection = MediumStateApplicationProjection(state=medium_state)
     else:
         return _query_unavailable("query-kind-unavailable")
     return ApplicationQueryResponse(
@@ -1000,6 +1029,7 @@ __all__ = [
     "RelationshipApplicationProjection",
     "ParticipantGoalCommitmentApplicationProjection",
     "SituatedStateApplicationProjection",
+    "MediumStateApplicationProjection",
     "AuthorizedOperationProjection",
     "CurrentApplicationProjection",
     "RuntimeApplicationProjection",

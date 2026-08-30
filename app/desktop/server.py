@@ -118,6 +118,7 @@ class AppState:
             "relationship_latest_event": accepted[0].event if accepted else None,
             "participant_goals": self._participant_goals(),
             "situated_state": self._situated_state(),
+            "medium_state": self._medium_state(),
         }
 
     def _participant_goals(self) -> list[dict]:
@@ -182,6 +183,29 @@ class AppState:
             "expires_in_seconds": int(expires_in),
         }
 
+    def _medium_state(self) -> dict:
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            ApplicationQueryStatus,
+            MediumStateApplicationProjection,
+        )
+
+        response = self.product.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.MEDIUM_STATE,
+                target_profile_id=self.product.profile_id,
+                target_timeline_id=self.product.timeline_id,
+            )
+        )
+        if (
+            response.status is ApplicationQueryStatus.AVAILABLE
+            and isinstance(response.projection, MediumStateApplicationProjection)
+        ):
+            state = response.projection.state
+            return {"baseline": state.baseline, "version": state.version}
+        return {"baseline": "settled", "version": 0}
+
     def submit_turn(self, text: str) -> dict:
         from dynamic_subject_agent.knowledge_entries import knowledge_entry_by_id
         from dynamic_subject_agent.timeline import SubjectCommand
@@ -240,6 +264,8 @@ class AppState:
             "situated_state_status": projection.situated_state_status,
             "situated_state_action": projection.situated_state_action,
             "situated_state_posture": projection.situated_state_posture,
+            "medium_state_status": projection.medium_state_status,
+            "medium_state_baseline": projection.medium_state_baseline,
             "citations": citations,
         }
 

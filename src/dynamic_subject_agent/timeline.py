@@ -35,6 +35,15 @@ from dynamic_subject_agent.situated_state import (
     POSTURES as SITUATED_POSTURES,
     SituatedStateRecord,
 )
+from dynamic_subject_agent.medium_state import (
+    BASELINES as MEDIUM_BASELINES,
+    POLICY_HASH as MEDIUM_POLICY_HASH,
+    POLICY_ID as MEDIUM_POLICY_ID,
+    POLICY_VERSION as MEDIUM_POLICY_VERSION,
+    SIGNALS as MEDIUM_SIGNALS,
+    MediumSignalRecord,
+    MediumStateRecord,
+)
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -1041,6 +1050,30 @@ class SubjectStateDomainOutcome:
                 "situated_state", {}
             ).get("posture")
             return value if value in SITUATED_POSTURES else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def medium_state_status(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "medium_state", {}
+            ).get("status")
+            return (
+                value
+                if value in {"accepted", "rejected", "no-update", "failed-closed"}
+                else None
+            )
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def medium_state_baseline(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "medium_state", {}
+            ).get("after_baseline")
+            return value if value in MEDIUM_BASELINES else None
         except (AttributeError, TypeError, json.JSONDecodeError):
             return None
 
@@ -6136,6 +6169,94 @@ class TimelineEngine:
             if not active_only or record.status == "active"
         ]
         return tuple(selected[:limit])
+
+    def current_medium_state(self) -> MediumStateRecord:
+        rows = self._writer.execute(
+            """
+            SELECT core.decision_id, outcome.head_sequence
+            FROM subject_core_outcome AS core
+            JOIN timeline_outcome AS outcome ON outcome.plan_id = core.plan_id
+            ORDER BY outcome.head_sequence ASC
+            """
+        ).fetchall()
+        current = MediumStateRecord(None, "settled", 0, None)
+        for row in rows:
+            decision = self._read_decision(bytes(row[0]))
+            try:
+                payload = json.loads(decision.reason)["medium_state"]
+            except (KeyError, TypeError, json.JSONDecodeError):
+                continue
+            if payload.get("action") != "transition" or payload.get("status") != "accepted":
+                continue
+            try:
+                revision_id = str(UUID(str(payload["revision_id"])))
+                before = str(payload["before_baseline"])
+                after = str(payload["after_baseline"])
+                base_version = int(payload["base_version"])
+                resulting_version = int(payload["resulting_version"])
+                entered = int(payload["entered_head_sequence"])
+                policy_id = str(payload["policy_id"])
+                policy_version = int(payload["policy_version"])
+                policy_hash = str(payload["policy_hash"])
+            except (KeyError, TypeError, ValueError):
+                raise PublicationFailedClosed(
+                    "canonical-medium-transition-invalid",
+                    "Accepted Medium transition is malformed",
+                ) from None
+            if (
+                before != current.baseline
+                or base_version != current.version
+                or after not in MEDIUM_BASELINES
+                or resulting_version != base_version + 1
+                or entered != int(row[1])
+                or policy_id != MEDIUM_POLICY_ID
+                or policy_version != MEDIUM_POLICY_VERSION
+                or policy_hash != MEDIUM_POLICY_HASH
+            ):
+                raise PublicationFailedClosed(
+                    "canonical-medium-lineage-invalid",
+                    "Medium transition does not extend the current version",
+                )
+            current = MediumStateRecord(
+                revision_id,
+                after,
+                resulting_version,
+                entered,
+                policy_id,
+                policy_version,
+                policy_hash,
+            )
+        return current
+
+    def list_medium_signals(self, *, limit: int = 7) -> tuple[MediumSignalRecord, ...]:
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 100:
+            raise ValueError("limit must be between 1 and 100")
+        rows = self._writer.execute(
+            """
+            SELECT core.decision_id, outcome.head_sequence
+            FROM subject_core_outcome AS core
+            JOIN timeline_outcome AS outcome ON outcome.plan_id = core.plan_id
+            ORDER BY outcome.head_sequence ASC
+            """
+        ).fetchall()
+        signals: list[MediumSignalRecord] = []
+        for row in rows:
+            decision = self._read_decision(bytes(row[0]))
+            try:
+                payload = json.loads(decision.reason)["medium_state"]
+            except (KeyError, TypeError, json.JSONDecodeError):
+                continue
+            if not payload.get("signal_eligible"):
+                continue
+            signal = payload.get("signal")
+            evidence = payload.get("evidence_quote")
+            if signal not in MEDIUM_SIGNALS or not isinstance(evidence, str) or not evidence:
+                raise PublicationFailedClosed(
+                    "canonical-medium-signal-invalid",
+                    "Eligible Medium signal is malformed",
+                )
+            signals.append(MediumSignalRecord(int(row[1]), signal, evidence))
+        return tuple(signals[-limit:])
 
     def list_relationship_interactions(
         self,

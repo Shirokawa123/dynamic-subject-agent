@@ -64,6 +64,7 @@ from dynamic_subject_agent.timeline import (
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
+from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -329,6 +330,8 @@ class CognitionRuntimeView:
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
     situated_state: SituatedStateRecord | None = None
     observed_at_us: int = 0
+    medium_state: MediumStateRecord | None = None
+    medium_signals: tuple[MediumSignalRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -940,6 +943,8 @@ class SubjectRuntime:
             if situated_records
             else None
         )
+        medium_state = self._engine.current_medium_state()
+        medium_signals = self._engine.list_medium_signals(limit=7)
         if interactions:
             accepted = [i for i in interactions if i.status == "accepted"]
             stance_summary = (
@@ -958,6 +963,8 @@ class SubjectRuntime:
             participant_goal_commitments=participant_goals,
             situated_state=situated_state,
             observed_at_us=observed_at_us,
+            medium_state=medium_state,
+            medium_signals=medium_signals,
         )
 
     def list_living_memories(
@@ -999,6 +1006,12 @@ class SubjectRuntime:
             active_only=active_only,
             limit=limit,
         )
+
+    def current_medium_state(self) -> MediumStateRecord:
+        return self._engine.current_medium_state()
+
+    def list_medium_signals(self, *, limit: int = 7) -> tuple[MediumSignalRecord, ...]:
+        return self._engine.list_medium_signals(limit=limit)
 
     def _activate_binding_gate(self, *, _host_token: object) -> None:
         if _host_token is not _HOST_RUNTIME_TOKEN:

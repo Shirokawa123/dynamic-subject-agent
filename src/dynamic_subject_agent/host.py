@@ -96,6 +96,7 @@ from dynamic_subject_agent.timeline import (
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord
+from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -3279,6 +3280,16 @@ class RuntimeLease:
             active_only=active_only,
             limit=limit,
         )
+
+    def current_medium_state(self) -> MediumStateRecord:
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call("current_medium_state")
+
+    def list_medium_signals(self, *, limit: int = 7) -> tuple[MediumSignalRecord, ...]:
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call("list_medium_signals", limit=limit)
 
     def release(self) -> None:
         if not self._released:

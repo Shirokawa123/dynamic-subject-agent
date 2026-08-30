@@ -10,7 +10,7 @@
 
 ## D-003：按产品缺口推进
 
-当前已有能力冻结维护；下一顺序为目标与承诺、Situated State、Medium State、五能力整合、Agency、低风险 effect。历史治理流程、学习计划和证据生成体系不进入新仓库。
+当前已有能力冻结维护；目标与承诺、Situated State、Medium State 完成后，以六项既有能力同轮整合和隔离身份长链验收收口当前最小产品。Agency、effect、人格发展、Reflection 与主动消息等待新的明确授权。历史治理流程、学习计划和证据生成体系不进入新仓库。
 
 ## D-004：软件内管理 DeepSeek credential
 
@@ -23,3 +23,7 @@
 ## D-006：Situated State 为一次 carry 的短时姿态
 
 2026-08-31，迁移 focused/gentle/cautious 闭集：set 当轮使用并保留 1 次下一完成轮 carry，绝对 TTL 30 分钟；replacement、consume 与 expiry 只向前记录。Provider 只提议，包含“必须”的直接命令不能成为证据，失败消费旧状态但不终止整轮。
+
+## D-007：Medium State 由独立经历证据裁决
+
+2026-08-31，迁移 settled/concerned/encouraged 闭集：Provider 每轮只从当前消息提议 concern、encouragement 或 settling signal，Python 以最近 7 个已完成 Experience、至少 2 条独立逐字证据、2 轮冷却和旧证据不可复用规则裁决转换。直接状态命令不构成证据；失败保持既有 baseline 且不终止整轮。

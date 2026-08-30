@@ -23,6 +23,7 @@ from dynamic_subject_agent.deepseek import (
     DeepSeekParticipantGoalProvider,
     DeepSeekRelationshipProvider,
     DeepSeekSituatedProvider,
+    DeepSeekMediumProvider,
     DeepSeekUrlLibTransport,
 )
 from dynamic_subject_agent.model_gateway import (
@@ -34,6 +35,7 @@ from dynamic_subject_agent.participant_goal_cognition import (
     ParticipantGoalProviderAdapter,
 )
 from dynamic_subject_agent.situated_cognition import SituatedProviderAdapter
+from dynamic_subject_agent.medium_cognition import MediumProviderAdapter
 from dynamic_subject_agent.host import RuntimeHost, RuntimeHostRootRef
 from dynamic_subject_agent.runtime import CognitionEngine
 from dynamic_subject_agent.studio import (
@@ -331,12 +333,24 @@ def open_deepseek_local_product(
             ),
         )
     )
+    medium_gateway = ModelGateway(
+        MediumProviderAdapter(
+            provider=DeepSeekMediumProvider(**provider_kwargs),
+            capabilities=ProviderCapabilities(
+                provider_id=DEEPSEEK_PROVIDER_AUTHORITY_ID,
+                model_id=DEEPSEEK_MODEL,
+                local=False,
+                structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+            ),
+        )
+    )
     cognition = ControlledCompositeCognition(
         memory_provider=DeepSeekLivingMemoryProvider(**provider_kwargs),
         knowledge_provider=DeepSeekKnowledgeProvider(**provider_kwargs),
         relationship_provider=DeepSeekRelationshipProvider(**provider_kwargs),
         participant_goal_gateway=participant_goal_gateway,
         situated_gateway=situated_gateway,
+        medium_gateway=medium_gateway,
     )
     return open_local_product(config, cognition=cognition)
 

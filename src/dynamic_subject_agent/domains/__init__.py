@@ -32,6 +32,7 @@ from dynamic_subject_agent.domains.relationship import (
 )
 from dynamic_subject_agent.domains.subject_state import (
     DevelopmentChangeCandidate,
+    MediumStateChangeCandidate,
     SituatedEffectCandidate,
     SubjectStateAdjudicationRequest,
     SubjectStateDomain,
@@ -56,6 +57,7 @@ __all__ = [
     "ExperienceImpactEnvelopeRejected",
     "ExperienceReadView",
     "M0_DOMAIN_RULE_VERSION",
+    "MediumStateChangeCandidate",
     "RelationshipAdjudicationRequest",
     "RelationshipChangeCandidate",
     "RelationshipDomain",

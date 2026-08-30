@@ -66,6 +66,7 @@ class ControlledCompositeCognition(CognitionEngine):
         relationship_provider: object,
         participant_goal_gateway: object | None = None,
         situated_gateway: object | None = None,
+        medium_gateway: object | None = None,
     ) -> None:
         from dynamic_subject_agent.knowledge import ControlledKnowledgeCognition
         from dynamic_subject_agent.living_memory import (
@@ -96,6 +97,11 @@ class ControlledCompositeCognition(CognitionEngine):
             )
 
             self._situated = ControlledSituatedCognition(gateway=situated_gateway)
+        self._medium = None
+        if medium_gateway is not None:
+            from dynamic_subject_agent.medium_cognition import ControlledMediumCognition
+
+            self._medium = ControlledMediumCognition(gateway=medium_gateway)
         authorities = {
             self._memory.provider_authority,
             self._knowledge.provider_authority,
@@ -105,6 +111,8 @@ class ControlledCompositeCognition(CognitionEngine):
             authorities.add(self._participant_goals.provider_authority)
         if self._situated is not None:
             authorities.add(self._situated.provider_authority)
+        if self._medium is not None:
+            authorities.add(self._medium.provider_authority)
         if len(authorities) != 1:
             raise TypeError(
                 "composite providers must share one provider authority"
@@ -118,6 +126,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 self._relationship,
                 self._participant_goals,
                 self._situated,
+                self._medium,
             )
             if sub is not None
         )
@@ -166,6 +175,17 @@ class ControlledCompositeCognition(CognitionEngine):
                 basis,
             )
             if self._situated is not None
+            else None
+        )
+        medium_proposal = (
+            self._propose_sub(
+                self._medium,
+                plan,
+                context,
+                command,
+                basis,
+            )
+            if self._medium is not None
             else None
         )
 
@@ -240,14 +260,32 @@ class ControlledCompositeCognition(CognitionEngine):
                 ),
                 knowledge_candidates=knowledge_request.knowledge_candidates,
             )
+        subject_state_request = (
+            situated_proposal.impact_envelope.subject_state
+            if situated_proposal is not None
+            else memory_proposal.impact_envelope.subject_state
+        )
+        if medium_proposal is not None:
+            medium_request = medium_proposal.impact_envelope.subject_state
+            subject_state_request = replace(
+                subject_state_request,
+                current_state=replace(
+                    subject_state_request.current_state,
+                    medium_state=medium_request.current_state.medium_state,
+                    medium_signals=medium_request.current_state.medium_signals,
+                ),
+                medium_candidates=medium_request.medium_candidates,
+                medium_failure_code=medium_request.medium_failure_code,
+                medium_expression_active=medium_request.medium_expression_active,
+                current_user_message=medium_request.current_user_message,
+                source_user_message_id=medium_request.source_user_message_id,
+                observed_at_us=medium_request.observed_at_us,
+                current_head_sequence=medium_request.current_head_sequence,
+            )
         envelope = replace(
             memory_proposal.impact_envelope,
             experience=experience_request,
-            subject_state=(
-                situated_proposal.impact_envelope.subject_state
-                if situated_proposal is not None
-                else memory_proposal.impact_envelope.subject_state
-            ),
+            subject_state=subject_state_request,
             relationship=relationship_proposal.impact_envelope.relationship,
         )
 
@@ -301,6 +339,24 @@ class ControlledCompositeCognition(CognitionEngine):
                 )
             else:
                 expression = situated_proposal.expression_candidate
+        if (
+            medium_proposal is not None
+            and medium_proposal.impact_envelope.subject_state.medium_expression_active
+        ):
+            medium_text = _supported_clauses(medium_proposal.expression_candidate.text)
+            if (
+                knowledge_cited
+                or memory_recalled
+                or participant_goal_relevant
+                or situated_proposal is not None
+                and situated_proposal.impact_envelope.subject_state.situated_expression_active
+            ):
+                expression = ExpressionCandidate(
+                    text=f"{_supported_clauses(expression.text)}\n\n{medium_text}",
+                    language=expression.language,
+                )
+            else:
+                expression = medium_proposal.expression_candidate
         if expression.text == _NO_MEMORY_EXPRESSION:
             expression = ExpressionCandidate(
                 text=_UNAVAILABLE_EXPRESSION,
