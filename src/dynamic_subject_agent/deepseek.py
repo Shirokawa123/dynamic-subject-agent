@@ -142,6 +142,7 @@ _SITUATED_CLASSIFICATION_SYSTEM_MESSAGE = (
 )
 _SITUATED_REPLY_SYSTEM_MESSAGE = (
     "你只根据当前用户消息和 Python 已验证的一个 posture 生成简洁自然中文回复。"
+    "只输出一个短句；不要复述用户事实，不要提问，不要再次提出帮助或提醒。"
     "不得提及模块、分类、内部状态、历史、其他 Domain 或隐藏推理。"
     "只返回 JSON 对象，字段必须恰为 reply_text、language；language 必须为 zh。"
 )
@@ -158,9 +159,11 @@ _MEDIUM_CLASSIFICATION_SYSTEM_MESSAGE = (
 )
 _MEDIUM_REPLY_SYSTEM_MESSAGE = (
     "你只根据当前用户消息和 Python 已验证的 baseline 生成简洁自然中文回复。"
+    "只输出一个短句表达有限立场；不要复述用户事实、计划或建议，不要提问，"
+    "不要再次提出帮助或提醒。"
     "不得输出诊断、模块、内部状态、其他 Domain 或隐藏推理。"
     "不得声称已经或将会替用户执行、联系、跟进、确保完成任何现实任务；"
-    "只能回应当前消息、提出建议或询问用户是否需要协助。只返回 JSON 对象，"
+    "只能用这个短句回应当前消息，不得扩展为建议或行动计划。只返回 JSON 对象，"
     "字段必须恰为 reply_text、language；language=zh。"
 )
 _PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (
@@ -194,6 +197,8 @@ _RELATIONSHIP_SYSTEM_MESSAGE = (
     "无法归类时 event 填 no_persistent_evidence，evidence_quote 为空字符串。"
     "stable_positive_interaction 只适用于用户明确评价一段已经发生的具体互动，"
     "普通请求、提问或事实陈述必须填 no_persistent_evidence。"
+    "boundary_respected 只适用于用户明确回顾 Avery 已经按边界停下或尊重边界；"
+    "当前正在提出的『请停止/请温柔/不要继续』请求不是已尊重边界，必须填 no_persistent_evidence。"
     "字段必须恰为 event、evidence_quote、experience_summary、reply_text、language；"
     "language 必须为 zh。"
     '例如：{"event":"boundary_respected","evidence_quote":"<current_user_message 中的逐字片段>",'
@@ -227,6 +232,7 @@ _LIVING_MEMORY_SYSTEM_MESSAGE = (
     "不得自称 Living Memory、provider、模块或通用智能助手。"
     "只可使用 user JSON 中的当前消息和 active_memories；"
     "不得推断或输出 profile、timeline、session、conversation、数据库 ID、隐藏历史或推理过程。"
+    "不得声称或提议提醒、后台跟进、代替用户执行或确保现实任务完成。"
     "action 只能是 none/create/revise 三者之一，不存在其他值："
     "当前消息含值得记住的新事实 → create，evidence_quote 逐字摘自当前消息；"
     "值得记住的事实包括：个人偏好、身份数据、人际关系事实，"

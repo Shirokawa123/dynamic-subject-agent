@@ -108,6 +108,7 @@ def test_relationship_adapter_parses_verbatim_evidence_and_teaches_closed_set() 
     ]
     assert "no_persistent_evidence" in system_message
     assert "逐字摘自" in system_message
+    assert "当前正在提出" in system_message
     outbound = json.loads(transport.calls[0].decode("utf-8"))["messages"][1]["content"]
     assert json.loads(outbound) == {
         "current_user_message": POSITIVE_MESSAGE,
@@ -313,6 +314,25 @@ class _MisclassifyingStanceProvider(_StanceProvider):
         )
 
 
+class _BoundaryRespectedProvider(_StanceProvider):
+    def analyze(self, request):
+        from dynamic_subject_agent.relationship import (
+            RelationshipProposal,
+            RelationshipProviderResult,
+        )
+
+        self.requests.append(request)
+        return RelationshipProviderResult(
+            proposal=RelationshipProposal(
+                event="boundary_respected",
+                evidence_quote=request.current_user_message.rstrip("。"),
+            ),
+            experience_summary="边界候选。",
+            reply_text="我听到了。",
+            language="zh",
+        )
+
+
 def _compose_relationship(tmp_path: Path, provider, *, mode: str = "dynamic"):
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     from dynamic_subject_agent.bootstrap import compose_application
@@ -479,6 +499,35 @@ def test_neutral_request_cannot_be_accepted_as_stable_positive_interaction(
 
     assert terminal.projection is not None
     assert terminal.projection.relationship_event is None
+
+
+def test_current_boundary_request_is_not_past_respect_evidence(
+    tmp_path: Path,
+) -> None:
+    provider = _BoundaryRespectedProvider()
+    _, qri, timeline_id, composition = _compose_relationship(tmp_path, provider)
+    try:
+        current_request = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我现在有点紧张，想请你温柔一点。",
+            "relationship-current-boundary-request-0001",
+        )
+        retrospective = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "你刚才听到我说停下就停下了。",
+            "relationship-retrospective-boundary-0002",
+        )
+    finally:
+        composition.close()
+
+    assert current_request.projection.relationship_status == "rejected"
+    assert current_request.projection.relationship_event is None
+    assert retrospective.projection.relationship_status == "accepted"
+    assert retrospective.projection.relationship_event == "boundary_respected"
 
 
 def test_relationship_mode_off_never_invokes_provider(tmp_path: Path) -> None:

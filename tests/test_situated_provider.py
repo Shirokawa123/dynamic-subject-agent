@@ -94,6 +94,7 @@ def test_situated_projection_and_reply_are_isolated() -> None:
         {"posture": "gentle", "remaining_turns": 1, "expires_in_seconds": 900}
     ]
     reply_body = json.loads(transport.bodies[1].decode("utf-8"))
+    assert "只输出一个短句" in reply_body["messages"][0]["content"]
     reply_projection = json.loads(reply_body["messages"][1]["content"])
     assert reply_projection == {
         "current_user_message": "继续。",

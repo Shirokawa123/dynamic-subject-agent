@@ -586,8 +586,9 @@ def test_one_turn_adjudicates_all_six_capabilities_through_facade(
     assert "四月五号" in turn.projection.expression_text
     assert "创刊号规格" in turn.projection.expression_text
     assert "目标" in turn.projection.expression_text
-    assert "gentle" in turn.projection.expression_text
-    assert "settled" in turn.projection.expression_text
+    assert "gentle" not in turn.projection.expression_text
+    assert "settled" not in turn.projection.expression_text
+    assert "目标已按逐字证据处理" not in turn.projection.expression_text
     assert "没有相关信息" not in turn.projection.expression_text
 
     assert set(vars(memory.requests[-1])) == {
@@ -842,8 +843,10 @@ def test_relationship_claim_does_not_erase_independent_goal(tmp_path: Path) -> N
     assert turn.projection.living_memory_status == "no-op"
     assert turn.projection.participant_goal_commitment_status == "accepted"
     assert turn.projection.participant_goal_commitment_action == "create"
-    assert "不会因为一句声称" in turn.projection.expression_text
-    assert "目标" in turn.projection.expression_text
+    assert turn.projection.expression_text == (
+        "我会根据我们之后真实发生的互动理解关系，"
+        "不会因为一句声称直接把关系写成既定事实。"
+    )
 
 
 def test_explicit_goal_query_does_not_mix_memory_or_knowledge_expression(
@@ -887,7 +890,9 @@ def test_explicit_goal_query_does_not_mix_memory_or_knowledge_expression(
     assert provider.classification_requests == []
 
 
-def test_similar_situated_and_medium_replies_are_not_repeated(tmp_path: Path) -> None:
+def test_situated_reply_owns_state_expression_when_medium_is_also_relevant(
+    tmp_path: Path,
+) -> None:
     from dynamic_subject_agent.medium_cognition import MediumReplyResult
     from dynamic_subject_agent.situated_cognition import SituatedReplyResult
     from test_medium_integration import _MediumProvider, _gateway as medium_gateway
@@ -904,7 +909,7 @@ def test_similar_situated_and_medium_replies_are_not_repeated(tmp_path: Path) ->
     class _SimilarMedium(_MediumProvider):
         def reply(self, request):
             self.replies.append(request)
-            return MediumReplyResult("我在这里，慢慢说，我听着。", "zh")
+            return MediumReplyResult("当前先判断风险，再决定下一步。", "zh")
 
     _, _, _, _, _, qri, timeline_id, composition = _composite(
         tmp_path,
@@ -923,3 +928,40 @@ def test_similar_situated_and_medium_replies_are_not_repeated(tmp_path: Path) ->
         composition.close()
 
     assert turn.projection.expression_text == "我在这里，慢慢说，我会认真听。"
+
+
+def test_explicit_medium_query_outranks_situated_carry_expression(
+    tmp_path: Path,
+) -> None:
+    from test_medium_integration import _MediumProvider, _gateway as medium_gateway
+    from test_situated_integration import (
+        _SituatedProvider,
+        _gateway as situated_gateway,
+    )
+
+    _, _, _, _, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        situated_gateway=situated_gateway(_SituatedProvider()),
+        medium_gateway=medium_gateway(_MediumProvider()),
+    )
+    try:
+        _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我现在有点紧张，请温柔一点。",
+            f"composite-{uuid4().hex}",
+        )
+        queried = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "当前基线是什么？",
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert queried.projection.situated_state_action == "carry"
+    assert queried.projection.medium_state_baseline == "settled"
+    assert queried.projection.expression_text == "我当前的中期基线是“平稳”，版本 0。"

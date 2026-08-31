@@ -42,6 +42,11 @@ from dynamic_subject_agent.timeline import SubjectCommand
 
 
 _NO_SITUATED_EXPRESSION = "（无情境状态相关内容）"
+_POSTURE_LABELS = {
+    "focused": "专注",
+    "gentle": "温和",
+    "cautious": "谨慎",
+}
 
 
 @dataclass(frozen=True)
@@ -181,7 +186,8 @@ class ControlledSituatedCognition(CognitionEngine):
         if direct_query:
             result = SituatedClassificationResult(None, "Python 直接查询 Situated State。", command.language)
             deterministic_reply = (
-                f"我当前的短时姿态是 {context.situated_state.posture}。"
+                "我当前的短时姿态是"
+                f"“{_POSTURE_LABELS[context.situated_state.posture]}”。"
                 if context.situated_state is not None
                 else "我当前没有持续中的短时情境姿态。"
             )
@@ -286,6 +292,7 @@ class ControlledSituatedCognition(CognitionEngine):
                     situated_expression_active=(
                         deterministic_reply is not None or reply_posture is not None
                     ),
+                    situated_expression_priority=(deterministic_reply is not None),
                 ),
             ),
         )

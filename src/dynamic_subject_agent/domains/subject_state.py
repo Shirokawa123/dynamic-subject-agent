@@ -88,9 +88,11 @@ class SubjectStateAdjudicationRequest:
     observed_at_us: int = 0
     situated_failure_code: str | None = None
     situated_expression_active: bool = False
+    situated_expression_priority: bool = False
     medium_candidates: tuple[MediumStateChangeCandidate, ...] = ()
     medium_failure_code: str | None = None
     medium_expression_active: bool = False
+    medium_expression_priority: bool = False
     current_head_sequence: int = 0
 
 
@@ -205,6 +207,12 @@ class SubjectStateDomain:
                 "situated-expression-active-invalid",
                 "Situated expression flag must be bool",
             )
+        if not isinstance(request.situated_expression_priority, bool):
+            raise DomainAdjudicationFailedClosed(
+                "subject-state",
+                "situated-expression-priority-invalid",
+                "Situated expression priority flag must be bool",
+            )
         if failure is not None and (
             failure
             not in {
@@ -245,6 +253,12 @@ class SubjectStateDomain:
                 "subject-state",
                 "medium-expression-active-invalid",
                 "Medium expression flag must be bool",
+            )
+        if not isinstance(request.medium_expression_priority, bool):
+            raise DomainAdjudicationFailedClosed(
+                "subject-state",
+                "medium-expression-priority-invalid",
+                "Medium expression priority flag must be bool",
             )
         if medium_failure is not None and (
             medium_failure

@@ -39,6 +39,21 @@ _STABLE_POSITIVE_EVIDENCE_MARKERS = (
     "做得好",
     "确认好了",
 )
+_BOUNDARY_RETROSPECTIVE_MARKERS = (
+    "刚才",
+    "之前",
+    "上次",
+    "这次你",
+    "你已经",
+    "你确实",
+)
+_BOUNDARY_RESPECT_OUTCOME_MARKERS = (
+    "尊重",
+    "听到我说",
+    "停下",
+    "没有继续",
+    "照我说的",
+)
 
 
 @dataclass(frozen=True)
@@ -215,6 +230,17 @@ class RelationshipDomain:
             )
         ):
             rejection_code = "relationship.stable-positive-evidence-insufficient"
+        if candidate.event == "boundary_respected" and not (
+            any(
+                marker in candidate.evidence_quote
+                for marker in _BOUNDARY_RETROSPECTIVE_MARKERS
+            )
+            and any(
+                marker in candidate.evidence_quote
+                for marker in _BOUNDARY_RESPECT_OUTCOME_MARKERS
+            )
+        ):
+            rejection_code = "relationship.boundary-respected-evidence-insufficient"
         if not candidate.policy_version.strip():
             rejection_code = "relationship.policy-version-missing"
         if rejection_code is not None:

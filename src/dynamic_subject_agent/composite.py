@@ -229,6 +229,7 @@ class ControlledCompositeCognition(CognitionEngine):
         participant_goal_relevant = False
         participant_goal_expression_priority = False
         participant_goal_selection_priority = False
+        participant_goal_mutation = False
         if participant_goal_proposal is not None:
             participant_request = participant_goal_proposal.impact_envelope.experience
             participant_goal_relevant = bool(
@@ -238,6 +239,7 @@ class ControlledCompositeCognition(CognitionEngine):
             participant_goal_expression_priority = (
                 participant_request.participant_goal_expression_priority
             )
+            participant_goal_mutation = bool(participant_request.candidates)
             participant_goal_selection_priority = bool(
                 participant_request.selected_participant_goal_record_ids
                 and participant_goal_expression_priority
@@ -324,6 +326,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 medium_candidates=medium_request.medium_candidates,
                 medium_failure_code=medium_request.medium_failure_code,
                 medium_expression_active=medium_request.medium_expression_active,
+                medium_expression_priority=medium_request.medium_expression_priority,
                 current_user_message=medium_request.current_user_message,
                 source_user_message_id=medium_request.source_user_message_id,
                 observed_at_us=medium_request.observed_at_us,
@@ -372,20 +375,44 @@ class ControlledCompositeCognition(CognitionEngine):
                 participant_goal_proposal.expression_candidate.text
             )
             if knowledge_cited or memory_relevant:
-                expression = ExpressionCandidate(
-                    text=(
-                        _merge_expression_text(goal_text, expression.text)
-                        if participant_goal_expression_priority
-                        else _merge_expression_text(expression.text, goal_text)
-                    ),
-                    language=expression.language,
-                )
+                if not participant_goal_mutation:
+                    expression = ExpressionCandidate(
+                        text=(
+                            _merge_expression_text(goal_text, expression.text)
+                            if participant_goal_expression_priority
+                            else _merge_expression_text(expression.text, goal_text)
+                        ),
+                        language=expression.language,
+                    )
             else:
                 expression = participant_goal_proposal.expression_candidate
-        if (
+        situated_active = bool(
             situated_proposal is not None
             and situated_proposal.impact_envelope.subject_state.situated_expression_active
-        ):
+        )
+        situated_priority = bool(
+            situated_proposal is not None
+            and situated_proposal.impact_envelope.subject_state.situated_expression_priority
+        )
+        medium_active = bool(
+            medium_proposal is not None
+            and medium_proposal.impact_envelope.subject_state.medium_expression_active
+        )
+        medium_priority = bool(
+            medium_proposal is not None
+            and medium_proposal.impact_envelope.subject_state.medium_expression_priority
+        )
+        non_state_relevant = bool(
+            knowledge_cited or memory_relevant or participant_goal_relevant
+        )
+        situated_should_speak = situated_active and (
+            situated_priority or not non_state_relevant
+        ) and not (medium_priority and not situated_priority)
+        medium_should_speak = medium_active and (
+            (medium_priority and not situated_priority)
+            or (not non_state_relevant and not situated_should_speak)
+        )
+        if situated_should_speak and situated_proposal is not None:
             situated_text = _supported_clauses(
                 situated_proposal.expression_candidate.text
             )
@@ -396,17 +423,13 @@ class ControlledCompositeCognition(CognitionEngine):
                 )
             else:
                 expression = situated_proposal.expression_candidate
-        if (
-            medium_proposal is not None
-            and medium_proposal.impact_envelope.subject_state.medium_expression_active
-        ):
+        if medium_should_speak and medium_proposal is not None:
             medium_text = _supported_clauses(medium_proposal.expression_candidate.text)
             if (
                 knowledge_cited
                 or memory_relevant
                 or participant_goal_relevant
-                or situated_proposal is not None
-                and situated_proposal.impact_envelope.subject_state.situated_expression_active
+                or situated_should_speak
             ):
                 expression = ExpressionCandidate(
                     text=_merge_expression_text(expression.text, medium_text),

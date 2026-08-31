@@ -964,6 +964,7 @@ def test_default_profile_adapter_parses_recall_shaped_none_action() -> None:
         "content"
     ]
     assert "始终以 Avery 第一人称表达" in system_message
+    assert "不得声称或提议提醒" in system_message
     assert "action 必须为 none" in system_message
     assert "recalled_memory_ids" in system_message
 

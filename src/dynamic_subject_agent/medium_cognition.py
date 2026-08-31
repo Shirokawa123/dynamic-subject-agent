@@ -41,6 +41,11 @@ from dynamic_subject_agent.timeline import SubjectCommand
 
 
 _NO_MEDIUM_EXPRESSION = "（无中期状态相关内容）"
+_BASELINE_LABELS = {
+    "settled": "平稳",
+    "concerned": "关切",
+    "encouraged": "受到鼓舞",
+}
 
 
 @dataclass(frozen=True)
@@ -163,7 +168,10 @@ class ControlledMediumCognition(CognitionEngine):
         )
         if direct_query:
             result = MediumClassificationResult(None, "Python 直接查询 Medium State。", command.language)
-            deterministic_reply = f"我当前的中期基线是 {current.baseline}，版本 {current.version}。"
+            deterministic_reply = (
+                f"我当前的中期基线是“{_BASELINE_LABELS[current.baseline]}”，"
+                f"版本 {current.version}。"
+            )
         else:
             request = MediumClassificationRequest(command.utterance)
             try:
@@ -279,6 +287,7 @@ class ControlledMediumCognition(CognitionEngine):
                     observed_at_us=context.observed_at_us,
                     medium_candidates=candidates,
                     medium_expression_active=relevant,
+                    medium_expression_priority=direct_query,
                     current_head_sequence=plan.expected_basis.head_sequence,
                 ),
             ),
