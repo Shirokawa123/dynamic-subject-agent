@@ -24,6 +24,8 @@
 
 当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。下一项工作必须先有新的用户目标与切片任务书；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
 
+文本来源建角预览已完成：只生成未发布、未持久化的 Genesis/Knowledge 候选；封存、身份创建、视频/音频和私人来源仍需新切片与授权。
+
 ## 永久不变量
 
 1. 一条 RuntimeTimeline 只有一个写入者与一个 canonical store。
@@ -50,6 +52,7 @@
 - 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
 - Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；回复使用当前消息且只附加本轮选中的 `{posture}`。
 - Medium State：分类只发送当前消息 + 固定版本策略；回复使用当前消息且只附加本轮选中的 `{baseline}`。
+- 文本来源建角：只在用户逐次确认权利与用途后发送单份 `{source_title, source_text, policy}`；source_text 最多 16,000 字符，仅用于未发布 Genesis/Knowledge 候选提取，不发送任何 runtime 状态或聊天历史。
 - 六类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
 

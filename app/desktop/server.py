@@ -24,6 +24,10 @@ from dynamic_subject_agent.local_product import (
     OpenedLocalProduct,
     open_deepseek_local_product,
 )
+from dynamic_subject_agent.source_character_authoring import (
+    SourcePreviewStatus,
+    TextSourcePreviewRequest,
+)
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
@@ -477,6 +481,42 @@ class AppState:
             ),
         }
 
+    def preview_character_source(
+        self,
+        *,
+        source_title: object,
+        source_text: object,
+        rights_confirmed: object,
+        extraction_use_confirmed: object,
+    ) -> dict:
+        response = self.product.application.preview_character_source(
+            TextSourcePreviewRequest(
+                source_title=source_title,  # type: ignore[arg-type]
+                source_text=source_text,  # type: ignore[arg-type]
+                rights_confirmed=rights_confirmed,  # type: ignore[arg-type]
+                extraction_use_confirmed=extraction_use_confirmed,  # type: ignore[arg-type]
+            )
+        )
+
+        def candidate(item) -> dict:
+            return {
+                "category": item.category,
+                "kind": item.kind,
+                "title": item.title,
+                "content": item.content,
+                "evidence_quote": item.evidence_quote,
+                "status": item.status,
+                "reason_code": item.reason_code,
+            }
+
+        return {
+            "ok": response.status is SourcePreviewStatus.AVAILABLE,
+            "status": response.status.value,
+            "problem": response.problem_code,
+            "accepted": [candidate(item) for item in response.accepted],
+            "rejected": [candidate(item) for item in response.rejected],
+        }
+
 
 class DesktopState:
     """Own credential setup and the optional opened product lifecycle."""
@@ -597,6 +637,18 @@ class DesktopState:
                 return {"ok": False, "stage": "credential", "code": "setup-required"}
             return self._app.submit_turn(text)
 
+    def preview_character_source(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                    "accepted": [],
+                    "rejected": [],
+                }
+            return self._app.preview_character_source(**payload)
+
     def close(self) -> None:
         with self._lock:
             self._replace_product(None)
@@ -657,6 +709,23 @@ def build_handler(state: DesktopState):
                 except (UnicodeError, ValueError, json.JSONDecodeError):
                     self._json(400, {"ok": False, "problem": "invalid-request"})
                     return
+                self._json(200 if result["ok"] else 422, result)
+                return
+            if self.path == "/api/authoring/preview":
+                try:
+                    payload = self._read_json(maximum=65_536)
+                    expected = {
+                        "source_title",
+                        "source_text",
+                        "rights_confirmed",
+                        "extraction_use_confirmed",
+                    }
+                    if set(payload) != expected:
+                        raise ValueError("unexpected-fields")
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                result = state.preview_character_source(payload)
                 self._json(200 if result["ok"] else 422, result)
                 return
             if self.path != "/api/turn":

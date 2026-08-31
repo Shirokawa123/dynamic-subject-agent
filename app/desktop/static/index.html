@@ -41,6 +41,21 @@
   .setup-actions { display:flex; flex-wrap:wrap; gap:8px; }
   .setup-status { min-height:22px; margin-top:12px; font-size:13px; color:#7a6d55; }
   .setup-status.error { color:#a04b3a; }
+  .authoring-screen { position:fixed; inset:0; z-index:9; display:flex; align-items:center; justify-content:center; background:rgba(243,239,230,.96); }
+  .authoring-screen[hidden] { display:none; }
+  .authoring-card { width:min(720px,calc(100vw - 48px)); max-height:calc(100vh - 48px); overflow:auto; padding:28px; border:1px solid #cfc5ae; border-radius:6px; background:#faf7ef; box-shadow:0 18px 60px rgba(62,51,32,.12); }
+  .authoring-card h2 { margin:0 0 12px; font-size:20px; font-weight:normal; letter-spacing:2px; }
+  .authoring-card p, .authoring-card label { color:#756b5a; line-height:1.7; font-size:13px; }
+  .authoring-card input[type=text], .authoring-card textarea { box-sizing:border-box; width:100%; margin:6px 0 12px; border:1px solid #cfc5ae; background:#fffdf7; border-radius:4px; padding:10px 12px; color:#26221c; font:inherit; }
+  .authoring-card textarea { min-height:190px; resize:vertical; line-height:1.7; }
+  .authoring-check { display:block; margin:8px 0; }
+  .authoring-actions { display:flex; gap:8px; margin-top:16px; }
+  .preview-section { margin-top:20px; }
+  .preview-section h3 { font-size:14px; font-weight:normal; letter-spacing:1px; }
+  .preview-item { border-left:3px solid #809461; }
+  .preview-item.rejected { border-left-color:#a04b3a; }
+  .preview-evidence { margin-top:6px; color:#7d7462; }
+  .header-actions { display:flex; gap:8px; }
 </style>
 </head>
 <body>
@@ -57,9 +72,25 @@
     <div class="setup-status" id="setup-status"></div>
   </div>
 </div>
+<div class="authoring-screen" id="authoring-screen" hidden>
+  <div class="authoring-card">
+    <h2>来 源 建 角 预 览</h2>
+    <p>当前只接受一份你有权使用的原创纯文本。文本会发送给 DeepSeek，仅用于提议有逐字证据的 Genesis/Knowledge 候选；不会保存、封存或修改 Avery。</p>
+    <label>来源标题<input type="text" id="source-title" maxlength="120" placeholder="例如：Avery 原创人物简报"></label>
+    <label>来源文本<textarea id="source-text" maxlength="16000" placeholder="粘贴 project-original 文本……"></textarea></label>
+    <label class="authoring-check"><input type="checkbox" id="source-rights"> 我确认拥有或已取得使用这份文本的权利。</label>
+    <label class="authoring-check"><input type="checkbox" id="source-use"> 我同意将本次文本发送给 DeepSeek，仅用于角色候选提取。</label>
+    <div class="authoring-actions">
+      <button id="preview-source">提取候选预览</button>
+      <button id="close-authoring" class="quiet-button">返回聊天</button>
+    </div>
+    <div class="setup-status" id="authoring-status"></div>
+    <div id="authoring-results"></div>
+  </div>
+</div>
 <div class="app">
   <div class="chat">
-    <header><h1>Avery</h1><button id="open-setup" class="quiet-button">连接设置</button></header>
+    <header><h1>Avery</h1><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
     <div id="log"></div>
   </div>
   <div class="rail">
@@ -93,6 +124,14 @@ const keyInput = document.getElementById("api-key");
 const saveKeyButton = document.getElementById("save-key");
 const deleteKeyButton = document.getElementById("delete-key");
 const closeSetupButton = document.getElementById("close-setup");
+const authoringScreen = document.getElementById("authoring-screen");
+const authoringStatus = document.getElementById("authoring-status");
+const authoringResults = document.getElementById("authoring-results");
+const sourceTitleInput = document.getElementById("source-title");
+const sourceTextInput = document.getElementById("source-text");
+const sourceRightsInput = document.getElementById("source-rights");
+const sourceUseInput = document.getElementById("source-use");
+const previewSourceButton = document.getElementById("preview-source");
 
 const setupProblemLabels = {
   "credential-invalid": "验证失败：API key 无效。",
@@ -112,6 +151,15 @@ const relationshipEventLabels = {
   boundary_violation:"发生边界侵犯",
   repeated_boundary_violation:"重复边界侵犯",
   repair_action:"发生修复行动",
+};
+const authoringProblemLabels = {
+  "source-rights-confirmation-required":"请先确认来源权利。",
+  "source-extraction-use-confirmation-required":"请先确认本次 DeepSeek 提取用途。",
+  "source-title-invalid":"来源标题不能为空或格式无效。",
+  "source-text-invalid":"来源文本不能为空，且最多 16,000 字符。",
+  "source-character-provider-failed":"本次 DeepSeek 提取失败关闭，没有产生候选。",
+  "source-character-provider-invalid-output":"模型输出未通过结构校验，没有产生候选。",
+  "source-character-authoring-unavailable":"当前未启用来源建角。",
 };
 
 function el(tag, cls, text) {
@@ -204,6 +252,70 @@ async function deleteCredential() {
     showSetup(result, result.ok ? "凭据已从 Windows Credential Manager 删除；对话数据未删除。" : "删除失败。 ");
   } finally {
     deleteKeyButton.disabled = false;
+  }
+}
+
+function previewItem(item, rejected=false) {
+  const card = el("div", "card preview-item" + (rejected ? " rejected" : ""));
+  const label = item.category === "genesis"
+    ? `Genesis · ${item.kind || "未知"}`
+    : `Knowledge · ${item.title || "无标题"}`;
+  card.appendChild(el("span", "k", label));
+  card.appendChild(document.createElement("br"));
+  card.appendChild(document.createTextNode(item.content || "（无内容）"));
+  card.appendChild(el(
+    "div",
+    "preview-evidence",
+    `来源逐字：「${item.evidence_quote || ""}」`,
+  ));
+  if (rejected) card.appendChild(el("div", "failed", `未通过：${item.reason_code}`));
+  return card;
+}
+
+function renderAuthoring(result) {
+  authoringResults.innerHTML = "";
+  if (!result.ok) {
+    authoringStatus.className = "setup-status error";
+    authoringStatus.textContent = authoringProblemLabels[result.problem] || "候选提取未完成。";
+    return;
+  }
+  authoringStatus.className = "setup-status";
+  authoringStatus.textContent = `预览完成：${result.accepted.length} 条结构通过（仍需人工确认），${result.rejected.length} 条未通过。刷新页面后本预览消失。`;
+  const accepted = el("div", "preview-section");
+  accepted.appendChild(el("h3", "", "结构通过候选（仍需人工确认）"));
+  for (const item of result.accepted) accepted.appendChild(previewItem(item));
+  if (!result.accepted.length) accepted.appendChild(el("div", "card", "没有结构通过候选。"));
+  authoringResults.appendChild(accepted);
+  if (result.rejected.length) {
+    const rejected = el("div", "preview-section");
+    rejected.appendChild(el("h3", "", "未通过候选"));
+    for (const item of result.rejected) rejected.appendChild(previewItem(item, true));
+    authoringResults.appendChild(rejected);
+  }
+}
+
+async function previewSource() {
+  if (previewSourceButton.disabled) return;
+  previewSourceButton.disabled = true;
+  authoringStatus.className = "setup-status";
+  authoringStatus.textContent = "正在提取并校验候选……";
+  authoringResults.innerHTML = "";
+  try {
+    const res = await fetch("/api/authoring/preview", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        source_title:sourceTitleInput.value,
+        source_text:sourceTextInput.value,
+        rights_confirmed:sourceRightsInput.checked,
+        extraction_use_confirmed:sourceUseInput.checked,
+      }),
+    });
+    renderAuthoring(await res.json());
+  } catch (error) {
+    renderAuthoring({ok:false,problem:"source-character-provider-failed"});
+  } finally {
+    previewSourceButton.disabled = false;
   }
 }
 
@@ -332,6 +444,15 @@ document.getElementById("open-setup").addEventListener("click", async () => {
   const snapshot = await refreshSetup();
   if (snapshot) showSetup(snapshot);
 });
+document.getElementById("open-authoring").addEventListener("click", () => {
+  authoringStatus.textContent = "";
+  authoringResults.innerHTML = "";
+  authoringScreen.hidden = false;
+});
+document.getElementById("close-authoring").addEventListener("click", () => {
+  authoringScreen.hidden = true;
+});
+previewSourceButton.addEventListener("click", previewSource);
 closeSetupButton.addEventListener("click", () => {
   if (productReady) setupScreen.hidden = true;
 });

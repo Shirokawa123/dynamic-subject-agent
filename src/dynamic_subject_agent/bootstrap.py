@@ -29,6 +29,7 @@ from dynamic_subject_agent.runtime import (
     RuntimeFaultPoint,
 )
 from dynamic_subject_agent.timeline import OperationRef
+from dynamic_subject_agent.source_character_authoring import TextSourceCharacterAuthoring
 from dynamic_subject_agent.studio import (
     CapabilityManifest,
     QualifiedRuntimeInput,
@@ -103,6 +104,7 @@ def compose_application(
     _local_serving_stop_timeout_seconds: float = 30.0,
     relationship_mode: str = "off",
     _host_fault_hook: Callable[[RuntimeHostFaultPoint], None] | None = None,
+    _source_authoring: TextSourceCharacterAuthoring | None = None,
 ) -> _ApplicationComposition:
     """Build the one fresh QRI→Host→Runtime→Facade authority lane."""
 
@@ -247,6 +249,7 @@ def compose_application(
                     _authorization=_local_serving_authorization,
                 )
             ),
+            _source_authoring=_source_authoring,
         )
         return _ApplicationComposition(application, router, host)
     except Exception:

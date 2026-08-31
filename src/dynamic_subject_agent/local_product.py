@@ -24,6 +24,7 @@ from dynamic_subject_agent.deepseek import (
     DeepSeekRelationshipProvider,
     DeepSeekSituatedProvider,
     DeepSeekMediumProvider,
+    DeepSeekSourceCharacterProvider,
     DeepSeekUrlLibTransport,
 )
 from dynamic_subject_agent.model_gateway import (
@@ -36,6 +37,10 @@ from dynamic_subject_agent.participant_goal_cognition import (
 )
 from dynamic_subject_agent.situated_cognition import SituatedProviderAdapter
 from dynamic_subject_agent.medium_cognition import MediumProviderAdapter
+from dynamic_subject_agent.source_character_authoring import (
+    SourceCharacterProviderAdapter,
+    TextSourceCharacterAuthoring,
+)
 from dynamic_subject_agent.host import RuntimeHost, RuntimeHostRootRef
 from dynamic_subject_agent.runtime import CognitionEngine
 from dynamic_subject_agent.studio import (
@@ -260,6 +265,7 @@ def open_local_product(
     config: LocalProductConfig,
     *,
     cognition: CognitionEngine,
+    source_authoring: TextSourceCharacterAuthoring | None = None,
 ) -> OpenedLocalProduct:
     """Open the one persistent product through its production composition root."""
 
@@ -278,6 +284,7 @@ def open_local_product(
         host_location=host_location,
         _cognition=cognition,
         relationship_mode=config.relationship_mode,
+        _source_authoring=source_authoring,
     )
     return OpenedLocalProduct(
         composition=composition,
@@ -352,7 +359,24 @@ def open_deepseek_local_product(
         situated_gateway=situated_gateway,
         medium_gateway=medium_gateway,
     )
-    return open_local_product(config, cognition=cognition)
+    source_authoring = TextSourceCharacterAuthoring(
+        gateway=ModelGateway(
+            SourceCharacterProviderAdapter(
+                provider=DeepSeekSourceCharacterProvider(**provider_kwargs),
+                capabilities=ProviderCapabilities(
+                    provider_id=DEEPSEEK_PROVIDER_AUTHORITY_ID,
+                    model_id=DEEPSEEK_MODEL,
+                    local=False,
+                    structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+                ),
+            )
+        )
+    )
+    return open_local_product(
+        config,
+        cognition=cognition,
+        source_authoring=source_authoring,
+    )
 
 
 __all__ = [

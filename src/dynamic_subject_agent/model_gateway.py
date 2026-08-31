@@ -45,6 +45,7 @@ class ModelTaskKind(str, Enum):
     SITUATED_STATE_REPLY = "situated-state-reply"
     MEDIUM_STATE_CLASSIFICATION = "medium-state-classification"
     MEDIUM_STATE_REPLY = "medium-state-reply"
+    SOURCE_CHARACTER_EXTRACTION = "source-character-extraction"
 
 
 @dataclass(frozen=True)

@@ -17,6 +17,7 @@
 - Medium State 的 settled/concerned/encouraged、双独立证据、冷却、窗口与重启恢复（STABLE）。
 - 六项能力可在同一原子轮次并存；任一 Provider 子能力故障只形成该项 FailedClosed，其他无依赖能力继续裁决与回复（STABLE）。
 - Windows 页面以用户语言说明本轮形成、召回、保持或失败的既有能力结果；Python 发言预算避免目标样板和多状态重复，解释仍来自裁决后的 Outcome。
+- Windows 页面可将逐次确认授权的一份原创纯文本提取为带逐字证据的临时 Genesis/Knowledge 候选预览；预览不保存、不封存、不修改 Avery。
 - 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
 
 当前最小产品范围已完成 Windows 隔离身份真实长链与重启验收。下一项能力需重新定义切片；Agency、effect、人格发展、Reflection 与主动消息不在当前范围。

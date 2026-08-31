@@ -219,6 +219,7 @@ def _composite(
     participant_goal_gateway=None,
     situated_gateway=None,
     medium_gateway=None,
+    source_authoring=None,
 ):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.cognition import CredentialRef
@@ -261,6 +262,7 @@ def _composite(
         host_location=host_location,
         _cognition=cognition,
         relationship_mode="dynamic",
+        _source_authoring=source_authoring,
     )
     return cognition, memory, knowledge, relationship, prepared, qri, timeline_id, composition
 

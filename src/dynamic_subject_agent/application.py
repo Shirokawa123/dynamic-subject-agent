@@ -41,6 +41,10 @@ from dynamic_subject_agent.timeline import (
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
+from dynamic_subject_agent.source_character_authoring import (
+    TextSourceCharacterAuthoring,
+    TextSourcePreviewResponse,
+)
 
 
 class ApplicationOperationStatus(str, Enum):
@@ -273,6 +277,7 @@ class _ApplicationRouter:
         stop_runtime: Callable[[], RuntimeHealth] | None = None,
         query_runtime: Callable[[], RuntimeHealth] | None = None,
         follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
+        source_authoring: TextSourceCharacterAuthoring | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -285,6 +290,12 @@ class _ApplicationRouter:
         self._stop_runtime = stop_runtime
         self._query_runtime = query_runtime
         self._follow_runtime = follow_runtime
+        if source_authoring is not None and not isinstance(
+            source_authoring,
+            TextSourceCharacterAuthoring,
+        ):
+            raise TypeError("source_authoring must be TextSourceCharacterAuthoring")
+        self._source_authoring = source_authoring
         self._executor = ThreadPoolExecutor(
             max_workers=1,
             thread_name_prefix=f"m0-application-{binding.binding_id[:8]}",
@@ -585,6 +596,14 @@ class _ApplicationRouter:
             medium_state=medium_state,
         )
 
+    def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
+        with self._lock:
+            self._require_open()
+            source_authoring = self._source_authoring
+        if source_authoring is None:
+            return TextSourcePreviewResponse.unavailable()
+        return source_authoring.preview(request)
+
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
             return lease.list_living_memories(active_only=False, limit=100)
@@ -629,7 +648,7 @@ _APPLICATION_FACADE_TOKEN = object()
 
 
 class ApplicationFacade:
-    """Only public application authority; all work routes through RuntimeHost."""
+    """Only public application authority for runtime and bounded authoring work."""
 
     def __init__(
         self,
@@ -672,6 +691,9 @@ class ApplicationFacade:
     def query(self, query: object) -> ApplicationQueryResponse:
         return self.__router.query(query)
 
+    def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
+        return self.__router.preview_character_source(request)
+
 
 def _create_application_facade(
     host: RuntimeHost,
@@ -682,6 +704,7 @@ def _create_application_facade(
     _stop_runtime: Callable[[], RuntimeHealth] | None = None,
     _query_runtime: Callable[[], RuntimeHealth] | None = None,
     _follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
+    _source_authoring: TextSourceCharacterAuthoring | None = None,
 ) -> tuple[ApplicationFacade, _ApplicationRouter]:
     router = _ApplicationRouter(
         host,
@@ -691,6 +714,7 @@ def _create_application_facade(
         stop_runtime=_stop_runtime,
         query_runtime=_query_runtime,
         follow_runtime=_follow_runtime,
+        source_authoring=_source_authoring,
     )
     return (
         ApplicationFacade(router, _token=_APPLICATION_FACADE_TOKEN),

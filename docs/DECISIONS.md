@@ -43,3 +43,7 @@
 ## D-011：状态裁决与状态发言分离
 
 2026-08-31，真实流程证明 Situated 与 Medium 分别生成完整回复会重复，且局部 Provider 无法知道其他能力已说什么。组合层因此采用确定性发言预算：非状态主干存在时状态不追加；状态独占时 Situated 优先，显式 Medium 查询可覆盖普通 carry。六项仍分别裁决并原子提交，不新增统一表达任务或跨能力 Provider 输入。
+
+## D-012：来源建角先做短文本临时预览
+
+2026-08-31，用户批准把逐次确认授权的单份 project-original 文本发送给 DeepSeek，仅提议 Genesis/Knowledge 候选。Slice-08 不复用旧 authoring ledger，不发布或创建身份；所有候选需逐字证据和 Python 结构裁决，UI 明示“结构通过仍需人工确认”。视频、多模态、私人来源、持久草稿和 SubjectStudio freeze 后置。
