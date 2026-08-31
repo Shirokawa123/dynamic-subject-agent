@@ -18,7 +18,7 @@
 - 六项能力可在同一原子轮次并存；任一 Provider 子能力故障只形成该项 FailedClosed，其他无依赖能力继续裁决与回复（STABLE）。
 - 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
 
-当前下一步是 Windows 隔离身份真实长链与重启验收。Agency、effect、人格发展、Reflection 与主动消息不在当前最小范围。
+当前最小产品范围已完成 Windows 隔离身份真实长链与重启验收。下一项能力需重新定义切片；Agency、effect、人格发展、Reflection 与主动消息不在当前范围。
 
 ## 安装与测试
 

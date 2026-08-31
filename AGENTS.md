@@ -22,7 +22,7 @@
 
 ## 产品顺序
 
-当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI 和持久身份。下一步只做 Windows 隔离身份真实长链与重启验收；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
+当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。下一项工作必须先有新的用户目标与切片任务书；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
 
 ## 永久不变量
 

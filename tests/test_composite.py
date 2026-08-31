@@ -761,6 +761,7 @@ def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:
     state = server.AppState(product)
     try:
         turn = state.submit_turn(KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE)
+        snapshot = state.snapshot()
     finally:
         product.close()
 
@@ -770,6 +771,7 @@ def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:
     assert turn["relationship_status"] == "failed-closed"
     assert turn["relationship_event"] is None
     assert turn["expression"] == "我记住了：你的生日是四月五号。"
+    assert "memory_id" not in json.dumps(snapshot, ensure_ascii=False)
 
 
 def test_relationship_claim_does_not_erase_independent_goal(tmp_path: Path) -> None:

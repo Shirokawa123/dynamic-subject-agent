@@ -81,7 +81,7 @@
 const log = document.getElementById("log");
 const sendBtn = document.getElementById("send");
 const textBox = document.getElementById("text");
-const knownMemories = new Map();
+let visibleMemories = [];
 let stanceAccepted = 0;
 let productReady = false;
 const setupScreen = document.getElementById("setup-screen");
@@ -119,12 +119,7 @@ async function refreshState() {
   stanceAccepted = state.relationship_accepted_count || 0;
   const rail = document.getElementById("rail-memories");
   rail.innerHTML = "";
-  for (const m of state.memories) {
-    if (!knownMemories.has(m.memory_id)) {
-      knownMemories.set(m.memory_id, m);
-      if (log.children.length > 0) return renderRail(state); // 首载不标新
-    }
-  }
+  visibleMemories = Array.isArray(state.memories) ? state.memories : [];
   renderRail(state);
 }
 
@@ -209,7 +204,6 @@ function renderRail(state) {
       ? "【已更正】"
       : (m.memory_kind === "plan" ? "【打算】" : "【长期】"));
     card.appendChild(kindTag);
-    card.appendChild(el("span", "k", m.memory_id.slice(0, 8)));
     card.appendChild(document.createElement("br"));
     card.appendChild(document.createTextNode("「" + m.content + "」"));
     rail.appendChild(card);
@@ -364,7 +358,7 @@ async function send() {
       if (notes.children.length) aiTurn.appendChild(notes);
       await refreshState();
       if (turn.living_memory_status === "accepted") {
-        const latest = [...knownMemories.values()].at(-1);
+        const latest = visibleMemories.at(-1);
         if (latest) {
           const hint = el("span");
           hint.appendChild(document.createTextNode(

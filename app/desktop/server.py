@@ -71,7 +71,6 @@ class AppState:
         ):
             return [
                 {
-                    "memory_id": memory.memory_id,
                     "content": memory.content,
                     "status": memory.status,
                     "memory_kind": memory.memory_kind,

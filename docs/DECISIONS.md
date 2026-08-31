@@ -31,3 +31,7 @@
 ## D-008：六项能力原子组合且故障局部化
 
 2026-08-31，六项能力各自通过 ModelGateway 与独立最小投影提出候选；组合层只合并候选、typed failure 和有依据的表达，四个 Domain 独立裁决后由单写入者一次 Publication。Memory、Knowledge、Relationship 与目标/Situated/Medium 一致：Provider 故障形成所属能力 FailedClosed，不携带候选、不写该项状态，也不取消其他无依赖能力。
+
+## D-009：以隔离 Windows 长链收口当前最小产品
+
+2026-08-31，仅使用新临时身份和 project-original 文本完成真实 DeepSeek 长链、关闭重开和 Windows 页面验收。Memory、Knowledge、Relationship、目标、Situated carry 与 Medium 双证据均可解释；页面不显示 canonical memory ID，credential 仅由 Windows Credential Manager 供生产 Transport 使用。该验收不扩大为正式身份迁移或新能力授权。
