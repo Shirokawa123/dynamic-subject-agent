@@ -105,6 +105,7 @@ def compose_application(
     relationship_mode: str = "off",
     _host_fault_hook: Callable[[RuntimeHostFaultPoint], None] | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
+    _source_studio_location: StudioRootRef | None = None,
 ) -> _ApplicationComposition:
     """Build the one fresh QRI→Host→Runtime→Facade authority lane."""
 
@@ -250,6 +251,7 @@ def compose_application(
                 )
             ),
             _source_authoring=_source_authoring,
+            _source_studio_location=_source_studio_location,
         )
         return _ApplicationComposition(application, router, host)
     except Exception:

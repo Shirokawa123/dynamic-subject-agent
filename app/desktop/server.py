@@ -25,6 +25,10 @@ from dynamic_subject_agent.local_product import (
     open_deepseek_local_product,
 )
 from dynamic_subject_agent.source_character_authoring import (
+    SourceDraftCandidate,
+    SourceDraftCommand,
+    SourceDraftSaveRequest,
+    SourceDraftStatus,
     SourcePreviewStatus,
     TextSourcePreviewRequest,
 )
@@ -517,6 +521,74 @@ class AppState:
             "rejected": [candidate(item) for item in response.rejected],
         }
 
+    def source_draft(self, action: str, payload: dict | None = None) -> dict:
+        if action == "query":
+            command = SourceDraftCommand.query()
+        elif action == "delete":
+            command = SourceDraftCommand.delete(confirmed=True)
+        elif action == "save" and isinstance(payload, dict):
+            raw_candidates = payload.get("candidates")
+            try:
+                candidates = tuple(
+                    SourceDraftCandidate(**item) for item in raw_candidates
+                )
+            except (TypeError, ValueError):
+                return {
+                    "ok": False,
+                    "status": "rejected",
+                    "problem": "source-draft-candidates-invalid",
+                    "view": None,
+                    "replayed": False,
+                }
+            command = SourceDraftCommand.save(
+                SourceDraftSaveRequest(
+                    source_title=payload.get("source_title"),
+                    source_text=payload.get("source_text"),
+                    candidates=candidates,
+                    local_save_confirmed=payload.get("local_save_confirmed"),
+                    base_revision=payload.get("base_revision"),
+                )
+            )
+        else:
+            return {
+                "ok": False,
+                "status": "rejected",
+                "problem": "source-draft-command-invalid",
+                "view": None,
+                "replayed": False,
+            }
+        response = self.product.application.source_draft(command)
+        view = None
+        if response.view is not None:
+            view = {
+                "source_title": response.view.source_title,
+                "source_digest": response.view.source_digest,
+                "revision": response.view.revision,
+                "candidates": [
+                    {
+                        "category": item.category,
+                        "kind": item.kind,
+                        "title": item.title,
+                        "content": item.content,
+                        "evidence_quote": item.evidence_quote,
+                        "selected": item.selected,
+                    }
+                    for item in response.view.candidates
+                ],
+            }
+        return {
+            "ok": response.status
+            in {
+                SourceDraftStatus.AVAILABLE,
+                SourceDraftStatus.ABSENT,
+                SourceDraftStatus.DELETED,
+            },
+            "status": response.status.value,
+            "problem": response.problem_code,
+            "view": view,
+            "replayed": response.replayed,
+        }
+
 
 class DesktopState:
     """Own credential setup and the optional opened product lifecycle."""
@@ -649,6 +721,18 @@ class DesktopState:
                 }
             return self._app.preview_character_source(**payload)
 
+    def source_draft(self, action: str, payload: dict | None = None) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                    "view": None,
+                    "replayed": False,
+                }
+            return self._app.source_draft(action, payload)
+
     def close(self) -> None:
         with self._lock:
             self._replace_product(None)
@@ -692,6 +776,9 @@ def build_handler(state: DesktopState):
                 self._json(200 if payload.get("ok") else 409, payload)
             elif path == "/api/setup":
                 self._json(200, state.setup_snapshot())
+            elif path == "/api/authoring/draft":
+                payload = state.source_draft("query")
+                self._json(200 if payload["ok"] else 422, payload)
             else:
                 self._json(404, {"error": "not-found"})
 
@@ -728,6 +815,24 @@ def build_handler(state: DesktopState):
                 result = state.preview_character_source(payload)
                 self._json(200 if result["ok"] else 422, result)
                 return
+            if self.path == "/api/authoring/draft":
+                try:
+                    payload = self._read_json(maximum=65_536)
+                    expected = {
+                        "source_title",
+                        "source_text",
+                        "candidates",
+                        "local_save_confirmed",
+                        "base_revision",
+                    }
+                    if set(payload) != expected:
+                        raise ValueError("unexpected-fields")
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                result = state.source_draft("save", payload)
+                self._json(200 if result["ok"] else 422, result)
+                return
             if self.path != "/api/turn":
                 self._json(404, {"error": "not-found"})
                 return
@@ -743,6 +848,10 @@ def build_handler(state: DesktopState):
             self._json(200, state.submit_turn(text))
 
         def do_DELETE(self) -> None:  # noqa: N802
+            if self.path == "/api/authoring/draft":
+                result = state.source_draft("delete")
+                self._json(200 if result["ok"] else 422, result)
+                return
             if self.path != "/api/credential":
                 self._json(404, {"error": "not-found"})
                 return

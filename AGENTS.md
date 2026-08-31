@@ -26,6 +26,8 @@
 
 文本来源建角预览已完成：只生成未发布、未持久化的 Genesis/Knowledge 候选；封存、身份创建、视频/音频和私人来源仍需新切片与授权。
 
+来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；草稿仍不能 freeze 或创建身份。
+
 ## 永久不变量
 
 1. 一条 RuntimeTimeline 只有一个写入者与一个 canonical store。

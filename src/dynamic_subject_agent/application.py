@@ -42,9 +42,12 @@ from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRec
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.source_character_authoring import (
+    SourceDraftResponse,
+    SourceDraftStatus,
     TextSourceCharacterAuthoring,
     TextSourcePreviewResponse,
 )
+from dynamic_subject_agent.studio import PolicyKernel, StudioRootRef, SubjectStudio
 
 
 class ApplicationOperationStatus(str, Enum):
@@ -278,6 +281,7 @@ class _ApplicationRouter:
         query_runtime: Callable[[], RuntimeHealth] | None = None,
         follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
         source_authoring: TextSourceCharacterAuthoring | None = None,
+        source_studio_location: StudioRootRef | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -296,6 +300,12 @@ class _ApplicationRouter:
         ):
             raise TypeError("source_authoring must be TextSourceCharacterAuthoring")
         self._source_authoring = source_authoring
+        if source_studio_location is not None and not isinstance(
+            source_studio_location,
+            StudioRootRef,
+        ):
+            raise TypeError("source_studio_location must be StudioRootRef")
+        self._source_studio_location = source_studio_location
         self._executor = ThreadPoolExecutor(
             max_workers=1,
             thread_name_prefix=f"m0-application-{binding.binding_id[:8]}",
@@ -604,6 +614,24 @@ class _ApplicationRouter:
             return TextSourcePreviewResponse.unavailable()
         return source_authoring.preview(request)
 
+    def source_draft(self, command: object) -> SourceDraftResponse:
+        with self._lock:
+            self._require_open()
+            source_studio_location = self._source_studio_location
+        if source_studio_location is None:
+            return SourceDraftResponse(
+                status=SourceDraftStatus.UNAVAILABLE,
+                problem_code="source-draft-unavailable",
+            )
+        source_studio = SubjectStudio.open(
+            source_studio_location,
+            policy_kernel=PolicyKernel(),
+        )
+        try:
+            return source_studio.source_draft(command)
+        finally:
+            source_studio.close()
+
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
             return lease.list_living_memories(active_only=False, limit=100)
@@ -694,6 +722,9 @@ class ApplicationFacade:
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
         return self.__router.preview_character_source(request)
 
+    def source_draft(self, command: object) -> SourceDraftResponse:
+        return self.__router.source_draft(command)
+
 
 def _create_application_facade(
     host: RuntimeHost,
@@ -705,6 +736,7 @@ def _create_application_facade(
     _query_runtime: Callable[[], RuntimeHealth] | None = None,
     _follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
+    _source_studio_location: StudioRootRef | None = None,
 ) -> tuple[ApplicationFacade, _ApplicationRouter]:
     router = _ApplicationRouter(
         host,
@@ -715,6 +747,7 @@ def _create_application_facade(
         query_runtime=_query_runtime,
         follow_runtime=_follow_runtime,
         source_authoring=_source_authoring,
+        source_studio_location=_source_studio_location,
     )
     return (
         ApplicationFacade(router, _token=_APPLICATION_FACADE_TOKEN),

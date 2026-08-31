@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from hashlib import sha256
+import json
 
 from dynamic_subject_agent.model_gateway import (
     ModelGateway,
@@ -104,6 +106,232 @@ class TextSourcePreviewResponse:
             status=SourcePreviewStatus.UNAVAILABLE,
             problem_code="source-character-authoring-unavailable",
         )
+
+
+class SourceDraftCommandKind(str, Enum):
+    SAVE = "save"
+    QUERY = "query"
+    DELETE = "delete"
+
+
+class SourceDraftStatus(str, Enum):
+    AVAILABLE = "available"
+    ABSENT = "absent"
+    DELETED = "deleted"
+    REJECTED = "rejected"
+    CONFLICT = "conflict"
+    FAILED_CLOSED = "failed-closed"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True)
+class SourceDraftCandidate:
+    category: str
+    kind: str | None
+    title: str | None
+    content: str
+    evidence_quote: str
+    selected: bool
+
+
+@dataclass(frozen=True)
+class SourceDraftSaveRequest:
+    source_title: str | None
+    source_text: str | None
+    candidates: tuple[SourceDraftCandidate, ...]
+    local_save_confirmed: bool
+    base_revision: int
+
+
+@dataclass(frozen=True)
+class SourceDraftCommand:
+    kind: SourceDraftCommandKind
+    save_request: SourceDraftSaveRequest | None = None
+    delete_confirmed: bool = False
+
+    @classmethod
+    def save(cls, request: SourceDraftSaveRequest) -> "SourceDraftCommand":
+        return cls(SourceDraftCommandKind.SAVE, save_request=request)
+
+    @classmethod
+    def query(cls) -> "SourceDraftCommand":
+        return cls(SourceDraftCommandKind.QUERY)
+
+    @classmethod
+    def delete(cls, *, confirmed: bool) -> "SourceDraftCommand":
+        return cls(SourceDraftCommandKind.DELETE, delete_confirmed=confirmed)
+
+
+@dataclass(frozen=True)
+class SourceDraftView:
+    source_title: str
+    source_digest: str
+    revision: int
+    candidates: tuple[SourceDraftCandidate, ...]
+
+
+@dataclass(frozen=True)
+class SourceDraftResponse:
+    status: SourceDraftStatus
+    view: SourceDraftView | None = None
+    problem_code: str | None = None
+    replayed: bool = False
+
+
+@dataclass(frozen=True)
+class PreparedSourceDraftSave:
+    source_title: str
+    source_text: str
+    source_digest: str
+    candidates: tuple[SourceDraftCandidate, ...]
+    candidates_json: str
+    candidate_basis_digest: str
+    selection_digest: str
+    request_digest: str
+    base_revision: int
+
+
+def prepare_source_draft_save(
+    request: object,
+) -> tuple[PreparedSourceDraftSave | None, str | None]:
+    if not isinstance(request, SourceDraftSaveRequest):
+        return None, "source-draft-save-request-invalid"
+    if request.local_save_confirmed is not True:
+        return None, "source-draft-local-save-confirmation-required"
+    if (
+        isinstance(request.base_revision, bool)
+        or not isinstance(request.base_revision, int)
+        or request.base_revision < 0
+    ):
+        return None, "source-draft-base-revision-invalid"
+    preview_problem = TextSourceCharacterAuthoring._validate_request(
+        TextSourcePreviewRequest(
+            source_title=request.source_title,
+            source_text=request.source_text,
+            rights_confirmed=True,
+            extraction_use_confirmed=True,
+        )
+    )
+    if preview_problem is not None:
+        return None, preview_problem.replace("source-", "source-draft-", 1)
+    if (
+        not isinstance(request.candidates, tuple)
+        or not request.candidates
+        or len(request.candidates) > SOURCE_CANDIDATE_LIMIT * 2
+        or any(not isinstance(item, SourceDraftCandidate) for item in request.candidates)
+    ):
+        return None, "source-draft-candidates-invalid"
+    normalized: list[SourceDraftCandidate] = []
+    seen: set[tuple[str, str, str]] = set()
+    selected_identity = False
+    for item in request.candidates:
+        assert isinstance(item, SourceDraftCandidate)
+        if type(item.selected) is not bool:
+            return None, "source-draft-candidate-selection-invalid"
+        if item.category == "genesis":
+            proposal = ProposedGenesisCandidate(
+                kind=item.kind,  # type: ignore[arg-type]
+                content=item.content,
+                evidence_quote=item.evidence_quote,
+            )
+            preview = TextSourceCharacterAuthoring._adjudicate_genesis(
+                proposal,
+                source_text=request.source_text,
+                over_limit=False,
+                seen=seen,
+            )
+            if item.title is not None or preview.status != "accepted":
+                return None, preview.reason_code if preview.status != "accepted" else "source-draft-candidate-shape-invalid"
+            selected_identity = selected_identity or (
+                item.selected and item.kind == "identity"
+            )
+        elif item.category == "knowledge":
+            proposal = ProposedKnowledgeCandidate(
+                title=item.title,  # type: ignore[arg-type]
+                content=item.content,
+                evidence_quote=item.evidence_quote,
+            )
+            preview = TextSourceCharacterAuthoring._adjudicate_knowledge(
+                proposal,
+                source_text=request.source_text,
+                over_limit=False,
+                seen=seen,
+            )
+            if item.kind is not None or preview.status != "accepted":
+                return None, preview.reason_code if preview.status != "accepted" else "source-draft-candidate-shape-invalid"
+        else:
+            return None, "source-draft-candidate-category-invalid"
+        normalized.append(item)
+    if not selected_identity:
+        return None, "source-draft-selected-identity-required"
+    candidates_payload = [
+        {
+            "category": item.category,
+            "kind": item.kind,
+            "title": item.title,
+            "content": item.content,
+            "evidence_quote": item.evidence_quote,
+            "selected": item.selected,
+        }
+        for item in normalized
+    ]
+    basis_payload = [
+        {key: value for key, value in item.items() if key != "selected"}
+        for item in candidates_payload
+    ]
+    source_title = request.source_title.strip()
+    source_digest = sha256(request.source_text.encode("utf-8")).hexdigest()
+    candidate_basis_digest = _json_digest(basis_payload)
+    selection_digest = _json_digest(candidates_payload)
+    request_digest = _json_digest(
+        {
+            "source_title": source_title,
+            "source_digest": source_digest,
+            "candidate_basis_digest": candidate_basis_digest,
+            "selection_digest": selection_digest,
+        }
+    )
+    return (
+        PreparedSourceDraftSave(
+            source_title=source_title,
+            source_text=request.source_text,
+            source_digest=source_digest,
+            candidates=tuple(normalized),
+            candidates_json=json.dumps(
+                candidates_payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ),
+            candidate_basis_digest=candidate_basis_digest,
+            selection_digest=selection_digest,
+            request_digest=request_digest,
+            base_revision=request.base_revision,
+        ),
+        None,
+    )
+
+
+def source_draft_candidates_from_json(value: str) -> tuple[SourceDraftCandidate, ...]:
+    try:
+        payload = json.loads(value)
+        if not isinstance(payload, list):
+            raise ValueError
+        candidates = tuple(SourceDraftCandidate(**item) for item in payload)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        raise ValueError("source-draft-candidates-corrupt") from None
+    return candidates
+
+
+def _json_digest(value: object) -> str:
+    return sha256(
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
 
 
 class SourceCharacterProviderAdapter(ProviderAdapter):
@@ -345,7 +573,17 @@ __all__ = [
     "SourceCharacterExtractionResult",
     "SourceCharacterProviderAdapter",
     "SourcePreviewStatus",
+    "PreparedSourceDraftSave",
+    "SourceDraftCandidate",
+    "SourceDraftCommand",
+    "SourceDraftCommandKind",
+    "SourceDraftResponse",
+    "SourceDraftSaveRequest",
+    "SourceDraftStatus",
+    "SourceDraftView",
     "TextSourceCharacterAuthoring",
     "TextSourcePreviewRequest",
     "TextSourcePreviewResponse",
+    "prepare_source_draft_save",
+    "source_draft_candidates_from_json",
 ]

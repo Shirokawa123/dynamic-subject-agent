@@ -15,6 +15,11 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceCharacterExtractionResult,
     SourceCharacterExtractionRequest,
     SourceCharacterProviderAdapter,
+    SourceDraftCandidate,
+    SourceDraftCommand,
+    SourceDraftCommandKind,
+    SourceDraftSaveRequest,
+    SourceDraftStatus,
     SourcePreviewStatus,
     TextSourceCharacterAuthoring,
     TextSourcePreviewRequest,
@@ -453,3 +458,307 @@ def test_desktop_preview_exposes_candidates_without_source_or_internal_ids(
     assert SOURCE not in serialized
     for forbidden in ("profile_id", "timeline_id", "memory_id", "raw_response"):
         assert forbidden not in serialized
+
+
+def _draft_candidates(*, knowledge_selected: bool = True):
+    return (
+        SourceDraftCandidate(
+            category="genesis",
+            kind="identity",
+            title=None,
+            content="社区刊物编辑",
+            evidence_quote="Avery 是一名社区刊物编辑",
+            selected=True,
+        ),
+        SourceDraftCandidate(
+            category="genesis",
+            kind="trait",
+            title=None,
+            content="先核对来源再回答",
+            evidence_quote="习惯先核对来源再回答",
+            selected=True,
+        ),
+        SourceDraftCandidate(
+            category="knowledge",
+            kind=None,
+            title="截单时间",
+            content="每周五十七点截单",
+            evidence_quote="Lantern Zine 每周五十七点截单",
+            selected=knowledge_selected,
+        ),
+    )
+
+
+def _draft_save(*, base_revision: int, knowledge_selected: bool = True):
+    return SourceDraftCommand.save(
+        SourceDraftSaveRequest(
+            source_title="Avery 来源简报",
+            source_text=SOURCE,
+            candidates=_draft_candidates(knowledge_selected=knowledge_selected),
+            local_save_confirmed=True,
+            base_revision=base_revision,
+        )
+    )
+
+
+def _draft_selection(*, base_revision: int, knowledge_selected: bool):
+    return SourceDraftCommand.save(
+        SourceDraftSaveRequest(
+            source_title=None,
+            source_text=None,
+            candidates=_draft_candidates(knowledge_selected=knowledge_selected),
+            local_save_confirmed=True,
+            base_revision=base_revision,
+        )
+    )
+
+
+def test_source_draft_save_replay_restart_revision_conflict_and_delete(
+    tmp_path,
+) -> None:
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        TimelineApplicationProjection,
+    )
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    config = _config(tmp_path)
+    first = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        absent = first.application.source_draft(SourceDraftCommand.query())
+        before = first.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.TIMELINE,
+                first.profile_id,
+                first.timeline_id,
+            )
+        )
+        saved = first.application.source_draft(_draft_save(base_revision=0))
+        replay = first.application.source_draft(_draft_save(base_revision=0))
+        after = first.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.TIMELINE,
+                first.profile_id,
+                first.timeline_id,
+            )
+        )
+    finally:
+        first.close()
+
+    assert absent.status is SourceDraftStatus.ABSENT
+    assert saved.status is SourceDraftStatus.AVAILABLE
+    assert saved.view is not None and saved.view.revision == 1
+    assert replay.status is SourceDraftStatus.AVAILABLE
+    assert replay.replayed is True and replay.view.revision == 1
+    assert isinstance(before.projection, TimelineApplicationProjection)
+    assert isinstance(after.projection, TimelineApplicationProjection)
+    assert before.projection.head_sequence == after.projection.head_sequence == 0
+
+    second = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        restored_first = second.application.source_draft(SourceDraftCommand.query())
+        revised = second.application.source_draft(
+            _draft_selection(base_revision=1, knowledge_selected=False)
+        )
+        stale = second.application.source_draft(
+            _draft_selection(base_revision=1, knowledge_selected=True)
+        )
+    finally:
+        second.close()
+
+    assert restored_first.status is SourceDraftStatus.AVAILABLE
+    assert restored_first.view is not None and restored_first.view.revision == 1
+    assert revised.status is SourceDraftStatus.AVAILABLE
+    assert revised.view is not None and revised.view.revision == 2
+    assert revised.view.candidates[-1].selected is False
+    assert stale.status is SourceDraftStatus.CONFLICT
+    assert stale.problem_code == "source-draft-revision-conflict"
+
+    third = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        restored = third.application.source_draft(SourceDraftCommand.query())
+        unconfirmed = third.application.source_draft(
+            SourceDraftCommand.delete(confirmed=False)
+        )
+        deleted = third.application.source_draft(
+            SourceDraftCommand.delete(confirmed=True)
+        )
+        gone = third.application.source_draft(SourceDraftCommand.query())
+    finally:
+        third.close()
+
+    assert restored.status is SourceDraftStatus.AVAILABLE
+    assert restored.view is not None and restored.view.revision == 2
+    assert restored.view.source_title == "Avery 来源简报"
+    assert SOURCE not in str(restored)
+    assert unconfirmed.status is SourceDraftStatus.REJECTED
+    assert unconfirmed.problem_code == "source-draft-delete-confirmation-required"
+    assert deleted.status is SourceDraftStatus.DELETED
+    assert gone.status is SourceDraftStatus.ABSENT
+
+
+def test_source_draft_rejects_unconfirmed_tampered_and_missing_identity_without_write(
+    tmp_path,
+) -> None:
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    config = _config(tmp_path)
+    product = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        malformed = product.application.source_draft(
+            SourceDraftCommand(
+                kind=SourceDraftCommandKind.QUERY,
+                save_request=_draft_save(base_revision=0).save_request,
+            )
+        )
+        unconfirmed = product.application.source_draft(
+            SourceDraftCommand.save(
+                SourceDraftSaveRequest(
+                    "Avery 来源简报",
+                    SOURCE,
+                    _draft_candidates(),
+                    False,
+                    0,
+                )
+            )
+        )
+        tampered_candidates = list(_draft_candidates())
+        tampered_candidates[0] = SourceDraftCandidate(
+            **{
+                **vars(tampered_candidates[0]),
+                "evidence_quote": "原文不存在的身份",
+            }
+        )
+        tampered = product.application.source_draft(
+            SourceDraftCommand.save(
+                SourceDraftSaveRequest(
+                    "Avery 来源简报",
+                    SOURCE,
+                    tuple(tampered_candidates),
+                    True,
+                    0,
+                )
+            )
+        )
+        no_identity = product.application.source_draft(
+            SourceDraftCommand.save(
+                SourceDraftSaveRequest(
+                    "Avery 来源简报",
+                    SOURCE,
+                    tuple(
+                        SourceDraftCandidate(**{**vars(item), "selected": False})
+                        for item in _draft_candidates()
+                    ),
+                    True,
+                    0,
+                )
+            )
+        )
+        absent = product.application.source_draft(SourceDraftCommand.query())
+    finally:
+        product.close()
+
+    assert unconfirmed.status is SourceDraftStatus.REJECTED
+    assert malformed.status is SourceDraftStatus.REJECTED
+    assert malformed.problem_code == "source-draft-command-shape-invalid"
+    assert tampered.status is SourceDraftStatus.REJECTED
+    assert tampered.problem_code == "candidate-evidence-not-verbatim"
+    assert no_identity.status is SourceDraftStatus.REJECTED
+    assert no_identity.problem_code == "source-draft-selected-identity-required"
+    assert absent.status is SourceDraftStatus.ABSENT
+    assert list(config.product_parent.rglob("draft-authority.sqlite3")) == []
+
+
+def test_desktop_source_draft_projection_hides_source_text_and_internal_identity(
+    tmp_path,
+) -> None:
+    import importlib.util
+    from pathlib import Path
+
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    config = _config(tmp_path)
+    product = open_local_product(config, cognition=DormantDeepSeekCognition())
+    server_path = Path(__file__).resolve().parents[1] / "app" / "desktop" / "server.py"
+    spec = importlib.util.spec_from_file_location("source_draft_desktop", server_path)
+    assert spec is not None and spec.loader is not None
+    server = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(server)
+    state = server.AppState(product)
+    payload = {
+        "source_title": "Avery 来源简报",
+        "source_text": SOURCE,
+        "candidates": [vars(item) for item in _draft_candidates()],
+        "local_save_confirmed": True,
+        "base_revision": 0,
+    }
+    try:
+        saved = state.source_draft("save", payload)
+        loaded = state.source_draft("query")
+    finally:
+        product.close()
+
+    assert saved["ok"] is True and saved["view"]["revision"] == 1
+    assert loaded["ok"] is True and loaded["view"]["revision"] == 1
+    serialized = json.dumps(loaded, ensure_ascii=False)
+    assert SOURCE not in serialized
+    for forbidden in ("draft_id", "profile_id", "timeline_id", "root_path"):
+        assert forbidden not in serialized
+
+
+def test_threaded_http_source_draft_opens_studio_in_request_thread(tmp_path) -> None:
+    import importlib.util
+    from http.server import ThreadingHTTPServer
+    from pathlib import Path
+    from threading import Thread
+    from urllib.request import Request, urlopen
+
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    config = _config(tmp_path)
+    product = open_local_product(config, cognition=DormantDeepSeekCognition())
+    server_path = Path(__file__).resolve().parents[1] / "app" / "desktop" / "server.py"
+    spec = importlib.util.spec_from_file_location("source_draft_http", server_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    state = module.AppState(product)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), module.build_handler(state))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    payload = json.dumps(
+        {
+            "source_title": "Avery 来源简报",
+            "source_text": SOURCE,
+            "candidates": [vars(item) for item in _draft_candidates()],
+            "local_save_confirmed": True,
+            "base_revision": 0,
+        },
+        ensure_ascii=False,
+    ).encode("utf-8")
+    request = Request(
+        f"http://127.0.0.1:{server.server_address[1]}/api/authoring/draft",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        response = json.loads(urlopen(request, timeout=10).read().decode("utf-8"))
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=10)
+        product.close()
+
+    assert response["ok"] is True
+    assert response["status"] == "available"
+    assert response["view"]["revision"] == 1

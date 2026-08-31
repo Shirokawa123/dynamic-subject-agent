@@ -29,6 +29,16 @@ from dynamic_subject_agent.source_authoring import (
     UnsealedKnowledgeArtifact,
     UnpublishedSubjectStudioArtifact,
 )
+from dynamic_subject_agent.source_character_authoring import (
+    SourceDraftCommand,
+    SourceDraftCommandKind,
+    SourceDraftResponse,
+    SourceDraftSaveRequest,
+    SourceDraftStatus,
+    SourceDraftView,
+    prepare_source_draft_save,
+    source_draft_candidates_from_json,
+)
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -2000,6 +2010,47 @@ _ARTIFACT_SIDECAR_TABLES = frozenset(
 )
 
 
+_SOURCE_DRAFT_DDL = (
+    """
+    CREATE TABLE draft_manifest (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        root_id TEXT NOT NULL,
+        store_kind TEXT NOT NULL CHECK (store_kind = 'source-character-draft'),
+        schema_version INTEGER NOT NULL CHECK (schema_version = 1),
+        created_at_us INTEGER NOT NULL
+    ) STRICT
+    """,
+    """
+    CREATE TABLE source_draft (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        draft_id TEXT NOT NULL UNIQUE,
+        source_title TEXT NOT NULL,
+        source_text TEXT NOT NULL,
+        source_digest TEXT NOT NULL CHECK (length(source_digest) = 64),
+        candidate_basis_digest TEXT NOT NULL CHECK (length(candidate_basis_digest) = 64),
+        current_revision INTEGER NOT NULL CHECK (current_revision >= 1),
+        created_at_us INTEGER NOT NULL
+    ) STRICT
+    """,
+    """
+    CREATE TABLE source_draft_revision (
+        draft_id TEXT NOT NULL,
+        revision INTEGER NOT NULL CHECK (revision >= 1),
+        candidates_json TEXT NOT NULL,
+        selection_digest TEXT NOT NULL CHECK (length(selection_digest) = 64),
+        request_digest TEXT NOT NULL UNIQUE CHECK (length(request_digest) = 64),
+        created_at_us INTEGER NOT NULL,
+        PRIMARY KEY (draft_id, revision),
+        FOREIGN KEY (draft_id) REFERENCES source_draft(draft_id) ON DELETE CASCADE
+    ) STRICT
+    """,
+)
+
+_SOURCE_DRAFT_TABLES = frozenset(
+    {"draft_manifest", "source_draft", "source_draft_revision"}
+)
+
+
 def _is_relative_to(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
@@ -3032,6 +3083,529 @@ class SubjectStudio:
                 "accepted-artifact-store-unavailable",
                 "accepted artifact snapshot authority is unavailable",
             ) from error
+
+    @property
+    def _source_draft_database(self) -> Path:
+        return (
+            self._location.root
+            / "source-character-draft"
+            / "draft-authority.sqlite3"
+        )
+
+    def _open_source_draft_sidecar(self, *, create: bool) -> sqlite3.Connection:
+        database = self._source_draft_database
+        if not database.exists() and not create:
+            raise StudioRejected(
+                "source-draft-not-found",
+                "source character draft authority does not exist",
+            )
+        root = self._location.root.resolve(strict=True)
+        if _has_linklike_component(database.parent, root) or not _is_relative_to(
+            database.resolve(strict=False),
+            root,
+        ):
+            raise StudioRejected(
+                "source-draft-store-invalid",
+                "source character draft authority escapes the Studio root",
+            )
+        if create:
+            try:
+                database.parent.mkdir(parents=False, exist_ok=True)
+            except OSError as error:
+                raise StudioFailedClosed(
+                    "source-draft-store-unavailable",
+                    "source character draft directory cannot be created",
+                ) from error
+            if _has_linklike_component(database.parent, root) or not _is_relative_to(
+                database.parent.resolve(strict=True),
+                root,
+            ):
+                raise StudioRejected(
+                    "source-draft-store-invalid",
+                    "source character draft authority changed path identity",
+                )
+        if database.exists() and (
+            not database.is_file()
+            or database.is_symlink()
+            or database.stat().st_nlink != 1
+        ):
+            raise StudioFailedClosed(
+                "source-draft-store-invalid",
+                "source character draft authority has an unsafe identity",
+            )
+        try:
+            connection = sqlite3.connect(
+                _sqlite_uri(
+                    database,
+                    "rwc" if create else ("ro" if self._readonly else "rw"),
+                ),
+                uri=True,
+                autocommit=True,
+                timeout=2.0,
+                check_same_thread=True,
+            )
+            connection.execute("PRAGMA synchronous = EXTRA")
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA secure_delete = ON")
+            connection.execute("PRAGMA busy_timeout = 2000")
+            if self._readonly:
+                connection.execute("PRAGMA query_only = ON")
+            connection.row_factory = sqlite3.Row
+            if create:
+                _begin(connection)
+                for statement in _SOURCE_DRAFT_DDL:
+                    connection.execute(
+                        statement.replace(
+                            "CREATE TABLE",
+                            "CREATE TABLE IF NOT EXISTS",
+                            1,
+                        )
+                    )
+                manifest = connection.execute(
+                    "SELECT root_id FROM draft_manifest WHERE singleton = 1"
+                ).fetchone()
+                if manifest is None:
+                    connection.execute(
+                        """
+                        INSERT INTO draft_manifest (
+                            singleton, root_id, store_kind, schema_version, created_at_us
+                        ) VALUES (1, ?, 'source-character-draft', 1, ?)
+                        """,
+                        (self._location.root_id, _utc_microseconds()),
+                    )
+                _commit(connection)
+            table_rows = connection.execute(
+                """
+                SELECT name FROM sqlite_schema
+                WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+                """
+            ).fetchall()
+            manifest = connection.execute(
+                """
+                SELECT root_id, store_kind, schema_version
+                FROM draft_manifest WHERE singleton = 1
+                """
+            ).fetchone()
+            integrity = connection.execute("PRAGMA integrity_check").fetchone()
+            foreign_key_errors = connection.execute(
+                "PRAGMA foreign_key_check"
+            ).fetchall()
+            if (
+                {str(row[0]) for row in table_rows} != _SOURCE_DRAFT_TABLES
+                or manifest is None
+                or tuple(manifest)
+                != (self._location.root_id, "source-character-draft", 1)
+                or integrity is None
+                or str(integrity[0]).lower() != "ok"
+                or foreign_key_errors
+            ):
+                raise StudioFailedClosed(
+                    "source-draft-store-invalid",
+                    "source character draft authority failed verification",
+                )
+            return connection
+        except StudioProblem:
+            try:
+                connection.close()
+            except UnboundLocalError:
+                pass
+            raise
+        except (OSError, sqlite3.Error) as error:
+            try:
+                connection.close()
+            except UnboundLocalError:
+                pass
+            raise StudioFailedClosed(
+                "source-draft-store-unavailable",
+                "source character draft authority is unavailable",
+            ) from error
+
+    def source_draft(self, command: object) -> SourceDraftResponse:
+        self._require_open()
+        if not isinstance(command, SourceDraftCommand):
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code="typed-source-draft-command-required",
+            )
+        try:
+            if command.kind is SourceDraftCommandKind.QUERY:
+                if command.save_request is not None or command.delete_confirmed:
+                    return SourceDraftResponse(
+                        SourceDraftStatus.REJECTED,
+                        problem_code="source-draft-command-shape-invalid",
+                    )
+                return self._query_source_draft()
+            if command.kind is SourceDraftCommandKind.SAVE:
+                if command.delete_confirmed:
+                    return SourceDraftResponse(
+                        SourceDraftStatus.REJECTED,
+                        problem_code="source-draft-command-shape-invalid",
+                    )
+                return self._save_source_draft(command.save_request)
+            if command.kind is SourceDraftCommandKind.DELETE:
+                if command.save_request is not None:
+                    return SourceDraftResponse(
+                        SourceDraftStatus.REJECTED,
+                        problem_code="source-draft-command-shape-invalid",
+                    )
+                return self._delete_source_draft(
+                    confirmed=command.delete_confirmed,
+                )
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code="source-draft-command-kind-invalid",
+            )
+        except StudioConflict:
+            return SourceDraftResponse(
+                SourceDraftStatus.CONFLICT,
+                problem_code="source-draft-revision-conflict",
+            )
+        except StudioProblem:
+            return SourceDraftResponse(
+                SourceDraftStatus.FAILED_CLOSED,
+                problem_code="source-draft-store-failed-closed",
+            )
+        except Exception:
+            return SourceDraftResponse(
+                SourceDraftStatus.FAILED_CLOSED,
+                problem_code="source-draft-store-failed-closed",
+            )
+
+    def _query_source_draft(self) -> SourceDraftResponse:
+        if not self._source_draft_database.exists():
+            return SourceDraftResponse(SourceDraftStatus.ABSENT)
+        sidecar = self._open_source_draft_sidecar(create=False)
+        try:
+            row = sidecar.execute(
+                """
+                SELECT
+                    d.draft_id,
+                    d.source_title,
+                    d.source_text,
+                    d.source_digest,
+                    d.candidate_basis_digest,
+                    d.current_revision,
+                    r.candidates_json,
+                    r.selection_digest,
+                    r.request_digest
+                FROM source_draft AS d
+                JOIN source_draft_revision AS r
+                  ON r.draft_id = d.draft_id
+                 AND r.revision = d.current_revision
+                WHERE d.singleton = 1
+                """
+            ).fetchone()
+            revision_rows = sidecar.execute(
+                """
+                SELECT revision, candidates_json, selection_digest, request_digest
+                FROM source_draft_revision
+                WHERE draft_id = (SELECT draft_id FROM source_draft WHERE singleton = 1)
+                ORDER BY revision
+                """
+            ).fetchall()
+        finally:
+            sidecar.close()
+        if row is None:
+            return SourceDraftResponse(SourceDraftStatus.ABSENT)
+        try:
+            UUID(str(row[0]))
+            candidates = source_draft_candidates_from_json(str(row[6]))
+        except (TypeError, ValueError):
+            raise StudioFailedClosed(
+                "source-draft-corrupt",
+                "source character draft payload is unreadable",
+            ) from None
+        prepared, problem = prepare_source_draft_save(
+            SourceDraftSaveRequest(
+                source_title=str(row[1]),
+                source_text=str(row[2]),
+                candidates=candidates,
+                local_save_confirmed=True,
+                base_revision=max(0, int(row[5]) - 1),
+            )
+        )
+        if (
+            problem is not None
+            or prepared is None
+            or prepared.source_digest != str(row[3])
+            or prepared.candidate_basis_digest != str(row[4])
+            or prepared.selection_digest != str(row[7])
+            or prepared.request_digest != str(row[8])
+        ):
+            raise StudioFailedClosed(
+                "source-draft-integrity-failed",
+                "source character draft digest no longer matches its content",
+            )
+        if (
+            len(revision_rows) != int(row[5])
+            or [int(item[0]) for item in revision_rows]
+            != list(range(1, int(row[5]) + 1))
+        ):
+            raise StudioFailedClosed(
+                "source-draft-revision-chain-invalid",
+                "source character draft revision chain is incomplete",
+            )
+        for revision_row in revision_rows:
+            try:
+                revision_candidates = source_draft_candidates_from_json(
+                    str(revision_row[1])
+                )
+            except ValueError:
+                raise StudioFailedClosed(
+                    "source-draft-revision-corrupt",
+                    "source character draft revision is unreadable",
+                ) from None
+            revision_prepared, revision_problem = prepare_source_draft_save(
+                SourceDraftSaveRequest(
+                    source_title=str(row[1]),
+                    source_text=str(row[2]),
+                    candidates=revision_candidates,
+                    local_save_confirmed=True,
+                    base_revision=max(0, int(revision_row[0]) - 1),
+                )
+            )
+            if (
+                revision_problem is not None
+                or revision_prepared is None
+                or revision_prepared.candidate_basis_digest != str(row[4])
+                or revision_prepared.selection_digest != str(revision_row[2])
+                or revision_prepared.request_digest != str(revision_row[3])
+            ):
+                raise StudioFailedClosed(
+                    "source-draft-revision-integrity-failed",
+                    "source character draft revision digest is invalid",
+                )
+        return SourceDraftResponse(
+            SourceDraftStatus.AVAILABLE,
+            view=SourceDraftView(
+                source_title=prepared.source_title,
+                source_digest=prepared.source_digest,
+                revision=int(row[5]),
+                candidates=prepared.candidates,
+            ),
+        )
+
+    def _save_source_draft(self, request: object) -> SourceDraftResponse:
+        self._require_authority()
+        effective_request = request
+        if not isinstance(request, SourceDraftSaveRequest):
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code="source-draft-save-request-invalid",
+            )
+        if request.local_save_confirmed is not True:
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code="source-draft-local-save-confirmation-required",
+            )
+        if (
+            request.source_text is None
+        ):
+            if request.source_title is not None:
+                return SourceDraftResponse(
+                    SourceDraftStatus.REJECTED,
+                    problem_code="source-draft-selection-update-invalid",
+                )
+            if not self._source_draft_database.exists():
+                return SourceDraftResponse(
+                    SourceDraftStatus.REJECTED,
+                    problem_code="source-draft-selection-source-absent",
+                )
+            reader = self._open_source_draft_sidecar(create=False)
+            try:
+                source_row = reader.execute(
+                    """
+                    SELECT source_title, source_text
+                    FROM source_draft WHERE singleton = 1
+                    """
+                ).fetchone()
+            finally:
+                reader.close()
+            if source_row is None:
+                return SourceDraftResponse(
+                    SourceDraftStatus.REJECTED,
+                    problem_code="source-draft-selection-source-absent",
+                )
+            effective_request = SourceDraftSaveRequest(
+                source_title=str(source_row[0]),
+                source_text=str(source_row[1]),
+                candidates=request.candidates,
+                local_save_confirmed=request.local_save_confirmed,
+                base_revision=request.base_revision,
+            )
+        prepared, problem = prepare_source_draft_save(effective_request)
+        if problem is not None or prepared is None:
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code=problem or "source-draft-save-invalid",
+            )
+        sidecar = self._open_source_draft_sidecar(create=True)
+        replayed = False
+        try:
+            _begin(sidecar)
+            current = sidecar.execute(
+                """
+                SELECT
+                    d.draft_id,
+                    d.source_title,
+                    d.source_digest,
+                    d.candidate_basis_digest,
+                    d.current_revision,
+                    r.request_digest
+                FROM source_draft AS d
+                JOIN source_draft_revision AS r
+                  ON r.draft_id = d.draft_id
+                 AND r.revision = d.current_revision
+                WHERE d.singleton = 1
+                """
+            ).fetchone()
+            if current is None:
+                if prepared.base_revision != 0:
+                    raise StudioConflict(
+                        "source-draft-revision-conflict",
+                        "source draft does not match requested base revision",
+                    )
+                draft_id = str(uuid4())
+                revision = 1
+                now_us = _utc_microseconds()
+                sidecar.execute(
+                    """
+                    INSERT INTO source_draft (
+                        singleton,
+                        draft_id,
+                        source_title,
+                        source_text,
+                        source_digest,
+                        candidate_basis_digest,
+                        current_revision,
+                        created_at_us
+                    ) VALUES (1, ?, ?, ?, ?, ?, 1, ?)
+                    """,
+                    (
+                        draft_id,
+                        prepared.source_title,
+                        prepared.source_text,
+                        prepared.source_digest,
+                        prepared.candidate_basis_digest,
+                        now_us,
+                    ),
+                )
+                sidecar.execute(
+                    """
+                    INSERT INTO source_draft_revision (
+                        draft_id,
+                        revision,
+                        candidates_json,
+                        selection_digest,
+                        request_digest,
+                        created_at_us
+                    ) VALUES (?, 1, ?, ?, ?, ?)
+                    """,
+                    (
+                        draft_id,
+                        prepared.candidates_json,
+                        prepared.selection_digest,
+                        prepared.request_digest,
+                        now_us,
+                    ),
+                )
+            else:
+                draft_id = str(current[0])
+                revision = int(current[4])
+                if prepared.request_digest == str(current[5]):
+                    replayed = True
+                else:
+                    if prepared.base_revision != revision:
+                        raise StudioConflict(
+                            "source-draft-revision-conflict",
+                            "source draft changed before this save",
+                        )
+                    if (
+                        prepared.source_title != str(current[1])
+                        or prepared.source_digest != str(current[2])
+                        or prepared.candidate_basis_digest != str(current[3])
+                    ):
+                        _rollback_if_needed(sidecar)
+                        return SourceDraftResponse(
+                            SourceDraftStatus.CONFLICT,
+                            problem_code="source-draft-basis-changed",
+                        )
+                    revision += 1
+                    now_us = _utc_microseconds()
+                    sidecar.execute(
+                        """
+                        INSERT INTO source_draft_revision (
+                            draft_id,
+                            revision,
+                            candidates_json,
+                            selection_digest,
+                            request_digest,
+                            created_at_us
+                        ) VALUES (?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            draft_id,
+                            revision,
+                            prepared.candidates_json,
+                            prepared.selection_digest,
+                            prepared.request_digest,
+                            now_us,
+                        ),
+                    )
+                    updated = sidecar.execute(
+                        """
+                        UPDATE source_draft
+                        SET current_revision = ?
+                        WHERE singleton = 1 AND current_revision = ?
+                        """,
+                        (revision, prepared.base_revision),
+                    )
+                    if updated.rowcount != 1:
+                        raise StudioConflict(
+                            "source-draft-revision-conflict",
+                            "source draft changed before publication",
+                        )
+            _commit(sidecar)
+        except Exception:
+            _rollback_if_needed(sidecar)
+            raise
+        finally:
+            sidecar.close()
+        return SourceDraftResponse(
+            SourceDraftStatus.AVAILABLE,
+            view=SourceDraftView(
+                source_title=prepared.source_title,
+                source_digest=prepared.source_digest,
+                revision=revision,
+                candidates=prepared.candidates,
+            ),
+            replayed=replayed,
+        )
+
+    def _delete_source_draft(self, *, confirmed: bool) -> SourceDraftResponse:
+        if confirmed is not True:
+            return SourceDraftResponse(
+                SourceDraftStatus.REJECTED,
+                problem_code="source-draft-delete-confirmation-required",
+            )
+        self._require_authority()
+        if not self._source_draft_database.exists():
+            return SourceDraftResponse(SourceDraftStatus.ABSENT)
+        sidecar = self._open_source_draft_sidecar(create=False)
+        try:
+            _begin(sidecar)
+            deleted = sidecar.execute(
+                "DELETE FROM source_draft WHERE singleton = 1"
+            ).rowcount
+            _commit(sidecar)
+        except Exception:
+            _rollback_if_needed(sidecar)
+            raise
+        finally:
+            sidecar.close()
+        return SourceDraftResponse(
+            SourceDraftStatus.DELETED if deleted else SourceDraftStatus.ABSENT
+        )
 
     @staticmethod
     def _accepted_artifact_payload(

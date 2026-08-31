@@ -80,8 +80,12 @@
     <label>来源文本<textarea id="source-text" maxlength="16000" placeholder="粘贴 project-original 文本……"></textarea></label>
     <label class="authoring-check"><input type="checkbox" id="source-rights"> 我确认拥有或已取得使用这份文本的权利。</label>
     <label class="authoring-check"><input type="checkbox" id="source-use"> 我同意将本次文本发送给 DeepSeek，仅用于角色候选提取。</label>
+    <label class="authoring-check"><input type="checkbox" id="draft-save-confirm"> 我确认将原文、候选与选择作为未封存草稿保存在本地。</label>
     <div class="authoring-actions">
       <button id="preview-source">提取候选预览</button>
+      <button id="save-draft">保存选择</button>
+      <button id="load-draft" class="quiet-button">加载已保存草稿</button>
+      <button id="delete-draft" class="quiet-button">删除草稿</button>
       <button id="close-authoring" class="quiet-button">返回聊天</button>
     </div>
     <div class="setup-status" id="authoring-status"></div>
@@ -132,6 +136,11 @@ const sourceTextInput = document.getElementById("source-text");
 const sourceRightsInput = document.getElementById("source-rights");
 const sourceUseInput = document.getElementById("source-use");
 const previewSourceButton = document.getElementById("preview-source");
+const draftSaveConfirmInput = document.getElementById("draft-save-confirm");
+const saveDraftButton = document.getElementById("save-draft");
+const deleteDraftButton = document.getElementById("delete-draft");
+let authoringCandidates = [];
+let authoringRevision = 0;
 
 const setupProblemLabels = {
   "credential-invalid": "验证失败：API key 无效。",
@@ -160,6 +169,11 @@ const authoringProblemLabels = {
   "source-character-provider-failed":"本次 DeepSeek 提取失败关闭，没有产生候选。",
   "source-character-provider-invalid-output":"模型输出未通过结构校验，没有产生候选。",
   "source-character-authoring-unavailable":"当前未启用来源建角。",
+  "source-draft-local-save-confirmation-required":"请先确认本地保存用途。",
+  "source-draft-selected-identity-required":"请至少选择一条 identity Genesis。",
+  "source-draft-revision-conflict":"草稿已发生变化，请重新加载后再保存。",
+  "source-draft-basis-changed":"来源或候选集合与当前草稿不一致。",
+  "source-draft-store-failed-closed":"草稿存储失败关闭，没有修改现有草稿。",
 };
 
 function el(tag, cls, text) {
@@ -255,12 +269,24 @@ async function deleteCredential() {
   }
 }
 
-function previewItem(item, rejected=false) {
+function previewItem(item, rejected=false, index=null) {
   const card = el("div", "card preview-item" + (rejected ? " rejected" : ""));
   const label = item.category === "genesis"
     ? `Genesis · ${item.kind || "未知"}`
     : `Knowledge · ${item.title || "无标题"}`;
-  card.appendChild(el("span", "k", label));
+  if (!rejected && index !== null) {
+    const choice = el("label", "authoring-check");
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = Boolean(item.selected);
+    checkbox.dataset.candidateIndex = String(index);
+    choice.appendChild(checkbox);
+    choice.appendChild(document.createTextNode(" 选择 "));
+    choice.appendChild(el("span", "k", label));
+    card.appendChild(choice);
+  } else {
+    card.appendChild(el("span", "k", label));
+  }
   card.appendChild(document.createElement("br"));
   card.appendChild(document.createTextNode(item.content || "（无内容）"));
   card.appendChild(el(
@@ -272,26 +298,35 @@ function previewItem(item, rejected=false) {
   return card;
 }
 
-function renderAuthoring(result) {
+function renderCandidateGroups(candidates, rejected=[]) {
   authoringResults.innerHTML = "";
+  const accepted = el("div", "preview-section");
+  accepted.appendChild(el("h3", "", "结构通过候选（仍需人工确认）"));
+  for (const [index, item] of candidates.entries()) {
+    accepted.appendChild(previewItem(item, false, index));
+  }
+  if (!candidates.length) accepted.appendChild(el("div", "card", "没有结构通过候选。"));
+  authoringResults.appendChild(accepted);
+  if (rejected.length) {
+    const rejectedSection = el("div", "preview-section");
+    rejectedSection.appendChild(el("h3", "", "未通过候选"));
+    for (const item of rejected) rejectedSection.appendChild(previewItem(item, true));
+    authoringResults.appendChild(rejectedSection);
+  }
+}
+
+function renderAuthoring(result) {
   if (!result.ok) {
+    authoringResults.innerHTML = "";
     authoringStatus.className = "setup-status error";
     authoringStatus.textContent = authoringProblemLabels[result.problem] || "候选提取未完成。";
     return;
   }
+  authoringRevision = 0;
+  authoringCandidates = result.accepted.map(item => ({...item, selected:false}));
   authoringStatus.className = "setup-status";
   authoringStatus.textContent = `预览完成：${result.accepted.length} 条结构通过（仍需人工确认），${result.rejected.length} 条未通过。刷新页面后本预览消失。`;
-  const accepted = el("div", "preview-section");
-  accepted.appendChild(el("h3", "", "结构通过候选（仍需人工确认）"));
-  for (const item of result.accepted) accepted.appendChild(previewItem(item));
-  if (!result.accepted.length) accepted.appendChild(el("div", "card", "没有结构通过候选。"));
-  authoringResults.appendChild(accepted);
-  if (result.rejected.length) {
-    const rejected = el("div", "preview-section");
-    rejected.appendChild(el("h3", "", "未通过候选"));
-    for (const item of result.rejected) rejected.appendChild(previewItem(item, true));
-    authoringResults.appendChild(rejected);
-  }
+  renderCandidateGroups(authoringCandidates, result.rejected);
 }
 
 async function previewSource() {
@@ -316,6 +351,97 @@ async function previewSource() {
     renderAuthoring({ok:false,problem:"source-character-provider-failed"});
   } finally {
     previewSourceButton.disabled = false;
+  }
+}
+
+function collectSelections() {
+  for (const checkbox of authoringResults.querySelectorAll("input[data-candidate-index]")) {
+    const index = Number(checkbox.dataset.candidateIndex);
+    if (Number.isInteger(index) && authoringCandidates[index]) {
+      authoringCandidates[index].selected = checkbox.checked;
+    }
+  }
+}
+
+function renderDraft(result) {
+  if (!result.ok) {
+    authoringStatus.className = "setup-status error";
+    authoringStatus.textContent = authoringProblemLabels[result.problem] || "草稿操作未完成。";
+    return;
+  }
+  if (result.status === "absent" || result.status === "deleted") {
+    authoringRevision = 0;
+    authoringCandidates = [];
+    authoringResults.innerHTML = "";
+    sourceTitleInput.value = "";
+    sourceTextInput.value = "";
+    authoringStatus.className = "setup-status";
+    authoringStatus.textContent = result.status === "deleted" ? "未封存草稿已删除；Avery 数据未删除。" : "当前没有已保存草稿。";
+    return;
+  }
+  authoringRevision = result.view.revision;
+  authoringCandidates = result.view.candidates.map(item => ({...item}));
+  sourceTitleInput.value = result.view.source_title;
+  sourceTextInput.value = "";
+  authoringStatus.className = "setup-status";
+  authoringStatus.textContent = `已加载未封存草稿 revision ${authoringRevision} · source ${result.view.source_digest.slice(0, 12)}…`;
+  renderCandidateGroups(authoringCandidates);
+}
+
+async function loadDraft() {
+  try {
+    const res = await fetch("/api/authoring/draft");
+    renderDraft(await res.json());
+  } catch (error) {
+    renderDraft({ok:false,problem:"source-draft-store-failed-closed"});
+  }
+}
+
+async function saveDraft() {
+  if (saveDraftButton.disabled) return;
+  collectSelections();
+  saveDraftButton.disabled = true;
+  authoringStatus.className = "setup-status";
+  authoringStatus.textContent = "正在保存未封存草稿……";
+  try {
+    const firstSave = authoringRevision === 0;
+    const res = await fetch("/api/authoring/draft", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        source_title:firstSave ? sourceTitleInput.value : null,
+        source_text:firstSave ? sourceTextInput.value : null,
+        candidates:authoringCandidates.map(item => ({
+          category:item.category,
+          kind:item.kind,
+          title:item.title,
+          content:item.content,
+          evidence_quote:item.evidence_quote,
+          selected:Boolean(item.selected),
+        })),
+        local_save_confirmed:draftSaveConfirmInput.checked,
+        base_revision:authoringRevision,
+      }),
+    });
+    const result = await res.json();
+    renderDraft(result);
+    if (result.ok && result.status === "available") {
+      draftSaveConfirmInput.checked = false;
+    }
+  } catch (error) {
+    renderDraft({ok:false,problem:"source-draft-store-failed-closed"});
+  } finally {
+    saveDraftButton.disabled = false;
+  }
+}
+
+async function deleteDraft() {
+  if (!window.confirm("删除整个未封存来源草稿及全部 revisions？Avery 和聊天数据不会删除。")) return;
+  try {
+    const res = await fetch("/api/authoring/draft", {method:"DELETE"});
+    renderDraft(await res.json());
+  } catch (error) {
+    renderDraft({ok:false,problem:"source-draft-store-failed-closed"});
   }
 }
 
@@ -444,15 +570,17 @@ document.getElementById("open-setup").addEventListener("click", async () => {
   const snapshot = await refreshSetup();
   if (snapshot) showSetup(snapshot);
 });
-document.getElementById("open-authoring").addEventListener("click", () => {
-  authoringStatus.textContent = "";
-  authoringResults.innerHTML = "";
+document.getElementById("open-authoring").addEventListener("click", async () => {
   authoringScreen.hidden = false;
+  if (!authoringCandidates.length) await loadDraft();
 });
 document.getElementById("close-authoring").addEventListener("click", () => {
   authoringScreen.hidden = true;
 });
 previewSourceButton.addEventListener("click", previewSource);
+saveDraftButton.addEventListener("click", saveDraft);
+document.getElementById("load-draft").addEventListener("click", loadDraft);
+deleteDraftButton.addEventListener("click", deleteDraft);
 closeSetupButton.addEventListener("click", () => {
   if (productReady) setupScreen.hidden = true;
 });

@@ -285,6 +285,7 @@ def open_local_product(
         _cognition=cognition,
         relationship_mode=config.relationship_mode,
         _source_authoring=source_authoring,
+        _source_studio_location=studio_location,
     )
     return OpenedLocalProduct(
         composition=composition,
