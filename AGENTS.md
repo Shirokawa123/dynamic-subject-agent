@@ -22,7 +22,7 @@
 
 ## 产品顺序
 
-当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、Windows UI 和持久身份。当前只推进六项既有能力的同轮整合与隔离身份长链验收；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
+当前已有 Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI 和持久身份。下一步只做 Windows 隔离身份真实长链与重启验收；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
 
 ## 永久不变量
 
@@ -37,6 +37,7 @@
 - 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。
 - 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
 - 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。
+- 六项 Provider 子任务分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。
 - 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
 - Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
 - 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。

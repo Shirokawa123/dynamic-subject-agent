@@ -66,6 +66,8 @@ class ExperienceAdjudicationRequest:
     source_user_message_id: str = ""
     knowledge_candidates: tuple[KnowledgeEntry, ...] = ()
     selected_participant_goal_record_ids: tuple[str, ...] = ()
+    living_memory_failure_code: str | None = None
+    knowledge_failure_code: str | None = None
     participant_goal_failure_code: str | None = None
     participant_goal_expression_priority: bool = False
 
@@ -219,6 +221,34 @@ class ExperienceDomain:
                 "reply selection must name at most five active records",
             )
         participant_goal_failure = request.participant_goal_failure_code
+        living_memory_failure = request.living_memory_failure_code
+        knowledge_failure = request.knowledge_failure_code
+        if living_memory_failure is not None and (
+            living_memory_failure
+            not in {
+                "living-memory-provider-failed",
+                "living-memory-provider-invalid-output",
+            }
+            or memory_candidate is not None
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "living-memory-failure-invalid",
+                "Living Memory failure must be typed and carry no memory candidate",
+            )
+        if knowledge_failure is not None and (
+            knowledge_failure
+            not in {
+                "knowledge-provider-failed",
+                "knowledge-provider-invalid-output",
+            }
+            or knowledge_candidate is not None
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "experience",
+                "knowledge-failure-invalid",
+                "Knowledge failure must be typed and carry no knowledge candidate",
+            )
         if not isinstance(request.participant_goal_expression_priority, bool):
             raise DomainAdjudicationFailedClosed(
                 "experience",
@@ -247,6 +277,8 @@ class ExperienceDomain:
             memory_candidate is None
             and knowledge_candidate is None
             and participant_goal_candidate is None
+            and living_memory_failure is None
+            and knowledge_failure is None
             and participant_goal_failure is None
         ):
             return ExperienceDomainOutcome(
@@ -282,6 +314,14 @@ class ExperienceDomain:
                 memory_candidate,
                 tuple(active_memories),
             )
+        elif living_memory_failure is not None:
+            memory_code = living_memory_failure
+            memory_payload = {
+                "status": "failed-closed",
+                "action": "noop",
+                "reason_code": living_memory_failure,
+                "recalled_memory_ids": [],
+            }
         knowledge_code: str | None = None
         knowledge_payload: dict[str, object] | None = None
         if knowledge_candidate is not None:
@@ -290,6 +330,14 @@ class ExperienceDomain:
                 request,
                 knowledge_candidate,
             )
+        elif knowledge_failure is not None:
+            knowledge_code = knowledge_failure
+            knowledge_payload = {
+                "status": "failed-closed",
+                "action": "noop",
+                "reason_code": knowledge_failure,
+                "cited_entry_ids": [],
+            }
         participant_goal_code: str | None = None
         participant_goal_payload: dict[str, object] | None = None
         if participant_goal_candidate is not None:

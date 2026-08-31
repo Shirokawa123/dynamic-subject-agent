@@ -17,7 +17,6 @@ from dynamic_subject_agent.knowledge_entries import (
 )
 from dynamic_subject_agent.runtime import (
     CognitionEngine,
-    CognitionFailedClosed,
     CognitionRuntimeView,
     CognitiveProposal,
     CyclePlan,
@@ -25,7 +24,20 @@ from dynamic_subject_agent.runtime import (
     ExpressionCandidate,
     M0_A_PROVIDER_AUTHORITY,
 )
+from dynamic_subject_agent.model_gateway import (
+    ModelGateway,
+    ModelGatewayFailure,
+    ModelResult,
+    ModelTask,
+    ModelTaskKind,
+    ProviderAdapter,
+    ProviderCapabilities,
+    StructuredOutputMode,
+)
 from dynamic_subject_agent.timeline import SubjectCommand
+
+
+_NO_KNOWLEDGE_EXPRESSION = "（无知识相关内容）"
 
 
 @dataclass(frozen=True)
@@ -45,6 +57,30 @@ class KnowledgeProviderResult:
     experience_summary: str
     reply_text: str
     language: str
+
+
+class KnowledgeProviderAdapter(ProviderAdapter):
+    def __init__(self, *, provider: object) -> None:
+        if not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose analyze(request)")
+        provider_id = getattr(provider, "provider_authority", M0_A_PROVIDER_AUTHORITY)
+        if not isinstance(provider_id, str) or not provider_id:
+            raise TypeError("provider_authority must be a non-empty string")
+        self._provider = provider
+        self.capabilities = ProviderCapabilities(
+            provider_id=provider_id,
+            model_id=str(getattr(provider, "model_id", type(provider).__name__)),
+            local=bool(getattr(provider, "local", False)),
+            structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+        )
+
+    def invoke(self, task: ModelTask) -> ModelResult:
+        if (
+            task.kind is not ModelTaskKind.KNOWLEDGE_ANALYSIS
+            or not isinstance(task.payload, KnowledgeProviderRequest)
+        ):
+            raise ModelGatewayFailure("knowledge-task-invalid")
+        return ModelResult(task.kind, self._provider.analyze(task.payload))
 
 
 class ControlledKnowledgeCognition(CognitionEngine):
@@ -67,7 +103,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
             raise TypeError("provider_authority must be a non-empty string")
         self.provider_authority = provider_authority
         self.test_only = bool(getattr(provider, "test_only", True))
-        self._provider = provider
+        self._gateway = ModelGateway(KnowledgeProviderAdapter(provider=provider))
 
     def propose(
         self,
@@ -83,17 +119,11 @@ class ControlledKnowledgeCognition(CognitionEngine):
             candidate_entries=candidates,
         )
         try:
-            result = self._provider.analyze(request)
+            result = self._gateway.execute(
+                ModelTask(ModelTaskKind.KNOWLEDGE_ANALYSIS, request)
+            ).value
         except Exception as error:
-            provider_code = getattr(getattr(error, "code", None), "name", None)
-            detail = "Knowledge provider failed without a usable proposal"
-            if provider_code:
-                detail = f"{detail} (provider code: {provider_code})"
-            raise CognitionFailedClosed(
-                "provider",
-                "knowledge-provider-failed",
-                detail,
-            ) from error
+            return self._failure(context, basis, command, "knowledge-provider-failed")
         candidate_ids = {entry.entry_id for entry in candidates}
         if (
             not isinstance(result, KnowledgeProviderResult)
@@ -104,10 +134,11 @@ class ControlledKnowledgeCognition(CognitionEngine):
             or not result.reply_text.strip()
             or result.language != command.language
         ):
-            raise CognitionFailedClosed(
-                "provider",
+            return self._failure(
+                context,
+                basis,
+                command,
                 "knowledge-provider-invalid-output",
-                "Knowledge provider returned an invalid bounded result",
             )
         citation_candidate: ExperienceChangeCandidate | None = None
         if result.proposal.citation_ids:
@@ -155,6 +186,38 @@ class ControlledKnowledgeCognition(CognitionEngine):
             ),
         )
 
+    def _failure(
+        self,
+        context: CognitionRuntimeView,
+        basis: ExperienceBasis,
+        command: SubjectCommand,
+        code: str,
+    ) -> CognitiveProposal:
+        base = self._bounded_noop_proposal(
+            context=context,
+            basis=basis,
+            experience_summary="Knowledge 本轮失败关闭。",
+            expression_candidate=ExpressionCandidate(
+                _NO_KNOWLEDGE_EXPRESSION,
+                command.language,
+            ),
+        )
+        return replace(
+            base,
+            impact_envelope=replace(
+                base.impact_envelope,
+                experience=ExperienceAdjudicationRequest(
+                    basis=basis,
+                    current_state=ExperienceReadView(
+                        verified_prefix_digest=basis.verified_prefix_digest,
+                        memory_trace_refs=(),
+                    ),
+                    candidates=(),
+                    knowledge_failure_code=code,
+                ),
+            ),
+        )
+
     @classmethod
     def for_profile(
         cls,
@@ -177,6 +240,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
 
 __all__ = [
     "ControlledKnowledgeCognition",
+    "KnowledgeProviderAdapter",
     "KnowledgeProposal",
     "KnowledgeProviderRequest",
     "KnowledgeProviderResult",

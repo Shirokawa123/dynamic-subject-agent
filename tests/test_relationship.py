@@ -216,14 +216,16 @@ def test_relationship_cognition_rejects_non_verbatim_evidence() -> None:
         provenance="project-original",
     )
 
-    with pytest.raises(Exception) as exc_info:
-        cognition.propose(
-            plan=_plan_stub(_basis_stub()),
-            context=context,
-            command=command,
-            basis=_basis_stub(),
-        )
-    assert getattr(exc_info.value, "code", "") == "relationship-provider-invalid-output"
+    basis = _basis_stub()
+    proposal = cognition.propose(
+        plan=_plan_stub(basis),
+        context=context,
+        command=command,
+        basis=basis,
+    )
+    request = proposal.impact_envelope.relationship
+    assert request.failure_code == "relationship-provider-invalid-output"
+    assert request.candidates == ()
 
 
 def _plan_stub(basis):

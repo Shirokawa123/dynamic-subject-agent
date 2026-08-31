@@ -70,6 +70,7 @@ class RelationshipAdjudicationRequest:
     relationship_target_id: str
     current_state: RelationshipReadView
     candidates: tuple[RelationshipChangeCandidate, ...]
+    failure_code: str | None = None
 
 
 class RelationshipDomain:
@@ -122,6 +123,51 @@ class RelationshipDomain:
                     "candidate-target-mismatch",
                     "Relationship candidate names a different target",
                 )
+        failure = request.failure_code
+        if failure is not None and (
+            failure
+            not in {
+                "relationship-provider-failed",
+                "relationship-provider-invalid-output",
+            }
+            or candidates
+            or not request.relationship_enabled
+        ):
+            raise DomainAdjudicationFailedClosed(
+                "relationship",
+                "relationship-failure-invalid",
+                "Relationship failure must be typed, enabled and carry no candidate",
+            )
+        if failure is not None:
+            decision = CandidateDecisionRecord(
+                decision_id=stable_id(basis, "relationship-decision"),
+                scope="relationship",
+                status=DecisionStatus.NO_OP,
+                reason=json.dumps(
+                    {
+                        "code": failure,
+                        "provenance": basis.source_provenance,
+                        "relationship": {
+                            "status": "failed-closed",
+                            "event": "",
+                            "evidence_quote": "",
+                            "source_user_message_id": basis.operation_id,
+                            "policy_version": "relationship-stance-v1",
+                            "reason_code": failure,
+                        },
+                    },
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                    sort_keys=True,
+                ),
+                rule_version="relationship-1.0",
+                actual_revision_ids=(),
+            )
+            return RelationshipDomainOutcome(
+                outcome_id=stable_id(basis, "relationship-outcome"),
+                decision=decision,
+                relationship_target_id=request.relationship_target_id,
+            )
         if candidates:
             return self._adjudicate_stance_event(basis, candidates[0])
         reason_code = (

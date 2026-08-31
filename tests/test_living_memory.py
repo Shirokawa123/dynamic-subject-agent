@@ -577,9 +577,10 @@ def test_provider_failure_is_failed_closed_without_memory_write(tmp_path: Path) 
     finally:
         composition.close()
 
-    assert failed.status is ApplicationOperationStatus.FAILED_CLOSED
+    assert failed.status is ApplicationOperationStatus.TERMINAL
     assert failed.projection is not None
-    assert failed.projection.failure_code == "living-memory-provider-failed"
+    assert failed.projection.living_memory_status == "failed-closed"
+    assert failed.projection.failure_code is None
     assert isinstance(result.projection, LivingMemoryApplicationProjection)
     assert result.projection.memories == ()
 
@@ -612,10 +613,11 @@ def test_foreign_recall_id_fails_closed_before_reply_publication(
     finally:
         composition.close()
 
-    assert failed.status is ApplicationOperationStatus.FAILED_CLOSED
+    assert failed.status is ApplicationOperationStatus.TERMINAL
     assert failed.projection is not None
-    assert failed.projection.failure_code == "living-memory-recall-invalid"
-    assert failed.projection.expression_text is None
+    assert failed.projection.living_memory_status == "failed-closed"
+    assert failed.projection.failure_code is None
+    assert failed.projection.expression_text
 
 
 def test_minimal_cli_routes_through_facade_and_shows_memory_source(

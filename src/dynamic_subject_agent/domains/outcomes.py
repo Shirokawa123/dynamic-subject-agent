@@ -87,7 +87,8 @@ def _validate_reasoned_noop(
         memory = reason["living_memory"]
         if (
             not isinstance(memory, dict)
-            or memory.get("status") not in {"accepted", "rejected", "no-op"}
+            or memory.get("status")
+            not in {"accepted", "rejected", "no-op", "failed-closed"}
         ):
             raise DomainOutcomeSetRejected(
                 "invalid-living-memory-reason",
@@ -97,7 +98,8 @@ def _validate_reasoned_noop(
         knowledge = reason["knowledge"]
         if (
             not isinstance(knowledge, dict)
-            or knowledge.get("status") not in {"accepted", "rejected"}
+            or knowledge.get("status")
+            not in {"accepted", "rejected", "failed-closed"}
             or not isinstance(knowledge.get("cited_entry_ids"), list)
         ):
             raise DomainOutcomeSetRejected(
@@ -122,7 +124,8 @@ def _validate_reasoned_noop(
         relationship = reason["relationship"]
         if (
             not isinstance(relationship, dict)
-            or relationship.get("status") not in {"accepted", "rejected", "no-update"}
+            or relationship.get("status")
+            not in {"accepted", "rejected", "no-update", "failed-closed"}
             or not isinstance(relationship.get("event"), str)
         ):
             raise DomainOutcomeSetRejected(

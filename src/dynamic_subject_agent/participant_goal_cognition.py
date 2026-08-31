@@ -283,13 +283,13 @@ def route_participant_goal_deterministically(
             experience_summary="Python 直接查询参与者承诺。",
         )
     patterns = (
-        (r"^我的目标改为(.+)$", "revise", "goal", goals, "active"),
-        (r"^我的承诺改为(.+)$", "revise", "commitment", commitments, "active"),
-        (r"^我的目标是(.+)$", "create", "goal", (), "active"),
-        (r"^我承诺(.+)$", "create", "commitment", (), "active"),
+        (r"^我的目标改为([^。；;！？!?]+)(?:[。；;！？!?]|$)", "revise", "goal", goals, "active"),
+        (r"^我的承诺改为([^。；;！？!?]+)(?:[。；;！？!?]|$)", "revise", "commitment", commitments, "active"),
+        (r"^我的目标是([^。；;！？!?]+)(?:[。；;！？!?]|$)", "create", "goal", (), "active"),
+        (r"^我承诺([^。；;！？!?]+)(?:[。；;！？!?]|$)", "create", "commitment", (), "active"),
     )
     for pattern, action, kind, candidates, next_status in patterns:
-        match = re.fullmatch(pattern, bare)
+        match = re.match(pattern, text)
         if match is None:
             continue
         terms = match.group(1).strip()
@@ -303,7 +303,7 @@ def route_participant_goal_deterministically(
                 terms=terms,
                 target_ref=target_ref,
                 next_status=next_status,
-                evidence_quote=bare,
+                evidence_quote=match.group(0).rstrip("。；;！？!? "),
             ),
             selected_turn_refs=(),
             reply_text="我会按你明确说出的内容记录这项目标或承诺变化。",

@@ -4,7 +4,7 @@
 
 Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果和查询投影。`open_local_product(config, cognition=...)` 是唯一 production composition root，负责隐藏身份创建、Studio、QRI、RuntimeHost、provider Adapter、恢复和关闭顺序。
 
-模型任务通过 `ModelGateway.execute(ModelTask)` 进入 provider-neutral seam。`ProviderAdapter` 声明 provider/model identity、本地/远程与 strict-schema/tool-call/json-object/text 能力；DeepSeek 只是当前生产 Adapter。运行中不做隐式 provider fallback。
+六项模型任务全部通过 `ModelGateway.execute(ModelTask)` 进入 provider-neutral seam。每个能力 Adapter 独立构造最小投影；`ProviderAdapter` 声明 provider/model identity、本地/远程与 strict-schema/tool-call/json-object/text 能力。DeepSeek 只是当前生产 Adapter，运行中不做隐式 provider fallback。
 
 ## 深 Module
 
@@ -24,7 +24,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 
 模型输出只能成为候选。Domain 独立返回 accepted、rejected、NoOp 或 FailedClosed；完整 Outcome 全可见或全不可见。effect 只消费已提交引用，失败不会重跑经历。
 
-明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。单项 provider 失败形成该能力的 FailedClosed，不阻断无依赖的其他 Domain 与表达。
+明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项单项 Provider 失败都形成所属 Domain 的 FailedClosed 片段，与其他候选一起进入同一个原子 Outcome；失败项不写状态，也不阻断无依赖的其他 Domain 与表达。
 
 ## 数据
 

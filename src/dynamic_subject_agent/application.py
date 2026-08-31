@@ -138,7 +138,9 @@ class AuthorizedOperationProjection:
     failure_code: str | None
     living_memory_status: str | None = None
     living_memory_recalled_ids: tuple[str, ...] = ()
+    knowledge_status: str | None = None
     knowledge_citation_ids: tuple[str, ...] = ()
+    relationship_status: str | None = None
     relationship_event: str | None = None
     participant_goal_commitment_status: str | None = None
     participant_goal_commitment_action: str | None = None
@@ -706,8 +708,12 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             living_memory_recalled_ids=(
                 result.outcome.experience_outcome.living_memory_recalled_ids
             ),
+            knowledge_status=result.outcome.experience_outcome.knowledge_status,
             knowledge_citation_ids=(
                 result.outcome.experience_outcome.knowledge_citation_ids
+            ),
+            relationship_status=(
+                result.outcome.relationship_outcome.relationship_status
             ),
             relationship_event=(
                 result.outcome.relationship_outcome.relationship_event or None

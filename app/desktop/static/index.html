@@ -305,6 +305,18 @@ async function send() {
         span.appendChild(el("span", "tag", "记忆更新"));
         notes.appendChild(span);
       }
+      if (turn.living_memory_status === "failed-closed") {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "记忆"));
+        span.appendChild(document.createTextNode("failed-closed"));
+        notes.appendChild(span);
+      }
+      if (turn.knowledge_status === "failed-closed") {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "知识"));
+        span.appendChild(document.createTextNode("failed-closed"));
+        notes.appendChild(span);
+      }
       if (turn.new_memory_kind) {
         const span = el("span");
         span.appendChild(document.createTextNode(
@@ -319,6 +331,12 @@ async function send() {
         if (turn.relationship_event === "stable_positive_interaction") {
           stanceAccepted += 1;
         }
+      }
+      if (turn.relationship_status === "failed-closed") {
+        const span = el("span");
+        span.appendChild(el("span", "tag", "立场"));
+        span.appendChild(document.createTextNode("failed-closed"));
+        notes.appendChild(span);
       }
       if (turn.participant_goal_status) {
         const span = el("span");

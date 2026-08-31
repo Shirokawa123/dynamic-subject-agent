@@ -254,6 +254,8 @@ class AppState:
             "expression": projection.expression_text,
             "living_memory_status": projection.living_memory_status,
             "recalled_ids": list(projection.living_memory_recalled_ids),
+            "knowledge_status": projection.knowledge_status,
+            "relationship_status": projection.relationship_status,
             "relationship_event": projection.relationship_event,
             "participant_goal_status": (
                 projection.participant_goal_commitment_status

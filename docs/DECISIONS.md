@@ -27,3 +27,7 @@
 ## D-007：Medium State 由独立经历证据裁决
 
 2026-08-31，迁移 settled/concerned/encouraged 闭集：Provider 每轮只从当前消息提议 concern、encouragement 或 settling signal，Python 以最近 7 个已完成 Experience、至少 2 条独立逐字证据、2 轮冷却和旧证据不可复用规则裁决转换。直接状态命令不构成证据；失败保持既有 baseline 且不终止整轮。
+
+## D-008：六项能力原子组合且故障局部化
+
+2026-08-31，六项能力各自通过 ModelGateway 与独立最小投影提出候选；组合层只合并候选、typed failure 和有依据的表达，四个 Domain 独立裁决后由单写入者一次 Publication。Memory、Knowledge、Relationship 与目标/Situated/Medium 一致：Provider 故障形成所属能力 FailedClosed，不携带候选、不写该项状态，也不取消其他无依赖能力。

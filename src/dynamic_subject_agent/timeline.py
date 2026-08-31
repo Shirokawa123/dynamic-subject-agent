@@ -103,6 +103,7 @@ class LivingMemoryDecisionStatus(str, Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     NO_OP = "no-op"
+    FAILED_CLOSED = "failed-closed"
 
 
 class EffectDispatchState(str, Enum):
@@ -954,6 +955,18 @@ class ExperienceDomainOutcome:
             return ()
 
     @property
+    def knowledge_status(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get("knowledge", {}).get("status")
+            return (
+                value
+                if value in {"accepted", "rejected", "failed-closed"}
+                else None
+            )
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
     def participant_goal_commitment_status(self) -> str | None:
         try:
             value = json.loads(self.decision.reason).get(
@@ -1102,6 +1115,18 @@ class RelationshipDomainOutcome:
             return str(relationship.get("event", ""))
         except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
             return ""
+
+    @property
+    def relationship_status(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get("relationship", {}).get("status")
+            return (
+                value
+                if value in {"accepted", "rejected", "no-update", "failed-closed"}
+                else None
+            )
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
 
 @dataclass(frozen=True)
 class RevisionSet:

@@ -1,7 +1,7 @@
 """Composite cognition: memory, knowledge, participant goals and stance.
 
-Each sub-cognition keeps its own authorized provider projection; no projection
-merging happens. Any sub-cognition failure fails the whole turn closed.
+Each sub-cognition keeps its own authorized provider projection and ModelGateway
+task; no projection merging happens. A typed sub-cognition failure remains local.
 Expression selection (Python-adjudicated): a proposed knowledge citation uses
 the knowledge reply; otherwise the memory reply. The relationship sub-cognition
 never speaks — it only contributes stance events.
@@ -35,6 +35,11 @@ _CROSS_DOMAIN_UNAVAILABLE_MARKERS = (
     "无法回答",
     "需要你告诉",
     "需要你提供",
+)
+_RELATIONSHIP_CLAIM_MARKERS = (
+    "最好的朋友",
+    "已经是朋友",
+    "关系已经确定",
 )
 
 
@@ -231,13 +236,18 @@ class ControlledCompositeCognition(CognitionEngine):
         if relationship_event == "relationship_claim":
             experience_request = replace(
                 experience_request,
-                candidates=(),
-                selected_participant_goal_record_ids=(),
-                participant_goal_failure_code=None,
-                participant_goal_expression_priority=False,
+                candidates=tuple(
+                    candidate
+                    for candidate in experience_request.candidates
+                    if not (
+                        candidate.memory_action is not None
+                        and any(
+                            marker in candidate.evidence_quote
+                            for marker in _RELATIONSHIP_CLAIM_MARKERS
+                        )
+                    )
+                ),
             )
-            participant_goal_relevant = False
-            participant_goal_expression_priority = False
             memory_proposal = replace(
                 memory_proposal,
                 experience_summary=(
@@ -259,6 +269,7 @@ class ControlledCompositeCognition(CognitionEngine):
                     experience_request.candidates + knowledge_request.candidates
                 ),
                 knowledge_candidates=knowledge_request.knowledge_candidates,
+                knowledge_failure_code=knowledge_request.knowledge_failure_code,
             )
         subject_state_request = (
             situated_proposal.impact_envelope.subject_state
@@ -290,15 +301,22 @@ class ControlledCompositeCognition(CognitionEngine):
         )
 
         knowledge_cited = bool(
-            experience_request.candidates
-            and experience_request.candidates[-1].knowledge_citation_ids
-            and knowledge_proposal is not None
+            knowledge_proposal is not None
+            and any(
+                candidate.knowledge_citation_ids
+                for candidate in knowledge_proposal.impact_envelope.experience.candidates
+            )
         )
         memory_recalled = any(
             candidate.recalled_memory_ids
-            for candidate in experience_request.candidates
+            for candidate in memory_proposal.impact_envelope.experience.candidates
         )
-        if knowledge_cited and memory_recalled:
+        memory_changed = any(
+            candidate.memory_action in {"create", "revise"}
+            for candidate in memory_proposal.impact_envelope.experience.candidates
+        )
+        memory_relevant = memory_recalled or memory_changed
+        if knowledge_cited and memory_relevant:
             expression = ExpressionCandidate(
                 text=(
                     f"{_supported_clauses(memory_proposal.expression_candidate.text)}\n\n"
@@ -316,11 +334,13 @@ class ControlledCompositeCognition(CognitionEngine):
             goal_text = _supported_clauses(
                 participant_goal_proposal.expression_candidate.text
             )
-            if participant_goal_expression_priority:
-                expression = participant_goal_proposal.expression_candidate
-            elif knowledge_cited or memory_recalled:
+            if knowledge_cited or memory_relevant:
                 expression = ExpressionCandidate(
-                    text=f"{_supported_clauses(expression.text)}\n\n{goal_text}",
+                    text=(
+                        f"{goal_text}\n\n{_supported_clauses(expression.text)}"
+                        if participant_goal_expression_priority
+                        else f"{_supported_clauses(expression.text)}\n\n{goal_text}"
+                    ),
                     language=expression.language,
                 )
             else:
@@ -332,7 +352,7 @@ class ControlledCompositeCognition(CognitionEngine):
             situated_text = _supported_clauses(
                 situated_proposal.expression_candidate.text
             )
-            if knowledge_cited or memory_recalled or participant_goal_relevant:
+            if knowledge_cited or memory_relevant or participant_goal_relevant:
                 expression = ExpressionCandidate(
                     text=f"{_supported_clauses(expression.text)}\n\n{situated_text}",
                     language=expression.language,
@@ -346,7 +366,7 @@ class ControlledCompositeCognition(CognitionEngine):
             medium_text = _supported_clauses(medium_proposal.expression_candidate.text)
             if (
                 knowledge_cited
-                or memory_recalled
+                or memory_relevant
                 or participant_goal_relevant
                 or situated_proposal is not None
                 and situated_proposal.impact_envelope.subject_state.situated_expression_active

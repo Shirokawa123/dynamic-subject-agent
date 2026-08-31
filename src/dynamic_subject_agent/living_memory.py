@@ -13,7 +13,6 @@ from dynamic_subject_agent.domains import (
 )
 from dynamic_subject_agent.runtime import (
     CognitionEngine,
-    CognitionFailedClosed,
     CognitionRuntimeView,
     CognitiveProposal,
     CyclePlan,
@@ -54,6 +53,16 @@ _HISTORICAL_RECALL_MARKERS = (
     "错误",
     "更正前",
     "改之前",
+)
+from dynamic_subject_agent.model_gateway import (
+    ModelGateway,
+    ModelGatewayFailure,
+    ModelResult,
+    ModelTask,
+    ModelTaskKind,
+    ProviderAdapter,
+    ProviderCapabilities,
+    StructuredOutputMode,
 )
 _EARLIEST_RECALL_MARKERS = ("一开始", "最初")
 
@@ -109,6 +118,30 @@ class LivingMemoryProviderResult:
     language: str
 
 
+class LivingMemoryProviderAdapter(ProviderAdapter):
+    def __init__(self, *, provider: object) -> None:
+        if not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose analyze(request)")
+        provider_id = getattr(provider, "provider_authority", M0_A_PROVIDER_AUTHORITY)
+        if not isinstance(provider_id, str) or not provider_id:
+            raise TypeError("provider_authority must be a non-empty string")
+        self._provider = provider
+        self.capabilities = ProviderCapabilities(
+            provider_id=provider_id,
+            model_id=str(getattr(provider, "model_id", type(provider).__name__)),
+            local=bool(getattr(provider, "local", False)),
+            structured_output_modes=(StructuredOutputMode.JSON_OBJECT,),
+        )
+
+    def invoke(self, task: ModelTask) -> ModelResult:
+        if (
+            task.kind is not ModelTaskKind.LIVING_MEMORY_ANALYSIS
+            or not isinstance(task.payload, LivingMemoryProviderRequest)
+        ):
+            raise ModelGatewayFailure("living-memory-task-invalid")
+        return ModelResult(task.kind, self._provider.analyze(task.payload))
+
+
 class ControlledLivingMemoryCognition(CognitionEngine):
     """No-write cognition seam; only ExperienceDomain may accept a proposal."""
 
@@ -129,7 +162,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             raise TypeError("provider_authority must be a non-empty string")
         self.provider_authority = provider_authority
         self.test_only = bool(getattr(provider, "test_only", True))
-        self._provider = provider
+        self._gateway = ModelGateway(LivingMemoryProviderAdapter(provider=provider))
 
     @classmethod
     def for_profile(
@@ -171,13 +204,17 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             ),
         )
         try:
-            result = self._provider.analyze(request)
+            result = self._gateway.execute(
+                ModelTask(ModelTaskKind.LIVING_MEMORY_ANALYSIS, request)
+            ).value
         except Exception as error:
-            raise CognitionFailedClosed(
-                "provider",
+            return self._failure(
+                context,
+                command,
+                basis,
+                active,
                 "living-memory-provider-failed",
-                "Living Memory provider failed without a usable proposal",
-            ) from error
+            )
         if (
             not isinstance(result, LivingMemoryProviderResult)
             or not isinstance(result.proposal, LivingMemoryProposal)
@@ -186,10 +223,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             or not result.reply_text.strip()
             or result.proposal.memory_kind not in MEMORY_KINDS
         ):
-            raise CognitionFailedClosed(
-                "provider",
+            return self._failure(
+                context,
+                command,
+                basis,
+                active,
                 "living-memory-provider-invalid-output",
-                "Living Memory provider returned an invalid bounded result",
             )
         summary = result.experience_summary.strip() or (
             f"召回 {len(result.proposal.recalled_memory_ids)} 条记忆。"
@@ -202,10 +241,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             not isinstance(recalled_ids, tuple)
             or any(memory_id not in active_ids for memory_id in recalled_ids)
         ):
-            raise CognitionFailedClosed(
-                "provider",
-                "living-memory-recall-invalid",
-                "Living Memory recall must name only active projected records",
+            return self._failure(
+                context,
+                command,
+                basis,
+                active,
+                "living-memory-provider-invalid-output",
             )
         historical_memory = _historical_memory_for_recalled_revision(
             command.utterance,
@@ -270,11 +311,48 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             ),
         )
 
+    def _failure(
+        self,
+        context: CognitionRuntimeView,
+        command: SubjectCommand,
+        basis: ExperienceBasis,
+        active: tuple[LivingMemoryRecord, ...],
+        code: str,
+    ) -> CognitiveProposal:
+        base = self._bounded_noop_proposal(
+            context=context,
+            basis=basis,
+            experience_summary="Living Memory 本轮失败关闭。",
+            expression_candidate=ExpressionCandidate(
+                text="（无记忆相关内容）",
+                language=command.language,
+            ),
+        )
+        return replace(
+            base,
+            impact_envelope=replace(
+                base.impact_envelope,
+                experience=ExperienceAdjudicationRequest(
+                    basis=basis,
+                    current_state=ExperienceReadView(
+                        verified_prefix_digest=basis.verified_prefix_digest,
+                        memory_trace_refs=tuple(memory.memory_id for memory in active),
+                        active_memories=active,
+                    ),
+                    candidates=(),
+                    current_user_message=command.utterance,
+                    source_user_message_id=basis.operation_id,
+                    living_memory_failure_code=code,
+                ),
+            ),
+        )
+
 
 __all__ = [
     "ACTIVE_MEMORY_LIMIT",
     "MEMORY_KINDS",
     "ControlledLivingMemoryCognition",
+    "LivingMemoryProviderAdapter",
     "LivingMemoryAction",
     "LivingMemoryProposal",
     "LivingMemoryProviderMemory",

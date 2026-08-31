@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import importlib.util
 from pathlib import Path
 from uuid import uuid4
 
@@ -31,6 +32,12 @@ COMBINED_MESSAGE = "请同时告诉我生日，以及创刊号要用什么纸。
 CLAIM_MESSAGE = "我们现在已经是最好的朋友了吧？"
 UNCOVERED_MESSAGE = "请告诉我今天北京的实时天气和气温。"
 THANKS_MESSAGE = "谢谢你把样张提前跟印刷厂确认好了。"
+KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE = "我的生日是四月五号。创刊号要用什么纸？"
+SIX_CAPABILITY_MESSAGE = (
+    "我的目标是今年通过 N1；我的生日是四月五号。"
+    "创刊号要用什么纸？谢谢你一直帮我。"
+    "我现在有点紧张。最近压力很大。"
+)
 
 
 def _composite_provider_response(memory_content, memory_action, memory_recalled):
@@ -65,10 +72,11 @@ class _FakeMemoryProvider:
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
     test_only = False
 
-    def __init__(self) -> None:
+    def __init__(self, *, fail_on_call: bool = False) -> None:
         self.requests = []
         self.memory_id = str(uuid4())
         self.created = False
+        self.fail_on_call = fail_on_call
 
     def analyze(self, request):
         from dynamic_subject_agent.living_memory import (
@@ -78,6 +86,8 @@ class _FakeMemoryProvider:
         )
 
         self.requests.append(request)
+        if self.fail_on_call:
+            raise RuntimeError("memory provider outage")
         if "最好的朋友" in request.current_user_message:
             return LivingMemoryProviderResult(
                 proposal=LivingMemoryProposal(
@@ -163,8 +173,9 @@ class _FakeRelationshipProvider:
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
     test_only = False
 
-    def __init__(self) -> None:
+    def __init__(self, *, fail_on_call: bool = False) -> None:
         self.requests = []
+        self.fail_on_call = fail_on_call
 
     def analyze(self, request):
         from dynamic_subject_agent.relationship import (
@@ -173,8 +184,12 @@ class _FakeRelationshipProvider:
         )
 
         self.requests.append(request)
+        if self.fail_on_call:
+            raise RuntimeError("relationship provider outage")
         message = request.current_user_message
-        if "谢谢" in message:
+        if "谢谢你一直帮我" in message:
+            event, quote = "stable_positive_interaction", "谢谢你一直帮我"
+        elif "谢谢" in message:
             event, quote = "stable_positive_interaction", (
                 "把样张提前跟印刷厂确认好了"
             )
@@ -195,7 +210,16 @@ class _NoopTransport(DeepSeekTransport):
         raise AssertionError("composite fake providers must not hit the network")
 
 
-def _composite(tmp_path: Path, *, knowledge_fail_on_call: bool = False):
+def _composite(
+    tmp_path: Path,
+    *,
+    memory_fail_on_call: bool = False,
+    knowledge_fail_on_call: bool = False,
+    relationship_fail_on_call: bool = False,
+    participant_goal_gateway=None,
+    situated_gateway=None,
+    medium_gateway=None,
+):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.cognition import CredentialRef
     from dynamic_subject_agent.composite import ControlledCompositeCognition
@@ -203,13 +227,16 @@ def _composite(tmp_path: Path, *, knowledge_fail_on_call: bool = False):
     from dynamic_subject_agent.host import RuntimeHost
     from test_deepseek_controlled_route import _publish_deepseek_qri
 
-    memory = _FakeMemoryProvider()
+    memory = _FakeMemoryProvider(fail_on_call=memory_fail_on_call)
     knowledge = _FakeKnowledgeProvider(fail_on_call=knowledge_fail_on_call)
-    relationship = _FakeRelationshipProvider()
+    relationship = _FakeRelationshipProvider(fail_on_call=relationship_fail_on_call)
     cognition = ControlledCompositeCognition(
         memory_provider=memory,
         knowledge_provider=knowledge,
         relationship_provider=relationship,
+        participant_goal_gateway=participant_goal_gateway,
+        situated_gateway=situated_gateway,
+        medium_gateway=medium_gateway,
     )
     assert cognition.provider_authority == DEEPSEEK_PROVIDER_AUTHORITY_ID
 
@@ -387,17 +414,401 @@ def test_composite_memory_recall_survives_restart(tmp_path: Path) -> None:
     assert memory_second.requests[-1].active_memories, "重启后记忆必须仍在投影中"
 
 
-def test_composite_provider_failure_fails_whole_turn_closed(tmp_path: Path) -> None:
+def test_knowledge_failure_is_typed_while_memory_still_commits(tmp_path: Path) -> None:
     _, memory, knowledge, relationship, prepared, qri, timeline_id, composition = (
         _composite(tmp_path, knowledge_fail_on_call=True)
     )
     try:
-        hit = select_knowledge_candidates(KNOWLEDGE_MESSAGE)
+        hit = select_knowledge_candidates(KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE)
         assert hit, "前置：该问题必须命中知识检索"
-        terminal = _submit(composition, qri, timeline_id, KNOWLEDGE_MESSAGE, f"composite-{uuid4().hex}")
+        terminal = _submit(
+            composition,
+            qri,
+            timeline_id,
+            KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
     finally:
         composition.close()
 
-    assert terminal.status.value == "failed-closed"
+    assert terminal.status.value == "terminal"
     assert terminal.projection is not None
-    assert terminal.projection.expression_text is None
+    assert terminal.projection.living_memory_status == "accepted"
+    assert terminal.projection.knowledge_status == "failed-closed"
+    assert terminal.projection.knowledge_citation_ids == ()
+    assert terminal.projection.expression_text == "我记住了：你的生日是四月五号。"
+
+
+def test_memory_failure_is_typed_while_knowledge_still_commits(tmp_path: Path) -> None:
+    _, memory, knowledge, relationship, prepared, qri, timeline_id, composition = (
+        _composite(tmp_path, memory_fail_on_call=True)
+    )
+    try:
+        terminal = _submit(
+            composition,
+            qri,
+            timeline_id,
+            KNOWLEDGE_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert terminal.status.value == "terminal"
+    assert terminal.projection is not None
+    assert terminal.projection.living_memory_status == "failed-closed"
+    assert terminal.projection.knowledge_status == "accepted"
+    assert terminal.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
+    assert terminal.projection.expression_text.startswith("根据条目《创刊号规格》")
+
+
+def test_relationship_failure_is_typed_while_knowledge_still_commits(
+    tmp_path: Path,
+) -> None:
+    _, memory, knowledge, relationship, prepared, qri, timeline_id, composition = (
+        _composite(tmp_path, relationship_fail_on_call=True)
+    )
+    try:
+        terminal = _submit(
+            composition,
+            qri,
+            timeline_id,
+            KNOWLEDGE_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert terminal.status.value == "terminal"
+    assert terminal.projection is not None
+    assert terminal.projection.relationship_status == "failed-closed"
+    assert terminal.projection.relationship_event is None
+    assert terminal.projection.knowledge_status == "accepted"
+    assert terminal.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
+
+
+def test_one_turn_adjudicates_all_six_capabilities_through_facade(
+    tmp_path: Path,
+) -> None:
+    from dynamic_subject_agent.participant_goal_cognition import (
+        ParticipantGoalClassificationResult,
+        ParticipantGoalReplyResult,
+    )
+    from dynamic_subject_agent.participant_goals import (
+        ParticipantGoalCommitmentCandidate,
+    )
+    from test_medium_integration import _MediumProvider, _gateway as medium_gateway
+    from test_participant_goal_integration import (
+        _ScriptedParticipantGoalProvider,
+        _goal_gateway,
+    )
+    from test_situated_integration import _SituatedProvider, _gateway as situated_gateway
+
+    class _SixGoalProvider(_ScriptedParticipantGoalProvider):
+        def classify(self, request):
+            self.classification_requests.append(request)
+            return ParticipantGoalClassificationResult(
+                candidate=ParticipantGoalCommitmentCandidate(
+                    "create",
+                    "goal",
+                    "今年通过 N1",
+                    None,
+                    "active",
+                    "我的目标是今年通过 N1",
+                ),
+                selected_turn_refs=(),
+                experience_summary="参与者目标分类完成。",
+                language="zh",
+            )
+
+        def reply(self, request):
+            self.reply_requests.append(request)
+            return ParticipantGoalReplyResult("目标已按逐字证据处理。", "zh")
+
+    goal = _SixGoalProvider()
+    situated = _SituatedProvider()
+    medium = _MediumProvider()
+    (
+        _,
+        memory,
+        knowledge,
+        relationship,
+        prepared,
+        qri,
+        timeline_id,
+        composition,
+    ) = _composite(
+        tmp_path,
+        participant_goal_gateway=_goal_gateway(goal),
+        situated_gateway=situated_gateway(situated),
+        medium_gateway=medium_gateway(medium),
+    )
+    try:
+        from dynamic_subject_agent.timeline import SubjectCommand
+
+        command = SubjectCommand.contribute_utterance(
+            target_profile_id=qri.profile_id,
+            target_timeline_id=timeline_id,
+            declared_intent="ask-collaborator-status",
+            utterance=SIX_CAPABILITY_MESSAGE,
+            language="zh",
+            provenance="project-original",
+        )
+        key = f"composite-{uuid4().hex}"
+        receipt = composition.application.submit(command, idempotency_key=key)
+        turn = composition.application.wait(receipt.operation_ref, timeout_seconds=30)
+        replay_receipt = composition.application.submit(command, idempotency_key=key)
+        replay = composition.application.wait(
+            replay_receipt.operation_ref,
+            timeout_seconds=30,
+        )
+        host_location = composition.host_location
+    finally:
+        composition.close()
+
+    assert turn.status.value == "terminal"
+    assert turn.projection is not None
+    assert turn.projection.timeline_head_sequence == 1
+    assert replay.status.value == "terminal"
+    assert replay.projection.timeline_outcome_id == turn.projection.timeline_outcome_id
+    assert replay.projection.timeline_head_sequence == 1
+    assert turn.projection.living_memory_status == "accepted"
+    assert turn.projection.knowledge_status == "accepted"
+    assert turn.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
+    assert turn.projection.relationship_status == "accepted"
+    assert turn.projection.relationship_event == "stable_positive_interaction"
+    assert turn.projection.participant_goal_commitment_status == "accepted"
+    assert turn.projection.participant_goal_commitment_action == "create"
+    assert turn.projection.situated_state_status == "accepted"
+    assert turn.projection.situated_state_posture == "gentle"
+    assert turn.projection.medium_state_status == "rejected"
+    assert turn.projection.medium_state_baseline == "settled"
+    assert "四月五号" in turn.projection.expression_text
+    assert "创刊号规格" in turn.projection.expression_text
+    assert "目标" in turn.projection.expression_text
+    assert "gentle" in turn.projection.expression_text
+    assert "settled" in turn.projection.expression_text
+    assert "没有相关信息" not in turn.projection.expression_text
+
+    assert set(vars(memory.requests[-1])) == {
+        "current_user_message",
+        "active_memories",
+    }
+    assert set(vars(knowledge.requests[-1])) == {
+        "current_user_message",
+        "candidate_entries",
+    }
+    assert set(vars(relationship.requests[-1])) == {
+        "current_user_message",
+        "stance_summary",
+    }
+    assert goal.classification_requests == []
+    assert goal.reply_requests == []
+    assert set(vars(situated.classifications[-1])) == {
+        "current_user_message",
+        "active_state",
+        "policy_id",
+        "policy_version",
+        "policy_hash",
+    }
+    assert set(vars(medium.calls[-1])) == {
+        "current_user_message",
+        "policy_id",
+        "policy_version",
+        "policy_hash",
+    }
+
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        LivingMemoryApplicationProjection,
+        MediumStateApplicationProjection,
+        ParticipantGoalCommitmentApplicationProjection,
+        RelationshipApplicationProjection,
+        SituatedStateApplicationProjection,
+    )
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+
+    restarted = compose_application(
+        m0_root=prepared.experiment_base,
+        studio_location=prepared.location,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+        host_location=host_location,
+        _cognition=ControlledCompositeCognition(
+            memory_provider=_FakeMemoryProvider(),
+            knowledge_provider=_FakeKnowledgeProvider(),
+            relationship_provider=_FakeRelationshipProvider(),
+            participant_goal_gateway=_goal_gateway(_SixGoalProvider()),
+            situated_gateway=situated_gateway(_SituatedProvider()),
+            medium_gateway=medium_gateway(_MediumProvider()),
+        ),
+        relationship_mode="dynamic",
+    )
+    try:
+        def query(kind):
+            return restarted.application.query(
+                ApplicationQuery(kind, qri.profile_id, timeline_id)
+            ).projection
+
+        memories = query(ApplicationQueryKind.LIVING_MEMORY)
+        relationship_state = query(ApplicationQueryKind.RELATIONSHIP)
+        goals = query(ApplicationQueryKind.PARTICIPANT_GOALS)
+        situated_state = query(ApplicationQueryKind.SITUATED_STATE)
+        medium_state = query(ApplicationQueryKind.MEDIUM_STATE)
+    finally:
+        restarted.close()
+
+    assert isinstance(memories, LivingMemoryApplicationProjection)
+    assert [item.content for item in memories.memories] == [BIRTHDAY_QUOTE]
+    assert isinstance(relationship_state, RelationshipApplicationProjection)
+    assert relationship_state.interactions[0].event == "stable_positive_interaction"
+    assert isinstance(goals, ParticipantGoalCommitmentApplicationProjection)
+    assert [(item.terms, item.status) for item in goals.records] == [
+        ("今年通过 N1", "active")
+    ]
+    assert isinstance(situated_state, SituatedStateApplicationProjection)
+    assert situated_state.state is not None
+    assert situated_state.state.posture == "gentle"
+    assert isinstance(medium_state, MediumStateApplicationProjection)
+    assert (medium_state.state.baseline, medium_state.state.version) == ("settled", 0)
+
+
+@pytest.mark.parametrize(
+    ("failed_capability", "projection_field"),
+    (
+        ("participant-goal", "participant_goal_commitment_status"),
+        ("situated", "situated_state_status"),
+        ("medium", "medium_state_status"),
+    ),
+)
+def test_each_model_gateway_failure_isolated_from_knowledge(
+    tmp_path: Path,
+    failed_capability: str,
+    projection_field: str,
+) -> None:
+    from test_medium_integration import _MediumProvider, _gateway as medium_gateway
+    from test_participant_goal_integration import (
+        _ScriptedParticipantGoalProvider,
+        _goal_gateway,
+    )
+    from test_situated_integration import _SituatedProvider, _gateway as situated_gateway
+
+    goal_gateway = None
+    situated = None
+    medium = None
+    if failed_capability == "participant-goal":
+        goal_gateway = _goal_gateway(
+            _ScriptedParticipantGoalProvider(fail_classify=True)
+        )
+    elif failed_capability == "situated":
+        situated = situated_gateway(_SituatedProvider(fail_after=0))
+    else:
+        medium = medium_gateway(_MediumProvider(fail_after=0))
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        qri,
+        timeline_id,
+        composition,
+    ) = _composite(
+        tmp_path,
+        participant_goal_gateway=goal_gateway,
+        situated_gateway=situated,
+        medium_gateway=medium,
+    )
+    try:
+        turn = _submit(
+            composition,
+            qri,
+            timeline_id,
+            KNOWLEDGE_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert turn.status.value == "terminal"
+    assert turn.projection is not None
+    assert getattr(turn.projection, projection_field) == "failed-closed"
+    assert turn.projection.knowledge_status == "accepted"
+    assert turn.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
+    assert turn.projection.expression_text.startswith("根据条目《创刊号规格》")
+
+
+def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:
+    from dynamic_subject_agent.local_product import OpenedLocalProduct
+
+    _, _, _, _, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        knowledge_fail_on_call=True,
+        relationship_fail_on_call=True,
+    )
+    product = OpenedLocalProduct(
+        composition=composition,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+    )
+    path = Path(__file__).resolve().parents[1] / "app" / "desktop" / "server.py"
+    spec = importlib.util.spec_from_file_location("six_capability_desktop", path)
+    assert spec is not None and spec.loader is not None
+    server = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(server)
+    state = server.AppState(product)
+    try:
+        turn = state.submit_turn(KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE)
+    finally:
+        product.close()
+
+    assert turn["ok"] is True
+    assert turn["living_memory_status"] == "accepted"
+    assert turn["knowledge_status"] == "failed-closed"
+    assert turn["relationship_status"] == "failed-closed"
+    assert turn["relationship_event"] is None
+    assert turn["expression"] == "我记住了：你的生日是四月五号。"
+
+
+def test_relationship_claim_does_not_erase_independent_goal(tmp_path: Path) -> None:
+    from test_participant_goal_integration import (
+        _ScriptedParticipantGoalProvider,
+        _goal_gateway,
+    )
+
+    message = "我的目标是今年通过 N1。我们现在已经是最好的朋友了吧？"
+    (
+        _,
+        _,
+        _,
+        _,
+        _,
+        qri,
+        timeline_id,
+        composition,
+    ) = _composite(
+        tmp_path,
+        participant_goal_gateway=_goal_gateway(_ScriptedParticipantGoalProvider()),
+    )
+    try:
+        turn = _submit(
+            composition,
+            qri,
+            timeline_id,
+            message,
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert turn.status.value == "terminal"
+    assert turn.projection is not None
+    assert turn.projection.relationship_status == "no-update"
+    assert turn.projection.relationship_event is None
+    assert turn.projection.living_memory_status == "no-op"
+    assert turn.projection.participant_goal_commitment_status == "accepted"
+    assert turn.projection.participant_goal_commitment_action == "create"
+    assert "不会因为一句声称" in turn.projection.expression_text
+    assert "目标" in turn.projection.expression_text

@@ -36,6 +36,9 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    LIVING_MEMORY_ANALYSIS = "living-memory-analysis"
+    KNOWLEDGE_ANALYSIS = "knowledge-analysis"
+    RELATIONSHIP_ANALYSIS = "relationship-analysis"
     PARTICIPANT_GOAL_CLASSIFICATION = "participant-goal-classification"
     PARTICIPANT_GOAL_REPLY = "participant-goal-reply"
     SITUATED_STATE_CLASSIFICATION = "situated-state-classification"
