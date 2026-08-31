@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 KNOWLEDGE_CANDIDATE_LIMIT = 6
+KNOWLEDGE_MINIMUM_RELEVANCE_SCORE = 2
 
 
 @dataclass(frozen=True)
@@ -98,7 +99,7 @@ def select_knowledge_candidates(
         title_overlap = len(message_grams & _char_bigrams(entry.title))
         content_overlap = len(message_grams & _char_bigrams(entry.content))
         score = title_overlap * 2 + content_overlap
-        if score > 0:
+        if score >= KNOWLEDGE_MINIMUM_RELEVANCE_SCORE:
             scored.append((score, entry.entry_id, entry))
     scored.sort(key=lambda item: (-item[0], item[1]))
     return tuple(entry for _, _, entry in scored[:limit])
@@ -106,6 +107,7 @@ def select_knowledge_candidates(
 
 __all__ = [
     "KNOWLEDGE_CANDIDATE_LIMIT",
+    "KNOWLEDGE_MINIMUM_RELEVANCE_SCORE",
     "KnowledgeEntry",
     "SEALED_KNOWLEDGE_ENTRIES",
     "SEALED_KNOWLEDGE_SOURCE_REF",

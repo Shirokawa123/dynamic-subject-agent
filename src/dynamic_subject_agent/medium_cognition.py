@@ -201,7 +201,10 @@ class ControlledMediumCognition(CognitionEngine):
             recent_completed_signals=context.medium_signals,
             candidate=result.candidate,
         )
-        relevant = direct_query or result.candidate is not None
+        relevant = direct_query or (
+            result.candidate is not None
+            and prepared.reason_code != "direct_subject_state_command"
+        )
         if deterministic_reply is not None:
             expression = deterministic_reply
         elif relevant:

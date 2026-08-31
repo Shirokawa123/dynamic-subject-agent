@@ -4,4 +4,4 @@
 - Memory、Knowledge、Relationship、目标承诺、Situated、Medium、Windows UI 和持久身份已迁入。
 - 参与者目标/承诺、Situated State 与 Medium State 均完成真实 DeepSeek、Windows UI、持久化和重启验收，状态为 STABLE。
 - ModelGateway、ProviderAdapter 能力声明、provider/account credential slot 与 noop-null canonicalizer 已完成；明确目标查询/变化为 Python 路径。
-- 六项任务均经 ModelGateway、最小投影独立；同轮原子组合、单项 FailedClosed、隔离 Windows 真实长链与重启均已验收，全量 223 passed。当前最小产品范围完成，等待一次用户体验确认。
+- 六项任务仍经独立最小投影同轮原子组合；Slice-06 以多个隔离身份完成真实 DeepSeek、Windows、重启与对抗验收，逐轮因果解释、自然目标查询、直接状态命令拒绝、知识相关阈值和表达去重完成，全量 225 passed。

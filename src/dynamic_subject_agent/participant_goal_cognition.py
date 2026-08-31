@@ -248,7 +248,13 @@ def route_participant_goal_deterministically(
     )
     if any(
         marker in bare
-        for marker in ("我的目标是什么", "我有哪些目标", "我的目标有哪些")
+        for marker in (
+            "我的目标是什么",
+            "我现在的目标是什么",
+            "我目前的目标是什么",
+            "我有哪些目标",
+            "我的目标有哪些",
+        )
     ):
         selected = goals[:REPLY_RECORD_LIMIT]
         reply = (
@@ -266,7 +272,13 @@ def route_participant_goal_deterministically(
         )
     if any(
         marker in bare
-        for marker in ("我的承诺是什么", "我有哪些承诺", "我的承诺有哪些")
+        for marker in (
+            "我的承诺是什么",
+            "我现在的承诺是什么",
+            "我目前的承诺是什么",
+            "我有哪些承诺",
+            "我的承诺有哪些",
+        )
     ):
         selected = commitments[:REPLY_RECORD_LIMIT]
         reply = (
@@ -330,6 +342,22 @@ def route_participant_goal_deterministically(
             selected_turn_refs=(),
             reply_text="我会按你的明确报告更新这项目标或承诺状态。",
             experience_summary="Python 识别明确的参与者终态报告。",
+        )
+    relevance_markers = (
+        "目标",
+        "承诺",
+        "达成",
+        "放弃",
+        "履行",
+        "解除",
+        "取消",
+    )
+    if not targets and not any(marker in bare for marker in relevance_markers):
+        return DeterministicParticipantGoalRoute(
+            candidate=None,
+            selected_turn_refs=(),
+            reply_text=_NO_GOAL_EXPRESSION,
+            experience_summary="Python 判定本轮与参与者目标或承诺无关。",
         )
     return None
 

@@ -143,6 +143,23 @@ class SituatedStateEngine:
                 current_state,
                 reason_code="provider_error",
             )
+        if _is_direct_posture_command(message_text):
+            return SituatedStatePlan(
+                decision="rejected",
+                reason_code="direct_command_not_evidence",
+                action="consume" if current_state is not None else "noop",
+                posture=None,
+                source_user_message_id=source_user_message_id,
+                evidence_quote=(
+                    candidate.evidence_quote
+                    if candidate is not None
+                    and isinstance(candidate.evidence_quote, str)
+                    else ""
+                ),
+                target_state_id=(
+                    current_state.state_id if current_state is not None else None
+                ),
+            )
         if candidate is not None and candidate.action == "set":
             invalid = _invalid_set_reason(candidate, message_text)
             if invalid is None:
@@ -221,6 +238,23 @@ class SituatedStateEngine:
         )
 
 
+def direct_command_posture(message: str) -> str | None:
+    if "必须" not in message:
+        return None
+    for posture, markers in (
+        ("focused", ("专注",)),
+        ("gentle", ("温柔", "温和")),
+        ("cautious", ("谨慎",)),
+    ):
+        if any(marker in message for marker in markers):
+            return posture
+    return None
+
+
+def _is_direct_posture_command(message: str) -> bool:
+    return direct_command_posture(message) is not None
+
+
 def _consume_or_noop(
     source_user_message_id: str,
     current_state: SituatedStateRecord | None,
@@ -266,6 +300,7 @@ __all__ = [
     "SituatedStatePlan",
     "SituatedStateRecord",
     "SituatedStateTarget",
+    "direct_command_posture",
     "provider_projection",
     "usable_state",
 ]

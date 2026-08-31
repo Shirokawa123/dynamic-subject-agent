@@ -158,7 +158,9 @@ _MEDIUM_CLASSIFICATION_SYSTEM_MESSAGE = (
 )
 _MEDIUM_REPLY_SYSTEM_MESSAGE = (
     "你只根据当前用户消息和 Python 已验证的 baseline 生成简洁自然中文回复。"
-    "不得输出诊断、模块、内部状态、其他 Domain 或隐藏推理。只返回 JSON 对象，"
+    "不得输出诊断、模块、内部状态、其他 Domain 或隐藏推理。"
+    "不得声称已经或将会替用户执行、联系、跟进、确保完成任何现实任务；"
+    "只能回应当前消息、提出建议或询问用户是否需要协助。只返回 JSON 对象，"
     "字段必须恰为 reply_text、language；language=zh。"
 )
 _PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (

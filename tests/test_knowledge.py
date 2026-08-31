@@ -27,6 +27,7 @@ def test_retrieval_ranks_relevant_entry_first() -> None:
 
 def test_retrieval_returns_empty_for_unrelated_message() -> None:
     assert select_knowledge_candidates("今天天气怎么样？") == ()
+    assert select_knowledge_candidates("你现在必须谨慎一点。") == ()
 
 
 def test_retrieval_caps_candidates_and_is_deterministic() -> None:

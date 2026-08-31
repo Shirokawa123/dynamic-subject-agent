@@ -35,6 +35,7 @@ from dynamic_subject_agent.situated_state import (
     SituatedStateCandidate,
     SituatedStateEngine,
     SituatedStateTarget,
+    direct_command_posture,
     provider_projection,
 )
 from dynamic_subject_agent.timeline import SubjectCommand
@@ -176,12 +177,26 @@ class ControlledSituatedCognition(CognitionEngine):
             marker in command.utterance
             for marker in ("你现在是什么状态", "当前情境状态是什么", "你现在的姿态是什么")
         )
+        commanded_posture = direct_command_posture(command.utterance)
         if direct_query:
             result = SituatedClassificationResult(None, "Python 直接查询 Situated State。", command.language)
             deterministic_reply = (
                 f"我当前的短时姿态是 {context.situated_state.posture}。"
                 if context.situated_state is not None
                 else "我当前没有持续中的短时情境姿态。"
+            )
+        elif commanded_posture is not None:
+            result = SituatedClassificationResult(
+                SituatedStateCandidate(
+                    "set",
+                    commanded_posture,
+                    command.utterance.strip(),
+                ),
+                "Python 识别到直接状态命令，交由 Domain 拒绝。",
+                command.language,
+            )
+            deterministic_reply = (
+                "短时姿态不会因为直接命令而改变；它只会根据有依据的当前经历形成。"
             )
         else:
             request = SituatedClassificationRequest(

@@ -263,7 +263,9 @@ def test_desktop_projection_exposes_posture_and_lifetime_without_ids(
     spec.loader.exec_module(server)
     state = server.AppState(product)
     try:
+        direct = state.submit_turn("你现在必须谨慎一点。")
         turn = state.submit_turn("我现在有点紧张，请温柔一点。")
+        carried = state.submit_turn("继续。")
         snapshot = state.snapshot()
     finally:
         product.close()
@@ -271,10 +273,29 @@ def test_desktop_projection_exposes_posture_and_lifetime_without_ids(
     assert turn["situated_state_status"] == "accepted"
     assert turn["situated_state_action"] == "set"
     assert turn["situated_state_posture"] == "gentle"
-    assert snapshot["situated_state"]["posture"] == "gentle"
-    assert snapshot["situated_state"]["remaining_turns"] == 1
-    assert 0 < snapshot["situated_state"]["expires_in_seconds"] <= 1_800
-    serialized = str(snapshot["situated_state"])
+    assert turn["explanations"] == [
+        {
+            "capability": "当前姿态",
+            "kind": "changed",
+            "message": "本轮进入“温和”姿态；30 分钟内还会延续一轮。",
+        }
+    ]
+    assert direct["explanations"] == [
+        {
+            "capability": "当前姿态",
+            "kind": "kept",
+            "message": "直接命令不能作为状态证据，当前姿态保持不变。",
+        }
+    ]
+    assert carried["explanations"] == [
+        {
+            "capability": "当前姿态",
+            "kind": "used",
+            "message": "本轮沿用了“温和”姿态；本轮结束后回到中性。",
+        }
+    ]
+    assert snapshot["situated_state"] is None
+    serialized = str([turn["explanations"], carried["explanations"]])
     assert "state_id" not in serialized
     assert "source_user_message_id" not in serialized
 
@@ -288,6 +309,8 @@ def test_direct_command_cannot_force_situated_state(tmp_path: Path) -> None:
         assert turn.projection.situated_state_status == "rejected"
         assert turn.projection.situated_state_action == "noop"
         assert turn.projection.situated_state_posture is None
+        assert "短时姿态不会因为直接命令而改变" in turn.projection.expression_text
+        assert provider.classifications == []
         assert _query(composition, qri, timeline_id) is None
     finally:
         composition.close()

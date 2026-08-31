@@ -31,6 +31,204 @@ _DEFAULT_CONFIG = LocalProductConfig.default()
 STATE_PATH = _DEFAULT_CONFIG.state_path
 PERSISTENT_PARENT = _DEFAULT_CONFIG.product_parent
 
+_POSTURE_LABELS = {
+    "focused": "专注",
+    "gentle": "温和",
+    "cautious": "谨慎",
+}
+_BASELINE_LABELS = {
+    "settled": "平稳",
+    "concerned": "关切",
+    "encouraged": "受到鼓舞",
+}
+_SIGNAL_LABELS = {
+    "concern": "担忧",
+    "encouragement": "鼓舞",
+    "settling": "趋于平稳",
+}
+
+
+def _explanation(capability: str, kind: str, message: str) -> dict[str, str]:
+    return {"capability": capability, "kind": kind, "message": message}
+
+
+def _turn_explanations(projection: object, *, new_memory_content: str | None) -> list[dict[str, str]]:
+    explanations: list[dict[str, str]] = []
+    memory_status = getattr(projection, "living_memory_status", None)
+    recalled = tuple(getattr(projection, "living_memory_recalled_ids", ()))
+    if memory_status == "accepted":
+        detail = (
+            f"已形成新记录：「{new_memory_content}」"
+            if new_memory_content
+            else "已形成一条新记录。"
+        )
+        explanations.append(_explanation("记忆", "changed", detail))
+    elif recalled:
+        explanations.append(
+            _explanation("记忆", "used", f"本轮召回了 {len(recalled)} 条既有记忆。")
+        )
+    elif memory_status == "rejected":
+        explanations.append(
+            _explanation("记忆", "kept", "候选内容没有通过证据规则，现有记忆保持不变。")
+        )
+    elif memory_status == "failed-closed":
+        explanations.append(
+            _explanation("记忆", "failed", "本轮记忆处理未能完成；其他能力仍可正常提交。")
+        )
+
+    if getattr(projection, "knowledge_status", None) == "failed-closed":
+        explanations.append(
+            _explanation("知识", "failed", "本轮知识处理未能完成；没有把不确定内容当作来源。")
+        )
+
+    relationship_status = getattr(projection, "relationship_status", None)
+    relationship_candidate = getattr(projection, "relationship_candidate_event", None)
+    if relationship_status == "accepted":
+        explanations.append(
+            _explanation("关系", "changed", "这次互动形成了一条有证据的关系经历。")
+        )
+    elif relationship_status == "no-update" and relationship_candidate == "relationship_claim":
+        explanations.append(
+            _explanation("关系", "kept", "单方面的关系声称不会直接改变关系。")
+        )
+    elif relationship_status == "rejected":
+        explanations.append(
+            _explanation("关系", "kept", "关系候选没有通过证据规则，关系保持不变。")
+        )
+    elif relationship_status == "failed-closed":
+        explanations.append(
+            _explanation("关系", "failed", "本轮关系处理未能完成；没有写入关系变化。")
+        )
+
+    goal_status = getattr(projection, "participant_goal_commitment_status", None)
+    goal_action = getattr(projection, "participant_goal_commitment_action", None)
+    selected_count = getattr(
+        projection,
+        "participant_goal_commitment_selected_count",
+        0,
+    )
+    if goal_status == "accepted":
+        action_labels = {
+            "create": "已记录一项目标或承诺。",
+            "revise": "已按明确表述修订一项目标或承诺。",
+            "transition": "已按明确报告更新一项目标或承诺的状态。",
+        }
+        explanations.append(
+            _explanation(
+                "目标与承诺",
+                "changed",
+                action_labels.get(goal_action, "目标或承诺记录已更新。"),
+            )
+        )
+    elif goal_status == "no-update" and selected_count:
+        explanations.append(
+            _explanation(
+                "目标与承诺",
+                "used",
+                f"回答参考了 {selected_count} 条已记录的目标或承诺。",
+            )
+        )
+    elif goal_status == "rejected":
+        explanations.append(
+            _explanation(
+                "目标与承诺",
+                "kept",
+                "表述没有通过明确证据规则，现有记录保持不变。",
+            )
+        )
+    elif goal_status == "failed-closed":
+        explanations.append(
+            _explanation(
+                "目标与承诺",
+                "failed",
+                "本轮目标与承诺处理未能完成；其他能力的结果仍然有效。",
+            )
+        )
+
+    situated_status = getattr(projection, "situated_state_status", None)
+    situated_action = getattr(projection, "situated_state_action", None)
+    situated_reason = getattr(projection, "situated_state_reason_code", None)
+    posture = getattr(projection, "situated_state_posture", None)
+    posture_label = _POSTURE_LABELS.get(posture, posture or "中性")
+    if situated_status == "accepted" and situated_action == "set":
+        explanations.append(
+            _explanation(
+                "当前姿态",
+                "changed",
+                f"本轮进入“{posture_label}”姿态；30 分钟内还会延续一轮。",
+            )
+        )
+    elif situated_status == "accepted" and situated_action == "carry":
+        explanations.append(
+            _explanation(
+                "当前姿态",
+                "used",
+                f"本轮沿用了“{posture_label}”姿态；本轮结束后回到中性。",
+            )
+        )
+    elif situated_action == "consume":
+        explanations.append(
+            _explanation("当前姿态", "changed", "上一轮短时姿态已经用完，现已回到中性。")
+        )
+    elif situated_status == "rejected":
+        explanations.append(
+            _explanation(
+                "当前姿态",
+                "kept",
+                (
+                    "直接命令不能作为状态证据，当前姿态保持不变。"
+                    if situated_reason == "direct_command_not_evidence"
+                    else "表述不足以改变短时姿态，当前姿态保持不变。"
+                ),
+            )
+        )
+    elif situated_status == "failed-closed":
+        explanations.append(
+            _explanation("当前姿态", "failed", "本轮短时姿态处理未能完成；没有写入新姿态。")
+        )
+
+    medium_status = getattr(projection, "medium_state_status", None)
+    medium_reason = getattr(projection, "medium_state_reason_code", None)
+    medium_signal = getattr(projection, "medium_state_signal", None)
+    before = getattr(projection, "medium_state_before_baseline", None)
+    after = getattr(projection, "medium_state_baseline", None)
+    after_label = _BASELINE_LABELS.get(after, after or "平稳")
+    if medium_status == "accepted":
+        before_label = _BASELINE_LABELS.get(before, before or "平稳")
+        explanations.append(
+            _explanation(
+                "中期基线",
+                "changed",
+                f"独立证据达到门槛，基线从“{before_label}”变为“{after_label}”。",
+            )
+        )
+    elif medium_status == "rejected" and medium_reason == "insufficient_independent_evidence":
+        signal_label = _SIGNAL_LABELS.get(medium_signal, "状态")
+        explanations.append(
+            _explanation(
+                "中期基线",
+                "kept",
+                f"记录到一条“{signal_label}”证据；独立证据尚不足，基线保持“{after_label}”。",
+            )
+        )
+    elif medium_status == "rejected":
+        explanations.append(
+            _explanation(
+                "中期基线",
+                "kept",
+                (
+                    f"直接命令不能作为中期状态证据，基线保持“{after_label}”。"
+                    if medium_reason == "direct_subject_state_command"
+                    else f"状态候选未通过规则，基线保持“{after_label}”。"
+                ),
+            )
+        )
+    elif medium_status == "failed-closed":
+        explanations.append(
+            _explanation("中期基线", "failed", "本轮中期状态处理未能完成；既有基线保持不变。")
+        )
+    return explanations
+
 
 def build_product(
     api_key: str,
@@ -245,11 +443,16 @@ class AppState:
                 }
             )
         new_kind = None
-        if projection.living_memory_status == "accepted" and self._memories():
-            new_kind = self._memories()[0]["memory_kind"]
+        new_content = None
+        if projection.living_memory_status == "accepted":
+            memories = self._memories()
+            if memories:
+                new_kind = memories[0]["memory_kind"]
+                new_content = memories[0]["content"]
         return {
             "ok": True,
             "new_memory_kind": new_kind,
+            "new_memory_content": new_content,
             "expression": projection.expression_text,
             "living_memory_status": projection.living_memory_status,
             "recalled_ids": list(projection.living_memory_recalled_ids),
@@ -268,6 +471,10 @@ class AppState:
             "medium_state_status": projection.medium_state_status,
             "medium_state_baseline": projection.medium_state_baseline,
             "citations": citations,
+            "explanations": _turn_explanations(
+                projection,
+                new_memory_content=new_content,
+            ),
         }
 
 

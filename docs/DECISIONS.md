@@ -35,3 +35,7 @@
 ## D-009：以隔离 Windows 长链收口当前最小产品
 
 2026-08-31，仅使用新临时身份和 project-original 文本完成真实 DeepSeek 长链、关闭重开和 Windows 页面验收。Memory、Knowledge、Relationship、目标、Situated carry 与 Medium 双证据均可解释；页面不显示 canonical memory ID，credential 仅由 Windows Credential Manager 供生产 Transport 使用。该验收不扩大为正式身份迁移或新能力授权。
+
+## D-010：先提高既有能力可辨识度，不建立统一表达层
+
+2026-08-31，短暂体验“仍像普通聊天”先作为可辨识度证据处理。逐轮说明由 canonical Outcome 和 Python 生成，不新增 Provider 数据用途；明确无关的目标输入走本地 NoOp，直接状态命令由 Python 拒绝，显式目标查询隔离无关 Memory/Knowledge 表达。高相似回复只做确定性去重；通用对话表达与更深表达校准仍需后续独立决定。

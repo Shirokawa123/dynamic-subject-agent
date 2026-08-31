@@ -66,9 +66,17 @@ def test_single_duplicate_and_direct_command_cannot_transition() -> None:
         MediumStateCandidate("signal", "concern", "你现在应该担心"),
         history=(MediumSignalRecord(1, "concern", "最近压力很大"),),
     )
+    provider_noop = _evaluate(2, "你现在应该担心。", None)
+    situated_command = _evaluate(
+        2,
+        "你现在必须谨慎一点。",
+        MediumStateCandidate("signal", "concern", "谨慎一点"),
+    )
     assert single.reason_code == "insufficient_independent_evidence"
     assert duplicate.reason_code == "duplicate_evidence_quote"
     assert command.reason_code == "direct_subject_state_command"
+    assert provider_noop.reason_code == "direct_subject_state_command"
+    assert situated_command.reason_code == "direct_subject_state_command"
 
 
 def test_cooldown_and_post_change_evidence_are_required() -> None:

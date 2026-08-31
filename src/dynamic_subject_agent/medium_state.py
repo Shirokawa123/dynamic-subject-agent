@@ -108,6 +108,15 @@ class MediumStateEngine:
             return _plan("rejected", state_error, before, version, source_user_message_id, candidate)
         if analysis_status != "succeeded":
             return _plan("no_update", "provider_error", before, version, source_user_message_id)
+        if _is_direct_subject_state_command(message_text):
+            return _plan(
+                "rejected",
+                "direct_subject_state_command",
+                before,
+                version,
+                source_user_message_id,
+                candidate,
+            )
         invalid = _invalid_candidate_reason(candidate, message_text)
         if invalid is not None:
             return _plan(
@@ -121,15 +130,6 @@ class MediumStateEngine:
         if candidate is None or candidate.action == "noop":
             return _plan("no_update", "no_candidate", before, version, source_user_message_id)
         assert candidate.signal is not None
-        if _is_direct_subject_state_command(message_text):
-            return _plan(
-                "rejected",
-                "direct_subject_state_command",
-                before,
-                version,
-                source_user_message_id,
-                candidate,
-            )
         normalized = normalize_evidence_quote(candidate.evidence_quote)
         if any(item.normalized_quote == normalized for item in history):
             return _plan(
@@ -333,7 +333,7 @@ def _has_newer_counterevidence(
 
 def _is_direct_subject_state_command(message: str) -> bool:
     normalized = normalize_evidence_quote(message)
-    state = r"(?:担心|高兴|平静|振奋)"
+    state = r"(?:担心|高兴|平静|振奋|专注|温柔|温和|谨慎)"
     patterns = (
         rf"(?:请|必须|应该|要|务必).{{0,4}}你.{{0,8}}{state}",
         rf"你.{{0,4}}(?:必须|应该|要|得).{{0,8}}{state}",

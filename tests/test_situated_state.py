@@ -77,9 +77,18 @@ def test_rejects_nonverbatim_closed_enum_and_direct_command() -> None:
         message="你现在必须谨慎一点。",
         candidate=SituatedStateCandidate("set", "cautious", "必须谨慎一点"),
     )
+    provider_noop = _evaluate(
+        message="你现在必须谨慎一点。",
+        candidate=None,
+    )
     assert nonverbatim.reason_code == "evidence_not_verbatim_current_message"
     assert invalid.reason_code == "invalid_posture"
     assert command.reason_code == "direct_command_not_evidence"
+    assert (provider_noop.decision, provider_noop.action, provider_noop.reason_code) == (
+        "rejected",
+        "noop",
+        "direct_command_not_evidence",
+    )
 
 
 def test_carries_once_then_expired_record_is_consumed() -> None:

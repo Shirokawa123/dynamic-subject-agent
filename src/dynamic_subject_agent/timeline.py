@@ -992,6 +992,28 @@ class ExperienceDomainOutcome:
         except (AttributeError, TypeError, json.JSONDecodeError):
             return None
 
+    @property
+    def participant_goal_commitment_reason_code(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get(
+                "participant_goal_commitment",
+                {},
+            ).get("reason_code")
+            return value if isinstance(value, str) and value.strip() else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def participant_goal_commitment_selected_count(self) -> int:
+        try:
+            value = json.loads(self.decision.reason).get(
+                "participant_goal_commitment",
+                {},
+            ).get("selected_count", 0)
+            return value if isinstance(value, int) and 0 <= value <= 5 else 0
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return 0
+
 
 
 @dataclass(frozen=True)
@@ -1090,6 +1112,46 @@ class SubjectStateDomainOutcome:
         except (AttributeError, TypeError, json.JSONDecodeError):
             return None
 
+    @property
+    def situated_state_reason_code(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "situated_state", {}
+            ).get("reason_code")
+            return value if isinstance(value, str) and value.strip() else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def medium_state_reason_code(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "medium_state", {}
+            ).get("reason_code")
+            return value if isinstance(value, str) and value.strip() else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def medium_state_signal(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "medium_state", {}
+            ).get("signal")
+            return value if value in {"concern", "encouragement", "settling"} else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def medium_state_before_baseline(self) -> str | None:
+        try:
+            value = json.loads(self.subject_core.decision.reason).get(
+                "medium_state", {}
+            ).get("before_baseline")
+            return value if value in MEDIUM_BASELINES else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
 
 @dataclass(frozen=True)
 class AgencyDomainOutcome:
@@ -1125,6 +1187,24 @@ class RelationshipDomainOutcome:
                 if value in {"accepted", "rejected", "no-update", "failed-closed"}
                 else None
             )
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def relationship_candidate_event(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get("relationship", {}).get(
+                "event"
+            )
+            return value if isinstance(value, str) and value.strip() else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def relationship_reason_code(self) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get("code")
+            return value if isinstance(value, str) and value.strip() else None
         except (AttributeError, TypeError, json.JSONDecodeError):
             return None
 

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import replace
+from difflib import SequenceMatcher
 
 from dynamic_subject_agent.knowledge_entries import select_knowledge_candidates
 from dynamic_subject_agent.runtime import (
@@ -29,6 +30,7 @@ _UNAVAILABLE_EXPRESSION = "抱歉，当前没有可用于回答这个问题的�
 _CROSS_DOMAIN_UNAVAILABLE_MARKERS = (
     "没有相关信息",
     "没有这方面的信息",
+    "没有记录",
     "目前没有",
     "不知道",
     "不清楚",
@@ -53,7 +55,30 @@ def _supported_clauses(text: str) -> str:
             marker in clause for marker in _CROSS_DOMAIN_UNAVAILABLE_MARKERS
         )
     ]
-    return "".join(supported) or text
+    return "".join(supported)
+
+
+def _merge_expression_text(base: str, addition: str) -> str:
+    supported_base = _supported_clauses(base)
+    supported_addition = _supported_clauses(addition)
+    if not supported_base and not supported_addition:
+        return _UNAVAILABLE_EXPRESSION
+    if not supported_base:
+        return supported_addition
+    if not supported_addition:
+        return supported_base
+    similarity = SequenceMatcher(
+        None,
+        supported_base,
+        supported_addition,
+    ).ratio()
+    if similarity >= 0.75:
+        return (
+            supported_base
+            if len(supported_base) >= len(supported_addition)
+            else supported_addition
+        )
+    return f"{supported_base}\n\n{supported_addition}"
 
 
 class ControlledCompositeCognition(CognitionEngine):
@@ -203,6 +228,7 @@ class ControlledCompositeCognition(CognitionEngine):
         )
         participant_goal_relevant = False
         participant_goal_expression_priority = False
+        participant_goal_selection_priority = False
         if participant_goal_proposal is not None:
             participant_request = participant_goal_proposal.impact_envelope.experience
             participant_goal_relevant = bool(
@@ -211,6 +237,10 @@ class ControlledCompositeCognition(CognitionEngine):
             )
             participant_goal_expression_priority = (
                 participant_request.participant_goal_expression_priority
+            )
+            participant_goal_selection_priority = bool(
+                participant_request.selected_participant_goal_record_ids
+                and participant_goal_expression_priority
             )
             experience_request = replace(
                 experience_request,
@@ -221,7 +251,13 @@ class ControlledCompositeCognition(CognitionEngine):
                     ),
                 ),
                 candidates=(
-                    experience_request.candidates + participant_request.candidates
+                    (() if participant_goal_selection_priority else experience_request.candidates)
+                    + participant_request.candidates
+                ),
+                living_memory_failure_code=(
+                    None
+                    if participant_goal_selection_priority
+                    else experience_request.living_memory_failure_code
                 ),
                 selected_participant_goal_record_ids=(
                     participant_request.selected_participant_goal_record_ids
@@ -261,7 +297,7 @@ class ControlledCompositeCognition(CognitionEngine):
                     language=memory_proposal.expression_candidate.language,
                 ),
             )
-        if knowledge_proposal is not None:
+        if knowledge_proposal is not None and not participant_goal_selection_priority:
             knowledge_request = knowledge_proposal.impact_envelope.experience
             experience_request = replace(
                 experience_request,
@@ -301,7 +337,8 @@ class ControlledCompositeCognition(CognitionEngine):
         )
 
         knowledge_cited = bool(
-            knowledge_proposal is not None
+            not participant_goal_selection_priority
+            and knowledge_proposal is not None
             and any(
                 candidate.knowledge_citation_ids
                 for candidate in knowledge_proposal.impact_envelope.experience.candidates
@@ -310,17 +347,17 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_recalled = any(
             candidate.recalled_memory_ids
             for candidate in memory_proposal.impact_envelope.experience.candidates
-        )
+        ) and not participant_goal_selection_priority
         memory_changed = any(
             candidate.memory_action in {"create", "revise"}
             for candidate in memory_proposal.impact_envelope.experience.candidates
-        )
+        ) and not participant_goal_selection_priority
         memory_relevant = memory_recalled or memory_changed
         if knowledge_cited and memory_relevant:
             expression = ExpressionCandidate(
-                text=(
-                    f"{_supported_clauses(memory_proposal.expression_candidate.text)}\n\n"
-                    f"{_supported_clauses(knowledge_proposal.expression_candidate.text)}"
+                text=_merge_expression_text(
+                    memory_proposal.expression_candidate.text,
+                    knowledge_proposal.expression_candidate.text,
                 ),
                 language=memory_proposal.expression_candidate.language,
             )
@@ -337,9 +374,9 @@ class ControlledCompositeCognition(CognitionEngine):
             if knowledge_cited or memory_relevant:
                 expression = ExpressionCandidate(
                     text=(
-                        f"{goal_text}\n\n{_supported_clauses(expression.text)}"
+                        _merge_expression_text(goal_text, expression.text)
                         if participant_goal_expression_priority
-                        else f"{_supported_clauses(expression.text)}\n\n{goal_text}"
+                        else _merge_expression_text(expression.text, goal_text)
                     ),
                     language=expression.language,
                 )
@@ -354,7 +391,7 @@ class ControlledCompositeCognition(CognitionEngine):
             )
             if knowledge_cited or memory_relevant or participant_goal_relevant:
                 expression = ExpressionCandidate(
-                    text=f"{_supported_clauses(expression.text)}\n\n{situated_text}",
+                    text=_merge_expression_text(expression.text, situated_text),
                     language=expression.language,
                 )
             else:
@@ -372,7 +409,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 and situated_proposal.impact_envelope.subject_state.situated_expression_active
             ):
                 expression = ExpressionCandidate(
-                    text=f"{_supported_clauses(expression.text)}\n\n{medium_text}",
+                    text=_merge_expression_text(expression.text, medium_text),
                     language=expression.language,
                 )
             else:
@@ -383,9 +420,14 @@ class ControlledCompositeCognition(CognitionEngine):
                 language=expression.language,
             )
         summary = (
-            knowledge_proposal.experience_summary
-            if knowledge_cited and knowledge_proposal.experience_summary.strip()
-            else memory_proposal.experience_summary
+            participant_goal_proposal.experience_summary
+            if participant_goal_selection_priority
+            and participant_goal_proposal is not None
+            else (
+                knowledge_proposal.experience_summary
+                if knowledge_cited and knowledge_proposal.experience_summary.strip()
+                else memory_proposal.experience_summary
+            )
         ) or memory_proposal.expression_candidate.text
         return CognitiveProposal(
             adapter_version=self.adapter_version,

@@ -189,6 +189,11 @@ def test_direct_command_and_provider_failure_do_not_change_baseline(tmp_path: Pa
             command.projection.failure_code,
         )
         assert command.projection.medium_state_status == "rejected"
+        assert (
+            command.projection.medium_state_reason_code
+            == "direct_subject_state_command"
+        )
+        assert "当前以" not in command.projection.expression_text
         assert _query(composition, qri, timeline_id).version == 0
         failed = _submit(composition, qri, timeline_id, "继续。")
         assert failed.status.value == "terminal"
@@ -216,13 +221,30 @@ def test_desktop_projection_exposes_baseline_and_version_without_ids(tmp_path: P
     spec.loader.exec_module(server)
     state = server.AppState(product)
     try:
-        state.submit_turn("最近压力很大。")
+        first = state.submit_turn("最近压力很大。")
         turn = state.submit_turn("这件事仍让我担心。")
+        ordinary = state.submit_turn("继续。")
         snapshot = state.snapshot()
     finally:
         product.close()
 
     assert turn["medium_state_status"] == "accepted"
     assert turn["medium_state_baseline"] == "concerned"
+    assert first["explanations"] == [
+        {
+            "capability": "中期基线",
+            "kind": "kept",
+            "message": "记录到一条“担忧”证据；独立证据尚不足，基线保持“平稳”。",
+        }
+    ]
+    assert turn["explanations"] == [
+        {
+            "capability": "中期基线",
+            "kind": "changed",
+            "message": "独立证据达到门槛，基线从“平稳”变为“关切”。",
+        }
+    ]
+    assert ordinary["medium_state_status"] == "no-update"
+    assert ordinary["explanations"] == []
     assert snapshot["medium_state"] == {"baseline": "concerned", "version": 1}
     assert "revision_id" not in str(snapshot["medium_state"])

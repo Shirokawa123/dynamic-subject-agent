@@ -69,6 +69,7 @@ def test_medium_projection_and_reply_are_isolated() -> None:
     projection = json.loads(classification["messages"][1]["content"])
     assert set(projection) == {"current_user_message", "policy"}
     reply_body = json.loads(transport.bodies[1].decode("utf-8"))
+    assert "不得声称已经或将会替用户执行" in reply_body["messages"][0]["content"]
     reply_projection = json.loads(reply_body["messages"][1]["content"])
     assert reply_projection == {
         "current_user_message": "继续。",

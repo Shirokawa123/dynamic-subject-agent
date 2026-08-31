@@ -290,8 +290,15 @@ def test_participant_goal_create_recall_revise_transition_and_restart(
         relationship_mode="dynamic",
     )
     try:
-        recalled = _submit(restarted, qri, timeline_id, "我的目标是什么？")
+        recalled = _submit(restarted, qri, timeline_id, "我现在的目标是什么？")
         assert recalled.projection.expression_text == "你当前的目标是：今年通过 N1。"
+        assert recalled.projection.participant_goal_commitment_status == "no-update"
+        assert recalled.projection.participant_goal_commitment_action == "noop"
+        assert (
+            recalled.projection.participant_goal_commitment_reason_code
+            == "selected_for_reply"
+        )
+        assert recalled.projection.participant_goal_commitment_selected_count == 1
         revision = _submit(restarted, qri, timeline_id, "我的目标改为明年通过 N1。")
         assert revision.projection.participant_goal_commitment_action == "revise"
         transitioned = _submit(restarted, qri, timeline_id, "我的目标已达成。")
@@ -314,10 +321,15 @@ def test_participant_goal_provider_failure_leaves_no_partial_record(
     provider = _ScriptedParticipantGoalProvider(fail_classify=True)
     _, qri, timeline_id, composition = _composition(tmp_path, provider)
     try:
-        failed = _submit(composition, qri, timeline_id, "最近我想认真准备 N1 了。")
+        unrelated = _submit(composition, qri, timeline_id, "今天事情很多。")
+        assert unrelated.status.value == "terminal"
+        assert unrelated.projection.participant_goal_commitment_status is None
+        assert provider.classification_requests == []
+        failed = _submit(composition, qri, timeline_id, "关于目标，我最近有些想法。")
         assert failed.status.value == "terminal"
         assert failed.projection.participant_goal_commitment_status == "failed-closed"
         assert failed.projection.expression_text
+        assert len(provider.classification_requests) == 1
         assert _query(composition, qri, timeline_id) == ()
     finally:
         composition.close()
@@ -343,12 +355,27 @@ def test_desktop_state_exposes_participant_goal_without_internal_ids(
     state = server.AppState(product)
     try:
         turn = state.submit_turn("我的目标是今年通过 N1。")
+        recalled = state.submit_turn("我现在的目标是什么？")
         snapshot = state.snapshot()
     finally:
         product.close()
 
     assert turn["participant_goal_status"] == "accepted"
     assert turn["participant_goal_action"] == "create"
+    assert turn["explanations"] == [
+        {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已记录一项目标或承诺。",
+        }
+    ]
+    assert recalled["explanations"] == [
+        {
+            "capability": "目标与承诺",
+            "kind": "used",
+            "message": "回答参考了 1 条已记录的目标或承诺。",
+        }
+    ]
     assert snapshot["participant_goals"] == [
         {
             "kind": "goal",
@@ -360,3 +387,4 @@ def test_desktop_state_exposes_participant_goal_without_internal_ids(
     serialized = str(snapshot["participant_goals"])
     assert "record_id" not in serialized
     assert "source_user_message_id" not in serialized
+    assert "record_id" not in str([turn["explanations"], recalled["explanations"]])

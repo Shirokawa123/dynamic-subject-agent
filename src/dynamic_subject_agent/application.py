@@ -142,13 +142,21 @@ class AuthorizedOperationProjection:
     knowledge_citation_ids: tuple[str, ...] = ()
     relationship_status: str | None = None
     relationship_event: str | None = None
+    relationship_candidate_event: str | None = None
+    relationship_reason_code: str | None = None
     participant_goal_commitment_status: str | None = None
     participant_goal_commitment_action: str | None = None
+    participant_goal_commitment_reason_code: str | None = None
+    participant_goal_commitment_selected_count: int = 0
     situated_state_status: str | None = None
     situated_state_action: str | None = None
     situated_state_posture: str | None = None
+    situated_state_reason_code: str | None = None
     medium_state_status: str | None = None
     medium_state_baseline: str | None = None
+    medium_state_before_baseline: str | None = None
+    medium_state_reason_code: str | None = None
+    medium_state_signal: str | None = None
 
 
 @dataclass(frozen=True)
@@ -718,11 +726,23 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             relationship_event=(
                 result.outcome.relationship_outcome.relationship_event or None
             ),
+            relationship_candidate_event=(
+                result.outcome.relationship_outcome.relationship_candidate_event
+            ),
+            relationship_reason_code=(
+                result.outcome.relationship_outcome.relationship_reason_code
+            ),
             participant_goal_commitment_status=(
                 result.outcome.experience_outcome.participant_goal_commitment_status
             ),
             participant_goal_commitment_action=(
                 result.outcome.experience_outcome.participant_goal_commitment_action
+            ),
+            participant_goal_commitment_reason_code=(
+                result.outcome.experience_outcome.participant_goal_commitment_reason_code
+            ),
+            participant_goal_commitment_selected_count=(
+                result.outcome.experience_outcome.participant_goal_commitment_selected_count
             ),
             situated_state_status=(
                 result.outcome.subject_state_outcome.situated_state_status
@@ -733,11 +753,23 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             situated_state_posture=(
                 result.outcome.subject_state_outcome.situated_state_posture
             ),
+            situated_state_reason_code=(
+                result.outcome.subject_state_outcome.situated_state_reason_code
+            ),
             medium_state_status=(
                 result.outcome.subject_state_outcome.medium_state_status
             ),
             medium_state_baseline=(
                 result.outcome.subject_state_outcome.medium_state_baseline
+            ),
+            medium_state_before_baseline=(
+                result.outcome.subject_state_outcome.medium_state_before_baseline
+            ),
+            medium_state_reason_code=(
+                result.outcome.subject_state_outcome.medium_state_reason_code
+            ),
+            medium_state_signal=(
+                result.outcome.subject_state_outcome.medium_state_signal
             ),
         )
         return ApplicationOperationResponse(

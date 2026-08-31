@@ -280,6 +280,7 @@ class ExperienceDomain:
             and living_memory_failure is None
             and knowledge_failure is None
             and participant_goal_failure is None
+            and not selected_ids
         ):
             return ExperienceDomainOutcome(
                 outcome_id=stable_id(basis, "experience-outcome"),
@@ -355,6 +356,14 @@ class ExperienceDomain:
                 "status": "failed-closed",
                 "action": "noop",
                 "reason_code": participant_goal_failure,
+            }
+        elif selected_ids:
+            participant_goal_code = "participant-goal.selected-for-reply"
+            participant_goal_payload = {
+                "status": "no-update",
+                "action": "noop",
+                "reason_code": "selected_for_reply",
+                "selected_count": len(selected_ids),
             }
         reason: dict[str, object] = {
             "code": (

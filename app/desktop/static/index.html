@@ -20,6 +20,10 @@
   .notes { margin-top:8px; border-left:2px solid #d5cdbb; padding-left:12px; font-size:12px; color:#8d8371; line-height:1.9; }
   .notes .tag { display:inline-block; border:1px solid #c9bda4; border-radius:3px; padding:0 6px; margin-right:6px; font-size:11px; color:#7a6d55; background:#eee8d8; }
   .notes .cite { color:#9a7b3f; border-bottom:1px dotted #c9b98f; }
+  .explanation { margin-top:5px; }
+  .explanation.changed { color:#5f6f43; }
+  .explanation.kept { color:#7d7462; }
+  .explanation.failed { color:#a04b3a; }
   .failed { color:#a04b3a; font-size:13px; margin-top:8px; }
   .inputbar { position:fixed; bottom:0; left:230px; right:0; background:#f3efe6; border-top:1px solid #d5cdbb; }
   .inputbar .inner { max-width:600px; margin:0 auto; padding:14px 26px; display:flex; gap:10px; }
@@ -62,15 +66,15 @@
     <h2>记 忆</h2>
     <div id="rail-memories"></div>
     <h2 style="margin-top:18px">知 识 来 源</h2>
-    <div class="card"><span class="k">4 entries</span> · project-original</div>
+    <div class="card"><span class="k">4 条封存来源</span> · 项目原创</div>
     <h2 style="margin-top:18px">立 场</h2>
     <div class="card" id="rail-stance"><span class="k">尚无立场互动</span></div>
     <h2 style="margin-top:18px">目 标 与 承 诺</h2>
     <div id="rail-goals"><div class="card"><span class="k">尚无明确记录</span></div></div>
     <h2 style="margin-top:18px">当 前 姿 态</h2>
-    <div id="rail-situated"><div class="card"><span class="k">neutral</span></div></div>
+    <div id="rail-situated"><div class="card"><span class="k">中性</span></div></div>
     <h2 style="margin-top:18px">中 期 基 线</h2>
-    <div id="rail-medium"><div class="card"><span class="k">settled · v0</span></div></div>
+    <div id="rail-medium"><div class="card"><span class="k">平稳 · 版本 0</span></div></div>
   </div>
 </div>
 <div class="inputbar"><div class="inner">
@@ -81,7 +85,6 @@
 const log = document.getElementById("log");
 const sendBtn = document.getElementById("send");
 const textBox = document.getElementById("text");
-let visibleMemories = [];
 let stanceAccepted = 0;
 let productReady = false;
 const setupScreen = document.getElementById("setup-screen");
@@ -99,6 +102,16 @@ const setupProblemLabels = {
   "credential-write-failed": "无法写入 Windows Credential Manager。",
   "credential-delete-failed": "无法删除 Windows Credential Manager 中的凭据。",
   "product-open-failed": "凭据已处理，但本地主体运行时启动失败。",
+};
+const postureLabels = {focused:"专注", gentle:"温和", cautious:"谨慎"};
+const baselineLabels = {settled:"平稳", concerned:"关切", encouraged:"受到鼓舞"};
+const relationshipEventLabels = {
+  stable_positive_interaction:"稳定的正向互动",
+  promise_fulfilled:"已履行承诺",
+  boundary_respected:"尊重了边界",
+  boundary_violation:"发生边界侵犯",
+  repeated_boundary_violation:"重复边界侵犯",
+  repair_action:"发生修复行动",
 };
 
 function el(tag, cls, text) {
@@ -119,7 +132,6 @@ async function refreshState() {
   stanceAccepted = state.relationship_accepted_count || 0;
   const rail = document.getElementById("rail-memories");
   rail.innerHTML = "";
-  visibleMemories = Array.isArray(state.memories) ? state.memories : [];
   renderRail(state);
 }
 
@@ -210,7 +222,7 @@ function renderRail(state) {
   }
   const stance = document.getElementById("rail-stance");
   stance.innerHTML = stanceAccepted > 0
-    ? `<span class="k">${stanceAccepted} accepted</span> · ${state.relationship_latest_event || "互动"}`
+    ? `<span class="k">${stanceAccepted} 条已确认互动</span> · ${relationshipEventLabels[state.relationship_latest_event] || "关系经历"}`
     : '<span class="k">尚无立场互动</span>';
   const goals = document.getElementById("rail-goals");
   goals.innerHTML = "";
@@ -236,19 +248,19 @@ function renderRail(state) {
   if (state.situated_state) {
     const s = state.situated_state;
     const card = el("div", "card");
-    card.appendChild(el("span", "k", `【${s.posture}】`));
+    card.appendChild(el("span", "k", `【${postureLabels[s.posture] || s.posture}】`));
     card.appendChild(document.createElement("br"));
     card.appendChild(document.createTextNode(
       `剩余 ${s.remaining_turns} 轮 · ${s.expires_in_seconds} 秒`));
     situated.appendChild(card);
   } else {
-    situated.appendChild(el("div", "card", "neutral"));
+    situated.appendChild(el("div", "card", "中性"));
   }
   const medium = document.getElementById("rail-medium");
   const mediumState = state.medium_state || {baseline:"settled", version:0};
   medium.innerHTML = "";
   medium.appendChild(el("div", "card",
-    `${mediumState.baseline} · v${mediumState.version}`));
+    `${baselineLabels[mediumState.baseline] || mediumState.baseline} · 版本 ${mediumState.version}`));
 }
 
 async function send() {
@@ -283,89 +295,22 @@ async function send() {
           span.appendChild(el("span", "tag", "引用"));
           const link = el("span", "cite", c.title);
           span.appendChild(link);
-          span.appendChild(document.createTextNode(" · " + c.source));
+          span.appendChild(document.createTextNode(
+            " · " + (c.source.startsWith("project-original:") ? "项目原创封存资料" : c.source)));
           notes.appendChild(span);
         }
       }
-      if (turn.recalled_ids.length) {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "召回"));
-        span.appendChild(document.createTextNode(
-          turn.recalled_ids.length + " 条记忆"));
-        notes.appendChild(span);
+      for (const explanation of turn.explanations || []) {
+        const row = el("div", `explanation ${explanation.kind || ""}`);
+        row.appendChild(el("span", "tag", explanation.capability));
+        row.appendChild(document.createTextNode(explanation.message));
+        notes.appendChild(row);
       }
-      if (turn.living_memory_status === "accepted") {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "记忆更新"));
-        notes.appendChild(span);
-      }
-      if (turn.living_memory_status === "failed-closed") {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "记忆"));
-        span.appendChild(document.createTextNode("failed-closed"));
-        notes.appendChild(span);
-      }
-      if (turn.knowledge_status === "failed-closed") {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "知识"));
-        span.appendChild(document.createTextNode("failed-closed"));
-        notes.appendChild(span);
-      }
-      if (turn.new_memory_kind) {
-        const span = el("span");
-        span.appendChild(document.createTextNode(
-          turn.new_memory_kind === "plan" ? "【打算】" : "【长期】"));
-        notes.appendChild(span);
-      }
-      if (turn.relationship_event) {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "立场"));
-        span.appendChild(document.createTextNode(turn.relationship_event));
-        notes.appendChild(span);
-        if (turn.relationship_event === "stable_positive_interaction") {
-          stanceAccepted += 1;
-        }
-      }
-      if (turn.relationship_status === "failed-closed") {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "立场"));
-        span.appendChild(document.createTextNode("failed-closed"));
-        notes.appendChild(span);
-      }
-      if (turn.participant_goal_status) {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "目标/承诺"));
-        span.appendChild(document.createTextNode(
-          `${turn.participant_goal_action || "noop"} · ${turn.participant_goal_status}`));
-        notes.appendChild(span);
-      }
-      if (turn.situated_state_status) {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "短时姿态"));
-        span.appendChild(document.createTextNode(
-          `${turn.situated_state_action || "noop"} · ${turn.situated_state_status}`
-          + (turn.situated_state_posture ? ` · ${turn.situated_state_posture}` : "")));
-        notes.appendChild(span);
-      }
-      if (turn.medium_state_status) {
-        const span = el("span");
-        span.appendChild(el("span", "tag", "中期基线"));
-        span.appendChild(document.createTextNode(
-          `${turn.medium_state_status}`
-          + (turn.medium_state_baseline ? ` · ${turn.medium_state_baseline}` : "")));
-        notes.appendChild(span);
+      if (turn.relationship_event === "stable_positive_interaction") {
+        stanceAccepted += 1;
       }
       if (notes.children.length) aiTurn.appendChild(notes);
       await refreshState();
-      if (turn.living_memory_status === "accepted") {
-        const latest = visibleMemories.at(-1);
-        if (latest) {
-          const hint = el("span");
-          hint.appendChild(document.createTextNode(
-            "「" + latest.content + "」"));
-          notes.appendChild(hint);
-        }
-      }
     }
   } catch (error) {
     say.remove();

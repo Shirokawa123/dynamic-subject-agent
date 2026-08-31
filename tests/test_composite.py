@@ -117,7 +117,7 @@ class _FakeMemoryProvider:
             recalled_id = request.active_memories[0].memory_id
             reply = "你的生日快到了，四月五号，我记得。"
             if request.current_user_message == COMBINED_MESSAGE:
-                reply += "至于纸张，我没有相关信息。"
+                reply += "至于纸张，我这边没有记录。"
             return LivingMemoryProviderResult(
                 proposal=LivingMemoryProposal(
                     action=LivingMemoryAction.NONE,
@@ -347,7 +347,7 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
     assert "创刊号规格" in combined.projection.expression_text
     assert combined.projection.living_memory_recalled_ids
     assert combined.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
-    assert "没有相关信息" not in combined.projection.expression_text
+    assert "没有记录" not in combined.projection.expression_text
 
     assert claim.projection.relationship_event is None
     assert claim.projection.knowledge_citation_ids == ()
@@ -721,12 +721,17 @@ def test_each_model_gateway_failure_isolated_from_knowledge(
         situated_gateway=situated,
         medium_gateway=medium,
     )
+    message = (
+        KNOWLEDGE_MESSAGE + " 关于目标我还没想清楚。"
+        if failed_capability == "participant-goal"
+        else KNOWLEDGE_MESSAGE
+    )
     try:
         turn = _submit(
             composition,
             qri,
             timeline_id,
-            KNOWLEDGE_MESSAGE,
+            message,
             f"composite-{uuid4().hex}",
         )
     finally:
@@ -770,6 +775,26 @@ def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:
     assert turn["knowledge_status"] == "failed-closed"
     assert turn["relationship_status"] == "failed-closed"
     assert turn["relationship_event"] is None
+    assert turn["new_memory_content"] == "我的生日是四月五号"
+    assert turn["explanations"] == [
+        {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": (
+                "已形成新记录：「我的生日是四月五号」"
+            ),
+        },
+        {
+            "capability": "知识",
+            "kind": "failed",
+            "message": "本轮知识处理未能完成；没有把不确定内容当作来源。",
+        },
+        {
+            "capability": "关系",
+            "kind": "failed",
+            "message": "本轮关系处理未能完成；没有写入关系变化。",
+        },
+    ]
     assert turn["expression"] == "我记住了：你的生日是四月五号。"
     assert "memory_id" not in json.dumps(snapshot, ensure_ascii=False)
 
@@ -808,9 +833,93 @@ def test_relationship_claim_does_not_erase_independent_goal(tmp_path: Path) -> N
     assert turn.status.value == "terminal"
     assert turn.projection is not None
     assert turn.projection.relationship_status == "no-update"
+    assert turn.projection.relationship_candidate_event == "relationship_claim"
+    assert (
+        turn.projection.relationship_reason_code
+        == "relationship.stance-event-no-update"
+    )
     assert turn.projection.relationship_event is None
     assert turn.projection.living_memory_status == "no-op"
     assert turn.projection.participant_goal_commitment_status == "accepted"
     assert turn.projection.participant_goal_commitment_action == "create"
     assert "不会因为一句声称" in turn.projection.expression_text
     assert "目标" in turn.projection.expression_text
+
+
+def test_explicit_goal_query_does_not_mix_memory_or_knowledge_expression(
+    tmp_path: Path,
+) -> None:
+    from test_participant_goal_integration import (
+        _ScriptedParticipantGoalProvider,
+        _goal_gateway,
+    )
+
+    provider = _ScriptedParticipantGoalProvider()
+    _, _, knowledge, _, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        participant_goal_gateway=_goal_gateway(provider),
+    )
+    try:
+        created = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我的目标是今年通过 N1。",
+            f"composite-{uuid4().hex}",
+        )
+        queried = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我现在的目标是什么？",
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert created.projection.participant_goal_commitment_status == "accepted"
+    assert queried.projection.expression_text == "你当前的目标是：今年通过 N1。"
+    assert queried.projection.participant_goal_commitment_status == "no-update"
+    assert queried.projection.participant_goal_commitment_selected_count == 1
+    assert queried.projection.living_memory_recalled_ids == ()
+    assert queried.projection.knowledge_citation_ids == ()
+    assert knowledge.requests == []
+    assert provider.classification_requests == []
+
+
+def test_similar_situated_and_medium_replies_are_not_repeated(tmp_path: Path) -> None:
+    from dynamic_subject_agent.medium_cognition import MediumReplyResult
+    from dynamic_subject_agent.situated_cognition import SituatedReplyResult
+    from test_medium_integration import _MediumProvider, _gateway as medium_gateway
+    from test_situated_integration import (
+        _SituatedProvider,
+        _gateway as situated_gateway,
+    )
+
+    class _SimilarSituated(_SituatedProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return SituatedReplyResult("我在这里，慢慢说，我会认真听。", "zh")
+
+    class _SimilarMedium(_MediumProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return MediumReplyResult("我在这里，慢慢说，我听着。", "zh")
+
+    _, _, _, _, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        situated_gateway=situated_gateway(_SimilarSituated()),
+        medium_gateway=medium_gateway(_SimilarMedium()),
+    )
+    try:
+        turn = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我现在有点紧张，最近压力很大。",
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+
+    assert turn.projection.expression_text == "我在这里，慢慢说，我会认真听。"
