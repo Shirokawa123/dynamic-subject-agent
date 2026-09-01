@@ -25,12 +25,16 @@ from dynamic_subject_agent.local_product import (
     open_deepseek_local_product,
 )
 from dynamic_subject_agent.source_character_authoring import (
+    LocalIdentitySelectRequest,
+    LocalIdentityStatus,
     SourceDraftCandidate,
     SourceDraftCommand,
     SourceDraftSaveRequest,
     SourceDraftStatus,
     SourceFreezeMappingRequest,
     SourceFreezeMappingStatus,
+    SourceIdentityFreezeRequest,
+    SourceIdentityFreezeStatus,
     SourcePreviewStatus,
     TextSourcePreviewRequest,
 )
@@ -317,10 +321,24 @@ class AppState:
             )
             else ()
         )
+        identities = self.local_identities()
+        active_identity = next(
+            (
+                item
+                for item in identities.get("identities", [])
+                if item.get("active")
+            ),
+            None,
+        )
+        knowledge_entries = self._knowledge_entries()
         return {
             "profile_id": self.product.profile_id,
+            "display_name": (
+                active_identity["display_name"] if active_identity else "Avery"
+            ),
+            "identities": identities.get("identities", []),
             "memories": self._memories(),
-            "knowledge_count": 4,
+            "knowledge_count": len(knowledge_entries),
             "relationship_accepted_count": len(accepted),
             "relationship_latest_event": accepted[0].event if accepted else None,
             "participant_goals": self._participant_goals(),
@@ -414,7 +432,6 @@ class AppState:
         return {"baseline": "settled", "version": 0}
 
     def submit_turn(self, text: str) -> dict:
-        from dynamic_subject_agent.knowledge_entries import knowledge_entry_by_id
         from dynamic_subject_agent.timeline import SubjectCommand
 
         command = SubjectCommand.contribute_utterance(
@@ -442,14 +459,17 @@ class AppState:
                 else (terminal.problem.code if terminal.problem else "unknown")
             )
             return {"ok": False, "stage": stage, "code": code}
+        knowledge_by_id = {
+            entry.entry_id: entry for entry in self._knowledge_entries()
+        }
         citations = []
         for entry_id in projection.knowledge_citation_ids:
-            entry = knowledge_entry_by_id(entry_id)
+            entry = knowledge_by_id.get(entry_id)
             citations.append(
                 {
                     "entry_id": entry_id,
                     "title": entry.title if entry else entry_id,
-                    "source": entry.source_ref if entry else "",
+                    "source": "封存来源" if entry else "",
                 }
             )
         new_kind = None
@@ -486,6 +506,28 @@ class AppState:
                 new_memory_content=new_content,
             ),
         }
+
+    def _knowledge_entries(self) -> tuple:
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            ApplicationQueryStatus,
+            KnowledgeApplicationProjection,
+        )
+
+        response = self.product.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.KNOWLEDGE,
+                target_profile_id=self.product.profile_id,
+                target_timeline_id=self.product.timeline_id,
+            )
+        )
+        if (
+            response.status is ApplicationQueryStatus.AVAILABLE
+            and isinstance(response.projection, KnowledgeApplicationProjection)
+        ):
+            return response.projection.entries
+        return ()
 
     def preview_character_source(
         self,
@@ -649,6 +691,70 @@ class AppState:
             "view": view,
         }
 
+    def freeze_source_identity(
+        self,
+        *,
+        expected_revision: object,
+        display_name: object,
+        freeze_basis_digest: object,
+        confirmed: object,
+    ) -> dict:
+        response = self.product.application.freeze_source_identity(
+            SourceIdentityFreezeRequest(
+                expected_revision=expected_revision,  # type: ignore[arg-type]
+                display_name=display_name,  # type: ignore[arg-type]
+                freeze_basis_digest=freeze_basis_digest,  # type: ignore[arg-type]
+                confirmed=confirmed,  # type: ignore[arg-type]
+            )
+        )
+        return {
+            "ok": response.status
+            in {SourceIdentityFreezeStatus.CREATED, SourceIdentityFreezeStatus.REPLAYED},
+            "status": response.status.value,
+            "problem": response.problem_code,
+            "view": (
+                None
+                if response.view is None
+                else {
+                    "identity_id": response.view.identity_id,
+                    "display_name": response.view.display_name,
+                    "freeze_basis_digest": response.view.freeze_basis_digest,
+                    "knowledge_member_count": response.view.knowledge_member_count,
+                    "active": response.view.active,
+                }
+            ),
+        }
+
+    def local_identities(self) -> dict:
+        response = self.product.application.local_identities()
+        return {
+            "ok": response.status is LocalIdentityStatus.AVAILABLE,
+            "status": response.status.value,
+            "problem": response.problem_code,
+            "identities": [
+                {
+                    "identity_id": item.identity_id,
+                    "display_name": item.display_name,
+                    "freeze_basis_digest": item.freeze_basis_digest,
+                    "active": item.active,
+                }
+                for item in response.identities
+            ],
+        }
+
+    def select_local_identity(self, identity_id: object, confirmed: object) -> dict:
+        response = self.product.application.select_local_identity(
+            LocalIdentitySelectRequest(
+                identity_id=identity_id,  # type: ignore[arg-type]
+                confirmed=confirmed,  # type: ignore[arg-type]
+            )
+        )
+        return {
+            "ok": response.status is LocalIdentityStatus.SELECTED,
+            "status": response.status.value,
+            "problem": response.problem_code,
+        }
+
 
 class DesktopState:
     """Own credential setup and the optional opened product lifecycle."""
@@ -804,6 +910,74 @@ class DesktopState:
                 }
             return self._app.preview_source_freeze_mapping(**payload)
 
+    def freeze_source_identity(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                    "view": None,
+                }
+            return self._app.freeze_source_identity(**payload)
+
+    def local_identities(self) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                    "identities": [],
+                }
+            return self._app.local_identities()
+
+    def select_local_identity(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                }
+            before = self._app.local_identities()
+            previous = next(
+                (
+                    item["identity_id"]
+                    for item in before.get("identities", [])
+                    if item.get("active")
+                ),
+                None,
+            )
+            result = self._app.select_local_identity(
+                payload.get("identity_id"),
+                payload.get("confirmed"),
+            )
+            if not result["ok"]:
+                return result
+            key = ""
+            try:
+                key = self._credential_store.load(self._credential_slot) or ""
+                if not key:
+                    raise RuntimeError("credential-unavailable")
+                replacement = self._product_factory(key)
+                self._replace_product(replacement)
+            except Exception:
+                rollback_ok = False
+                if previous is not None and self._app is not None:
+                    rollback = self._app.select_local_identity(previous, True)
+                    rollback_ok = bool(rollback.get("ok"))
+                if not rollback_ok:
+                    self._replace_product(None)
+                return {
+                    "ok": False,
+                    "status": "failed-closed",
+                    "problem": "local-identity-open-failed",
+                }
+            finally:
+                key = ""
+            return {"ok": True, "status": "selected", **self._app.snapshot()}
+
     def close(self) -> None:
         with self._lock:
             self._replace_product(None)
@@ -849,6 +1023,9 @@ def build_handler(state: DesktopState):
                 self._json(200, state.setup_snapshot())
             elif path == "/api/authoring/draft":
                 payload = state.source_draft("query")
+                self._json(200 if payload["ok"] else 422, payload)
+            elif path == "/api/identities":
+                payload = state.local_identities()
                 self._json(200 if payload["ok"] else 422, payload)
             else:
                 self._json(404, {"error": "not-found"})
@@ -913,6 +1090,33 @@ def build_handler(state: DesktopState):
                     self._json(400, {"ok": False, "problem": "invalid-request"})
                     return
                 result = state.preview_source_freeze_mapping(payload)
+                self._json(200 if result["ok"] else 422, result)
+                return
+            if self.path == "/api/authoring/freeze":
+                try:
+                    payload = self._read_json(maximum=8_192)
+                    if set(payload) != {
+                        "expected_revision",
+                        "display_name",
+                        "freeze_basis_digest",
+                        "confirmed",
+                    }:
+                        raise ValueError("unexpected-fields")
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                result = state.freeze_source_identity(payload)
+                self._json(200 if result["ok"] else 422, result)
+                return
+            if self.path == "/api/identities/select":
+                try:
+                    payload = self._read_json(maximum=8_192)
+                    if set(payload) != {"identity_id", "confirmed"}:
+                        raise ValueError("unexpected-fields")
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                result = state.select_local_identity(payload)
                 self._json(200 if result["ok"] else 422, result)
                 return
             if self.path != "/api/turn":

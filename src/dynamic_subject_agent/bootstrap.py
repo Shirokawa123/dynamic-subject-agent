@@ -29,7 +29,13 @@ from dynamic_subject_agent.runtime import (
     RuntimeFaultPoint,
 )
 from dynamic_subject_agent.timeline import OperationRef
-from dynamic_subject_agent.source_character_authoring import TextSourceCharacterAuthoring
+from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+from dynamic_subject_agent.source_character_authoring import (
+    LocalIdentityListResponse,
+    LocalIdentitySelectResponse,
+    SourceIdentityFreezeResponse,
+    TextSourceCharacterAuthoring,
+)
 from dynamic_subject_agent.studio import (
     CapabilityManifest,
     QualifiedRuntimeInput,
@@ -106,6 +112,12 @@ def compose_application(
     _host_fault_hook: Callable[[RuntimeHostFaultPoint], None] | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
+    _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
+    | None = None,
+    _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
+    _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
+    | None = None,
+    _knowledge_entries: tuple[KnowledgeEntry, ...] = (),
 ) -> _ApplicationComposition:
     """Build the one fresh QRI→Host→Runtime→Facade authority lane."""
 
@@ -252,6 +264,10 @@ def compose_application(
             ),
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
+            _source_identity_freezer=_source_identity_freezer,
+            _local_identity_lister=_local_identity_lister,
+            _local_identity_selector=_local_identity_selector,
+            _knowledge_entries=_knowledge_entries,
         )
         return _ApplicationComposition(application, router, host)
     except Exception:

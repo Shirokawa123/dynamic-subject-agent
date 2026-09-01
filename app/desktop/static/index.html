@@ -75,7 +75,7 @@
 <div class="authoring-screen" id="authoring-screen" hidden>
   <div class="authoring-card">
     <h2>来 源 建 角 预 览</h2>
-    <p>当前只接受一份你有权使用的原创纯文本。文本会发送给 DeepSeek，仅用于提议有逐字证据的 Genesis/Knowledge 候选；不会保存、封存或修改 Avery。</p>
+    <p>当前只接受一份你有权使用的原创纯文本。文本仅在逐次确认后发送给 DeepSeek 提议候选；保存草稿、预览映射与按 exact Freeze Basis 创建新隔离身份分别确认。不会覆盖 Avery。</p>
     <label>来源标题<input type="text" id="source-title" maxlength="120" placeholder="例如：Avery 原创人物简报"></label>
     <label>来源文本<textarea id="source-text" maxlength="16000" placeholder="粘贴 project-original 文本……"></textarea></label>
     <label class="authoring-check"><input type="checkbox" id="source-rights"> 我确认拥有或已取得使用这份文本的权利。</label>
@@ -91,24 +91,27 @@
     <div class="setup-status" id="authoring-status"></div>
     <div id="authoring-results"></div>
     <div class="preview-section">
-      <h3>封存映射预览（不会执行 freeze）</h3>
+      <h3>封存映射与身份创建</h3>
       <label>角色显示名称<input type="text" id="mapping-display-name" maxlength="128" placeholder="必须出现在已选 identity 的逐字证据中"></label>
       <button id="preview-mapping">生成 exact mapping</button>
+      <button id="freeze-identity" disabled>按此 Freeze Basis 创建新身份</button>
       <div class="setup-status" id="mapping-status"></div>
       <div id="mapping-results"></div>
+      <h3>本地隔离身份</h3>
+      <div id="identity-results"></div>
     </div>
   </div>
 </div>
 <div class="app">
   <div class="chat">
-    <header><h1>Avery</h1><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
+    <header><h1 id="subject-name">Avery</h1><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
     <div id="log"></div>
   </div>
   <div class="rail">
     <h2>记 忆</h2>
     <div id="rail-memories"></div>
     <h2 style="margin-top:18px">知 识 来 源</h2>
-    <div class="card"><span class="k">4 条封存来源</span> · 项目原创</div>
+    <div class="card"><span class="k" id="knowledge-count">4 条封存来源</span> · 项目原创</div>
     <h2 style="margin-top:18px">立 场</h2>
     <div class="card" id="rail-stance"><span class="k">尚无立场互动</span></div>
     <h2 style="margin-top:18px">目 标 与 承 诺</h2>
@@ -150,8 +153,11 @@ const mappingDisplayNameInput = document.getElementById("mapping-display-name");
 const previewMappingButton = document.getElementById("preview-mapping");
 const mappingStatus = document.getElementById("mapping-status");
 const mappingResults = document.getElementById("mapping-results");
+const freezeIdentityButton = document.getElementById("freeze-identity");
+const identityResults = document.getElementById("identity-results");
 let authoringCandidates = [];
 let authoringRevision = 0;
+let lastMapping = null;
 
 const setupProblemLabels = {
   "credential-invalid": "验证失败：API key 无效。",
@@ -189,6 +195,9 @@ const authoringProblemLabels = {
   "source-freeze-display-name-not-in-identity-evidence":"显示名称必须逐字出现在已选 identity 证据中。",
   "source-freeze-draft-revision-conflict":"草稿 revision 已变化，请重新加载。",
   "source-freeze-draft-unavailable":"当前草稿不可用于映射。",
+  "source-identity-freeze-basis-conflict":"Freeze Basis 已变化，未执行封存；请重新生成映射。",
+  "source-identity-freeze-confirmation-required":"需要明确确认 exact Freeze Basis。",
+  "source-identity-freeze-failed-closed":"身份封存失败关闭，没有报告为完成。",
 };
 
 function el(tag, cls, text) {
@@ -207,6 +216,11 @@ async function refreshState() {
     return;
   }
   stanceAccepted = state.relationship_accepted_count || 0;
+  const activeIdentity = (state.identities || []).find(item => item.active);
+  const subjectLabel = `${state.display_name || "Avery"}${activeIdentity && activeIdentity.freeze_basis_digest ? " · 来源封存" : " · 原有身份"}`;
+  document.getElementById("subject-name").textContent = subjectLabel;
+  document.title = subjectLabel;
+  document.getElementById("knowledge-count").textContent = `${state.knowledge_count} 条封存来源`;
   const rail = document.getElementById("rail-memories");
   rail.innerHTML = "";
   renderRail(state);
@@ -463,6 +477,8 @@ async function deleteDraft() {
 }
 
 function clearMapping() {
+  lastMapping = null;
+  freezeIdentityButton.disabled = true;
   mappingStatus.textContent = "";
   mappingStatus.className = "setup-status";
   mappingResults.innerHTML = "";
@@ -479,11 +495,15 @@ function mappingCard(label, content) {
 function renderMapping(result) {
   mappingResults.innerHTML = "";
   if (!result.ok) {
+    lastMapping = null;
+    freezeIdentityButton.disabled = true;
     mappingStatus.className = "setup-status error";
     mappingStatus.textContent = authoringProblemLabels[result.problem] || "封存映射未生成。";
     return;
   }
   const view = result.view;
+  lastMapping = view;
+  freezeIdentityButton.disabled = false;
   mappingStatus.className = "setup-status";
   mappingStatus.textContent = `尚未封存 · draft revision ${view.draft_revision} · policy ${view.mapping_policy_version}`;
   mappingResults.appendChild(mappingCard(
@@ -517,6 +537,93 @@ function renderMapping(result) {
     "notes",
     "此预览只描述未来将封存的 exact 内容；尚未创建身份，也不会替换 Avery。",
   ));
+}
+
+function renderIdentities(result) {
+  identityResults.innerHTML = "";
+  if (!result || !result.ok) {
+    identityResults.appendChild(el("div", "card", "身份列表暂不可用。"));
+    return;
+  }
+  for (const item of result.identities) {
+    const card = el("div", "card");
+    const originLabel = item.freeze_basis_digest ? "来源封存" : "原有身份";
+    card.appendChild(el("span", "k", `${item.display_name} · ${originLabel}${item.active ? "（当前）" : ""}`));
+    if (item.freeze_basis_digest) {
+      card.appendChild(el("div", "preview-evidence", `Freeze Basis ${item.freeze_basis_digest}`));
+    }
+    if (!item.active) {
+      const button = el("button", "quiet-button", "切换到此身份");
+      button.addEventListener("click", () => selectIdentity(item));
+      card.appendChild(button);
+    }
+    identityResults.appendChild(card);
+  }
+}
+
+async function loadIdentities() {
+  try {
+    const res = await fetch("/api/identities");
+    renderIdentities(await res.json());
+  } catch (error) {
+    renderIdentities(null);
+  }
+}
+
+async function freezeIdentity() {
+  if (!lastMapping || freezeIdentityButton.disabled) return;
+  const basis = lastMapping.freeze_basis_digest;
+  if (!window.confirm(`确认以 exact Freeze Basis\n${basis}\n创建新的隔离身份？此操作不会覆盖 Avery，也不会删除 Source Draft。`)) return;
+  freezeIdentityButton.disabled = true;
+  mappingStatus.className = "setup-status";
+  mappingStatus.textContent = "正在复核 basis 并封存新身份……";
+  try {
+    const res = await fetch("/api/authoring/freeze", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        expected_revision:lastMapping.draft_revision,
+        display_name:lastMapping.profile.display_name,
+        freeze_basis_digest:basis,
+        confirmed:true,
+      }),
+    });
+    const result = await res.json();
+    if (!result.ok) {
+      mappingStatus.className = "setup-status error";
+      mappingStatus.textContent = authoringProblemLabels[result.problem] || "身份封存未完成。";
+      return;
+    }
+    mappingStatus.className = "setup-status";
+    mappingStatus.textContent = result.status === "replayed"
+      ? "该 Freeze Basis 已封存；返回同一隔离身份。"
+      : `已创建新隔离身份 ${result.view.display_name}，封存 ${result.view.knowledge_member_count} 条 Knowledge。`;
+    await loadIdentities();
+  } catch (error) {
+    mappingStatus.className = "setup-status error";
+    mappingStatus.textContent = "身份封存请求失败，没有报告为完成。";
+  } finally {
+    freezeIdentityButton.disabled = false;
+  }
+}
+
+async function selectIdentity(item) {
+  if (!window.confirm(`切换到隔离身份 ${item.display_name}？两个身份的 Timeline 不会合并。`)) return;
+  const res = await fetch("/api/identities/select", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({identity_id:item.identity_id, confirmed:true}),
+  });
+  const result = await res.json();
+  if (!result.ok) {
+    mappingStatus.className = "setup-status error";
+    mappingStatus.textContent = "身份切换失败关闭；当前身份未被报告为新身份。";
+    return;
+  }
+  document.getElementById("log").innerHTML = "";
+  await refreshState();
+  await loadIdentities();
+  authoringScreen.hidden = true;
 }
 
 async function previewMapping() {
@@ -670,6 +777,7 @@ document.getElementById("open-setup").addEventListener("click", async () => {
 document.getElementById("open-authoring").addEventListener("click", async () => {
   authoringScreen.hidden = false;
   if (!authoringCandidates.length) await loadDraft();
+  await loadIdentities();
 });
 document.getElementById("close-authoring").addEventListener("click", () => {
   authoringScreen.hidden = true;
@@ -679,6 +787,7 @@ saveDraftButton.addEventListener("click", saveDraft);
 document.getElementById("load-draft").addEventListener("click", loadDraft);
 deleteDraftButton.addEventListener("click", deleteDraft);
 previewMappingButton.addEventListener("click", previewMapping);
+freezeIdentityButton.addEventListener("click", freezeIdentity);
 closeSetupButton.addEventListener("click", () => {
   if (productReady) setupScreen.hidden = true;
 });

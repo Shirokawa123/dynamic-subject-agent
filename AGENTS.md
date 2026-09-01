@@ -24,11 +24,11 @@
 
 当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。下一项工作必须先有新的用户目标与切片任务书；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
 
-文本来源建角预览已完成：只生成未发布、未持久化的 Genesis/Knowledge 候选；封存、身份创建、视频/音频和私人来源仍需新切片与授权。
+project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；草稿仍不能 freeze 或创建身份。
+来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
 
-未封存草稿可确定性预览 exact Profile/Genesis/Knowledge Freeze Mapping 与 Freeze Basis；预览不写 snapshot/QRI，不创建或替换身份。
+未封存草稿可确定性预览 exact Profile/Genesis/Knowledge Freeze Mapping 与 Freeze Basis；只有携带 exact basis 的显式确认才能幂等创建新 Sealed Identity，且不替换既有身份。
 
 ## 永久不变量
 

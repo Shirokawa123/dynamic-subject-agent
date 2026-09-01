@@ -22,6 +22,7 @@ class KnowledgeEntry:
     title: str
     content: str
     source_ref: str
+    evidence_quote: str | None = None
 
 
 SEALED_KNOWLEDGE_SOURCE_REF = "project-original:lantern-zine-fixture-v1"

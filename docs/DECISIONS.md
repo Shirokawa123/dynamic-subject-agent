@@ -55,3 +55,7 @@
 ## D-014：Freeze 前必须展示 exact deterministic mapping
 
 2026-09-01，Source Draft 不直接 seal。用户先提供有 identity evidence 的 display name，Python 按固定策略映射 Profile/Genesis/Knowledge，并展示完整 Freeze Basis；来源不能预写已赚取关系，初始关系固定为空白。映射重复稳定且只读，真正 freeze/新身份创建等待下一次明确授权。
+
+## D-015：exact Freeze Basis 创建独立 runtime authority
+
+2026-09-01，用户明确授权 basis `e99264f...311343`。Freeze 在写前重算 basis，以稳定身份幂等封存 Profile/Genesis/Knowledge 并发布 QRI；本地 registry 只选择完整隔离 authority，不合并 Timeline。Knowledge runtime 改从当前 QRI snapshot 注入，代码 fixture 仅兼容旧 Avery；0 member 不继承旧知识。真实切换发现 Presentation DOM 会残留上一身份消息，已在切换成功时清空并标记“原有身份/来源封存”。Freeze、registry、切换均不调用 Provider，真实对话继续使用既有六类授权投影。

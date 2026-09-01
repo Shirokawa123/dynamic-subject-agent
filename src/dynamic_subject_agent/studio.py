@@ -33,6 +33,7 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceFreezeMappingRequest,
     SourceFreezeMappingResponse,
     SourceFreezeMappingStatus,
+    SourceFreezeMappingView,
     SourceDraftCommand,
     SourceDraftCommandKind,
     SourceDraftResponse,
@@ -43,13 +44,15 @@ from dynamic_subject_agent.source_character_authoring import (
     prepare_source_freeze_mapping,
     source_draft_candidates_from_json,
 )
+from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
 PERSISTENCE_VERSION = "M0-PERSISTENCE-1.0"
 POLICY_VERSION = "m0-host-policy-1.0"
 QUALIFICATION_VERSION = "m0-qualified-runtime-input-1.0"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+_LEGACY_SCHEMA_VERSION = 1
 ROOT_FORMAT = "dynamic-subject-m0-canonical"
 ROOT_EPOCH = 1
 ROOT_KIND = "test-fixture"
@@ -1543,6 +1546,7 @@ class GenesisSnapshot:
     premise: GenesisPremise
     knowledge_member_count: int
     created_at_us: int
+    source_freeze_basis_digest: str | None = None
 
 
 @dataclass(frozen=True, init=False)
@@ -1864,10 +1868,26 @@ _PROFILE_DDL = (
     CREATE TABLE knowledge_snapshot (
         knowledge_snapshot_id TEXT PRIMARY KEY,
         genesis_snapshot_id TEXT NOT NULL UNIQUE REFERENCES genesis_snapshot(snapshot_id),
-        member_count INTEGER NOT NULL CHECK (member_count = 0),
-        qualification TEXT NOT NULL CHECK (qualification = 'qualified-original-empty'),
+        member_count INTEGER NOT NULL CHECK (member_count >= 0 AND member_count <= 6),
+        qualification TEXT NOT NULL CHECK (
+            qualification IN ('qualified-original-empty', 'qualified-source-freeze')
+        ),
         snapshot_digest TEXT NOT NULL CHECK (length(snapshot_digest) = 64),
         created_at_us INTEGER NOT NULL
+    ) STRICT
+    """,
+    """
+    CREATE TABLE knowledge_snapshot_member (
+        knowledge_snapshot_id TEXT NOT NULL REFERENCES knowledge_snapshot(knowledge_snapshot_id),
+        ordinal INTEGER NOT NULL CHECK (ordinal >= 0 AND ordinal < 6),
+        entry_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        source_ref TEXT NOT NULL,
+        evidence_quote TEXT,
+        member_digest TEXT NOT NULL CHECK (length(member_digest) = 64),
+        PRIMARY KEY (knowledge_snapshot_id, ordinal),
+        UNIQUE (knowledge_snapshot_id, entry_id)
     ) STRICT
     """,
     """
@@ -1890,6 +1910,7 @@ _PROFILE_TABLES = frozenset(
         "genesis_draft_revision",
         "genesis_snapshot",
         "knowledge_snapshot",
+        "knowledge_snapshot_member",
         "participant_profile",
         "policy_decision",
         "profile_governance",
@@ -2012,6 +2033,8 @@ _ARTIFACT_SIDECAR_TABLES = frozenset(
         "sidecar_manifest",
     }
 )
+
+_PROFILE_TABLES_V1 = _PROFILE_TABLES - {"knowledge_snapshot_member"}
 
 
 _SOURCE_DRAFT_DDL = (
@@ -2671,15 +2694,21 @@ def _verify_store(location: StudioRootRef, connection: sqlite3.Connection) -> No
         WHERE singleton = 1
         """
     ).fetchone()
-    if manifest is None or tuple(manifest) != (
-        location.root_id,
-        location.profile_store_id,
-        "profile",
-        PROFILE_SCHEMA_FAMILY,
-        SCHEMA_VERSION,
-        CONTRACT_VERSION,
-        PERSISTENCE_VERSION,
-        ROOT_EPOCH,
+    schema_version = None if manifest is None else int(manifest[4])
+    user_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+    if (
+        manifest is None
+        or tuple(manifest[:4])
+        != (
+            location.root_id,
+            location.profile_store_id,
+            "profile",
+            PROFILE_SCHEMA_FAMILY,
+        )
+        or tuple(manifest[5:])
+        != (CONTRACT_VERSION, PERSISTENCE_VERSION, ROOT_EPOCH)
+        or schema_version not in {_LEGACY_SCHEMA_VERSION, SCHEMA_VERSION}
+        or user_version != schema_version
     ):
         raise StudioFailedClosed(
             "store-identity-mismatch",
@@ -2692,7 +2721,12 @@ def _verify_store(location: StudioRootRef, connection: sqlite3.Connection) -> No
         WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
         """
     ).fetchall()
-    if {str(row[0]) for row in table_rows} != _PROFILE_TABLES:
+    expected_tables = (
+        _PROFILE_TABLES
+        if schema_version == SCHEMA_VERSION
+        else _PROFILE_TABLES_V1
+    )
+    if {str(row[0]) for row in table_rows} != expected_tables:
         raise StudioFailedClosed(
             "schema-shape-mismatch",
             "ProfileStore schema does not match the M0 contract",
@@ -2793,6 +2827,54 @@ class SubjectStudio:
             base,
             root_kind=EXPERIMENTAL_ROOT_KIND,
             policy_kernel=policy_kernel,
+        )
+
+    @classmethod
+    def open_or_create_source_identity(
+        cls,
+        product_parent: Path,
+        *,
+        freeze_basis_digest: str,
+        policy_kernel: PolicyKernel,
+    ) -> tuple[SubjectStudio, Path]:
+        """Open or create the deterministic Studio hidden behind one Freeze Basis."""
+
+        basis = _canonical_sha256(freeze_basis_digest, "freeze_basis_digest")
+        if not isinstance(policy_kernel, PolicyKernel):
+            raise TypeError("SubjectStudio requires a PolicyKernel")
+        experiment_id = str(
+            uuid5(
+                NAMESPACE_URL,
+                "dynamic-subject-agent:source-experiment:" + basis,
+            )
+        )
+        experiment_base = Path(product_parent) / experiment_id
+        root_id = str(
+            uuid5(NAMESPACE_URL, "dynamic-subject-agent:source-studio:" + basis)
+        )
+        profile_store_id = str(
+            uuid5(NAMESPACE_URL, "dynamic-subject-agent:source-profile-store:" + basis)
+        )
+        location = StudioRootRef(
+            root_path=str(
+                experiment_base / "mature-runtime-m0" / "roots" / root_id
+            ),
+            root_id=root_id,
+            profile_store_id=profile_store_id,
+            root_kind=EXPERIMENTAL_ROOT_KIND,
+        )
+        if location.root.exists():
+            return cls.open(location, policy_kernel=policy_kernel), experiment_base
+        base = _validate_experimental_base(experiment_base)
+        return (
+            cls._create_at_base(
+                base,
+                root_kind=EXPERIMENTAL_ROOT_KIND,
+                policy_kernel=policy_kernel,
+                root_id=root_id,
+                profile_store_id=profile_store_id,
+            ),
+            experiment_base,
         )
 
     @classmethod
@@ -3281,6 +3363,13 @@ class SubjectStudio:
     ) -> SourceFreezeMappingResponse:
         self._require_open()
         draft = self.source_draft(SourceDraftCommand.query())
+        return self._validated_source_freeze_mapping(draft, request)
+
+    def _validated_source_freeze_mapping(
+        self,
+        draft: SourceDraftResponse,
+        request: object,
+    ) -> SourceFreezeMappingResponse:
         if draft.status is SourceDraftStatus.ABSENT:
             return SourceFreezeMappingResponse(SourceFreezeMappingStatus.ABSENT)
         if draft.status is not SourceDraftStatus.AVAILABLE or draft.view is None:
@@ -3327,10 +3416,50 @@ class SubjectStudio:
             )
         return mapping
 
-    def _query_source_draft(self) -> SourceDraftResponse:
+    def execute_locked_source_freeze(
+        self,
+        request: object,
+        publisher: Callable[[SourceFreezeMappingView], Any],
+    ) -> Any:
+        """Hold the Source Draft revision stable through the irreversible publisher."""
+
+        self._require_authority()
+        if not callable(publisher):
+            raise TypeError("publisher must be callable")
+        if not self._source_draft_database.exists():
+            return SourceFreezeMappingResponse(SourceFreezeMappingStatus.ABSENT)
+        sidecar = self._open_source_draft_sidecar(create=False)
+        try:
+            _begin(sidecar)
+            draft = self._query_source_draft(_sidecar=sidecar)
+            mapping = self._validated_source_freeze_mapping(draft, request)
+            if (
+                mapping.status is not SourceFreezeMappingStatus.AVAILABLE
+                or mapping.view is None
+            ):
+                _commit(sidecar)
+                return mapping
+            result = publisher(mapping.view)
+            _commit(sidecar)
+            return result
+        except Exception:
+            _rollback_if_needed(sidecar)
+            raise
+        finally:
+            sidecar.close()
+
+    def _query_source_draft(
+        self,
+        *,
+        _sidecar: sqlite3.Connection | None = None,
+    ) -> SourceDraftResponse:
         if not self._source_draft_database.exists():
             return SourceDraftResponse(SourceDraftStatus.ABSENT)
-        sidecar = self._open_source_draft_sidecar(create=False)
+        sidecar = (
+            self._open_source_draft_sidecar(create=False)
+            if _sidecar is None
+            else _sidecar
+        )
         try:
             row = sidecar.execute(
                 """
@@ -3360,7 +3489,8 @@ class SubjectStudio:
                 """
             ).fetchall()
         finally:
-            sidecar.close()
+            if _sidecar is None:
+                sidecar.close()
         if row is None:
             return SourceDraftResponse(SourceDraftStatus.ABSENT)
         try:
@@ -8129,6 +8259,56 @@ class SubjectStudio:
             branch_id=str(uuid4()),
         )
 
+    def ensure_source_identity_draft(
+        self,
+        *,
+        profile: ParticipantProfile,
+        premise: GenesisPremise,
+        source_freeze_basis_digest: str,
+    ) -> DraftView:
+        """Idempotently stage the one Genesis draft derived from a source basis."""
+
+        basis = _canonical_sha256(
+            source_freeze_basis_digest,
+            "source_freeze_basis_digest",
+        )
+        draft_id = str(
+            uuid5(NAMESPACE_URL, "dynamic-subject-agent:source-draft:" + basis)
+        )
+        branch_id = str(
+            uuid5(NAMESPACE_URL, "dynamic-subject-agent:source-branch:" + basis)
+        )
+        try:
+            row, stored_profile, stored_premise, _profile_digest = self._draft_bundle(
+                draft_id
+            )
+        except StudioRejected as error:
+            if error.code != "draft-not-found":
+                raise
+            return self._create_draft_with_ids(
+                profile=profile,
+                premise=premise,
+                draft_id=draft_id,
+                branch_id=branch_id,
+            )
+        if (
+            str(row[1]) != branch_id
+            or stored_profile.to_dict() != profile.to_dict()
+            or stored_premise.to_dict() != premise.to_dict()
+        ):
+            raise StudioConflict(
+                "source-freeze-identity-conflict",
+                "Freeze Basis already names different staged identity content",
+            )
+        return DraftView(
+            draft_id=str(row[0]),
+            branch_id=str(row[1]),
+            profile_id=str(row[2]),
+            revision=int(row[3]),
+            content_fingerprint=str(row[10]),
+            sealed_snapshot_id=None if row[4] is None else str(row[4]),
+        )
+
     def _create_reserved_draft(
         self,
         *,
@@ -8481,6 +8661,33 @@ class SubjectStudio:
             sealed_snapshot_id=(None if row[4] is None else str(row[4])),
         )
 
+    def query_profile(self, profile_id: str) -> ParticipantProfile:
+        self._require_open()
+        canonical_id = _canonical_uuid(profile_id, "profile_id")
+        row = self._writer.execute(
+            """
+            SELECT profile_json, profile_digest
+            FROM participant_profile WHERE profile_id = ?
+            """,
+            (canonical_id,),
+        ).fetchone()
+        if row is None:
+            raise StudioRejected("profile-not-found", "ParticipantProfile does not exist")
+        try:
+            payload = json.loads(str(row[0]))
+            profile = ParticipantProfile.from_dict(payload)
+        except (json.JSONDecodeError, TypeError, ValueError) as error:
+            raise StudioFailedClosed(
+                "profile-corrupt",
+                "ParticipantProfile is unreadable",
+            ) from error
+        if profile.profile_id != canonical_id or _digest(payload) != str(row[1]):
+            raise StudioFailedClosed(
+                "profile-integrity-failed",
+                "ParticipantProfile digest is invalid",
+            )
+        return profile
+
     def preview(self, draft_id: str) -> GenesisPreview:
         self._require_open()
         row, profile, premise, profile_digest = self._draft_bundle(draft_id)
@@ -8640,10 +8847,55 @@ class SubjectStudio:
         freeze: FreezeDecision,
         *,
         policy_decision_id: str,
+        knowledge_entries: tuple[KnowledgeEntry, ...] = (),
+        source_freeze_basis_digest: str | None = None,
     ) -> GenesisSnapshot:
         self._require_authority()
         if not isinstance(freeze, FreezeDecision):
             raise TypeError("seal requires a FreezeDecision")
+        if not isinstance(knowledge_entries, tuple) or any(
+            not isinstance(entry, KnowledgeEntry) for entry in knowledge_entries
+        ):
+            raise TypeError("knowledge_entries must be sealed KnowledgeEntry values")
+        if len(knowledge_entries) > 6 or len(
+            {entry.entry_id for entry in knowledge_entries}
+        ) != len(knowledge_entries):
+            raise StudioRejected(
+                "knowledge-members-invalid",
+                "Knowledge snapshot accepts at most six unique members",
+            )
+        for entry in knowledge_entries:
+            if (
+                not entry.entry_id
+                or len(entry.entry_id) > 64
+                or not entry.title.strip()
+                or len(entry.title) > 200
+                or not entry.content.strip()
+                or len(entry.content) > 4_000
+                or not entry.source_ref.strip()
+                or len(entry.source_ref) > 256
+                or (
+                    entry.evidence_quote is not None
+                    and (
+                        not entry.evidence_quote.strip()
+                        or len(entry.evidence_quote) > 4_000
+                    )
+                )
+            ):
+                raise StudioRejected(
+                    "knowledge-members-invalid",
+                    "Knowledge snapshot member is invalid",
+                )
+        if source_freeze_basis_digest is not None:
+            source_freeze_basis_digest = _canonical_sha256(
+                source_freeze_basis_digest,
+                "source_freeze_basis_digest",
+            )
+        if knowledge_entries and source_freeze_basis_digest is None:
+            raise StudioRejected(
+                "source-freeze-basis-required",
+                "non-empty Knowledge snapshot requires exact source freeze provenance",
+            )
         preview = self.preview(draft_id)
         if (
             freeze.draft_id != preview.draft_id
@@ -8670,10 +8922,21 @@ class SubjectStudio:
                 f"{freeze.decision_id}",
             )
         )
+        knowledge_payload = [
+            {
+                "entry_id": entry.entry_id,
+                "title": entry.title,
+                "content": entry.content,
+                "source_ref": entry.source_ref,
+                "evidence_quote": entry.evidence_quote,
+            }
+            for entry in knowledge_entries
+        ]
         knowledge_snapshot_id = str(
             uuid5(
                 NAMESPACE_URL,
-                f"dynamic-subject-agent:knowledge-empty:{snapshot_id}",
+                "dynamic-subject-agent:knowledge:"
+                f"{snapshot_id}:{_digest(knowledge_payload)}",
             )
         )
         created_at_us = _utc_microseconds()
@@ -8697,7 +8960,8 @@ class SubjectStudio:
                 ).fetchone()[0]
             ),
             "premise": premise.to_dict(),
-            "knowledge_member_count": 0,
+            "knowledge_member_count": len(knowledge_entries),
+            "source_freeze_basis_digest": source_freeze_basis_digest,
             "created_at_us": created_at_us,
         }
         snapshot_digest = _digest(snapshot_payload)
@@ -8705,8 +8969,14 @@ class SubjectStudio:
             {
                 "knowledge_snapshot_id": knowledge_snapshot_id,
                 "genesis_snapshot_id": snapshot_id,
-                "member_count": 0,
-                "qualification": "qualified-original-empty",
+                "member_count": len(knowledge_entries),
+                "qualification": (
+                    "qualified-source-freeze"
+                    if knowledge_entries
+                    else "qualified-original-empty"
+                ),
+                "members": knowledge_payload,
+                "source_freeze_basis_digest": source_freeze_basis_digest,
             }
         )
         try:
@@ -8801,15 +9071,41 @@ class SubjectStudio:
                     qualification,
                     snapshot_digest,
                     created_at_us
-                ) VALUES (?, ?, 0, 'qualified-original-empty', ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 """,
                 (
                     knowledge_snapshot_id,
                     snapshot_id,
+                    len(knowledge_entries),
+                    (
+                        "qualified-source-freeze"
+                        if knowledge_entries
+                        else "qualified-original-empty"
+                    ),
                     knowledge_digest,
                     created_at_us,
                 ),
             )
+            for ordinal, entry in enumerate(knowledge_entries):
+                member_payload = knowledge_payload[ordinal]
+                self._writer.execute(
+                    """
+                    INSERT INTO knowledge_snapshot_member (
+                        knowledge_snapshot_id, ordinal, entry_id, title, content,
+                        source_ref, evidence_quote, member_digest
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        knowledge_snapshot_id,
+                        ordinal,
+                        entry.entry_id,
+                        entry.title,
+                        entry.content,
+                        entry.source_ref,
+                        entry.evidence_quote,
+                        _digest(member_payload),
+                    ),
+                )
             self._writer.execute(
                 """
                 UPDATE genesis_draft
@@ -8829,7 +9125,8 @@ class SubjectStudio:
         canonical_id = _canonical_uuid(snapshot_id, "snapshot_id")
         row = self._writer.execute(
             """
-            SELECT s.snapshot_json, s.snapshot_digest, k.member_count
+            SELECT s.snapshot_json, s.snapshot_digest, k.member_count,
+                   k.qualification, k.snapshot_digest
             FROM genesis_snapshot AS s
             JOIN knowledge_snapshot AS k ON k.genesis_snapshot_id = s.snapshot_id
             WHERE s.snapshot_id = ?
@@ -8850,7 +9147,49 @@ class SubjectStudio:
                 "snapshot-corrupt",
                 "GenesisSnapshot is unreadable",
             ) from error
-        if _digest(payload) != str(row[1]) or int(row[2]) != 0:
+        member_count = int(row[2])
+        members = self.knowledge_entries(str(payload["knowledge_snapshot_id"]))
+        knowledge_payload = [
+            {
+                "entry_id": entry.entry_id,
+                "title": entry.title,
+                "content": entry.content,
+                "source_ref": entry.source_ref,
+                "evidence_quote": entry.evidence_quote,
+            }
+            for entry in members
+        ]
+        expected_knowledge_digest = _digest(
+            {
+                "knowledge_snapshot_id": str(payload["knowledge_snapshot_id"]),
+                "genesis_snapshot_id": canonical_id,
+                "member_count": member_count,
+                "qualification": str(row[3]),
+                "members": knowledge_payload,
+                "source_freeze_basis_digest": payload.get(
+                    "source_freeze_basis_digest"
+                ),
+            }
+        )
+        legacy_empty_digest = _digest(
+            {
+                "knowledge_snapshot_id": str(payload["knowledge_snapshot_id"]),
+                "genesis_snapshot_id": canonical_id,
+                "member_count": 0,
+                "qualification": "qualified-original-empty",
+            }
+        )
+        knowledge_digest_valid = str(row[4]) == expected_knowledge_digest or (
+            member_count == 0
+            and "source_freeze_basis_digest" not in payload
+            and str(row[4]) == legacy_empty_digest
+        )
+        if (
+            _digest(payload) != str(row[1])
+            or member_count != int(payload["knowledge_member_count"])
+            or member_count != len(members)
+            or not knowledge_digest_valid
+        ):
             raise StudioFailedClosed(
                 "snapshot-integrity-failed",
                 "GenesisSnapshot digest or KnowledgeSnapshot is invalid",
@@ -8880,7 +9219,75 @@ class SubjectStudio:
             premise=premise,
             knowledge_member_count=int(payload["knowledge_member_count"]),
             created_at_us=int(payload["created_at_us"]),
+            source_freeze_basis_digest=payload.get("source_freeze_basis_digest"),
         )
+
+    def knowledge_entries(
+        self,
+        knowledge_snapshot_id: str,
+    ) -> tuple[KnowledgeEntry, ...]:
+        self._require_open()
+        canonical_id = _canonical_uuid(
+            knowledge_snapshot_id,
+            "knowledge_snapshot_id",
+        )
+        snapshot = self._writer.execute(
+            """
+            SELECT member_count FROM knowledge_snapshot
+            WHERE knowledge_snapshot_id = ?
+            """,
+            (canonical_id,),
+        ).fetchone()
+        if snapshot is None:
+            raise StudioRejected(
+                "knowledge-snapshot-not-found",
+                "KnowledgeSnapshot does not exist",
+            )
+        count = int(snapshot[0])
+        if count == 0:
+            return ()
+        tables = {
+            str(row[0])
+            for row in self._writer.execute(
+                "SELECT name FROM sqlite_schema WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "knowledge_snapshot_member" not in tables:
+            raise StudioFailedClosed(
+                "knowledge-snapshot-integrity-failed",
+                "non-empty KnowledgeSnapshot has no member authority",
+            )
+        rows = self._writer.execute(
+            """
+            SELECT ordinal, entry_id, title, content, source_ref,
+                   evidence_quote, member_digest
+            FROM knowledge_snapshot_member
+            WHERE knowledge_snapshot_id = ?
+            ORDER BY ordinal
+            """,
+            (canonical_id,),
+        ).fetchall()
+        if len(rows) != count or [int(row[0]) for row in rows] != list(range(count)):
+            raise StudioFailedClosed(
+                "knowledge-snapshot-integrity-failed",
+                "KnowledgeSnapshot members are incomplete",
+            )
+        entries: list[KnowledgeEntry] = []
+        for row in rows:
+            payload = {
+                "entry_id": str(row[1]),
+                "title": str(row[2]),
+                "content": str(row[3]),
+                "source_ref": str(row[4]),
+                "evidence_quote": None if row[5] is None else str(row[5]),
+            }
+            if _digest(payload) != str(row[6]):
+                raise StudioFailedClosed(
+                    "knowledge-snapshot-integrity-failed",
+                    "KnowledgeSnapshot member digest is invalid",
+                )
+            entries.append(KnowledgeEntry(**payload))
+        return tuple(entries)
 
     def _qri_from_payload(self, payload: Mapping[str, Any]) -> QualifiedRuntimeInput:
         capabilities_payload = payload.get("capabilities")
@@ -8936,7 +9343,10 @@ class SubjectStudio:
             snapshot.draft_id,
             decision.capability_manifest,
         )
-        if snapshot.policy_decision_id != decision.decision_id:
+        if (
+            snapshot.policy_decision_id != decision.decision_id
+            and snapshot.source_freeze_basis_digest is None
+        ):
             raise StudioRejected(
                 "policy-snapshot-mismatch",
                 "PolicyDecision did not seal this GenesisSnapshot",
@@ -8962,6 +9372,11 @@ class SubjectStudio:
                 "capability_manifest": decision.capability_manifest.to_dict(),
             }
         )
+        publication_policy_decision_ids = (
+            [decision.decision_id]
+            if snapshot.policy_decision_id == decision.decision_id
+            else [snapshot.policy_decision_id, decision.decision_id]
+        )
         published_at_us = _utc_microseconds()
         payload_without_integrity = {
             "qualification_id": qualification_id,
@@ -8970,7 +9385,7 @@ class SubjectStudio:
             "genesis_branch_id": snapshot.branch_id,
             "genesis_snapshot_id": snapshot.snapshot_id,
             "knowledge_snapshot_id": snapshot.knowledge_snapshot_id,
-            "policy_decision_ids": [decision.decision_id],
+            "policy_decision_ids": publication_policy_decision_ids,
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": self.isolation_proof.to_dict(),
             "provider_authority": (
@@ -9189,12 +9604,14 @@ def _data_control_export_snapshot(
         profile_payload = json.loads(str(profile_row[0]))
         snapshot_payload = json.loads(str(snapshot_row[0]))
         profile = ParticipantProfile.from_dict(profile_payload)
+        knowledge_entries = studio.knowledge_entries(
+            snapshot.knowledge_snapshot_id
+        )
         if (
             profile.profile_id != expected_profile_id
             or _digest(profile_payload) != str(profile_row[1])
             or _digest(snapshot_payload) != str(snapshot_row[1])
-            or int(knowledge_row[0]) != 0
-            or str(knowledge_row[1]) != "qualified-original-empty"
+            or int(knowledge_row[0]) != len(knowledge_entries)
         ):
             raise StudioFailedClosed(
                 "data-control-publication-integrity-failed",
@@ -9204,10 +9621,15 @@ def _data_control_export_snapshot(
             studio._read_policy_decision(decision_id).to_dict()
             for decision_id in qri.policy_decision_ids
         ]
+        schema_version = int(
+            studio._writer.execute(
+                "SELECT schema_version FROM store_manifest WHERE singleton = 1"
+            ).fetchone()[0]
+        )
         return {
             "record_kind": "profile-genesis-publication",
             "schema_family": PROFILE_SCHEMA_FAMILY,
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": schema_version,
             "contract_version": CONTRACT_VERSION,
             "persistence_version": PERSISTENCE_VERSION,
             "source_root": location.to_dict(),
@@ -9219,6 +9641,22 @@ def _data_control_export_snapshot(
                 "member_count": int(knowledge_row[0]),
                 "qualification": str(knowledge_row[1]),
                 "snapshot_digest": str(knowledge_row[2]),
+                **(
+                    {
+                        "members": [
+                            {
+                                "entry_id": entry.entry_id,
+                                "title": entry.title,
+                                "content": entry.content,
+                                "source_ref": entry.source_ref,
+                                "evidence_quote": entry.evidence_quote,
+                            }
+                            for entry in knowledge_entries
+                        ]
+                    }
+                    if knowledge_entries
+                    else {}
+                ),
             },
             "policy_decisions": policies,
             "qualified_runtime_input": qri.to_dict(),

@@ -13,7 +13,11 @@ import re
 from dataclasses import replace
 from difflib import SequenceMatcher
 
-from dynamic_subject_agent.knowledge_entries import select_knowledge_candidates
+from dynamic_subject_agent.knowledge_entries import (
+    KnowledgeEntry,
+    SEALED_KNOWLEDGE_ENTRIES,
+    select_knowledge_candidates,
+)
 from dynamic_subject_agent.runtime import (
     CognitionEngine,
     CognitionFailedClosed,
@@ -94,6 +98,7 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_provider: object,
         knowledge_provider: object,
         relationship_provider: object,
+        knowledge_entries: tuple[KnowledgeEntry, ...] = SEALED_KNOWLEDGE_ENTRIES,
         participant_goal_gateway: object | None = None,
         situated_gateway: object | None = None,
         medium_gateway: object | None = None,
@@ -107,7 +112,15 @@ class ControlledCompositeCognition(CognitionEngine):
         )
 
         self._memory = ControlledLivingMemoryCognition(provider=memory_provider)
-        self._knowledge = ControlledKnowledgeCognition(provider=knowledge_provider)
+        if not isinstance(knowledge_entries, tuple) or any(
+            not isinstance(entry, KnowledgeEntry) for entry in knowledge_entries
+        ):
+            raise TypeError("knowledge_entries must be sealed KnowledgeEntry values")
+        self._knowledge_entries = knowledge_entries
+        self._knowledge = ControlledKnowledgeCognition(
+            provider=knowledge_provider,
+            entries=knowledge_entries,
+        )
         self._relationship = ControlledRelationshipCognition(
             provider=relationship_provider
         )
@@ -171,7 +184,10 @@ class ControlledCompositeCognition(CognitionEngine):
     ) -> CognitiveProposal:
         memory_proposal = self._propose_sub(self._memory, plan, context, command, basis)
         knowledge_hit = bool(
-            select_knowledge_candidates(command.utterance)
+            select_knowledge_candidates(
+                command.utterance,
+                self._knowledge_entries,
+            )
         )
         knowledge_proposal = (
             self._propose_sub(self._knowledge, plan, context, command, basis)

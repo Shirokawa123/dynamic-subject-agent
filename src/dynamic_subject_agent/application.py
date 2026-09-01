@@ -41,11 +41,17 @@ from dynamic_subject_agent.timeline import (
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
+from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
 from dynamic_subject_agent.source_character_authoring import (
+    LocalIdentityListResponse,
+    LocalIdentitySelectResponse,
+    LocalIdentityStatus,
     SourceDraftResponse,
     SourceDraftStatus,
     SourceFreezeMappingResponse,
     SourceFreezeMappingStatus,
+    SourceIdentityFreezeResponse,
+    SourceIdentityFreezeStatus,
     TextSourceCharacterAuthoring,
     TextSourcePreviewResponse,
 )
@@ -74,6 +80,7 @@ class ApplicationQueryKind(str, Enum):
     PARTICIPANT_GOALS = "participant-goals"
     SITUATED_STATE = "situated-state"
     MEDIUM_STATE = "medium-state"
+    KNOWLEDGE = "knowledge"
 
 
 class ApplicationQueryStatus(str, Enum):
@@ -242,6 +249,17 @@ class MediumStateApplicationProjection:
     state: MediumStateRecord
 
 
+@dataclass(frozen=True)
+class KnowledgeApplicationEntry:
+    entry_id: str
+    title: str
+
+
+@dataclass(frozen=True)
+class KnowledgeApplicationProjection:
+    entries: tuple[KnowledgeApplicationEntry, ...]
+
+
 ApplicationProjection: TypeAlias = (
     CurrentApplicationProjection
     | RuntimeApplicationProjection
@@ -251,6 +269,7 @@ ApplicationProjection: TypeAlias = (
     | ParticipantGoalCommitmentApplicationProjection
     | SituatedStateApplicationProjection
     | MediumStateApplicationProjection
+    | KnowledgeApplicationProjection
 )
 
 
@@ -284,6 +303,12 @@ class _ApplicationRouter:
         follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
         source_authoring: TextSourceCharacterAuthoring | None = None,
         source_studio_location: StudioRootRef | None = None,
+        source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
+        | None = None,
+        local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
+        local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
+        | None = None,
+        knowledge_entries: tuple[KnowledgeEntry, ...] = (),
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -308,6 +333,18 @@ class _ApplicationRouter:
         ):
             raise TypeError("source_studio_location must be StudioRootRef")
         self._source_studio_location = source_studio_location
+        if source_identity_freezer is not None and not callable(
+            source_identity_freezer
+        ):
+            raise TypeError("source_identity_freezer must be callable")
+        self._source_identity_freezer = source_identity_freezer
+        self._local_identity_lister = local_identity_lister
+        self._local_identity_selector = local_identity_selector
+        if not isinstance(knowledge_entries, tuple) or any(
+            not isinstance(entry, KnowledgeEntry) for entry in knowledge_entries
+        ):
+            raise TypeError("knowledge_entries must be sealed KnowledgeEntry values")
+        self._knowledge_entries = knowledge_entries
         self._executor = ThreadPoolExecutor(
             max_workers=1,
             thread_name_prefix=f"m0-application-{binding.binding_id[:8]}",
@@ -593,6 +630,14 @@ class _ApplicationRouter:
                 if query.kind is not ApplicationQueryKind.MEDIUM_STATE
                 else self._current_medium_state()
             )
+            knowledge_entries = (
+                tuple(
+                    KnowledgeApplicationEntry(entry.entry_id, entry.title)
+                    for entry in self._knowledge_entries
+                )
+                if query.kind is ApplicationQueryKind.KNOWLEDGE
+                else None
+            )
         except RuntimeHostRejected:
             return _query_not_found_or_not_authorized()
         except Exception:
@@ -606,6 +651,7 @@ class _ApplicationRouter:
             participant_goal_commitments=participant_goal_commitments,
             situated_state=situated_state,
             medium_state=medium_state,
+            knowledge_entries=knowledge_entries,
         )
 
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
@@ -654,6 +700,39 @@ class _ApplicationRouter:
             return source_studio.preview_source_freeze_mapping(request)
         finally:
             source_studio.close()
+
+    def freeze_source_identity(self, request: object) -> SourceIdentityFreezeResponse:
+        with self._lock:
+            self._require_open()
+            source_identity_freezer = self._source_identity_freezer
+        if source_identity_freezer is None:
+            return SourceIdentityFreezeResponse(
+                SourceIdentityFreezeStatus.UNAVAILABLE,
+                problem_code="source-identity-freeze-unavailable",
+            )
+        try:
+            return source_identity_freezer(request)
+        except Exception:
+            return SourceIdentityFreezeResponse(
+                SourceIdentityFreezeStatus.FAILED_CLOSED,
+                problem_code="source-identity-freeze-failed-closed",
+            )
+
+    def local_identities(self) -> LocalIdentityListResponse:
+        with self._lock:
+            self._require_open()
+            lister = self._local_identity_lister
+        if lister is None:
+            return LocalIdentityListResponse(LocalIdentityStatus.UNAVAILABLE)
+        return lister()
+
+    def select_local_identity(self, request: object) -> LocalIdentitySelectResponse:
+        with self._lock:
+            self._require_open()
+            selector = self._local_identity_selector
+        if selector is None:
+            return LocalIdentitySelectResponse(LocalIdentityStatus.UNAVAILABLE)
+        return selector(request)
 
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
@@ -754,6 +833,15 @@ class ApplicationFacade:
     ) -> SourceFreezeMappingResponse:
         return self.__router.preview_source_freeze_mapping(request)
 
+    def freeze_source_identity(self, request: object) -> SourceIdentityFreezeResponse:
+        return self.__router.freeze_source_identity(request)
+
+    def local_identities(self) -> LocalIdentityListResponse:
+        return self.__router.local_identities()
+
+    def select_local_identity(self, request: object) -> LocalIdentitySelectResponse:
+        return self.__router.select_local_identity(request)
+
 
 def _create_application_facade(
     host: RuntimeHost,
@@ -766,6 +854,12 @@ def _create_application_facade(
     _follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
+    _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
+    | None = None,
+    _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
+    _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
+    | None = None,
+    _knowledge_entries: tuple[KnowledgeEntry, ...] = (),
 ) -> tuple[ApplicationFacade, _ApplicationRouter]:
     router = _ApplicationRouter(
         host,
@@ -777,6 +871,10 @@ def _create_application_facade(
         follow_runtime=_follow_runtime,
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
+        source_identity_freezer=_source_identity_freezer,
+        local_identity_lister=_local_identity_lister,
+        local_identity_selector=_local_identity_selector,
+        knowledge_entries=_knowledge_entries,
     )
     return (
         ApplicationFacade(router, _token=_APPLICATION_FACADE_TOKEN),
@@ -1058,6 +1156,7 @@ def _from_query(
     | None = None,
     situated_state: SituatedStateRecord | None = None,
     medium_state: MediumStateRecord | None = None,
+    knowledge_entries: tuple[KnowledgeApplicationEntry, ...] | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
@@ -1102,6 +1201,8 @@ def _from_query(
         projection = SituatedStateApplicationProjection(state=situated_state)
     elif kind is ApplicationQueryKind.MEDIUM_STATE and medium_state is not None:
         projection = MediumStateApplicationProjection(state=medium_state)
+    elif kind is ApplicationQueryKind.KNOWLEDGE and knowledge_entries is not None:
+        projection = KnowledgeApplicationProjection(entries=knowledge_entries)
     else:
         return _query_unavailable("query-kind-unavailable")
     return ApplicationQueryResponse(
@@ -1150,6 +1251,8 @@ __all__ = [
     "ApplicationQueryResponse",
     "ApplicationQueryStatus",
     "LivingMemoryApplicationProjection",
+    "KnowledgeApplicationProjection",
+    "KnowledgeApplicationEntry",
     "RelationshipApplicationProjection",
     "ParticipantGoalCommitmentApplicationProjection",
     "SituatedStateApplicationProjection",

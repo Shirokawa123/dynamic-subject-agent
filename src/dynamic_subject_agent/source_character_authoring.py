@@ -243,6 +243,77 @@ class SourceFreezeMappingResponse:
     problem_code: str | None = None
 
 
+class SourceIdentityFreezeStatus(str, Enum):
+    CREATED = "created"
+    REPLAYED = "replayed"
+    REJECTED = "rejected"
+    CONFLICT = "conflict"
+    FAILED_CLOSED = "failed-closed"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True)
+class SourceIdentityFreezeRequest:
+    expected_revision: int
+    display_name: str
+    freeze_basis_digest: str
+    confirmed: bool
+
+
+@dataclass(frozen=True)
+class SourceIdentityFreezeView:
+    identity_id: str
+    display_name: str
+    freeze_basis_digest: str
+    publication_key: str
+    knowledge_member_count: int
+    active: bool
+
+
+@dataclass(frozen=True)
+class SourceIdentityFreezeResponse:
+    status: SourceIdentityFreezeStatus
+    view: SourceIdentityFreezeView | None = None
+    problem_code: str | None = None
+
+
+class LocalIdentityStatus(str, Enum):
+    AVAILABLE = "available"
+    SELECTED = "selected"
+    REJECTED = "rejected"
+    NOT_FOUND = "not-found"
+    FAILED_CLOSED = "failed-closed"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True)
+class LocalIdentityView:
+    identity_id: str
+    display_name: str
+    freeze_basis_digest: str | None
+    active: bool
+
+
+@dataclass(frozen=True)
+class LocalIdentityListResponse:
+    status: LocalIdentityStatus
+    identities: tuple[LocalIdentityView, ...] = ()
+    problem_code: str | None = None
+
+
+@dataclass(frozen=True)
+class LocalIdentitySelectRequest:
+    identity_id: str
+    confirmed: bool
+
+
+@dataclass(frozen=True)
+class LocalIdentitySelectResponse:
+    status: LocalIdentityStatus
+    identity: LocalIdentityView | None = None
+    problem_code: str | None = None
+
+
 def prepare_source_freeze_mapping(
     draft: object,
     request: object,
@@ -810,6 +881,11 @@ __all__ = [
     "MappedGenesisView",
     "MappedKnowledgeMember",
     "MappedProfileView",
+    "LocalIdentityListResponse",
+    "LocalIdentitySelectRequest",
+    "LocalIdentitySelectResponse",
+    "LocalIdentityStatus",
+    "LocalIdentityView",
     "SOURCE_FREEZE_MAPPING_POLICY_VERSION",
     "SourceDraftCandidate",
     "SourceDraftCommand",
@@ -822,6 +898,10 @@ __all__ = [
     "SourceFreezeMappingResponse",
     "SourceFreezeMappingStatus",
     "SourceFreezeMappingView",
+    "SourceIdentityFreezeRequest",
+    "SourceIdentityFreezeResponse",
+    "SourceIdentityFreezeStatus",
+    "SourceIdentityFreezeView",
     "TextSourceCharacterAuthoring",
     "TextSourcePreviewRequest",
     "TextSourcePreviewResponse",

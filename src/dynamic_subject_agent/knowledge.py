@@ -13,6 +13,7 @@ from dynamic_subject_agent.domains import (
 from dynamic_subject_agent.knowledge_entries import (
     KNOWLEDGE_CANDIDATE_LIMIT,
     KnowledgeEntry,
+    SEALED_KNOWLEDGE_ENTRIES,
     select_knowledge_candidates,
 )
 from dynamic_subject_agent.runtime import (
@@ -91,7 +92,12 @@ class ControlledKnowledgeCognition(CognitionEngine):
     experimental = True
     test_only = True
 
-    def __init__(self, *, provider: object) -> None:
+    def __init__(
+        self,
+        *,
+        provider: object,
+        entries: tuple[KnowledgeEntry, ...] = SEALED_KNOWLEDGE_ENTRIES,
+    ) -> None:
         if not callable(getattr(provider, "analyze", None)):
             raise TypeError("provider must expose analyze(request)")
         provider_authority = getattr(
@@ -104,6 +110,11 @@ class ControlledKnowledgeCognition(CognitionEngine):
         self.provider_authority = provider_authority
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(KnowledgeProviderAdapter(provider=provider))
+        if not isinstance(entries, tuple) or any(
+            not isinstance(entry, KnowledgeEntry) for entry in entries
+        ):
+            raise TypeError("entries must be sealed KnowledgeEntry values")
+        self._entries = entries
 
     def propose(
         self,
@@ -113,7 +124,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
         command: SubjectCommand,
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
-        candidates = select_knowledge_candidates(command.utterance)
+        candidates = select_knowledge_candidates(command.utterance, self._entries)
         request = KnowledgeProviderRequest(
             current_user_message=command.utterance,
             candidate_entries=candidates,
