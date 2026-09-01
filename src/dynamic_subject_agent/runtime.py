@@ -40,6 +40,7 @@ from dynamic_subject_agent.timeline import (
     AdmissionSnapshot,
     CanonicalRootRef,
     CommittedEffectSet,
+    ConversationTurnRecord,
     CycleCommitPlan,
     DecisionStatus,
     EffectDispatchState,
@@ -977,6 +978,13 @@ class SubjectRuntime:
             active_only=active_only,
             limit=limit,
         )
+
+    def list_conversation_turns(
+        self,
+        *,
+        limit: int = 20,
+    ) -> tuple[ConversationTurnRecord, ...]:
+        return self._engine.list_conversation_turns(limit=limit)
 
     def list_relationship_interactions(
         self,

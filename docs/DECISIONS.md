@@ -63,3 +63,7 @@
 ## D-016：本地身份 Authority 从 composition root 提炼为深 Module
 
 2026-09-01，Slice-11 后 `local_product.py` 同时承担 registry/state/freeze/select/Host 生命周期与 cognition 装配，虽行为正确但 locality 不足。提炼 `LocalIdentityAuthority`，以 `load_active/freeze/list/select` 四方法 Interface 隐藏本地持久化与恢复复杂度；`local_product` 只消费 `LoadedLocalIdentity` 并完成唯一 production composition。该重构不迁移数据、不改变 Provider 投影或用户行为，真实 v2 双身份 state 无迁移复验。
+
+## D-017：Dogfood 历史只投影 canonical TimelineOutcome
+
+2026-09-01，为让用户首次体验能感到跨重启连续性，页面恢复当前 identity 最近 20 个已提交 user/expression 对。History 不建立新 store，不展示 pending/interrupted/FailedClosed；TimelineEngine 每次验证完整 outcome digest 链与 head 后再裁剪窗口。实时第 21 轮由服务器返回的 canonical window 重建 DOM，身份切换只在目标 history 成功加载后关闭选择页。build 为固定 `dogfood-s13` 常量；错误主文案使用 exact typed 闭集，未知值统一 FailedClosed，不显示裸 code/path/ID。

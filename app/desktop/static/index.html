@@ -56,6 +56,7 @@
   .preview-item.rejected { border-left-color:#a04b3a; }
   .preview-evidence { margin-top:6px; color:#7d7462; }
   .header-actions { display:flex; gap:8px; }
+  .build-id { margin-top:4px; font-family:ui-monospace,Consolas,monospace; font-size:10px; color:#9a907d; letter-spacing:.4px; }
 </style>
 </head>
 <body>
@@ -104,7 +105,7 @@
 </div>
 <div class="app">
   <div class="chat">
-    <header><h1 id="subject-name">Avery</h1><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
+    <header><div><h1 id="subject-name">Avery</h1><div id="build-id" class="build-id">dogfood</div></div><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
     <div id="log"></div>
   </div>
   <div class="rail">
@@ -207,23 +208,65 @@ function el(tag, cls, text) {
   return node;
 }
 
-async function refreshState() {
-  const res = await fetch("/api/state");
-  const state = await res.json();
-  if (!res.ok || !state.ok) {
-    productReady = false;
-    await refreshSetup();
+function renderHistory(turns, status="available") {
+  log.innerHTML = "";
+  if (status !== "available") {
+    log.appendChild(el(
+      "div",
+      "failed",
+      "最近对话未能通过完整性验证，因此没有显示；Timeline 与既有状态未被修改。",
+    ));
     return;
   }
-  stanceAccepted = state.relationship_accepted_count || 0;
-  const activeIdentity = (state.identities || []).find(item => item.active);
-  const subjectLabel = `${state.display_name || "Avery"}${activeIdentity && activeIdentity.freeze_basis_digest ? " · 来源封存" : " · 原有身份"}`;
-  document.getElementById("subject-name").textContent = subjectLabel;
-  document.title = subjectLabel;
-  document.getElementById("knowledge-count").textContent = `${state.knowledge_count} 条封存来源`;
-  const rail = document.getElementById("rail-memories");
-  rail.innerHTML = "";
-  renderRail(state);
+  for (const turn of turns || []) {
+    const userTurn = el("div", "turn user");
+    userTurn.dataset.headSequence = String(turn.head_sequence);
+    userTurn.dataset.committed = "true";
+    userTurn.textContent = turn.user_text;
+    log.appendChild(userTurn);
+    const aiTurn = el("div", "turn ai");
+    aiTurn.dataset.headSequence = String(turn.head_sequence);
+    aiTurn.dataset.committed = "true";
+    aiTurn.appendChild(el("div", "say", turn.assistant_text));
+    log.appendChild(aiTurn);
+  }
+}
+
+async function refreshState(restoreHistory=false) {
+  try {
+    const res = await fetch("/api/state");
+    const state = await res.json();
+    if (!res.ok || !state.ok) {
+      productReady = false;
+      await refreshSetup();
+      return false;
+    }
+    stanceAccepted = state.relationship_accepted_count || 0;
+    const activeIdentity = (state.identities || []).find(item => item.active);
+    const subjectLabel = `${state.display_name || "Avery"}${activeIdentity && activeIdentity.freeze_basis_digest ? " · 来源封存" : " · 原有身份"}`;
+    document.getElementById("subject-name").textContent = subjectLabel;
+    document.title = subjectLabel;
+    document.getElementById("knowledge-count").textContent = `${state.knowledge_count} 条封存来源`;
+    document.getElementById("build-id").textContent = state.build_id || "dogfood-unknown";
+    if (restoreHistory) renderHistory(
+      state.conversation_history || [],
+      state.conversation_history_status || "failed-closed",
+    );
+    const rail = document.getElementById("rail-memories");
+    rail.innerHTML = "";
+    renderRail(state);
+    return true;
+  } catch (error) {
+    if (restoreHistory) {
+      log.innerHTML = "";
+      log.appendChild(el(
+        "div",
+        "failed",
+        "无法加载当前身份的 canonical 状态与最近对话；切换结果尚未确认。请刷新页面，不要继续发送。",
+      ));
+    }
+    return false;
+  }
 }
 
 function showSetup(snapshot, message="") {
@@ -273,7 +316,7 @@ async function saveCredential() {
     if (result.ok) {
       productReady = true;
       setupScreen.hidden = true;
-      await refreshState();
+      await refreshState(true);
     } else {
       showSetup(result);
     }
@@ -609,21 +652,30 @@ async function freezeIdentity() {
 
 async function selectIdentity(item) {
   if (!window.confirm(`切换到隔离身份 ${item.display_name}？两个身份的 Timeline 不会合并。`)) return;
-  const res = await fetch("/api/identities/select", {
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({identity_id:item.identity_id, confirmed:true}),
-  });
-  const result = await res.json();
-  if (!result.ok) {
+  try {
+    const res = await fetch("/api/identities/select", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({identity_id:item.identity_id, confirmed:true}),
+    });
+    const result = await res.json();
+    if (!result.ok) {
+      mappingStatus.className = "setup-status error";
+      mappingStatus.textContent = "身份切换失败关闭；当前身份未被报告为新身份。";
+      return;
+    }
+    document.getElementById("log").innerHTML = "";
+    if (!await refreshState(true)) {
+      mappingStatus.className = "setup-status error";
+      mappingStatus.textContent = "身份切换结果尚未确认；请刷新页面，不要继续发送。";
+      return;
+    }
+    await loadIdentities();
+    authoringScreen.hidden = true;
+  } catch (error) {
     mappingStatus.className = "setup-status error";
-    mappingStatus.textContent = "身份切换失败关闭；当前身份未被报告为新身份。";
-    return;
+    mappingStatus.textContent = "身份切换状态尚未确认；请刷新页面，不要继续发送。";
   }
-  document.getElementById("log").innerHTML = "";
-  await refreshState();
-  await loadIdentities();
-  authoringScreen.hidden = true;
 }
 
 async function previewMapping() {
@@ -726,10 +778,15 @@ async function send() {
     const turn = await res.json();
     if (!turn.ok) {
       say.remove();
-      aiTurn.appendChild(el("div", "failed",
-        `本轮失败关闭: ${turn.stage || "unknown"}:${turn.code}`));
+      const failed = el("div", "failed", turn.message || "本轮失败关闭，没有形成可见提交；既有状态保持。");
+      failed.dataset.diagnosticCode = turn.code || "unknown";
+      aiTurn.appendChild(failed);
     } else {
       say.textContent = turn.expression;
+      userTurn.dataset.headSequence = String(turn.head_sequence);
+      userTurn.dataset.committed = "true";
+      aiTurn.dataset.headSequence = String(turn.head_sequence);
+      aiTurn.dataset.committed = "true";
       const notes = el("div", "notes");
       if (turn.citations.length) {
         for (const c of turn.citations) {
@@ -751,12 +808,31 @@ async function send() {
       if (turn.relationship_event === "stable_positive_interaction") {
         stanceAccepted += 1;
       }
-      if (notes.children.length) aiTurn.appendChild(notes);
-      await refreshState();
+      if (turn.conversation_history_status === "available") {
+        renderHistory(turn.conversation_history || [], "available");
+        const restoredAnswer = log.querySelector(
+          `.turn.ai[data-head-sequence="${turn.head_sequence}"]`,
+        );
+        if (restoredAnswer && notes.children.length) {
+          restoredAnswer.appendChild(notes);
+        }
+      } else {
+        if (notes.children.length) aiTurn.appendChild(notes);
+        aiTurn.appendChild(el(
+          "div",
+          "failed",
+          "本轮已提交，但最近历史未能通过完整性验证；Timeline 未被修改。",
+        ));
+      }
+      await refreshState(false);
     }
   } catch (error) {
     say.remove();
-    aiTurn.appendChild(el("div", "failed", "连接失败: " + error));
+    aiTurn.appendChild(el(
+      "div",
+      "failed",
+      "无法连接本地产品，本轮提交状态尚未确认。请先刷新页面查看是否已恢复，不要连续重复发送。",
+    ));
   } finally {
     sendBtn.disabled = false;
     textBox.focus();
@@ -796,7 +872,7 @@ keyInput.addEventListener("keydown", (e) => {
 });
 (async () => {
   const snapshot = await refreshSetup();
-  if (snapshot && snapshot.product_ready) await refreshState();
+  if (snapshot && snapshot.product_ready) await refreshState(true);
 })();
 textBox.focus();
 </script>

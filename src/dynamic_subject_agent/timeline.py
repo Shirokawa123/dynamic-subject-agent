@@ -888,6 +888,16 @@ class TimelineBasis:
 
 
 @dataclass(frozen=True)
+class ConversationTurnRecord:
+    head_sequence: int
+    user_text: str
+    user_language: str
+    assistant_text: str
+    assistant_language: str
+    published_at_us: int
+
+
+@dataclass(frozen=True)
 class CandidateDecisionRecord:
     decision_id: str
     scope: str
@@ -6413,6 +6423,110 @@ class TimelineEngine:
                 )
         return tuple(records[-limit:])
 
+    def list_conversation_turns(
+        self,
+        *,
+        limit: int = 20,
+    ) -> tuple[ConversationTurnRecord, ...]:
+        """Return recent completed user/expression pairs from canonical outcomes."""
+
+        self._require_open()
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 100
+        ):
+            raise ValueError("limit must be between 1 and 100")
+        rows = self._writer.execute(
+            """
+            SELECT
+                outcome.head_sequence,
+                outcome.published_at_us,
+                outcome.operation_id,
+                operation.contract_version,
+                operation.operation_kind,
+                hex(operation.payload_fingerprint)
+            FROM timeline_outcome AS outcome
+            JOIN subject_operation AS operation
+              ON operation.operation_id = outcome.operation_id
+            ORDER BY outcome.head_sequence ASC
+            """
+        ).fetchall()
+        basis = _read_timeline_basis(self._writer)
+        if len(rows) != basis.head_sequence:
+            raise PublicationFailedClosed(
+                "conversation-history-outcome-count-invalid",
+                "recent TimelineOutcome suffix is incomplete",
+            )
+        expected_sequences = list(range(1, basis.head_sequence + 1))
+        if [int(row[0]) for row in rows] != expected_sequences:
+            raise PublicationFailedClosed(
+                "conversation-history-head-invalid",
+                "recent TimelineOutcome head sequence is incomplete",
+            )
+        records: list[ConversationTurnRecord] = []
+        previous_outcome: TimelineOutcome | None = None
+        for row in rows:
+            operation_ref = OperationRef(
+                contract_version=str(row[3]),
+                root_id=self._location.root_id,
+                timeline_store_id=self._location.timeline_store_id,
+                authority_scope_id=self._authority.authority_scope_id,
+                operation_id=str(UUID(bytes=bytes(row[2]))),
+                operation_kind=OperationKind(str(row[4])),
+                admitted_payload_fingerprint=str(row[5]).casefold(),
+            )
+            outcome = self.query_outcome(operation_ref)
+            command = self._query_command(operation_ref)
+            if outcome.head_sequence != int(row[0]):
+                raise PublicationFailedClosed(
+                    "conversation-history-outcome-invalid",
+                    "canonical history outcome does not match its suffix position",
+                )
+            if (
+                previous_outcome is not None
+                and outcome.previous_outcome_digest
+                != previous_outcome.outcome_digest
+            ):
+                raise PublicationFailedClosed(
+                    "conversation-history-chain-invalid",
+                    "canonical history outcome digest chain is broken",
+                )
+            published_at_us = int(row[1])
+            if published_at_us < 1:
+                raise PublicationFailedClosed(
+                    "conversation-history-time-invalid",
+                    "canonical history publication time is invalid",
+                )
+            records.append(
+                ConversationTurnRecord(
+                    head_sequence=int(row[0]),
+                    user_text=command.utterance,
+                    user_language=command.language,
+                    assistant_text=outcome.expression.text,
+                    assistant_language=outcome.expression.language,
+                    published_at_us=published_at_us,
+                )
+            )
+            previous_outcome = outcome
+        if records and (
+            previous_outcome is None
+            or previous_outcome.head_sequence != basis.head_sequence
+            or previous_outcome.outcome_digest != basis.published_outcome_digest
+        ):
+            raise PublicationFailedClosed(
+                "conversation-history-head-digest-invalid",
+                "canonical history suffix does not end at the Timeline head",
+            )
+        if not records and (
+            basis.head_sequence != 0 or basis.published_outcome_digest is not None
+        ):
+            raise PublicationFailedClosed(
+                "conversation-history-empty-head-invalid",
+                "empty canonical history does not match the Timeline head",
+            )
+        return tuple(records[-limit:])
+
     def query_outcome(self, operation_ref: OperationRef) -> TimelineOutcome:
         snapshot = self.query(operation_ref)
         if snapshot.operation_state is not OperationState.COMPLETED:
@@ -6927,6 +7041,7 @@ __all__ = [
     "CommitPlanConflict",
     "CommitPlanRejected",
     "CommittedEffectSet",
+    "ConversationTurnRecord",
     "CycleCommitPlan",
     "DecisionStatus",
     "DevelopmentOutcome",

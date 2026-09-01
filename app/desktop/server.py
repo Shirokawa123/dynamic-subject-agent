@@ -20,6 +20,7 @@ from dynamic_subject_agent.credentials import (
     WindowsCredentialStore,
 )
 from dynamic_subject_agent.local_product import (
+    DOGFOOD_BUILD_ID,
     LocalProductConfig,
     OpenedLocalProduct,
     open_deepseek_local_product,
@@ -60,6 +61,49 @@ _SIGNAL_LABELS = {
     "encouragement": "鼓舞",
     "settling": "趋于平稳",
 }
+
+
+_TURN_FAILURE_MESSAGES_BY_STAGE = {
+    "cognition": (
+        "模型处理未完成，本轮没有形成可见提交；既有身份状态保持。"
+        "请稍后重试，若持续出现请记录页面上的 dogfood build。"
+    ),
+    "admission": (
+        "本轮未能进入当前 Timeline，没有重复提交。请刷新页面后重新发送。"
+    ),
+    "experience": "经历裁决失败关闭，本轮没有提交；既有状态保持。",
+    "subject-state": "主体状态裁决失败关闭，本轮没有提交；既有状态保持。",
+    "agency": "Agency 裁决失败关闭，本轮没有提交；既有状态保持。",
+    "relationship": "关系裁决失败关闭，本轮没有提交；既有状态保持。",
+    "domains": "本轮 Domain 结果不完整，因此没有提交；既有状态保持。",
+}
+_TURN_FAILURE_MESSAGES_BY_PAIR = {
+    ("cognition", "invalid-cognition-output"): (
+        "模型结果未通过结构校验，本轮没有提交；既有状态保持。"
+    ),
+    ("cognition", "invalid-expression-output"): (
+        "回复未通过表达校验，本轮没有提交；既有状态保持。"
+    ),
+    ("domains", "incomplete-domain-outcome-set"): (
+        "本轮 Domain 结果不完整，因此没有提交；既有状态保持。"
+    ),
+}
+_DEFAULT_TURN_FAILURE_MESSAGE = (
+    "本轮失败关闭，没有形成可见提交；既有身份状态保持。"
+    "可以重试一次，若持续出现请记录页面上的 dogfood build。"
+)
+
+
+def _turn_failure_message(stage: object, code: object) -> str:
+    failure_stage = str(stage or "")
+    failure_code = str(code or "")
+    return _TURN_FAILURE_MESSAGES_BY_PAIR.get(
+        (failure_stage, failure_code),
+        _TURN_FAILURE_MESSAGES_BY_STAGE.get(
+            failure_stage,
+            _DEFAULT_TURN_FAILURE_MESSAGE,
+        ),
+    )
 
 
 def _explanation(capability: str, kind: str, message: str) -> dict[str, str]:
@@ -331,12 +375,16 @@ class AppState:
             None,
         )
         knowledge_entries = self._knowledge_entries()
+        history = self._conversation_history()
         return {
+            "build_id": DOGFOOD_BUILD_ID,
             "profile_id": self.product.profile_id,
             "display_name": (
                 active_identity["display_name"] if active_identity else "Avery"
             ),
             "identities": identities.get("identities", []),
+            "conversation_history_status": history["status"],
+            "conversation_history": history["turns"],
             "memories": self._memories(),
             "knowledge_count": len(knowledge_entries),
             "relationship_accepted_count": len(accepted),
@@ -458,7 +506,12 @@ class AppState:
                 if projection
                 else (terminal.problem.code if terminal.problem else "unknown")
             )
-            return {"ok": False, "stage": stage, "code": code}
+            return {
+                "ok": False,
+                "stage": stage,
+                "code": code,
+                "message": _turn_failure_message(stage, code),
+            }
         knowledge_by_id = {
             entry.entry_id: entry for entry in self._knowledge_entries()
         }
@@ -479,11 +532,15 @@ class AppState:
             if memories:
                 new_kind = memories[0]["memory_kind"]
                 new_content = memories[0]["content"]
+        history = self._conversation_history()
         return {
             "ok": True,
             "new_memory_kind": new_kind,
             "new_memory_content": new_content,
             "expression": projection.expression_text,
+            "head_sequence": projection.timeline_head_sequence,
+            "conversation_history_status": history["status"],
+            "conversation_history": history["turns"],
             "living_memory_status": projection.living_memory_status,
             "recalled_ids": list(projection.living_memory_recalled_ids),
             "knowledge_status": projection.knowledge_status,
@@ -528,6 +585,44 @@ class AppState:
         ):
             return response.projection.entries
         return ()
+
+    def _conversation_history(self) -> dict:
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            ApplicationQueryStatus,
+            ConversationHistoryApplicationProjection,
+        )
+
+        response = self.product.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.CONVERSATION_HISTORY,
+                target_profile_id=self.product.profile_id,
+                target_timeline_id=self.product.timeline_id,
+            )
+        )
+        if (
+            response.status is not ApplicationQueryStatus.AVAILABLE
+            or not isinstance(
+                response.projection,
+                ConversationHistoryApplicationProjection,
+            )
+        ):
+            return {"status": response.status.value, "turns": []}
+        return {
+            "status": "available",
+            "turns": [
+                {
+                    "head_sequence": turn.head_sequence,
+                    "user_text": turn.user_text,
+                    "user_language": turn.user_language,
+                    "assistant_text": turn.assistant_text,
+                    "assistant_language": turn.assistant_language,
+                    "published_at_us": turn.published_at_us,
+                }
+                for turn in response.projection.turns
+            ],
+        }
 
     def preview_character_source(
         self,
@@ -955,6 +1050,8 @@ class DesktopState:
             )
             if not result["ok"]:
                 return result
+            if payload.get("identity_id") == self._app.product.profile_id:
+                return {"ok": True, "status": "selected", **self._app.snapshot()}
             key = ""
             try:
                 key = self._credential_store.load(self._credential_slot) or ""

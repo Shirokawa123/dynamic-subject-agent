@@ -573,6 +573,16 @@ def test_desktop_lifecycle_failure_rolls_back_active_identity(tmp_path: Path) ->
         product_factory=factory,
     )
     try:
+        initial = desktop.local_identities()
+        current_id = next(
+            item["identity_id"]
+            for item in initial["identities"]
+            if item["active"]
+        )
+        same = desktop.select_local_identity(
+            {"identity_id": current_id, "confirmed": True}
+        )
+        assert same["ok"] and calls == 1
         save = _save_request()
         saved = desktop.source_draft(
             "save",

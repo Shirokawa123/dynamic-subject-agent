@@ -72,6 +72,7 @@ from dynamic_subject_agent.timeline import (
     CONTROL_SCHEMA_FAMILY as TIMELINE_CONTROL_SCHEMA_FAMILY,
     TIMELINE_SCHEMA_FAMILY,
     CanonicalRootRef,
+    ConversationTurnRecord,
     LivingMemoryRecord,
     RelationshipStanceInteraction,
     OperationRef,
@@ -3240,6 +3241,15 @@ class RuntimeLease:
             active_only=active_only,
             limit=limit,
         )
+
+    def list_conversation_turns(
+        self,
+        *,
+        limit: int = 20,
+    ) -> tuple[ConversationTurnRecord, ...]:
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call("list_conversation_turns", limit=limit)
 
     def list_relationship_interactions(
         self,

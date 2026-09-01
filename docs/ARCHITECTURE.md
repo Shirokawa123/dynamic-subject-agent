@@ -41,6 +41,8 @@ Source Identity Freeze 仍只经 `ApplicationFacade`：`LocalIdentityAuthority` 
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 
+Dogfood conversation history 是 `TimelineEngine` 的只读投影：查询会重建完整 TimelineOutcome 链，验证每轮 plan/domain/Expression/outcome/receipt digest、previous digest 和最终 head，再只返回当前 identity 最近 20 个 `{head_sequence, user_text, user_language, assistant_text, assistant_language, published_at_us}`。`SubjectRuntime → RuntimeLease → ApplicationFacade` 只转发 typed projection；Desktop 不建第二份 transcript。pending、interrupted 与 FailedClosed 操作没有 TimelineOutcome，因此不显示为完成轮次。
+
 逐轮因果解释只读取已提交 Outcome 的 typed status、reason、selected count 与当前可见投影，由 Python 确定性翻译为 changed/used/kept/failed 用户语言。普通 NoOp 不显示为变化；Relationship 声称拒绝、目标直接查询、Situated carry/直接命令和 Medium 证据门槛均不得由模型事后编写理由。
 
 表达组合有独立于状态裁决的发言预算：Memory/Knowledge/目标形成非状态主干时，Situated 与 Medium 只提交 typed 结果而不追加重复回复；无非状态主干时 Situated 优先于 Medium，显式状态查询以其确定性 priority 覆盖普通 carry。未发言不等于 NoOp、Rejected 或失败，Domain Outcome 保持完整。

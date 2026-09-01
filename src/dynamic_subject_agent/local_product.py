@@ -47,6 +47,8 @@ from dynamic_subject_agent.source_character_authoring import (
 )
 from dynamic_subject_agent.studio import QualifiedRuntimeInput
 
+DOGFOOD_BUILD_ID = "dogfood-s13"
+
 
 class OpenedLocalProduct:
     """A running local product with one public application Interface."""
@@ -232,6 +234,7 @@ def open_deepseek_local_product(
 
 
 __all__ = [
+    "DOGFOOD_BUILD_ID",
     "LocalProductConfig",
     "LocalProductIdentity",
     "OpenedLocalProduct",

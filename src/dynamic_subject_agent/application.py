@@ -30,6 +30,7 @@ from dynamic_subject_agent.runtime import (
 from dynamic_subject_agent.timeline import (
     AdmissionFailedClosed,
     AdmissionProblem,
+    ConversationTurnRecord,
     LivingMemoryRecord,
     OperationKind,
     OperationRef,
@@ -81,6 +82,7 @@ class ApplicationQueryKind(str, Enum):
     SITUATED_STATE = "situated-state"
     MEDIUM_STATE = "medium-state"
     KNOWLEDGE = "knowledge"
+    CONVERSATION_HISTORY = "conversation-history"
 
 
 class ApplicationQueryStatus(str, Enum):
@@ -260,6 +262,11 @@ class KnowledgeApplicationProjection:
     entries: tuple[KnowledgeApplicationEntry, ...]
 
 
+@dataclass(frozen=True)
+class ConversationHistoryApplicationProjection:
+    turns: tuple[ConversationTurnRecord, ...]
+
+
 ApplicationProjection: TypeAlias = (
     CurrentApplicationProjection
     | RuntimeApplicationProjection
@@ -270,6 +277,7 @@ ApplicationProjection: TypeAlias = (
     | SituatedStateApplicationProjection
     | MediumStateApplicationProjection
     | KnowledgeApplicationProjection
+    | ConversationHistoryApplicationProjection
 )
 
 
@@ -638,6 +646,11 @@ class _ApplicationRouter:
                 if query.kind is ApplicationQueryKind.KNOWLEDGE
                 else None
             )
+            conversation_turns = (
+                self._list_conversation_turns()
+                if query.kind is ApplicationQueryKind.CONVERSATION_HISTORY
+                else None
+            )
         except RuntimeHostRejected:
             return _query_not_found_or_not_authorized()
         except Exception:
@@ -652,6 +665,7 @@ class _ApplicationRouter:
             situated_state=situated_state,
             medium_state=medium_state,
             knowledge_entries=knowledge_entries,
+            conversation_turns=conversation_turns,
         )
 
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
@@ -737,6 +751,10 @@ class _ApplicationRouter:
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
             return lease.list_living_memories(active_only=False, limit=100)
+
+    def _list_conversation_turns(self) -> tuple[ConversationTurnRecord, ...]:
+        with self._lease() as lease:
+            return lease.list_conversation_turns(limit=20)
 
     def _list_relationship_interactions(
         self,
@@ -1157,6 +1175,7 @@ def _from_query(
     situated_state: SituatedStateRecord | None = None,
     medium_state: MediumStateRecord | None = None,
     knowledge_entries: tuple[KnowledgeApplicationEntry, ...] | None = None,
+    conversation_turns: tuple[ConversationTurnRecord, ...] | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
@@ -1203,6 +1222,13 @@ def _from_query(
         projection = MediumStateApplicationProjection(state=medium_state)
     elif kind is ApplicationQueryKind.KNOWLEDGE and knowledge_entries is not None:
         projection = KnowledgeApplicationProjection(entries=knowledge_entries)
+    elif (
+        kind is ApplicationQueryKind.CONVERSATION_HISTORY
+        and conversation_turns is not None
+    ):
+        projection = ConversationHistoryApplicationProjection(
+            turns=conversation_turns
+        )
     else:
         return _query_unavailable("query-kind-unavailable")
     return ApplicationQueryResponse(
@@ -1238,6 +1264,7 @@ def _query_not_found_or_not_authorized() -> ApplicationQueryResponse:
 
 __all__ = [
     "ApplicationFacade",
+    "ConversationHistoryApplicationProjection",
     "ApplicationHostCommand",
     "ApplicationHostCommandKind",
     "ApplicationHostResponse",
