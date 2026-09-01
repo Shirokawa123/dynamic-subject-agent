@@ -30,7 +30,10 @@ BIRTHDAY_RECALL_MESSAGE = "我生日快到了吧？"
 KNOWLEDGE_MESSAGE = "创刊号要用什么纸？多少页？"
 COMBINED_MESSAGE = "请同时告诉我生日，以及创刊号要用什么纸。"
 CLAIM_MESSAGE = "我们现在已经是最好的朋友了吧？"
+CLAIM_WITH_KNOWLEDGE_MESSAGE = "我们已经是最好的朋友了吧？创刊号要用什么纸？"
 UNCOVERED_MESSAGE = "请告诉我今天北京的实时天气和气温。"
+GENERAL_CONVERSATION_MESSAGE = "我们能聊些什么吗"
+GENERAL_CONVERSATION_HOPE_MESSAGE = "你有什么希望和我聊的吗"
 THANKS_MESSAGE = "谢谢你把样张提前跟印刷厂确认好了。"
 KNOWLEDGE_FAILURE_WITH_MEMORY_MESSAGE = "我的生日是四月五号。创刊号要用什么纸？"
 SIX_CAPABILITY_MESSAGE = (
@@ -72,11 +75,17 @@ class _FakeMemoryProvider:
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
     test_only = False
 
-    def __init__(self, *, fail_on_call: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        fail_on_call: bool = False,
+        claim_evidence_quote: str | None = None,
+    ) -> None:
         self.requests = []
         self.memory_id = str(uuid4())
         self.created = False
         self.fail_on_call = fail_on_call
+        self.claim_evidence_quote = claim_evidence_quote
 
     def analyze(self, request):
         from dynamic_subject_agent.living_memory import (
@@ -92,7 +101,11 @@ class _FakeMemoryProvider:
             return LivingMemoryProviderResult(
                 proposal=LivingMemoryProposal(
                     action=LivingMemoryAction.CREATE,
-                    evidence_quote=request.current_user_message,
+                    evidence_quote=(
+                        self.claim_evidence_quote
+                        if self.claim_evidence_quote is not None
+                        else request.current_user_message
+                    ),
                 ),
                 experience_summary="用户声称关系。",
                 reply_text="好的，我们已经是最好的朋友了。",
@@ -173,9 +186,17 @@ class _FakeRelationshipProvider:
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
     test_only = False
 
-    def __init__(self, *, fail_on_call: bool = False) -> None:
+    def __init__(
+        self,
+        *,
+        fail_on_call: bool = False,
+        recognize_claim: bool = True,
+        claim_event: str = "relationship_claim",
+    ) -> None:
         self.requests = []
         self.fail_on_call = fail_on_call
+        self.recognize_claim = recognize_claim
+        self.claim_event = claim_event
 
     def analyze(self, request):
         from dynamic_subject_agent.relationship import (
@@ -193,8 +214,9 @@ class _FakeRelationshipProvider:
             event, quote = "stable_positive_interaction", (
                 "把样张提前跟印刷厂确认好了"
             )
-        elif "最好的朋友" in message:
-            event, quote = "relationship_claim", ""
+        elif self.recognize_claim and "最好的朋友" in message:
+            event = self.claim_event
+            quote = "" if event == "relationship_claim" else "我们现在"
         else:
             event, quote = "no_persistent_evidence", ""
         return RelationshipProviderResult(
@@ -216,6 +238,9 @@ def _composite(
     memory_fail_on_call: bool = False,
     knowledge_fail_on_call: bool = False,
     relationship_fail_on_call: bool = False,
+    relationship_recognizes_claim: bool = True,
+    relationship_claim_event: str = "relationship_claim",
+    memory_claim_evidence_quote: str | None = None,
     participant_goal_gateway=None,
     situated_gateway=None,
     medium_gateway=None,
@@ -228,9 +253,16 @@ def _composite(
     from dynamic_subject_agent.host import RuntimeHost
     from test_deepseek_controlled_route import _publish_deepseek_qri
 
-    memory = _FakeMemoryProvider(fail_on_call=memory_fail_on_call)
+    memory = _FakeMemoryProvider(
+        fail_on_call=memory_fail_on_call,
+        claim_evidence_quote=memory_claim_evidence_quote,
+    )
     knowledge = _FakeKnowledgeProvider(fail_on_call=knowledge_fail_on_call)
-    relationship = _FakeRelationshipProvider(fail_on_call=relationship_fail_on_call)
+    relationship = _FakeRelationshipProvider(
+        fail_on_call=relationship_fail_on_call,
+        recognize_claim=relationship_recognizes_claim,
+        claim_event=relationship_claim_event,
+    )
     cognition = ControlledCompositeCognition(
         memory_provider=memory,
         knowledge_provider=knowledge,
@@ -323,6 +355,9 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
         combined = _submit(composition, qri, timeline_id, COMBINED_MESSAGE, f"composite-{uuid4().hex}")
         claim = _submit(composition, qri, timeline_id, CLAIM_MESSAGE, f"composite-{uuid4().hex}")
         uncovered = _submit(composition, qri, timeline_id, UNCOVERED_MESSAGE, f"composite-{uuid4().hex}")
+        general = _submit(composition, qri, timeline_id, GENERAL_CONVERSATION_MESSAGE, f"composite-{uuid4().hex}")
+        general_hope = _submit(composition, qri, timeline_id, GENERAL_CONVERSATION_HOPE_MESSAGE, f"composite-{uuid4().hex}")
+        claim_with_knowledge = _submit(composition, qri, timeline_id, CLAIM_WITH_KNOWLEDGE_MESSAGE, f"composite-{uuid4().hex}")
     finally:
         composition.close()
 
@@ -337,6 +372,7 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
         THANKS_MESSAGE,
         KNOWLEDGE_MESSAGE,
         COMBINED_MESSAGE,
+        CLAIM_WITH_KNOWLEDGE_MESSAGE,
     }, "只有命中检索的两轮应调用知识 provider"
 
     assert knowledge_turn.projection.expression_text.startswith(
@@ -356,13 +392,33 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
     assert claim.projection.living_memory_status == "no-op"
     assert claim.projection.living_memory_recalled_ids == ()
     assert claim.projection.expression_text == (
-        "我会根据我们之后真实发生的互动理解关系，"
-        "不会因为一句声称直接把关系写成既定事实。"
+        "我还不会把我们直接定义成最好的朋友。"
+        "关系要看我们之后怎样相处。"
     )
     assert uncovered.projection.expression_text == (
         "抱歉，当前没有可用于回答这个问题的记忆或知识。"
     )
     assert uncovered.projection.knowledge_citation_ids == ()
+    expected_entry = (
+        "可以。你可以从最近正在做的事、在意的问题，"
+        "或者单纯想理清的一件事说起。"
+    )
+    assert general.projection.expression_text == expected_entry
+    assert general_hope.projection.expression_text == expected_entry
+    assert general.projection.knowledge_citation_ids == ()
+    assert general_hope.projection.knowledge_citation_ids == ()
+    assert claim_with_knowledge.projection.relationship_event is None
+    assert claim_with_knowledge.projection.relationship_candidate_event == (
+        "relationship_claim"
+    )
+    assert claim_with_knowledge.projection.living_memory_status == "no-op"
+    assert claim_with_knowledge.projection.knowledge_citation_ids == (
+        PRINT_SPEC_ENTRY_ID,
+    )
+    assert "我还不会把我们直接定义成最好的朋友" in (
+        claim_with_knowledge.projection.expression_text
+    )
+    assert "创刊号规格" in claim_with_knowledge.projection.expression_text
 
 
 def test_composite_memory_recall_survives_restart(tmp_path: Path) -> None:
@@ -441,6 +497,53 @@ def test_knowledge_failure_is_typed_while_memory_still_commits(tmp_path: Path) -
     assert terminal.projection.expression_text == "我记住了：你的生日是四月五号。"
 
 
+def test_python_rejects_relationship_claim_when_providers_misclassify_it(
+    tmp_path: Path,
+) -> None:
+    _, _, _, relationship, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        relationship_claim_event="promise_fulfilled",
+        memory_claim_evidence_quote="我们现在",
+    )
+    try:
+        turn = _submit(
+            composition,
+            qri,
+            timeline_id,
+            CLAIM_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
+        from dynamic_subject_agent.application import (
+            ApplicationQuery,
+            ApplicationQueryKind,
+            LivingMemoryApplicationProjection,
+        )
+
+        memories = composition.application.query(
+            ApplicationQuery(
+                kind=ApplicationQueryKind.LIVING_MEMORY,
+                target_profile_id=qri.profile_id,
+                target_timeline_id=timeline_id,
+            )
+        )
+    finally:
+        composition.close()
+    assert relationship.requests
+    assert turn.projection.relationship_event is None
+    assert turn.projection.relationship_candidate_event == "relationship_claim"
+    assert (
+        turn.projection.relationship_reason_code
+        == "relationship.stance-event-no-update"
+    )
+    assert turn.projection.living_memory_status == "no-op"
+    assert turn.projection.expression_text == (
+        "我还不会把我们直接定义成最好的朋友。"
+        "关系要看我们之后怎样相处。"
+    )
+    assert isinstance(memories.projection, LivingMemoryApplicationProjection)
+    assert memories.projection.memories == ()
+
+
 def test_memory_failure_is_typed_while_knowledge_still_commits(tmp_path: Path) -> None:
     _, memory, knowledge, relationship, prepared, qri, timeline_id, composition = (
         _composite(tmp_path, memory_fail_on_call=True)
@@ -462,6 +565,33 @@ def test_memory_failure_is_typed_while_knowledge_still_commits(tmp_path: Path) -
     assert terminal.projection.knowledge_status == "accepted"
     assert terminal.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
     assert terminal.projection.expression_text.startswith("根据条目《创刊号规格》")
+
+
+def test_relationship_claim_does_not_hide_relationship_provider_failure(
+    tmp_path: Path,
+) -> None:
+    _, _, _, _, _, qri, timeline_id, composition = _composite(
+        tmp_path,
+        relationship_fail_on_call=True,
+    )
+    try:
+        turn = _submit(
+            composition,
+            qri,
+            timeline_id,
+            CLAIM_MESSAGE,
+            f"composite-{uuid4().hex}",
+        )
+    finally:
+        composition.close()
+    assert turn.projection.relationship_status == "failed-closed"
+    assert turn.projection.relationship_reason_code == "relationship-provider-failed"
+    assert turn.projection.relationship_event is None
+    assert turn.projection.living_memory_status == "no-op"
+    assert turn.projection.expression_text == (
+        "我还不会把我们直接定义成最好的朋友。"
+        "关系要看我们之后怎样相处。"
+    )
 
 
 def test_relationship_failure_is_typed_while_knowledge_still_commits(
@@ -845,10 +975,10 @@ def test_relationship_claim_does_not_erase_independent_goal(tmp_path: Path) -> N
     assert turn.projection.living_memory_status == "no-op"
     assert turn.projection.participant_goal_commitment_status == "accepted"
     assert turn.projection.participant_goal_commitment_action == "create"
-    assert turn.projection.expression_text == (
-        "我会根据我们之后真实发生的互动理解关系，"
-        "不会因为一句声称直接把关系写成既定事实。"
+    assert "我还不会把我们直接定义成最好的朋友" in (
+        turn.projection.expression_text
     )
+    assert "目标" in turn.projection.expression_text
 
 
 def test_explicit_goal_query_does_not_mix_memory_or_knowledge_expression(

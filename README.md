@@ -18,6 +18,7 @@
 - 六项能力可在同一原子轮次并存；任一 Provider 子能力故障只形成该项 FailedClosed，其他无依赖能力继续裁决与回复（STABLE）。
 - Windows 页面以用户语言说明本轮形成、召回、保持或失败的既有能力结果；Python 发言预算避免目标样板和多状态重复，解释仍来自裁决后的 Outcome。
 - 页面显示当前 dogfood build，并从当前隔离身份的 canonical Timeline 恢复最近 20 个已提交对话轮次；身份切换与重启不会混入其他身份历史，未完成操作不伪装成已完成对话。
+- 直接状态命令和关系声称仍由 Python 规则保护，但主对话使用自然回应；内部裁决原因只显示在逐轮 explanation，不作为角色台词朗读。
 - Windows 页面可将逐次确认授权的一份原创纯文本提取为带逐字证据的 Genesis/Knowledge 候选预览；提取预览本身不保存、不封存、不修改既有身份。
 - 用户可选择候选并显式保存为 SubjectStudio 内未封存草稿；支持重启恢复、选择 revision 和显式删除。保存与删除均需单独确认。
 - 未封存草稿可生成 exact Profile/Genesis/Knowledge 映射和稳定 Freeze Basis；用户再次确认 exact basis 后可幂等创建新的来源封存身份。原有身份不被替换，两个身份使用独立 QRI、Knowledge snapshot、Host 与 Timeline，并可显式切换和跨重启恢复。
@@ -45,6 +46,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s13`，会显示在聊天页身份名称下方。首次体验建议完成两轮对话、关闭窗口后重新启动，确认两轮历史恢复；任何失败主文案都应说明是否提交及既有状态是否保持，不应出现裸路径、内部 ID 或 source digest。
+当前内部体验 build 为 `dogfood-s14`，会显示在聊天页身份名称下方。首次体验建议完成两轮对话、关闭窗口后重新启动，确认两轮历史恢复；任何失败主文案都应说明是否提交及既有状态是否保持，不应出现裸路径、内部 ID 或 source digest。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

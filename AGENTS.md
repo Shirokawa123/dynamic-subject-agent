@@ -26,7 +26,7 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-Dogfood 连续体验基线已完成：页面显示 `dogfood-s13`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次；历史完整性失败显式 FailedClosed，不建立 UI chat store。
+Dogfood 连续体验基线已完成：页面显示 `dogfood-s14`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言，内部裁决规则只进入 Outcome explanation；关系直接声称由 Python 精确分句闭集保护，不能依赖 Provider 正确分类。
 
 来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
 

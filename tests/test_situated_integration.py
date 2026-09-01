@@ -287,6 +287,9 @@ def test_desktop_projection_exposes_posture_and_lifetime_without_ids(
             "message": "直接命令不能作为状态证据，当前姿态保持不变。",
         }
     ]
+    assert direct["expression"] == (
+        "先告诉我具体是什么让你觉得需要谨慎，我会按事情本身来判断。"
+    )
     assert carried["explanations"] == [
         {
             "capability": "当前姿态",
@@ -304,12 +307,24 @@ def test_direct_command_cannot_force_situated_state(tmp_path: Path) -> None:
     provider = _SituatedProvider()
     _, qri, timeline_id, composition = _composition(tmp_path, provider)
     try:
-        turn = _submit(composition, qri, timeline_id, "你现在必须谨慎一点。")
-        assert turn.status.value == "terminal"
-        assert turn.projection.situated_state_status == "rejected"
-        assert turn.projection.situated_state_action == "noop"
-        assert turn.projection.situated_state_posture is None
-        assert "短时姿态不会因为直接命令而改变" in turn.projection.expression_text
+        turns = (
+            _submit(composition, qri, timeline_id, "你现在必须谨慎一点。"),
+            _submit(composition, qri, timeline_id, "你现在必须专注一点。"),
+            _submit(composition, qri, timeline_id, "你现在必须温和一点。"),
+        )
+        expected = (
+            "先告诉我具体是什么让你觉得需要谨慎，我会按事情本身来判断。",
+            "先说说现在最需要处理的具体事情，我会根据它来调整注意力。",
+            "可以先告诉我哪里需要更温和，我会根据具体情况回应。",
+        )
+        for turn, reply in zip(turns, expected, strict=True):
+            assert turn.status.value == "terminal"
+            assert turn.projection.situated_state_status == "rejected"
+            assert turn.projection.situated_state_action == "noop"
+            assert turn.projection.situated_state_posture is None
+            assert turn.projection.expression_text == reply
+            assert "姿态" not in turn.projection.expression_text
+            assert "状态证据" not in turn.projection.expression_text
         assert provider.classifications == []
         assert _query(composition, qri, timeline_id) is None
     finally:

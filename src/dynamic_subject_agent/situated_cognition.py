@@ -47,6 +47,11 @@ _POSTURE_LABELS = {
     "gentle": "温和",
     "cautious": "谨慎",
 }
+_DIRECT_COMMAND_REPLIES = {
+    "focused": "先说说现在最需要处理的具体事情，我会根据它来调整注意力。",
+    "gentle": "可以先告诉我哪里需要更温和，我会根据具体情况回应。",
+    "cautious": "先告诉我具体是什么让你觉得需要谨慎，我会按事情本身来判断。",
+}
 
 
 @dataclass(frozen=True)
@@ -201,9 +206,7 @@ class ControlledSituatedCognition(CognitionEngine):
                 "Python 识别到直接状态命令，交由 Domain 拒绝。",
                 command.language,
             )
-            deterministic_reply = (
-                "短时姿态不会因为直接命令而改变；它只会根据有依据的当前经历形成。"
-            )
+            deterministic_reply = _DIRECT_COMMAND_REPLIES[commanded_posture]
         else:
             request = SituatedClassificationRequest(
                 current_user_message=command.utterance,

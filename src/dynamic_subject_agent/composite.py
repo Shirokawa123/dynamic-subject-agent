@@ -10,9 +10,11 @@ never speaks — it only contributes stance events.
 from __future__ import annotations
 
 import re
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
+from uuid import NAMESPACE_URL, uuid5
 
+from dynamic_subject_agent.domains import RelationshipChangeCandidate
 from dynamic_subject_agent.knowledge_entries import (
     KnowledgeEntry,
     SEALED_KNOWLEDGE_ENTRIES,
@@ -27,10 +29,24 @@ from dynamic_subject_agent.runtime import (
     ExperienceBasis,
     ExpressionCandidate,
 )
+from dynamic_subject_agent.relationship import RELATIONSHIP_POLICY_VERSION
 
 _COMPOSITE_ADAPTER_VERSION = "composite-cognition-1.0"
 _NO_MEMORY_EXPRESSION = "（无记忆相关内容）"
 _UNAVAILABLE_EXPRESSION = "抱歉，当前没有可用于回答这个问题的记忆或知识。"
+_GENERAL_CONVERSATION_REPLY = (
+    "可以。你可以从最近正在做的事、在意的问题，"
+    "或者单纯想理清的一件事说起。"
+)
+_GENERAL_CONVERSATION_ENTRIES = frozenset(
+    {
+        "我们能聊些什么吗",
+        "我们可以聊些什么",
+        "你有什么希望和我聊的吗",
+        "你想和我聊什么",
+        "我们聊点什么",
+    }
+)
 _CROSS_DOMAIN_UNAVAILABLE_MARKERS = (
     "没有相关信息",
     "没有这方面的信息",
@@ -42,11 +58,70 @@ _CROSS_DOMAIN_UNAVAILABLE_MARKERS = (
     "需要你告诉",
     "需要你提供",
 )
-_RELATIONSHIP_CLAIM_MARKERS = (
-    "最好的朋友",
-    "已经是朋友",
-    "关系已经确定",
-)
+_DIRECT_RELATIONSHIP_CLAIM_KINDS = {
+    "我们现在已经是最好的朋友了吧": "best-friend",
+    "我们已经是最好的朋友了吧": "best-friend",
+    "我们现在是最好的朋友了吧": "best-friend",
+    "我们是最好的朋友了吧": "best-friend",
+    "我们现在已经是朋友了吧": "friend",
+    "我们已经是朋友了吧": "friend",
+    "我们现在是朋友了吧": "friend",
+    "我们是朋友了吧": "friend",
+    "我们的关系已经确定了吧": "defined",
+    "我们的关系已经确定吗": "defined",
+}
+_DIRECT_RELATIONSHIP_CLAIM_REPLIES = {
+    "best-friend": (
+        "我还不会把我们直接定义成最好的朋友。"
+        "关系要看我们之后怎样相处。"
+    ),
+    "friend": "我还不会直接替我们定义关系。关系要看我们之后怎样相处。",
+    "defined": "我不会把我们的关系直接当成已经确定。还要看之后怎样相处。",
+}
+
+
+@dataclass(frozen=True)
+class _DirectRelationshipClaim:
+    kind: str
+    clause: str
+
+
+def _direct_relationship_claims(text: str) -> tuple[_DirectRelationshipClaim, ...]:
+    claims: list[_DirectRelationshipClaim] = []
+    for clause in re.split(r"[。！？!?；;\n]+", text):
+        normalized = re.sub(r"\s+", "", clause).strip()
+        kind = _DIRECT_RELATIONSHIP_CLAIM_KINDS.get(normalized)
+        if kind is not None:
+            claims.append(_DirectRelationshipClaim(kind, clause.strip()))
+    return tuple(claims)
+
+
+def _claim_reply(claims: tuple[_DirectRelationshipClaim, ...]) -> str:
+    kind = (
+        "best-friend"
+        if any(claim.kind == "best-friend" for claim in claims)
+        else claims[0].kind
+    )
+    return _DIRECT_RELATIONSHIP_CLAIM_REPLIES[kind]
+
+
+def _evidence_overlaps_claim(
+    evidence_quote: str,
+    claims: tuple[_DirectRelationshipClaim, ...],
+) -> bool:
+    evidence = evidence_quote.strip().rstrip("。！？!?；;")
+    return bool(
+        evidence
+        and any(
+            evidence in claim.clause or claim.clause in evidence
+            for claim in claims
+        )
+    )
+
+
+def _is_general_conversation_entry(text: str) -> bool:
+    normalized = re.sub(r"[\s。！？!?]+", "", text)
+    return normalized in _GENERAL_CONVERSATION_ENTRIES
 
 
 def _supported_clauses(text: str) -> str:
@@ -287,7 +362,36 @@ class ControlledCompositeCognition(CognitionEngine):
                     participant_goal_expression_priority
                 ),
             )
-        if relationship_event == "relationship_claim":
+        relationship_claims = _direct_relationship_claims(command.utterance)
+        relationship_claimed = bool(relationship_claims)
+        if relationship_event == "relationship_claim" and not relationship_claims:
+            relationship_claims = (
+                _DirectRelationshipClaim("defined", command.utterance.strip()),
+            )
+        relationship_claim_protected = bool(relationship_claims)
+        if relationship_claimed and relationship_request.failure_code is None:
+            relationship_request = replace(
+                relationship_request,
+                candidates=(
+                    RelationshipChangeCandidate(
+                        candidate_id=str(
+                            uuid5(
+                                NAMESPACE_URL,
+                                "relationship-direct-claim:"
+                                f"{basis.operation_id}",
+                            )
+                        ),
+                        relationship_target_id=context.profile_id,
+                        evidence_refs=(basis.operation_id,),
+                        event="relationship_claim",
+                        evidence_quote=relationship_claims[0].clause,
+                        source_user_message_id=basis.operation_id,
+                        policy_version=RELATIONSHIP_POLICY_VERSION,
+                    ),
+                ),
+            )
+            relationship_event = "relationship_claim"
+        if relationship_claim_protected:
             experience_request = replace(
                 experience_request,
                 candidates=tuple(
@@ -295,9 +399,9 @@ class ControlledCompositeCognition(CognitionEngine):
                     for candidate in experience_request.candidates
                     if not (
                         candidate.memory_action is not None
-                        and any(
-                            marker in candidate.evidence_quote
-                            for marker in _RELATIONSHIP_CLAIM_MARKERS
+                        and _evidence_overlaps_claim(
+                            candidate.evidence_quote,
+                            relationship_claims,
                         )
                     )
                 ),
@@ -308,10 +412,7 @@ class ControlledCompositeCognition(CognitionEngine):
                     "用户单方面声称关系；Python 保持关系与记忆均不变。"
                 ),
                 expression_candidate=ExpressionCandidate(
-                    text=(
-                        "我会根据我们之后真实发生的互动理解关系，"
-                        "不会因为一句声称直接把关系写成既定事实。"
-                    ),
+                    text=_claim_reply(relationship_claims),
                     language=memory_proposal.expression_candidate.language,
                 ),
             )
@@ -352,7 +453,7 @@ class ControlledCompositeCognition(CognitionEngine):
             memory_proposal.impact_envelope,
             experience=experience_request,
             subject_state=subject_state_request,
-            relationship=relationship_proposal.impact_envelope.relationship,
+            relationship=relationship_request,
         )
 
         knowledge_cited = bool(
@@ -365,11 +466,11 @@ class ControlledCompositeCognition(CognitionEngine):
         )
         memory_recalled = any(
             candidate.recalled_memory_ids
-            for candidate in memory_proposal.impact_envelope.experience.candidates
+            for candidate in experience_request.candidates
         ) and not participant_goal_selection_priority
         memory_changed = any(
             candidate.memory_action in {"create", "revise"}
-            for candidate in memory_proposal.impact_envelope.experience.candidates
+            for candidate in experience_request.candidates
         ) and not participant_goal_selection_priority
         memory_relevant = memory_recalled or memory_changed
         if knowledge_cited and memory_relevant:
@@ -419,7 +520,10 @@ class ControlledCompositeCognition(CognitionEngine):
             and medium_proposal.impact_envelope.subject_state.medium_expression_priority
         )
         non_state_relevant = bool(
-            knowledge_cited or memory_relevant or participant_goal_relevant
+            knowledge_cited
+            or memory_relevant
+            or participant_goal_relevant
+            or relationship_claim_protected
         )
         situated_should_speak = situated_active and (
             situated_priority or not non_state_relevant
@@ -453,9 +557,21 @@ class ControlledCompositeCognition(CognitionEngine):
                 )
             else:
                 expression = medium_proposal.expression_candidate
+        if relationship_claim_protected:
+            expression = ExpressionCandidate(
+                text=_merge_expression_text(
+                    _claim_reply(relationship_claims),
+                    expression.text,
+                ),
+                language=expression.language,
+            )
         if expression.text == _NO_MEMORY_EXPRESSION:
             expression = ExpressionCandidate(
-                text=_UNAVAILABLE_EXPRESSION,
+                text=(
+                    _GENERAL_CONVERSATION_REPLY
+                    if _is_general_conversation_entry(command.utterance)
+                    else _UNAVAILABLE_EXPRESSION
+                ),
                 language=expression.language,
             )
         summary = (

@@ -1,3 +1,3 @@
 # 当前工作
 
-Slice-13 已完成，当前无活跃切片。`dogfood-s13` 已达到首次用户体验点；下一项工作应先接收真实体验反馈或新的明确产品目标，不自动扩展主体能力或 Provider 数据用途。
+Slice-14 已完成，当前无活跃切片。下一项推荐是 Temporal Grounding：以本地 Python 为“明天/后天”等计划建立绝对日期锚点；在正式任务书前不增加 Identity Provider 投影、Agency 或新数据用途。

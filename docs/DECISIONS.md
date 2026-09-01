@@ -67,3 +67,7 @@
 ## D-017：Dogfood 历史只投影 canonical TimelineOutcome
 
 2026-09-01，为让用户首次体验能感到跨重启连续性，页面恢复当前 identity 最近 20 个已提交 user/expression 对。History 不建立新 store，不展示 pending/interrupted/FailedClosed；TimelineEngine 每次验证完整 outcome digest 链与 head 后再裁剪窗口。实时第 21 轮由服务器返回的 canonical window 重建 DOM，身份切换只在目标 history 成功加载后关闭选择页。build 为固定 `dogfood-s13` 常量；错误主文案使用 exact typed 闭集，未知值统一 FailedClosed，不显示裸 code/path/ID。
+
+## D-018：主表达不朗读裁决规则
+
+2026-09-02，真实体验证明直接姿态命令的硬编码主回复像状态机说明书，普通会话入口会错误退化为“没有记忆或知识”，关系声称在 Provider 漏判时甚至被直接接受。Slice-14 保持 Domain/Outcome/explanation 不变：Situated 自然询问具体情境；五条精确普通会话入口使用本地自然回复；关系声称按分句精确闭集生成 Python `relationship_claim` NoUpdate candidate，并与合法 Knowledge/目标表达合并。该保护不覆盖 Relationship Provider FailedClosed，不新增统一表达层、Identity 投影或 Provider 字段。build 升为 `dogfood-s14`。
