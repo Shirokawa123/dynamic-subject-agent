@@ -6,6 +6,9 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from pathlib import Path
 from threading import Event
+from uuid import uuid4
+
+import pytest
 
 from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 from dynamic_subject_agent.credentials import (
@@ -14,6 +17,7 @@ from dynamic_subject_agent.credentials import (
     InMemoryCredentialStore,
 )
 from dynamic_subject_agent.local_product import LocalProductConfig, open_local_product
+from dynamic_subject_agent.host import RuntimeHostProblem
 from dynamic_subject_agent.source_character_authoring import (
     LocalIdentitySelectRequest,
     LocalIdentityStatus,
@@ -228,7 +232,7 @@ def test_registry_interruption_recovers_same_sealed_identity(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
-    import dynamic_subject_agent.local_product as local_product
+    import dynamic_subject_agent.local_identity_authority as local_identity_authority
 
     config = _config(tmp_path)
     product = open_local_product(config, cognition=DormantDeepSeekCognition())
@@ -244,15 +248,19 @@ def test_registry_interruption_recovers_same_sealed_identity(
             mapping.view.freeze_basis_digest,
             True,
         )
-        real_write = local_product._write_state
+        real_write = local_identity_authority._write_state
 
         def interrupted_write(path, payload):
             del path, payload
             raise OSError("fault after QRI publication")
 
-        monkeypatch.setattr(local_product, "_write_state", interrupted_write)
+        monkeypatch.setattr(
+            local_identity_authority,
+            "_write_state",
+            interrupted_write,
+        )
         interrupted = product.application.freeze_source_identity(request)
-        monkeypatch.setattr(local_product, "_write_state", real_write)
+        monkeypatch.setattr(local_identity_authority, "_write_state", real_write)
         recovered = product.application.freeze_source_identity(request)
     finally:
         product.close()
@@ -481,22 +489,61 @@ def test_registry_identity_label_tamper_fails_closed_on_open(tmp_path: Path) -> 
         raise AssertionError("tampered active identity must fail closed")
 
 
+@pytest.mark.parametrize("tamper", ["host", "timeline"])
+def test_registry_host_or_timeline_tamper_fails_closed_before_open(
+    tmp_path: Path,
+    tamper: str,
+) -> None:
+    config = _config(tmp_path)
+    product = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        product.application.source_draft(SourceDraftCommand.save(_save_request()))
+        mapping = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Avery")
+        )
+        assert mapping.view is not None
+        frozen = product.application.freeze_source_identity(
+            SourceIdentityFreezeRequest(
+                1,
+                "Avery",
+                mapping.view.freeze_basis_digest,
+                True,
+            )
+        )
+        assert frozen.view is not None
+        product.application.select_local_identity(
+            LocalIdentitySelectRequest(frozen.view.identity_id, True)
+        )
+    finally:
+        product.close()
+    state = json.loads(config.state_path.read_text(encoding="utf-8"))
+    source = state["identities"][1]
+    if tamper == "host":
+        source["host_location"] = state["identities"][0]["host_location"]
+    else:
+        source["timeline_id"] = str(uuid4())
+    config.state_path.write_text(json.dumps(state), encoding="utf-8")
+    with pytest.raises((RuntimeError, RuntimeHostProblem)):
+        open_local_product(config, cognition=DormantDeepSeekCognition())
+
+
 def test_deepseek_open_loads_one_identity_authority_snapshot(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
     import dynamic_subject_agent.local_product as local_product
+    from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
 
     config = _config(tmp_path)
-    original = local_product._load_or_create_authority
+    original = LocalIdentityAuthority.load_active
     calls = 0
 
-    def counted(target):
+    def counted(self):
         nonlocal calls
         calls += 1
-        return original(target)
+        return original(self)
 
-    monkeypatch.setattr(local_product, "_load_or_create_authority", counted)
+    monkeypatch.setattr(LocalIdentityAuthority, "load_active", counted)
     product = local_product.open_deepseek_local_product(config, api_key="test-key")
     try:
         assert calls == 1

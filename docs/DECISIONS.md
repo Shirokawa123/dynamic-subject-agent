@@ -59,3 +59,7 @@
 ## D-015：exact Freeze Basis 创建独立 runtime authority
 
 2026-09-01，用户明确授权 basis `e99264f...311343`。Freeze 在写前重算 basis，以稳定身份幂等封存 Profile/Genesis/Knowledge 并发布 QRI；本地 registry 只选择完整隔离 authority，不合并 Timeline。Knowledge runtime 改从当前 QRI snapshot 注入，代码 fixture 仅兼容旧 Avery；0 member 不继承旧知识。真实切换发现 Presentation DOM 会残留上一身份消息，已在切换成功时清空并标记“原有身份/来源封存”。Freeze、registry、切换均不调用 Provider，真实对话继续使用既有六类授权投影。
+
+## D-016：本地身份 Authority 从 composition root 提炼为深 Module
+
+2026-09-01，Slice-11 后 `local_product.py` 同时承担 registry/state/freeze/select/Host 生命周期与 cognition 装配，虽行为正确但 locality 不足。提炼 `LocalIdentityAuthority`，以 `load_active/freeze/list/select` 四方法 Interface 隐藏本地持久化与恢复复杂度；`local_product` 只消费 `LoadedLocalIdentity` 并完成唯一 production composition。该重构不迁移数据、不改变 Provider 投影或用户行为，真实 v2 双身份 state 无迁移复验。
