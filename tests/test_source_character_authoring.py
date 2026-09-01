@@ -20,6 +20,8 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceDraftCommandKind,
     SourceDraftSaveRequest,
     SourceDraftStatus,
+    SourceFreezeMappingRequest,
+    SourceFreezeMappingStatus,
     SourcePreviewStatus,
     TextSourceCharacterAuthoring,
     TextSourcePreviewRequest,
@@ -762,3 +764,143 @@ def test_threaded_http_source_draft_opens_studio_in_request_thread(tmp_path) -> 
     assert response["ok"] is True
     assert response["status"] == "available"
     assert response["view"]["revision"] == 1
+
+
+def test_source_freeze_mapping_is_deterministic_exact_and_read_only(tmp_path) -> None:
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        TimelineApplicationProjection,
+    )
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    config = _config(tmp_path)
+    product = open_local_product(config, cognition=DormantDeepSeekCognition())
+    try:
+        absent = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Avery")
+        )
+        saved = product.application.source_draft(_draft_save(base_revision=0))
+        before_draft = product.application.source_draft(SourceDraftCommand.query())
+        before_timeline = product.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.TIMELINE,
+                product.profile_id,
+                product.timeline_id,
+            )
+        )
+        mapping = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Avery")
+        )
+        repeated = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Avery")
+        )
+        fake_name = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Rowan")
+        )
+        stale = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(2, "Avery")
+        )
+        after_draft = product.application.source_draft(SourceDraftCommand.query())
+        after_timeline = product.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.TIMELINE,
+                product.profile_id,
+                product.timeline_id,
+            )
+        )
+    finally:
+        product.close()
+
+    assert absent.status is SourceFreezeMappingStatus.ABSENT
+    assert saved.status is SourceDraftStatus.AVAILABLE
+    assert mapping.status is SourceFreezeMappingStatus.AVAILABLE
+    assert mapping == repeated
+    assert mapping.view is not None
+    assert mapping.view.profile.display_name == "Avery"
+    assert mapping.view.profile.identity_core == "社区刊物编辑"
+    assert mapping.view.genesis.subject_identity == (
+        "社区刊物编辑；先核对来源再回答"
+    )
+    assert "尚无运行时经历" in mapping.view.genesis.canon_start
+    assert "尚无信任、承诺、共同记忆或既有关系状态" in (
+        mapping.view.genesis.initial_relationship_premise
+    )
+    assert [item.title for item in mapping.view.knowledge_members] == ["截单时间"]
+    assert len(mapping.view.freeze_basis_digest) == 64
+    assert fake_name.status is SourceFreezeMappingStatus.REJECTED
+    assert fake_name.problem_code == "source-freeze-display-name-not-in-identity-evidence"
+    assert stale.status is SourceFreezeMappingStatus.CONFLICT
+    assert before_draft.view is not None and after_draft.view is not None
+    assert before_draft.view.revision == after_draft.view.revision == 1
+    assert isinstance(before_timeline.projection, TimelineApplicationProjection)
+    assert isinstance(after_timeline.projection, TimelineApplicationProjection)
+    assert before_timeline.projection.head_sequence == after_timeline.projection.head_sequence == 0
+
+
+def test_source_freeze_basis_changes_with_selection_revision(tmp_path) -> None:
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    product = open_local_product(
+        _config(tmp_path),
+        cognition=DormantDeepSeekCognition(),
+    )
+    try:
+        product.application.source_draft(_draft_save(base_revision=0))
+        first = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(1, "Avery")
+        )
+        product.application.source_draft(
+            _draft_selection(base_revision=1, knowledge_selected=False)
+        )
+        second = product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(2, "Avery")
+        )
+    finally:
+        product.close()
+
+    assert first.status is SourceFreezeMappingStatus.AVAILABLE
+    assert second.status is SourceFreezeMappingStatus.AVAILABLE
+    assert first.view.freeze_basis_digest != second.view.freeze_basis_digest
+    assert second.view.knowledge_members == ()
+
+
+def test_desktop_freeze_mapping_hides_internal_profile_identity(tmp_path) -> None:
+    import importlib.util
+    from pathlib import Path
+
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.local_product import open_local_product
+    from test_local_product import _config
+
+    product = open_local_product(
+        _config(tmp_path),
+        cognition=DormantDeepSeekCognition(),
+    )
+    product.application.source_draft(_draft_save(base_revision=0))
+    server_path = Path(__file__).resolve().parents[1] / "app" / "desktop" / "server.py"
+    spec = importlib.util.spec_from_file_location("source_mapping_desktop", server_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    state = module.AppState(product)
+    try:
+        result = state.preview_source_freeze_mapping(
+            expected_revision=1,
+            display_name="Avery",
+        )
+    finally:
+        product.close()
+
+    assert result["ok"] is True
+    assert result["view"]["profile"] == {
+        "display_name": "Avery",
+        "identity_core": "社区刊物编辑",
+    }
+    serialized = json.dumps(result, ensure_ascii=False)
+    assert "profile_id" not in serialized
+    assert SOURCE not in serialized

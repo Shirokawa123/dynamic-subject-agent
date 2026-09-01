@@ -30,6 +30,9 @@ from dynamic_subject_agent.source_authoring import (
     UnpublishedSubjectStudioArtifact,
 )
 from dynamic_subject_agent.source_character_authoring import (
+    SourceFreezeMappingRequest,
+    SourceFreezeMappingResponse,
+    SourceFreezeMappingStatus,
     SourceDraftCommand,
     SourceDraftCommandKind,
     SourceDraftResponse,
@@ -37,6 +40,7 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceDraftStatus,
     SourceDraftView,
     prepare_source_draft_save,
+    prepare_source_freeze_mapping,
     source_draft_candidates_from_json,
 )
 
@@ -3270,6 +3274,58 @@ class SubjectStudio:
                 SourceDraftStatus.FAILED_CLOSED,
                 problem_code="source-draft-store-failed-closed",
             )
+
+    def preview_source_freeze_mapping(
+        self,
+        request: object,
+    ) -> SourceFreezeMappingResponse:
+        self._require_open()
+        draft = self.source_draft(SourceDraftCommand.query())
+        if draft.status is SourceDraftStatus.ABSENT:
+            return SourceFreezeMappingResponse(SourceFreezeMappingStatus.ABSENT)
+        if draft.status is not SourceDraftStatus.AVAILABLE or draft.view is None:
+            return SourceFreezeMappingResponse(
+                SourceFreezeMappingStatus.FAILED_CLOSED,
+                problem_code="source-freeze-draft-unavailable",
+            )
+        mapping = prepare_source_freeze_mapping(draft.view, request)
+        if mapping.status is not SourceFreezeMappingStatus.AVAILABLE:
+            return mapping
+        assert mapping.view is not None
+        try:
+            source = SourceDeclaration.project_original(rights_confirmed=True)
+            profile = ParticipantProfile(
+                profile_id=mapping.view.profile.profile_id,
+                display_name=mapping.view.profile.display_name,
+                identity_core=mapping.view.profile.identity_core,
+                source=source,
+            )
+            premise = GenesisPremise(
+                subject_identity=mapping.view.genesis.subject_identity,
+                canon_start=mapping.view.genesis.canon_start,
+                initial_relationship_premise=(
+                    mapping.view.genesis.initial_relationship_premise
+                ),
+                source=source,
+            )
+        except StudioProblem:
+            return SourceFreezeMappingResponse(
+                SourceFreezeMappingStatus.REJECTED,
+                problem_code="source-freeze-studio-mapping-invalid",
+            )
+        if (
+            profile.display_name != mapping.view.profile.display_name
+            or profile.identity_core != mapping.view.profile.identity_core
+            or premise.subject_identity != mapping.view.genesis.subject_identity
+            or premise.canon_start != mapping.view.genesis.canon_start
+            or premise.initial_relationship_premise
+            != mapping.view.genesis.initial_relationship_premise
+        ):
+            return SourceFreezeMappingResponse(
+                SourceFreezeMappingStatus.FAILED_CLOSED,
+                problem_code="source-freeze-studio-normalization-changed",
+            )
+        return mapping
 
     def _query_source_draft(self) -> SourceDraftResponse:
         if not self._source_draft_database.exists():

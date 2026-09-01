@@ -90,6 +90,13 @@
     </div>
     <div class="setup-status" id="authoring-status"></div>
     <div id="authoring-results"></div>
+    <div class="preview-section">
+      <h3>封存映射预览（不会执行 freeze）</h3>
+      <label>角色显示名称<input type="text" id="mapping-display-name" maxlength="128" placeholder="必须出现在已选 identity 的逐字证据中"></label>
+      <button id="preview-mapping">生成 exact mapping</button>
+      <div class="setup-status" id="mapping-status"></div>
+      <div id="mapping-results"></div>
+    </div>
   </div>
 </div>
 <div class="app">
@@ -139,6 +146,10 @@ const previewSourceButton = document.getElementById("preview-source");
 const draftSaveConfirmInput = document.getElementById("draft-save-confirm");
 const saveDraftButton = document.getElementById("save-draft");
 const deleteDraftButton = document.getElementById("delete-draft");
+const mappingDisplayNameInput = document.getElementById("mapping-display-name");
+const previewMappingButton = document.getElementById("preview-mapping");
+const mappingStatus = document.getElementById("mapping-status");
+const mappingResults = document.getElementById("mapping-results");
 let authoringCandidates = [];
 let authoringRevision = 0;
 
@@ -174,6 +185,10 @@ const authoringProblemLabels = {
   "source-draft-revision-conflict":"草稿已发生变化，请重新加载后再保存。",
   "source-draft-basis-changed":"来源或候选集合与当前草稿不一致。",
   "source-draft-store-failed-closed":"草稿存储失败关闭，没有修改现有草稿。",
+  "source-freeze-display-name-invalid":"角色显示名称不能为空或格式无效。",
+  "source-freeze-display-name-not-in-identity-evidence":"显示名称必须逐字出现在已选 identity 证据中。",
+  "source-freeze-draft-revision-conflict":"草稿 revision 已变化，请重新加载。",
+  "source-freeze-draft-unavailable":"当前草稿不可用于映射。",
 };
 
 function el(tag, cls, text) {
@@ -316,6 +331,7 @@ function renderCandidateGroups(candidates, rejected=[]) {
 }
 
 function renderAuthoring(result) {
+  clearMapping();
   if (!result.ok) {
     authoringResults.innerHTML = "";
     authoringStatus.className = "setup-status error";
@@ -364,6 +380,7 @@ function collectSelections() {
 }
 
 function renderDraft(result) {
+  clearMapping();
   if (!result.ok) {
     authoringStatus.className = "setup-status error";
     authoringStatus.textContent = authoringProblemLabels[result.problem] || "草稿操作未完成。";
@@ -442,6 +459,86 @@ async function deleteDraft() {
     renderDraft(await res.json());
   } catch (error) {
     renderDraft({ok:false,problem:"source-draft-store-failed-closed"});
+  }
+}
+
+function clearMapping() {
+  mappingStatus.textContent = "";
+  mappingStatus.className = "setup-status";
+  mappingResults.innerHTML = "";
+}
+
+function mappingCard(label, content) {
+  const card = el("div", "card");
+  card.appendChild(el("span", "k", label));
+  card.appendChild(document.createElement("br"));
+  card.appendChild(document.createTextNode(content));
+  return card;
+}
+
+function renderMapping(result) {
+  mappingResults.innerHTML = "";
+  if (!result.ok) {
+    mappingStatus.className = "setup-status error";
+    mappingStatus.textContent = authoringProblemLabels[result.problem] || "封存映射未生成。";
+    return;
+  }
+  const view = result.view;
+  mappingStatus.className = "setup-status";
+  mappingStatus.textContent = `尚未封存 · draft revision ${view.draft_revision} · policy ${view.mapping_policy_version}`;
+  mappingResults.appendChild(mappingCard(
+    "Profile",
+    `${view.profile.display_name}｜${view.profile.identity_core}`,
+  ));
+  mappingResults.appendChild(mappingCard(
+    "Genesis · subject_identity",
+    view.genesis.subject_identity,
+  ));
+  mappingResults.appendChild(mappingCard(
+    "Genesis · canon_start",
+    view.genesis.canon_start,
+  ));
+  mappingResults.appendChild(mappingCard(
+    "Genesis · initial_relationship_premise",
+    view.genesis.initial_relationship_premise,
+  ));
+  const knowledge = el("div", "preview-section");
+  knowledge.appendChild(el("h3", "", "将封存的 Knowledge members"));
+  for (const item of view.knowledge_members) {
+    const card = mappingCard(item.title, item.content);
+    card.appendChild(el("div", "preview-evidence", `来源逐字：「${item.evidence_quote}」`));
+    knowledge.appendChild(card);
+  }
+  if (!view.knowledge_members.length) knowledge.appendChild(el("div", "card", "无 Knowledge member。"));
+  mappingResults.appendChild(knowledge);
+  mappingResults.appendChild(mappingCard("Freeze Basis", view.freeze_basis_digest));
+  mappingResults.appendChild(el(
+    "div",
+    "notes",
+    "此预览只描述未来将封存的 exact 内容；尚未创建身份，也不会替换 Avery。",
+  ));
+}
+
+async function previewMapping() {
+  if (previewMappingButton.disabled) return;
+  previewMappingButton.disabled = true;
+  mappingStatus.className = "setup-status";
+  mappingStatus.textContent = "正在生成确定性映射……";
+  mappingResults.innerHTML = "";
+  try {
+    const res = await fetch("/api/authoring/mapping", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        expected_revision:authoringRevision,
+        display_name:mappingDisplayNameInput.value,
+      }),
+    });
+    renderMapping(await res.json());
+  } catch (error) {
+    renderMapping({ok:false,problem:"source-freeze-draft-unavailable"});
+  } finally {
+    previewMappingButton.disabled = false;
   }
 }
 
@@ -581,6 +678,7 @@ previewSourceButton.addEventListener("click", previewSource);
 saveDraftButton.addEventListener("click", saveDraft);
 document.getElementById("load-draft").addEventListener("click", loadDraft);
 deleteDraftButton.addEventListener("click", deleteDraft);
+previewMappingButton.addEventListener("click", previewMapping);
 closeSetupButton.addEventListener("click", () => {
   if (productReady) setupScreen.hidden = true;
 });

@@ -28,6 +28,8 @@
 
 来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；草稿仍不能 freeze 或创建身份。
 
+未封存草稿可确定性预览 exact Profile/Genesis/Knowledge Freeze Mapping 与 Freeze Basis；预览不写 snapshot/QRI，不创建或替换身份。
+
 ## 永久不变量
 
 1. 一条 RuntimeTimeline 只有一个写入者与一个 canonical store。

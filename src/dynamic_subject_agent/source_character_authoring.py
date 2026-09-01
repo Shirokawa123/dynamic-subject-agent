@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from hashlib import sha256
 import json
+from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.model_gateway import (
     ModelGateway,
@@ -178,6 +179,234 @@ class SourceDraftResponse:
     replayed: bool = False
 
 
+SOURCE_FREEZE_MAPPING_POLICY_VERSION = "source-freeze-mapping-1.0"
+_EMPTY_RELATIONSHIP_PREMISE = (
+    "这是一个新创建的身份；与现实参与者尚无信任、承诺、共同记忆或既有关系状态。"
+)
+_NO_RUNTIME_HISTORY = "此身份尚无运行时经历。"
+
+
+class SourceFreezeMappingStatus(str, Enum):
+    AVAILABLE = "available"
+    ABSENT = "absent"
+    REJECTED = "rejected"
+    CONFLICT = "conflict"
+    FAILED_CLOSED = "failed-closed"
+    UNAVAILABLE = "unavailable"
+
+
+@dataclass(frozen=True)
+class SourceFreezeMappingRequest:
+    expected_revision: int
+    display_name: str
+
+
+@dataclass(frozen=True)
+class MappedProfileView:
+    profile_id: str
+    display_name: str
+    identity_core: str
+
+
+@dataclass(frozen=True)
+class MappedGenesisView:
+    subject_identity: str
+    canon_start: str
+    initial_relationship_premise: str
+
+
+@dataclass(frozen=True)
+class MappedKnowledgeMember:
+    title: str
+    content: str
+    evidence_quote: str
+    source_digest: str
+
+
+@dataclass(frozen=True)
+class SourceFreezeMappingView:
+    source_title: str
+    source_digest: str
+    draft_revision: int
+    mapping_policy_version: str
+    freeze_basis_digest: str
+    profile: MappedProfileView
+    genesis: MappedGenesisView
+    knowledge_members: tuple[MappedKnowledgeMember, ...]
+    selected_candidates: tuple[SourceDraftCandidate, ...]
+
+
+@dataclass(frozen=True)
+class SourceFreezeMappingResponse:
+    status: SourceFreezeMappingStatus
+    view: SourceFreezeMappingView | None = None
+    problem_code: str | None = None
+
+
+def prepare_source_freeze_mapping(
+    draft: object,
+    request: object,
+) -> SourceFreezeMappingResponse:
+    if not isinstance(draft, SourceDraftView):
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.FAILED_CLOSED,
+            problem_code="source-freeze-draft-invalid",
+        )
+    if not isinstance(request, SourceFreezeMappingRequest):
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-mapping-request-invalid",
+        )
+    if (
+        isinstance(request.expected_revision, bool)
+        or not isinstance(request.expected_revision, int)
+        or request.expected_revision < 1
+    ):
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-expected-revision-invalid",
+        )
+    if request.expected_revision != draft.revision:
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.CONFLICT,
+            problem_code="source-freeze-draft-revision-conflict",
+        )
+    if (
+        not isinstance(request.display_name, str)
+        or not request.display_name.strip()
+        or len(request.display_name.strip()) > 128
+        or any(marker in request.display_name for marker in ("\x00", "\r", "\n"))
+    ):
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-display-name-invalid",
+        )
+    display_name = request.display_name.strip()
+    selected = tuple(item for item in draft.candidates if item.selected)
+    identities = tuple(
+        item for item in selected if item.category == "genesis" and item.kind == "identity"
+    )
+    if not identities:
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-selected-identity-required",
+        )
+    if not any(display_name in item.evidence_quote for item in identities):
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-display-name-not-in-identity-evidence",
+        )
+    traits = tuple(
+        item for item in selected if item.category == "genesis" and item.kind == "trait"
+    )
+    origins = tuple(
+        item for item in selected if item.category == "genesis" and item.kind == "origin"
+    )
+    voices = tuple(
+        item for item in selected if item.category == "genesis" and item.kind == "voice"
+    )
+    knowledge = tuple(item for item in selected if item.category == "knowledge")
+    identity_core = "；".join(_mapping_content(item.content) for item in identities)
+    subject_identity = "；".join(
+        _mapping_content(item.content) for item in identities + traits
+    )
+    canon_parts: list[str] = []
+    if origins:
+        canon_parts.append(
+            "来源记载的来历："
+            + "；".join(_mapping_content(item.content) for item in origins)
+        )
+    if voices:
+        canon_parts.append(
+            "表达方式："
+            + "；".join(_mapping_content(item.content) for item in voices)
+        )
+    canon_parts.append(_NO_RUNTIME_HISTORY)
+    canon_start = "\n".join(canon_parts)
+    if len(identity_core) > 2_000 or len(subject_identity) > 2_000 or len(canon_start) > 4_000:
+        return SourceFreezeMappingResponse(
+            SourceFreezeMappingStatus.REJECTED,
+            problem_code="source-freeze-mapped-content-too-long",
+        )
+    profile_basis = {
+        "source_digest": draft.source_digest,
+        "draft_revision": draft.revision,
+        "display_name": display_name,
+        "identity_core": identity_core,
+        "mapping_policy_version": SOURCE_FREEZE_MAPPING_POLICY_VERSION,
+    }
+    profile_id = str(
+        uuid5(
+            NAMESPACE_URL,
+            "dynamic-subject-agent:source-profile:" + _json_digest(profile_basis),
+        )
+    )
+    profile = MappedProfileView(profile_id, display_name, identity_core)
+    genesis = MappedGenesisView(
+        subject_identity,
+        canon_start,
+        _EMPTY_RELATIONSHIP_PREMISE,
+    )
+    knowledge_members = tuple(
+        MappedKnowledgeMember(
+            title=item.title or "",
+            content=item.content,
+            evidence_quote=item.evidence_quote,
+            source_digest=draft.source_digest,
+        )
+        for item in knowledge
+    )
+    freeze_payload = {
+        "source_title": draft.source_title,
+        "source_digest": draft.source_digest,
+        "draft_revision": draft.revision,
+        "mapping_policy_version": SOURCE_FREEZE_MAPPING_POLICY_VERSION,
+        "profile": {
+            "profile_id": profile.profile_id,
+            "display_name": profile.display_name,
+            "identity_core": profile.identity_core,
+        },
+        "genesis": {
+            "subject_identity": genesis.subject_identity,
+            "canon_start": genesis.canon_start,
+            "initial_relationship_premise": genesis.initial_relationship_premise,
+        },
+        "knowledge_members": [
+            {
+                "title": item.title,
+                "content": item.content,
+                "evidence_quote": item.evidence_quote,
+                "source_digest": item.source_digest,
+            }
+            for item in knowledge_members
+        ],
+        "selected_candidates": [
+            {
+                "category": item.category,
+                "kind": item.kind,
+                "title": item.title,
+                "content": item.content,
+                "evidence_quote": item.evidence_quote,
+            }
+            for item in selected
+        ],
+    }
+    return SourceFreezeMappingResponse(
+        SourceFreezeMappingStatus.AVAILABLE,
+        view=SourceFreezeMappingView(
+            source_title=draft.source_title,
+            source_digest=draft.source_digest,
+            draft_revision=draft.revision,
+            mapping_policy_version=SOURCE_FREEZE_MAPPING_POLICY_VERSION,
+            freeze_basis_digest=_json_digest(freeze_payload),
+            profile=profile,
+            genesis=genesis,
+            knowledge_members=knowledge_members,
+            selected_candidates=selected,
+        ),
+    )
+
+
 @dataclass(frozen=True)
 class PreparedSourceDraftSave:
     source_title: str
@@ -332,6 +561,10 @@ def _json_digest(value: object) -> str:
             separators=(",", ":"),
         ).encode("utf-8")
     ).hexdigest()
+
+
+def _mapping_content(value: str) -> str:
+    return value.strip().rstrip("。；;")
 
 
 class SourceCharacterProviderAdapter(ProviderAdapter):
@@ -574,6 +807,10 @@ __all__ = [
     "SourceCharacterProviderAdapter",
     "SourcePreviewStatus",
     "PreparedSourceDraftSave",
+    "MappedGenesisView",
+    "MappedKnowledgeMember",
+    "MappedProfileView",
+    "SOURCE_FREEZE_MAPPING_POLICY_VERSION",
     "SourceDraftCandidate",
     "SourceDraftCommand",
     "SourceDraftCommandKind",
@@ -581,9 +818,14 @@ __all__ = [
     "SourceDraftSaveRequest",
     "SourceDraftStatus",
     "SourceDraftView",
+    "SourceFreezeMappingRequest",
+    "SourceFreezeMappingResponse",
+    "SourceFreezeMappingStatus",
+    "SourceFreezeMappingView",
     "TextSourceCharacterAuthoring",
     "TextSourcePreviewRequest",
     "TextSourcePreviewResponse",
     "prepare_source_draft_save",
+    "prepare_source_freeze_mapping",
     "source_draft_candidates_from_json",
 ]

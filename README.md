@@ -19,6 +19,7 @@
 - Windows 页面以用户语言说明本轮形成、召回、保持或失败的既有能力结果；Python 发言预算避免目标样板和多状态重复，解释仍来自裁决后的 Outcome。
 - Windows 页面可将逐次确认授权的一份原创纯文本提取为带逐字证据的临时 Genesis/Knowledge 候选预览；预览不保存、不封存、不修改 Avery。
 - 用户可选择候选并显式保存为 SubjectStudio 内未封存草稿；支持重启恢复、选择 revision 和显式删除，但尚不能 freeze 或创建身份。
+- 未封存草稿可生成 exact Profile/Genesis/Knowledge 映射和稳定 Freeze Basis 供最终确认；映射预览不会创建或替换身份。
 - 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
 
 当前最小产品范围已完成 Windows 隔离身份真实长链与重启验收。下一项能力需重新定义切片；Agency、effect、人格发展、Reflection 与主动消息不在当前范围。

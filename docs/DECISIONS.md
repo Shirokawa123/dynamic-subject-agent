@@ -51,3 +51,7 @@
 ## D-013：预封存选择由 Studio sidecar 持久化
 
 2026-09-01，用户批准逐次确认保存来源原文、候选和选择，并由显式操作删除。为避免迁移现有 ProfileStore 或建立平行身份真相，SubjectStudio root lazy 创建单草稿 sidecar；candidate basis/source 不可在 revision 间偷换，只允许 selection-only 追加。ApplicationFacade 是唯一入口，Timeline 与 Avery 不参与。
+
+## D-014：Freeze 前必须展示 exact deterministic mapping
+
+2026-09-01，Source Draft 不直接 seal。用户先提供有 identity evidence 的 display name，Python 按固定策略映射 Profile/Genesis/Knowledge，并展示完整 Freeze Basis；来源不能预写已赚取关系，初始关系固定为空白。映射重复稳定且只读，真正 freeze/新身份创建等待下一次明确授权。

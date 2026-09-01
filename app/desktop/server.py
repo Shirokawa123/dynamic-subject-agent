@@ -29,6 +29,8 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceDraftCommand,
     SourceDraftSaveRequest,
     SourceDraftStatus,
+    SourceFreezeMappingRequest,
+    SourceFreezeMappingStatus,
     SourcePreviewStatus,
     TextSourcePreviewRequest,
 )
@@ -589,6 +591,64 @@ class AppState:
             "replayed": response.replayed,
         }
 
+    def preview_source_freeze_mapping(
+        self,
+        *,
+        expected_revision: object,
+        display_name: object,
+    ) -> dict:
+        response = self.product.application.preview_source_freeze_mapping(
+            SourceFreezeMappingRequest(
+                expected_revision=expected_revision,  # type: ignore[arg-type]
+                display_name=display_name,  # type: ignore[arg-type]
+            )
+        )
+        view = None
+        if response.view is not None:
+            view = {
+                "source_title": response.view.source_title,
+                "source_digest": response.view.source_digest,
+                "draft_revision": response.view.draft_revision,
+                "mapping_policy_version": response.view.mapping_policy_version,
+                "freeze_basis_digest": response.view.freeze_basis_digest,
+                "profile": {
+                    "display_name": response.view.profile.display_name,
+                    "identity_core": response.view.profile.identity_core,
+                },
+                "genesis": {
+                    "subject_identity": response.view.genesis.subject_identity,
+                    "canon_start": response.view.genesis.canon_start,
+                    "initial_relationship_premise": (
+                        response.view.genesis.initial_relationship_premise
+                    ),
+                },
+                "knowledge_members": [
+                    {
+                        "title": item.title,
+                        "content": item.content,
+                        "evidence_quote": item.evidence_quote,
+                        "source_digest": item.source_digest,
+                    }
+                    for item in response.view.knowledge_members
+                ],
+                "selected_candidates": [
+                    {
+                        "category": item.category,
+                        "kind": item.kind,
+                        "title": item.title,
+                        "content": item.content,
+                        "evidence_quote": item.evidence_quote,
+                    }
+                    for item in response.view.selected_candidates
+                ],
+            }
+        return {
+            "ok": response.status is SourceFreezeMappingStatus.AVAILABLE,
+            "status": response.status.value,
+            "problem": response.problem_code,
+            "view": view,
+        }
+
 
 class DesktopState:
     """Own credential setup and the optional opened product lifecycle."""
@@ -733,6 +793,17 @@ class DesktopState:
                 }
             return self._app.source_draft(action, payload)
 
+    def preview_source_freeze_mapping(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {
+                    "ok": False,
+                    "status": "unavailable",
+                    "problem": "credential-setup-required",
+                    "view": None,
+                }
+            return self._app.preview_source_freeze_mapping(**payload)
+
     def close(self) -> None:
         with self._lock:
             self._replace_product(None)
@@ -831,6 +902,17 @@ def build_handler(state: DesktopState):
                     self._json(400, {"ok": False, "problem": "invalid-request"})
                     return
                 result = state.source_draft("save", payload)
+                self._json(200 if result["ok"] else 422, result)
+                return
+            if self.path == "/api/authoring/mapping":
+                try:
+                    payload = self._read_json(maximum=8_192)
+                    if set(payload) != {"expected_revision", "display_name"}:
+                        raise ValueError("unexpected-fields")
+                except (UnicodeError, ValueError, json.JSONDecodeError):
+                    self._json(400, {"ok": False, "problem": "invalid-request"})
+                    return
+                result = state.preview_source_freeze_mapping(payload)
                 self._json(200 if result["ok"] else 422, result)
                 return
             if self.path != "/api/turn":

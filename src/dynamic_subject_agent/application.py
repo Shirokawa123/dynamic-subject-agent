@@ -44,6 +44,8 @@ from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.source_character_authoring import (
     SourceDraftResponse,
     SourceDraftStatus,
+    SourceFreezeMappingResponse,
+    SourceFreezeMappingStatus,
     TextSourceCharacterAuthoring,
     TextSourcePreviewResponse,
 )
@@ -632,6 +634,27 @@ class _ApplicationRouter:
         finally:
             source_studio.close()
 
+    def preview_source_freeze_mapping(
+        self,
+        request: object,
+    ) -> SourceFreezeMappingResponse:
+        with self._lock:
+            self._require_open()
+            source_studio_location = self._source_studio_location
+        if source_studio_location is None:
+            return SourceFreezeMappingResponse(
+                status=SourceFreezeMappingStatus.UNAVAILABLE,
+                problem_code="source-freeze-mapping-unavailable",
+            )
+        source_studio = SubjectStudio.open(
+            source_studio_location,
+            policy_kernel=PolicyKernel(),
+        )
+        try:
+            return source_studio.preview_source_freeze_mapping(request)
+        finally:
+            source_studio.close()
+
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
             return lease.list_living_memories(active_only=False, limit=100)
@@ -724,6 +747,12 @@ class ApplicationFacade:
 
     def source_draft(self, command: object) -> SourceDraftResponse:
         return self.__router.source_draft(command)
+
+    def preview_source_freeze_mapping(
+        self,
+        request: object,
+    ) -> SourceFreezeMappingResponse:
+        return self.__router.preview_source_freeze_mapping(request)
 
 
 def _create_application_facade(
