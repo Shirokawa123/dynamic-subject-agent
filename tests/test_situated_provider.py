@@ -82,7 +82,19 @@ def test_situated_projection_and_reply_are_isolated() -> None:
         (SituatedStateTarget("gentle", 1, 900),),
     )
     result = provider.classify(request)
-    reply = provider.reply(SituatedReplyRequest("继续。", "gentle"))
+    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+
+    reply = provider.reply(
+        SituatedReplyRequest(
+            "继续。",
+            "gentle",
+            RuntimeIdentityProjection(
+                "Avery",
+                "Avery 是社区刊物编辑。",
+                "此身份尚无运行时经历。",
+            ),
+        )
+    )
 
     assert result.candidate is None
     assert result.experience_summary == ""
@@ -99,6 +111,11 @@ def test_situated_projection_and_reply_are_isolated() -> None:
     assert reply_projection == {
         "current_user_message": "继续。",
         "selected_state": {"posture": "gentle"},
+        "runtime_identity": {
+            "subject_name": "Avery",
+            "subject_identity": "Avery 是社区刊物编辑。",
+            "canon_start": "此身份尚无运行时经历。",
+        },
     }
     serialized = json.dumps([projection, reply_projection], ensure_ascii=False)
     for forbidden in (

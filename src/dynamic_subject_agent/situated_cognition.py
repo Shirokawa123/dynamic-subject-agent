@@ -27,6 +27,7 @@ from dynamic_subject_agent.runtime import (
     ExperienceBasis,
     ExpressionCandidate,
 )
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.situated_state import (
     POLICY_HASH,
     POLICY_ID,
@@ -74,6 +75,7 @@ class SituatedClassificationResult:
 class SituatedReplyRequest:
     current_user_message: str
     posture: str
+    runtime_identity: RuntimeIdentityProjection | None
 
 
 @dataclass(frozen=True)
@@ -244,7 +246,11 @@ class ControlledSituatedCognition(CognitionEngine):
                 reply = self._gateway.execute(
                     ModelTask(
                         ModelTaskKind.SITUATED_STATE_REPLY,
-                        SituatedReplyRequest(command.utterance, reply_posture),
+                        SituatedReplyRequest(
+                            command.utterance,
+                            reply_posture,
+                            context.runtime_identity,
+                        ),
                     )
                 ).value
             except Exception:
@@ -256,7 +262,21 @@ class ControlledSituatedCognition(CognitionEngine):
                 or len(reply.reply_text) > 8_000
             ):
                 return self._failure_proposal(context, command, basis, "situated-reply-invalid")
-            expression = reply.reply_text
+            expression = (
+                reply.reply_text
+                if not isinstance(
+                    context.runtime_identity,
+                    RuntimeIdentityProjection,
+                )
+                else context.runtime_identity.guard_reply(reply.reply_text)
+            )
+            if expression is None:
+                return self._failure_proposal(
+                    context,
+                    command,
+                    basis,
+                    "situated-reply-invalid",
+                )
         else:
             expression = _NO_SITUATED_EXPRESSION
         candidates: tuple[SituatedEffectCandidate, ...] = ()

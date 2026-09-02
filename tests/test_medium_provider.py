@@ -62,7 +62,19 @@ def test_medium_projection_and_reply_are_isolated() -> None:
     )
     provider = _provider(transport)
     result = provider.classify(MediumClassificationRequest("继续。"))
-    reply = provider.reply(MediumReplyRequest("继续。", "settled"))
+    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+
+    reply = provider.reply(
+        MediumReplyRequest(
+            "继续。",
+            "settled",
+            RuntimeIdentityProjection(
+                "Avery",
+                "Avery 是社区刊物编辑。",
+                "此身份尚无运行时经历。",
+            ),
+        )
+    )
     assert result.candidate is None and result.experience_summary == ""
     assert reply.reply_text == "我会保持平稳回应。"
     classification = json.loads(transport.bodies[0].decode("utf-8"))
@@ -76,6 +88,11 @@ def test_medium_projection_and_reply_are_isolated() -> None:
     assert reply_projection == {
         "current_user_message": "继续。",
         "selected_state": {"baseline": "settled"},
+        "runtime_identity": {
+            "subject_name": "Avery",
+            "subject_identity": "Avery 是社区刊物编辑。",
+            "canon_start": "此身份尚无运行时经历。",
+        },
     }
     serialized = json.dumps([projection, reply_projection], ensure_ascii=False)
     for forbidden in ("memory", "knowledge", "relationship", "goal", "situated", "profile", "timeline_id", "api_key"):

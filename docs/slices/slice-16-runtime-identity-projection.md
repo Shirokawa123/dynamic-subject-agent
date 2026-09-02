@@ -1,6 +1,6 @@
 # Slice-16：封存身份的 Runtime Identity / Voice Projection
 
-状态：proposed（2026-09-02，等待 exact Provider 数据用途授权）。规模预算：≤ 3 个工作会话。
+状态：active（2026-09-02，exact Provider 数据用途已获用户确认）。规模预算：≤ 3 个工作会话。
 
 ## 用户可见结果
 
@@ -10,7 +10,7 @@
 
 ## 授权门槛：拟新增的 exact Provider 数据用途
 
-本节尚未获授权。只有用户明确确认后才能进入实现或真实 Provider 验收。
+用户已于 2026-09-02 逐字确认本节 exact 数据用途及三项 capability-local proposal/reply 拆分；不得据此扩展其他字段、任务或用途。
 
 每个需要形成自然回复的既有 Provider 请求可新增一个相同的只读对象：
 
@@ -74,9 +74,9 @@
 - 编辑、合并、迁移 Sealed Identity，重新解释 Source Draft，视频/音频来源建角或私人来源。
 - 将身份内容作为 Domain evidence，或让 Provider 输出直接成为 Profile/Genesis/Timeline 状态。
 
-## 待用户确认
+## 已确认授权
 
-请明确确认或拒绝：允许本切片把上述 exact `{subject_name, subject_identity, canon_start}` 投影发送给六类 DeepSeek reply 请求，仅用于当前回复的身份与 voice grounding；同时允许把 Living Memory、Knowledge、Relationship 现有合并调用拆为 capability-local proposal/reply 两阶段。所有 proposal/classification outbound、持久状态和其他数据用途保持不变，reply 的非身份字段只能缩小为上列既有数据子集。
+用户确认允许本切片把 exact `{subject_name, subject_identity, canon_start}` 投影发送给六类 DeepSeek reply 请求，仅用于当前回复的身份与 voice grounding；同时允许把 Living Memory、Knowledge、Relationship 现有合并调用拆为 capability-local proposal/reply 两阶段。所有 proposal/classification outbound、持久状态和其他数据用途保持不变，reply 的非身份字段只能缩小为上列既有数据子集。
 
 ## 主要风险
 

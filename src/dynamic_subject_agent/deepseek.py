@@ -42,11 +42,16 @@ from dynamic_subject_agent.knowledge import (
     KnowledgeProposal,
     KnowledgeProviderRequest,
     KnowledgeProviderResult,
+    KnowledgeReplyEntry,
+    KnowledgeReplyRequest,
+    KnowledgeReplyResult,
 )
 from dynamic_subject_agent.relationship import (
     RelationshipProviderRequest,
     RelationshipProviderResult,
     RelationshipProposal,
+    RelationshipReplyRequest,
+    RelationshipReplyResult,
 )
 from dynamic_subject_agent.relationship_events import ALL_RELATIONSHIP_EVENTS
 from dynamic_subject_agent.living_memory import (
@@ -56,6 +61,9 @@ from dynamic_subject_agent.living_memory import (
     LivingMemoryProviderMemory,
     LivingMemoryProviderRequest,
     LivingMemoryProviderResult,
+    LivingMemoryReplyMemory,
+    LivingMemoryReplyRequest,
+    LivingMemoryReplyResult,
 )
 from dynamic_subject_agent.participant_goal_cognition import (
     ParticipantGoalClassificationRequest,
@@ -133,6 +141,7 @@ _MAX_REQUEST_BYTES = 4_096
 _LIVING_MEMORY_MAX_REQUEST_BYTES = 32_768
 _TRANSPORT_MAX_REQUEST_BYTES = 65_536
 _LIVING_MEMORY_MAX_OUTPUT_TOKENS = 600
+_IDENTITY_REPLY_MAX_OUTPUT_TOKENS = 400
 _KNOWLEDGE_MAX_REQUEST_BYTES = 32_768
 _KNOWLEDGE_MAX_OUTPUT_TOKENS = 600
 _RELATIONSHIP_MAX_REQUEST_BYTES = 32_768
@@ -157,6 +166,16 @@ _SOURCE_CHARACTER_SYSTEM_MESSAGE = (
     "language=zh。Genesis 每项字段恰为 kind/content/evidence_quote；"
     "Knowledge 每项字段恰为 title/content/evidence_quote。"
 )
+_RUNTIME_IDENTITY_REPLY_RULES = (
+    "runtime_identity 是封存背景，只能约束第一人称身份、视角和措辞风格，不能提供当前答案或事件。"
+    "不得声称角色今天、刚刚、已经、正在或尚未做过、收到、看到、完成任何事情，"
+    "除非该事实逐字存在于 current_user_message 或本请求的 selected 数据中。"
+    "canon_start 只是不可续写的故事起点，不是当前世界状态；不得推断其后发生了什么。"
+    "canon_start 中的示例说法只能抽象为风格，不得复制、引用或反复当作口头禅。"
+    "除非用户直接询问身份，否则不要自报姓名、职业、设定或复述 subject_identity/canon_start。"
+    "对用户的感受、目标、打算或闲聊直接回应；不得因为 selected 数据为空就声称资料没有写或自己不知道。"
+    "不得为了共情或陪衬而编造角色自己的同步活动、身体感受、周围环境、来稿或工作进展。"
+)
 _SITUATED_CLASSIFICATION_SYSTEM_MESSAGE = (
     "你只负责短时 Situated State 分类。只可使用 user JSON 中的 current_user_message、"
     "至多一个 active_state 和固定 policy；不得使用历史消息、Memory、Knowledge、"
@@ -170,8 +189,9 @@ _SITUATED_CLASSIFICATION_SYSTEM_MESSAGE = (
     '"experience_summary":"","language":"zh"}。'
 )
 _SITUATED_REPLY_SYSTEM_MESSAGE = (
-    "你只根据当前用户消息和 Python 已验证的一个 posture 生成简洁自然中文回复。"
-    "只输出一个短句；不要复述用户事实，不要提问，不要再次提出帮助或提醒。"
+    "你只根据当前用户消息、Python 已验证的一个 posture 和 runtime_identity 生成简洁自然中文回复。"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "只输出一个短句；不要复述用户事实，不要提问，不要再次提出帮助或提醒。"
     "不得提及模块、分类、内部状态、历史、其他 Domain 或隐藏推理。"
     "只返回 JSON 对象，字段必须恰为 reply_text、language；language 必须为 zh。"
 )
@@ -187,8 +207,9 @@ _MEDIUM_CLASSIFICATION_SYSTEM_MESSAGE = (
     '"experience_summary":"","language":"zh"}。'
 )
 _MEDIUM_REPLY_SYSTEM_MESSAGE = (
-    "你只根据当前用户消息和 Python 已验证的 baseline 生成简洁自然中文回复。"
-    "只输出一个短句表达有限立场；不要复述用户事实、计划或建议，不要提问，"
+    "你只根据当前用户消息、Python 已验证的 baseline 和 runtime_identity 生成简洁自然中文回复。"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "只输出一个短句表达有限立场；不要复述用户事实、计划或建议，不要提问，"
     "不要再次提出帮助或提醒。"
     "不得输出诊断、模块、内部状态、其他 Domain 或隐藏推理。"
     "不得声称已经或将会替用户执行、联系、跟进、确保完成任何现实任务；"
@@ -210,8 +231,10 @@ _PARTICIPANT_GOAL_CLASSIFICATION_SYSTEM_MESSAGE = (
 )
 _PARTICIPANT_GOAL_REPLY_SYSTEM_MESSAGE = (
     "你负责基于当前用户消息和 Python 已验证、已选中的参与者目标/承诺生成简洁自然中文回复。"
-    "只可使用 user JSON 的 current_user_message 与 selected_records；selected_records 最多 5 条，"
-    "且只含 kind、terms、status。不得推断历史、提醒能力、后台执行、主体承诺、共同承诺、"
+    "只可使用 user JSON 的 current_user_message、selected_records 与 runtime_identity；"
+    "selected_records 最多 5 条。"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "且只含 kind、terms、status。不得推断历史、提醒能力、后台执行、主体承诺、共同承诺、"
     "其他 Domain、内部 ID、隐藏推理或 API key。输出字段必须恰为 reply_text、language；"
     "language 必须为 zh。"
 )
@@ -286,6 +309,28 @@ _LIVING_MEMORY_SYSTEM_MESSAGE = (
     "supersedes_memory_id、recalled_memory_ids、experience_summary、reply_text、language；"
     "其余 action 时不含 memory_kind；language 必须为 zh。"
 )
+_KNOWLEDGE_REPLY_SYSTEM_MESSAGE = (
+    "你只负责基于当前消息、已选中的封存知识与 runtime_identity 形成简洁自然中文回复。"
+    "selected_entries 是唯一可引用的事实。"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "不得提出 citation、Memory、Relationship、目标、状态、提醒、行动或身份修改。"
+    "只返回字段恰为 reply_text、language 的 JSON 对象；language 必须为 zh。"
+)
+_RELATIONSHIP_REPLY_SYSTEM_MESSAGE = (
+    "你只负责基于当前消息、当前 stance_summary 与 runtime_identity 形成一个简洁自然中文回复。"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "不得声称未提交的关系、承诺、经历、提醒或行动。"
+    + "不得提出或修改 Relationship 事件及任何状态。"
+    "只返回字段恰为 reply_text、language 的 JSON 对象；language 必须为 zh。"
+)
+_LIVING_MEMORY_REPLY_SYSTEM_MESSAGE = (
+    "你只负责形成 Living Memory 能力的简洁自然中文回复。"
+    "只可使用 user JSON 的 current_user_message、selected_memories 与 runtime_identity；"
+    + _RUNTIME_IDENTITY_REPLY_RULES
+    + "不得把『尚无运行时经历』说成当前没有记忆。"
+    + "不得提出或修改 Memory 候选、Relationship、目标、状态、提醒、后台行动或身份。"
+    "只返回字段恰为 reply_text、language 的 JSON 对象；language 必须为 zh。"
+)
 _CONFIRMED_COMMAND = (
     "Avery，我们正在筹备 Lantern Zine。给出三条下一步的建议，说明一下你缺少哪些信息，我告诉你。"
 )
@@ -306,6 +351,52 @@ def _bounded_text(value: Any, *, maximum: int) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > maximum:
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     return value
+
+
+def _bounded_identity_reply_text(value: Any) -> str:
+    return _bounded_text(value, maximum=_MAX_EXPRESSION_CHARACTERS)
+
+
+def _runtime_identity_payload(value: object) -> dict[str, str]:
+    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+
+    if not isinstance(value, RuntimeIdentityProjection):
+        raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+    return {
+        "subject_name": value.subject_name,
+        "subject_identity": value.subject_identity,
+        "canon_start": value.canon_start,
+    }
+
+
+def _identity_reply_body(
+    *,
+    system_message: str,
+    projection: dict[str, object],
+    maximum_bytes: int,
+) -> bytes:
+    body = _canonical_json_bytes(
+        {
+            "model": DEEPSEEK_MODEL,
+            "messages": [
+                {"role": "system", "content": system_message},
+                {
+                    "role": "user",
+                    "content": _canonical_json_bytes(projection).decode("utf-8"),
+                },
+            ],
+            "thinking": {"type": "disabled"},
+            "response_format": {"type": "json_object"},
+            "max_tokens": _IDENTITY_REPLY_MAX_OUTPUT_TOKENS,
+            "temperature": 0.2,
+            "stream": False,
+            "tools": [],
+            "tool_choice": "none",
+        }
+    )
+    if len(body) > maximum_bytes:
+        raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+    return body
 
 
 def _outbound_body(request: CognitionProviderRequest) -> dict[str, Any]:
@@ -369,6 +460,71 @@ class DeepSeekTransport(ABC):
         timeout_seconds: float,
     ) -> DeepSeekHttpResponse:
         raise NotImplementedError
+
+
+def _post_identity_reply_content(
+    transport: DeepSeekTransport,
+    credential_ref: CredentialRef,
+    body: bytes,
+) -> dict[str, object]:
+    try:
+        response = transport.post_json(
+            endpoint=DEEPSEEK_ENDPOINT,
+            body=body,
+            credential_ref=credential_ref,
+            timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
+        )
+    except ProviderFailure:
+        raise
+    except TimeoutError:
+        raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
+    except Exception:
+        raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
+    if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
+        if isinstance(response, DeepSeekHttpResponse) and response.status_code == 429:
+            raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
+        raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+    try:
+        payload = json.loads(response.body.decode("utf-8"))
+        choices = payload["choices"]
+        message = choices[0]["message"]
+        content = json.loads(message["content"])
+        usage = payload["usage"]
+        prompt_tokens = int(usage["prompt_tokens"])
+        completion_tokens = int(usage["completion_tokens"])
+    except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
+        raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+    if (
+        payload.get("model") != DEEPSEEK_MODEL
+        or not isinstance(choices, list)
+        or len(choices) != 1
+        or not isinstance(message, dict)
+        or message.get("role") != "assistant"
+        or message.get("reasoning_content") not in (None, "")
+        or message.get("tool_calls") not in (None, [])
+        or not isinstance(content, dict)
+        or prompt_tokens < 0
+        or completion_tokens < 0
+        or completion_tokens > _IDENTITY_REPLY_MAX_OUTPUT_TOKENS
+    ):
+        raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+    return content
+
+
+def _identity_reply_result(
+    content: dict[str, object],
+    result_type: type,
+):
+    if (
+        set(content) != {"reply_text", "language"}
+        or content.get("language") != "zh"
+    ):
+        raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+    try:
+        reply_text = _bounded_identity_reply_text(content["reply_text"])
+    except (KeyError, TypeError, ProviderFailure):
+        raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+    return result_type(reply_text=reply_text, language="zh")
 
 
 class DeepSeekCredentialResolver(ABC):
@@ -783,6 +939,124 @@ class DeepSeekLivingMemoryProvider:
             language="zh",
         )
 
+    @classmethod
+    def reply_outbound_bytes(cls, request: LivingMemoryReplyRequest) -> bytes:
+        if (
+            not isinstance(request, LivingMemoryReplyRequest)
+            or not isinstance(request.current_user_message, str)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or not isinstance(request.selected_memories, tuple)
+            or len(request.selected_memories) > 5
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        selected = []
+        for memory in request.selected_memories:
+            if (
+                not isinstance(memory, LivingMemoryReplyMemory)
+                or not isinstance(memory.content, str)
+                or not memory.content.strip()
+                or len(memory.content) > 500
+            ):
+                raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            selected.append({"content": memory.content})
+        projection = {
+            "current_user_message": request.current_user_message,
+            "selected_memories": selected,
+            "runtime_identity": _runtime_identity_payload(
+                request.runtime_identity
+            ),
+        }
+        body = _canonical_json_bytes(
+            {
+                "model": DEEPSEEK_MODEL,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE,
+                    },
+                    {
+                        "role": "user",
+                        "content": _canonical_json_bytes(projection).decode("utf-8"),
+                    },
+                ],
+                "thinking": {"type": "disabled"},
+                "response_format": {"type": "json_object"},
+                "max_tokens": _IDENTITY_REPLY_MAX_OUTPUT_TOKENS,
+                "temperature": 0.2,
+                "stream": False,
+                "tools": [],
+                "tool_choice": "none",
+            }
+        )
+        if len(body) > _LIVING_MEMORY_MAX_REQUEST_BYTES:
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return body
+
+    def propose(
+        self,
+        request: LivingMemoryProviderRequest,
+    ) -> LivingMemoryProviderResult:
+        return self.analyze(request)
+
+    def reply(self, request: LivingMemoryReplyRequest) -> LivingMemoryReplyResult:
+        body = self.reply_outbound_bytes(request)
+        content = self._post_reply_and_decode(body)
+        if (
+            set(content) != {"reply_text", "language"}
+            or content.get("language") != "zh"
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        try:
+            reply_text = _bounded_identity_reply_text(content["reply_text"])
+        except (KeyError, TypeError, ProviderFailure):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        return LivingMemoryReplyResult(reply_text=reply_text, language="zh")
+
+    def _post_reply_and_decode(self, body: bytes) -> dict[str, object]:
+        try:
+            response = self._transport.post_json(
+                endpoint=DEEPSEEK_ENDPOINT,
+                body=body,
+                credential_ref=self._credential_ref,
+                timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
+            )
+        except ProviderFailure:
+            raise
+        except TimeoutError:
+            raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
+        except Exception:
+            raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
+        if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
+            if isinstance(response, DeepSeekHttpResponse) and response.status_code == 429:
+                raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        try:
+            payload = json.loads(response.body.decode("utf-8"))
+            choices = payload["choices"]
+            message = choices[0]["message"]
+            content = json.loads(message["content"])
+            usage = payload["usage"]
+            prompt_tokens = int(usage["prompt_tokens"])
+            completion_tokens = int(usage["completion_tokens"])
+        except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
+        if (
+            payload.get("model") != DEEPSEEK_MODEL
+            or not isinstance(choices, list)
+            or len(choices) != 1
+            or not isinstance(message, dict)
+            or message.get("role") != "assistant"
+            or message.get("reasoning_content") not in (None, "")
+            or message.get("tool_calls") not in (None, [])
+            or not isinstance(content, dict)
+            or prompt_tokens < 0
+            or completion_tokens < 0
+            or completion_tokens > _IDENTITY_REPLY_MAX_OUTPUT_TOKENS
+        ):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
+        return content
+
 
 class DeepSeekKnowledgeProvider:
     """Default-profile knowledge citation adapter over the existing DeepSeek transport."""
@@ -944,6 +1218,53 @@ class DeepSeekKnowledgeProvider:
             language="zh",
         )
 
+    @classmethod
+    def reply_outbound_bytes(cls, request: KnowledgeReplyRequest) -> bytes:
+        if (
+            not isinstance(request, KnowledgeReplyRequest)
+            or not isinstance(request.current_user_message, str)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or not isinstance(request.selected_entries, tuple)
+            or len(request.selected_entries) > KNOWLEDGE_CANDIDATE_LIMIT
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        entries = []
+        for entry in request.selected_entries:
+            if (
+                not isinstance(entry, KnowledgeReplyEntry)
+                or not isinstance(entry.title, str)
+                or not entry.title.strip()
+                or len(entry.title) > 200
+                or not isinstance(entry.content, str)
+                or not entry.content.strip()
+                or len(entry.content) > 4_000
+            ):
+                raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            entries.append({"title": entry.title, "content": entry.content})
+        return _identity_reply_body(
+            system_message=_KNOWLEDGE_REPLY_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "selected_entries": entries,
+                "runtime_identity": _runtime_identity_payload(
+                    request.runtime_identity
+                ),
+            },
+            maximum_bytes=_KNOWLEDGE_MAX_REQUEST_BYTES,
+        )
+
+    def propose(self, request: KnowledgeProviderRequest) -> KnowledgeProviderResult:
+        return self.analyze(request)
+
+    def reply(self, request: KnowledgeReplyRequest) -> KnowledgeReplyResult:
+        content = _post_identity_reply_content(
+            self._transport,
+            self._credential_ref,
+            self.reply_outbound_bytes(request),
+        )
+        return _identity_reply_result(content, KnowledgeReplyResult)
+
 
 class DeepSeekRelationshipProvider:
     """Default-profile relationship classification adapter over the DeepSeek transport."""
@@ -1087,6 +1408,44 @@ class DeepSeekRelationshipProvider:
             language="zh",
         )
 
+    @classmethod
+    def reply_outbound_bytes(cls, request: RelationshipReplyRequest) -> bytes:
+        if (
+            not isinstance(request, RelationshipReplyRequest)
+            or not isinstance(request.current_user_message, str)
+            or not request.current_user_message.strip()
+            or len(request.current_user_message) > 32_768
+            or not isinstance(request.stance_summary, str)
+            or not request.stance_summary.strip()
+            or len(request.stance_summary) > 2_000
+        ):
+            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+        return _identity_reply_body(
+            system_message=_RELATIONSHIP_REPLY_SYSTEM_MESSAGE,
+            projection={
+                "current_user_message": request.current_user_message,
+                "stance_summary": request.stance_summary,
+                "runtime_identity": _runtime_identity_payload(
+                    request.runtime_identity
+                ),
+            },
+            maximum_bytes=_RELATIONSHIP_MAX_REQUEST_BYTES,
+        )
+
+    def propose(
+        self,
+        request: RelationshipProviderRequest,
+    ) -> RelationshipProviderResult:
+        return self.analyze(request)
+
+    def reply(self, request: RelationshipReplyRequest) -> RelationshipReplyResult:
+        content = _post_identity_reply_content(
+            self._transport,
+            self._credential_ref,
+            self.reply_outbound_bytes(request),
+        )
+        return _identity_reply_result(content, RelationshipReplyResult)
+
 
 class DeepSeekParticipantGoalProvider:
     """Two-stage default-profile adapter for participant goals and commitments."""
@@ -1195,6 +1554,9 @@ class DeepSeekParticipantGoalProvider:
             projection={
                 "current_user_message": request.current_user_message,
                 "selected_records": records,
+                "runtime_identity": _runtime_identity_payload(
+                    request.runtime_identity
+                ),
             },
             max_tokens=_PARTICIPANT_GOAL_MAX_OUTPUT_TOKENS,
         )
@@ -1250,10 +1612,7 @@ class DeepSeekParticipantGoalProvider:
         ):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
         try:
-            reply_text = _bounded_text(
-                content["reply_text"],
-                maximum=_MAX_EXPRESSION_CHARACTERS,
-            )
+            reply_text = _bounded_identity_reply_text(content["reply_text"])
         except (KeyError, TypeError, ProviderFailure):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
         return ParticipantGoalReplyResult(reply_text=reply_text, language="zh")
@@ -1380,6 +1739,9 @@ class DeepSeekSituatedProvider:
             projection={
                 "current_user_message": request.current_user_message,
                 "selected_state": {"posture": request.posture},
+                "runtime_identity": _runtime_identity_payload(
+                    request.runtime_identity
+                ),
             },
             max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
         )
@@ -1404,10 +1766,7 @@ class DeepSeekSituatedProvider:
         ):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
         try:
-            reply = _bounded_text(
-                content["reply_text"],
-                maximum=_MAX_EXPRESSION_CHARACTERS,
-            )
+            reply = _bounded_identity_reply_text(content["reply_text"])
         except (KeyError, TypeError, ProviderFailure):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
         return SituatedReplyResult(reply_text=reply, language="zh")
@@ -1460,6 +1819,9 @@ class DeepSeekMediumProvider:
             projection={
                 "current_user_message": request.current_user_message,
                 "selected_state": {"baseline": request.baseline},
+                "runtime_identity": _runtime_identity_payload(
+                    request.runtime_identity
+                ),
             },
             max_tokens=_SITUATED_MAX_OUTPUT_TOKENS,
         )
@@ -1478,7 +1840,7 @@ class DeepSeekMediumProvider:
         if set(content) != {"reply_text", "language"} or content.get("language") != "zh":
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
         try:
-            reply = _bounded_text(content["reply_text"], maximum=_MAX_EXPRESSION_CHARACTERS)
+            reply = _bounded_identity_reply_text(content["reply_text"])
         except (KeyError, TypeError, ProviderFailure):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
         return MediumReplyResult(reply, "zh")

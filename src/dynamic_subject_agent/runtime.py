@@ -67,6 +67,7 @@ from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRec
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -335,6 +336,7 @@ class CognitionRuntimeView:
     observed_at_us: int = 0
     medium_state: MediumStateRecord | None = None
     medium_signals: tuple[MediumSignalRecord, ...] = ()
+    runtime_identity: RuntimeIdentityProjection | None = None
 
 
 @dataclass(frozen=True)

@@ -30,6 +30,7 @@ from dynamic_subject_agent.model_gateway import (
     StructuredOutputMode,
 )
 from dynamic_subject_agent.timeline import SubjectCommand
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 RELATIONSHIP_POLICY_VERSION = "relationship-stance-v1"
@@ -48,6 +49,19 @@ class RelationshipProviderRequest:
 
 
 @dataclass(frozen=True)
+class RelationshipReplyRequest:
+    current_user_message: str
+    stance_summary: str
+    runtime_identity: RuntimeIdentityProjection
+
+
+@dataclass(frozen=True)
+class RelationshipReplyResult:
+    reply_text: str
+    language: str
+
+
+@dataclass(frozen=True)
 class RelationshipProposal:
     event: str
     evidence_quote: str
@@ -63,8 +77,11 @@ class RelationshipProviderResult:
 
 class RelationshipProviderAdapter(ProviderAdapter):
     def __init__(self, *, provider: object) -> None:
-        if not callable(getattr(provider, "analyze", None)):
-            raise TypeError("provider must expose analyze(request)")
+        self._split = callable(getattr(provider, "propose", None)) and callable(
+            getattr(provider, "reply", None)
+        )
+        if not self._split and not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose propose/reply or analyze")
         provider_id = getattr(provider, "provider_authority", M0_A_PROVIDER_AUTHORITY)
         if not isinstance(provider_id, str) or not provider_id:
             raise TypeError("provider_authority must be a non-empty string")
@@ -77,12 +94,23 @@ class RelationshipProviderAdapter(ProviderAdapter):
         )
 
     def invoke(self, task: ModelTask) -> ModelResult:
-        if (
-            task.kind is not ModelTaskKind.RELATIONSHIP_ANALYSIS
-            or not isinstance(task.payload, RelationshipProviderRequest)
+        if task.kind is ModelTaskKind.RELATIONSHIP_ANALYSIS and isinstance(
+            task.payload,
+            RelationshipProviderRequest,
         ):
-            raise ModelGatewayFailure("relationship-task-invalid")
-        return ModelResult(task.kind, self._provider.analyze(task.payload))
+            result = (
+                self._provider.propose(task.payload)
+                if self._split
+                else self._provider.analyze(task.payload)
+            )
+            return ModelResult(task.kind, result)
+        if (
+            task.kind is ModelTaskKind.RELATIONSHIP_REPLY
+            and isinstance(task.payload, RelationshipReplyRequest)
+            and self._split
+        ):
+            return ModelResult(task.kind, self._provider.reply(task.payload))
+        raise ModelGatewayFailure("relationship-task-invalid")
 
 
 class ControlledRelationshipCognition(CognitionEngine):
@@ -93,9 +121,19 @@ class ControlledRelationshipCognition(CognitionEngine):
     experimental = True
     test_only = True
 
-    def __init__(self, *, provider: object) -> None:
-        if not callable(getattr(provider, "analyze", None)):
-            raise TypeError("provider must expose analyze(request)")
+    def __init__(
+        self,
+        *,
+        provider: object,
+        runtime_identity: RuntimeIdentityProjection | None = None,
+    ) -> None:
+        split = callable(getattr(provider, "propose", None)) and callable(
+            getattr(provider, "reply", None)
+        )
+        if not split and not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose propose/reply or analyze")
+        if split and not isinstance(runtime_identity, RuntimeIdentityProjection):
+            raise TypeError("split provider requires RuntimeIdentityProjection")
         provider_authority = getattr(
             provider,
             "provider_authority",
@@ -106,6 +144,8 @@ class ControlledRelationshipCognition(CognitionEngine):
         self.provider_authority = provider_authority
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(RelationshipProviderAdapter(provider=provider))
+        self._split = split
+        self._runtime_identity = runtime_identity
 
     def propose(
         self,
@@ -162,12 +202,54 @@ class ControlledRelationshipCognition(CognitionEngine):
         summary = result.experience_summary.strip() or (
             f"关系事件分类：{result.proposal.event}。"
         )
+        reply_text = result.reply_text
+        if self._split:
+            try:
+                reply_result = self._gateway.execute(
+                    ModelTask(
+                        ModelTaskKind.RELATIONSHIP_REPLY,
+                        RelationshipReplyRequest(
+                            command.utterance,
+                            stance_summary,
+                            self._runtime_identity,
+                        ),
+                    )
+                ).value
+            except Exception:
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    "relationship-provider-failed",
+                )
+            if (
+                not isinstance(reply_result, RelationshipReplyResult)
+                or not reply_result.reply_text.strip()
+                or reply_result.language != command.language
+            ):
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    "relationship-provider-invalid-output",
+                )
+            guarded_reply = self._runtime_identity.guard_reply(
+                reply_result.reply_text
+            )
+            if guarded_reply is None:
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    "relationship-provider-invalid-output",
+                )
+            reply_text = guarded_reply
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
             experience_summary=summary,
             expression_candidate=ExpressionCandidate(
-                text=result.reply_text,
+                text=reply_text,
                 language=result.language,
             ),
         )
@@ -239,6 +321,7 @@ class ControlledRelationshipCognition(CognitionEngine):
         *,
         deepseek_transport: object | None = None,
         credential_ref: object | None = None,
+        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> "ControlledRelationshipCognition":
         if profile != "default":
             raise ValueError("Relationship profile adapter is unavailable")
@@ -248,7 +331,8 @@ class ControlledRelationshipCognition(CognitionEngine):
             provider=DeepSeekRelationshipProvider(
                 transport=deepseek_transport,
                 credential_ref=credential_ref,
-            )
+            ),
+            runtime_identity=runtime_identity,
         )
 
 
@@ -261,5 +345,7 @@ __all__ = [
     "RelationshipProviderRequest",
     "RelationshipProviderResult",
     "RelationshipProposal",
+    "RelationshipReplyRequest",
+    "RelationshipReplyResult",
     "UPDATE_EVENTS",
 ]

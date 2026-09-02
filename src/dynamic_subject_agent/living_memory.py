@@ -21,6 +21,7 @@ from dynamic_subject_agent.runtime import (
     M0_A_PROVIDER_AUTHORITY,
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -43,6 +44,24 @@ class LivingMemoryProviderMemory:
 class LivingMemoryProviderRequest:
     current_user_message: str
     active_memories: tuple[LivingMemoryProviderMemory, ...]
+
+
+@dataclass(frozen=True)
+class LivingMemoryReplyMemory:
+    content: str
+
+
+@dataclass(frozen=True)
+class LivingMemoryReplyRequest:
+    current_user_message: str
+    selected_memories: tuple[LivingMemoryReplyMemory, ...]
+    runtime_identity: RuntimeIdentityProjection
+
+
+@dataclass(frozen=True)
+class LivingMemoryReplyResult:
+    reply_text: str
+    language: str
 
 
 MEMORY_KINDS = frozenset({"durable", "plan"})
@@ -120,8 +139,11 @@ class LivingMemoryProviderResult:
 
 class LivingMemoryProviderAdapter(ProviderAdapter):
     def __init__(self, *, provider: object) -> None:
-        if not callable(getattr(provider, "analyze", None)):
-            raise TypeError("provider must expose analyze(request)")
+        self._split = callable(getattr(provider, "propose", None)) and callable(
+            getattr(provider, "reply", None)
+        )
+        if not self._split and not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose propose/reply or analyze")
         provider_id = getattr(provider, "provider_authority", M0_A_PROVIDER_AUTHORITY)
         if not isinstance(provider_id, str) or not provider_id:
             raise TypeError("provider_authority must be a non-empty string")
@@ -134,12 +156,23 @@ class LivingMemoryProviderAdapter(ProviderAdapter):
         )
 
     def invoke(self, task: ModelTask) -> ModelResult:
-        if (
-            task.kind is not ModelTaskKind.LIVING_MEMORY_ANALYSIS
-            or not isinstance(task.payload, LivingMemoryProviderRequest)
+        if task.kind is ModelTaskKind.LIVING_MEMORY_ANALYSIS and isinstance(
+            task.payload,
+            LivingMemoryProviderRequest,
         ):
-            raise ModelGatewayFailure("living-memory-task-invalid")
-        return ModelResult(task.kind, self._provider.analyze(task.payload))
+            result = (
+                self._provider.propose(task.payload)
+                if self._split
+                else self._provider.analyze(task.payload)
+            )
+            return ModelResult(task.kind, result)
+        if (
+            task.kind is ModelTaskKind.LIVING_MEMORY_REPLY
+            and isinstance(task.payload, LivingMemoryReplyRequest)
+            and self._split
+        ):
+            return ModelResult(task.kind, self._provider.reply(task.payload))
+        raise ModelGatewayFailure("living-memory-task-invalid")
 
 
 class ControlledLivingMemoryCognition(CognitionEngine):
@@ -150,9 +183,19 @@ class ControlledLivingMemoryCognition(CognitionEngine):
     experimental = True
     test_only = True
 
-    def __init__(self, *, provider: object) -> None:
-        if not callable(getattr(provider, "analyze", None)):
-            raise TypeError("provider must expose analyze(request)")
+    def __init__(
+        self,
+        *,
+        provider: object,
+        runtime_identity: RuntimeIdentityProjection | None = None,
+    ) -> None:
+        split = callable(getattr(provider, "propose", None)) and callable(
+            getattr(provider, "reply", None)
+        )
+        if not split and not callable(getattr(provider, "analyze", None)):
+            raise TypeError("provider must expose propose/reply or analyze")
+        if split and not isinstance(runtime_identity, RuntimeIdentityProjection):
+            raise TypeError("split provider requires RuntimeIdentityProjection")
         provider_authority = getattr(
             provider,
             "provider_authority",
@@ -163,6 +206,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         self.provider_authority = provider_authority
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(LivingMemoryProviderAdapter(provider=provider))
+        self._split = split
+        self._runtime_identity = runtime_identity
 
     @classmethod
     def for_profile(
@@ -171,6 +216,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         *,
         deepseek_transport: object | None = None,
         credential_ref: object | None = None,
+        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> ControlledLivingMemoryCognition:
         if profile != "default":
             raise ValueError("Living Memory profile adapter is unavailable")
@@ -180,7 +226,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             provider=DeepSeekLivingMemoryProvider(
                 transport=deepseek_transport,
                 credential_ref=credential_ref,
-            )
+            ),
+            runtime_identity=runtime_identity,
         )
 
     def propose(
@@ -255,6 +302,55 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             memory_history=context.living_memory_history,
         )
         reply_text = result.reply_text
+        if self._split:
+            selected = tuple(
+                LivingMemoryReplyMemory(memory.content)
+                for memory in active
+                if memory.memory_id in recalled_ids
+            )[:5]
+            try:
+                reply_result = self._gateway.execute(
+                    ModelTask(
+                        ModelTaskKind.LIVING_MEMORY_REPLY,
+                        LivingMemoryReplyRequest(
+                            current_user_message=command.utterance,
+                            selected_memories=selected,
+                            runtime_identity=self._runtime_identity,
+                        ),
+                    )
+                ).value
+            except Exception:
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    active,
+                    "living-memory-provider-failed",
+                )
+            if (
+                not isinstance(reply_result, LivingMemoryReplyResult)
+                or not reply_result.reply_text.strip()
+                or reply_result.language != command.language
+            ):
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    active,
+                    "living-memory-provider-invalid-output",
+                )
+            guarded_reply = self._runtime_identity.guard_reply(
+                reply_result.reply_text
+            )
+            if guarded_reply is None:
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    active,
+                    "living-memory-provider-invalid-output",
+                )
+            reply_text = guarded_reply
         if historical_memory is not None:
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"
             reply_text = f"你更正前说的是：「{historical_memory.content}」"
@@ -358,4 +454,7 @@ __all__ = [
     "LivingMemoryProviderMemory",
     "LivingMemoryProviderRequest",
     "LivingMemoryProviderResult",
+    "LivingMemoryReplyMemory",
+    "LivingMemoryReplyRequest",
+    "LivingMemoryReplyResult",
 ]

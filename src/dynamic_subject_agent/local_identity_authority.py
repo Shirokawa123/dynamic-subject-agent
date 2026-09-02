@@ -16,6 +16,7 @@ from dynamic_subject_agent.knowledge_entries import (
     KnowledgeEntry,
     SEALED_KNOWLEDGE_ENTRIES,
 )
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.source_character_authoring import (
     LocalIdentityListResponse,
     LocalIdentitySelectRequest,
@@ -215,6 +216,8 @@ class _ValidatedLocalIdentity:
     display_name: str
     freeze_basis_digest: str | None
     knowledge_member_count: int
+    knowledge_entries: tuple[KnowledgeEntry, ...]
+    runtime_identity: RuntimeIdentityProjection
 
 
 def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
@@ -254,6 +257,12 @@ def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
         display_name=expected_display_name,
         freeze_basis_digest=snapshot.source_freeze_basis_digest,
         knowledge_member_count=len(entries),
+        knowledge_entries=entries,
+        runtime_identity=RuntimeIdentityProjection.from_sealed_authority(
+            qri=qri,
+            profile=profile,
+            snapshot=snapshot,
+        ),
     )
 
 
@@ -729,6 +738,8 @@ def _load_or_create_authority(
     QualifiedRuntimeInput,
     str,
     StudioRootRef,
+    tuple[KnowledgeEntry, ...],
+    RuntimeIdentityProjection,
 ]:
     if config.state_path.exists():
         saved = json.loads(config.state_path.read_text(encoding="utf-8"))
@@ -751,6 +762,8 @@ def _load_or_create_authority(
                 validated.qri,
                 timeline_id,
                 validated.studio_location,
+                validated.knowledge_entries,
+                validated.runtime_identity,
             )
 
         state = _state_v2(saved)
@@ -789,19 +802,24 @@ def _load_or_create_authority(
             validated.qri,
             timeline_id,
             StudioRootRef.from_dict(state["authoring_studio_location"]),
+            validated.knowledge_entries,
+            validated.runtime_identity,
         )
 
     identity = create_local_product_identity(config.product_parent)
-    host_location, timeline_id = _create_identity_host(
-        _ValidatedLocalIdentity(
-            qri=identity.qualified_runtime_input,
-            studio_location=identity.studio_location,
-            experiment_base=identity.experiment_base,
-            display_name="Avery",
-            freeze_basis_digest=None,
-            knowledge_member_count=0,
-        )
+    initial_record = _validate_identity_record(
+        {
+            "identity_id": identity.qualified_runtime_input.profile_id,
+            "display_name": "Avery",
+            "freeze_basis_digest": None,
+            "experiment_base": str(identity.experiment_base),
+            "studio_location": identity.studio_location.to_dict(),
+            "host_location": None,
+            "timeline_id": None,
+            "publication_key": identity.qualified_runtime_input.publication_key,
+        }
     )
+    host_location, timeline_id = _create_identity_host(initial_record)
     _write_state(
         config.state_path,
         {
@@ -820,6 +838,8 @@ def _load_or_create_authority(
         identity.qualified_runtime_input,
         timeline_id,
         identity.studio_location,
+        initial_record.knowledge_entries,
+        initial_record.runtime_identity,
     )
 
 
@@ -832,6 +852,7 @@ class LoadedLocalIdentity:
     timeline_id: str
     authoring_studio_location: StudioRootRef
     knowledge_entries: tuple[KnowledgeEntry, ...]
+    runtime_identity: RuntimeIdentityProjection
 
 
 class LocalIdentityAuthority:
@@ -850,12 +871,9 @@ class LocalIdentityAuthority:
             qri,
             timeline_id,
             authoring_studio_location,
+            snapshot_entries,
+            runtime_identity,
         ) = _load_or_create_authority(self._config)
-        studio = SubjectStudio.open(studio_location, policy_kernel=PolicyKernel())
-        try:
-            snapshot_entries = studio.knowledge_entries(qri.knowledge_snapshot_id)
-        finally:
-            studio.close()
         knowledge_entries = (
             SEALED_KNOWLEDGE_ENTRIES
             if qri.publication_key == "local-product-deepseek-qri-v1"
@@ -869,6 +887,7 @@ class LocalIdentityAuthority:
             timeline_id=timeline_id,
             authoring_studio_location=authoring_studio_location,
             knowledge_entries=knowledge_entries,
+            runtime_identity=runtime_identity,
         )
 
     def freeze(

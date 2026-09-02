@@ -37,6 +37,7 @@ from dynamic_subject_agent.runtime import (
     ExperienceBasis,
     ExpressionCandidate,
 )
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.timeline import SubjectCommand
 
 
@@ -67,6 +68,7 @@ class MediumClassificationResult:
 class MediumReplyRequest:
     current_user_message: str
     baseline: str
+    runtime_identity: RuntimeIdentityProjection | None
 
 
 @dataclass(frozen=True)
@@ -220,7 +222,11 @@ class ControlledMediumCognition(CognitionEngine):
                 reply = self._gateway.execute(
                     ModelTask(
                         ModelTaskKind.MEDIUM_STATE_REPLY,
-                        MediumReplyRequest(command.utterance, prepared.after_baseline),
+                        MediumReplyRequest(
+                            command.utterance,
+                            prepared.after_baseline,
+                            context.runtime_identity,
+                        ),
                     )
                 ).value
             except Exception:
@@ -243,7 +249,22 @@ class ControlledMediumCognition(CognitionEngine):
                     plan.expected_basis.head_sequence,
                     "medium-reply-invalid",
                 )
-            expression = reply.reply_text
+            expression = (
+                reply.reply_text
+                if not isinstance(
+                    context.runtime_identity,
+                    RuntimeIdentityProjection,
+                )
+                else context.runtime_identity.guard_reply(reply.reply_text)
+            )
+            if expression is None:
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    plan.expected_basis.head_sequence,
+                    "medium-reply-invalid",
+                )
         else:
             expression = _NO_MEDIUM_EXPRESSION
         candidates: tuple[MediumStateChangeCandidate, ...] = ()

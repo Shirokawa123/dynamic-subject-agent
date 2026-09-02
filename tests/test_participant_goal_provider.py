@@ -21,6 +21,7 @@ from dynamic_subject_agent.participant_goal_cognition import (
     ParticipantGoalReplyRequest,
     canonicalize_participant_goal_output,
 )
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 def _response(content: dict) -> DeepSeekHttpResponse:
@@ -107,6 +108,11 @@ def test_two_stage_projection_contains_no_persistent_ids_or_other_domains() -> N
                     status="active",
                 ),
             ),
+            runtime_identity=RuntimeIdentityProjection(
+                "Avery",
+                "Avery 是社区刊物编辑。",
+                "此身份尚无运行时经历。",
+            ),
         )
     )
 
@@ -136,6 +142,11 @@ def test_two_stage_projection_contains_no_persistent_ids_or_other_domains() -> N
         "selected_records": [
             {"kind": "goal", "terms": "今年通过 N1", "status": "active"}
         ],
+        "runtime_identity": {
+            "subject_name": "Avery",
+            "subject_identity": "Avery 是社区刊物编辑。",
+            "canon_start": "此身份尚无运行时经历。",
+        },
     }
     serialized = json.dumps(
         [classification_projection, reply_projection],

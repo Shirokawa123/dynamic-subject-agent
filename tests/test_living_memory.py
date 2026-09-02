@@ -108,7 +108,6 @@ class _BirthdayCorrectionProvider:
             LivingMemoryProposal,
             LivingMemoryProviderResult,
         )
-
         self.requests.append(request)
         if len(self.requests) == 1:
             proposal = LivingMemoryProposal(
@@ -741,6 +740,7 @@ def test_default_profile_deepseek_adapter_uses_only_authorized_projection() -> N
         LivingMemoryProviderMemory,
         LivingMemoryProviderRequest,
     )
+    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
     class CapturingTransport(DeepSeekTransport):
         def __init__(self) -> None:
@@ -824,6 +824,11 @@ def test_default_profile_deepseek_adapter_uses_only_authorized_projection() -> N
         "default",
         deepseek_transport=transport,
         credential_ref=credential_ref,
+        runtime_identity=RuntimeIdentityProjection(
+            "Avery",
+            "Avery 是社区刊物编辑。",
+            "此身份尚无运行时经历。",
+        ),
     )
 
     assert result.proposal.action.value == "create"

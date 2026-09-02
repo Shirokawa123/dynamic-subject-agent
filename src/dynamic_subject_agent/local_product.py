@@ -210,6 +210,7 @@ def open_deepseek_local_product(
         participant_goal_gateway=participant_goal_gateway,
         situated_gateway=situated_gateway,
         medium_gateway=medium_gateway,
+        runtime_identity=loaded.runtime_identity,
     )
     source_authoring = TextSourceCharacterAuthoring(
         gateway=ModelGateway(

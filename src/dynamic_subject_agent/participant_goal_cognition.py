@@ -42,6 +42,7 @@ from dynamic_subject_agent.runtime import (
     ExperienceBasis,
     ExpressionCandidate,
 )
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.timeline import SubjectCommand
 
 
@@ -217,6 +218,7 @@ class ParticipantGoalReplyRecord:
 class ParticipantGoalReplyRequest:
     current_user_message: str
     selected_records: tuple[ParticipantGoalReplyRecord, ...]
+    runtime_identity: RuntimeIdentityProjection | None
 
 
 @dataclass(frozen=True)
@@ -527,6 +529,7 @@ class ControlledParticipantGoalCognition(CognitionEngine):
                                 )
                                 for record in selected
                             ),
+                            runtime_identity=context.runtime_identity,
                         ),
                     )
                 )
@@ -552,7 +555,21 @@ class ControlledParticipantGoalCognition(CognitionEngine):
                     command=command,
                     code="participant-goal-reply-invalid",
                 )
-            expression = reply.reply_text
+            expression = (
+                reply.reply_text
+                if not isinstance(
+                    context.runtime_identity,
+                    RuntimeIdentityProjection,
+                )
+                else context.runtime_identity.guard_reply(reply.reply_text)
+            )
+            if expression is None:
+                return self._failure_proposal(
+                    context=context,
+                    basis=basis,
+                    command=command,
+                    code="participant-goal-reply-invalid",
+                )
         else:
             expression = _NO_GOAL_EXPRESSION
         candidates: tuple[ExperienceChangeCandidate, ...] = ()
