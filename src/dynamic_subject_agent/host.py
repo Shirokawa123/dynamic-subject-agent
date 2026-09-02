@@ -98,6 +98,7 @@ from dynamic_subject_agent.timeline import (
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -3323,6 +3324,7 @@ class RuntimeHost:
         runtime_interrupt_at: RuntimeFaultPoint | None,
         runtime_fault_hook: Callable[[RuntimeFaultPoint, OperationRef], None] | None,
         instance_id: str,
+        runtime_identity: RuntimeIdentityProjection | None,
     ) -> None:
         self._location = location
         self._studio_location = studio_location
@@ -3332,6 +3334,7 @@ class RuntimeHost:
         self._runtime_interrupt_at = runtime_interrupt_at
         self._runtime_fault_hook = runtime_fault_hook
         self._instance_id = instance_id
+        self._runtime_identity = runtime_identity
         self._lanes: dict[tuple[str, str], _Lane] = {}
         self._state_lock = threading.RLock()
         self._owner_thread_id = threading.get_ident()
@@ -3357,6 +3360,7 @@ class RuntimeHost:
         ) = None,
         _activation_plan: _HostActivationPlan | None = None,
         relationship_enabled: bool = False,
+        _runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> RuntimeHost:
         if not isinstance(studio_location, StudioRootRef):
             raise TypeError("RuntimeHost requires StudioRootRef authority")
@@ -3433,6 +3437,7 @@ class RuntimeHost:
                 _runtime_interrupt_at=_runtime_interrupt_at,
                 _runtime_fault_hook=_runtime_fault_hook,
                 relationship_enabled=relationship_enabled,
+                _runtime_identity=_runtime_identity,
             )
         except Exception:
             if root.exists() and _is_relative_to(root.resolve(), base):
@@ -5371,6 +5376,7 @@ class RuntimeHost:
         ) = None,
         _local_serving_authorization: _LocalServingAuthorization | None = None,
         relationship_enabled: bool = False,
+        _runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> RuntimeHost:
         if not isinstance(location, RuntimeHostRootRef):
             raise TypeError("RuntimeHost.open requires RuntimeHostRootRef")
@@ -5413,6 +5419,7 @@ class RuntimeHost:
                 runtime_interrupt_at=_runtime_interrupt_at,
                 runtime_fault_hook=_runtime_fault_hook,
                 instance_id=instance_id,
+                runtime_identity=_runtime_identity,
             )
             host._local_serving_authorization = _local_serving_authorization
             host._relationship_enabled = relationship_enabled
@@ -6740,6 +6747,7 @@ class RuntimeHost:
                     authority=authority,
                     cognition=cognition,
                     experienced_at_us=qri.published_at_us,
+                    runtime_identity=self._runtime_identity,
                     root_kind=self._location.root_kind,
                     relationship_enabled=self._relationship_enabled,
                     _host_token=_HOST_RUNTIME_TOKEN,
@@ -6854,6 +6862,7 @@ class RuntimeHost:
                     authority=authority,
                     cognition=successor_cognition,
                     experienced_at_us=qri.published_at_us,
+                    runtime_identity=self._runtime_identity,
                     root_kind=self._location.root_kind,
                     relationship_enabled=self._relationship_enabled,
                     _host_token=_HOST_RUNTIME_TOKEN,
@@ -7389,6 +7398,7 @@ class RuntimeHost:
                 authority=self._authority_for_binding(binding),
                 cognition=cognition,
                 experienced_at_us=qri.published_at_us,
+                runtime_identity=self._runtime_identity,
                 root_kind=self._location.root_kind,
                 relationship_enabled=self._relationship_enabled,
                 _host_token=_HOST_RUNTIME_TOKEN,
@@ -7760,6 +7770,7 @@ class RuntimeHost:
                     authority=self._authority_for_binding(binding),
                     cognition=cognition,
                     experienced_at_us=qri.published_at_us,
+                    runtime_identity=self._runtime_identity,
                     root_kind=self._location.root_kind,
                     relationship_enabled=self._relationship_enabled,
                     _host_token=_HOST_RUNTIME_TOKEN,
@@ -7965,6 +7976,7 @@ class RuntimeHost:
                         authority=self._authority_for_binding(binding),
                         cognition=cognition,
                         experienced_at_us=qri.published_at_us,
+                        runtime_identity=self._runtime_identity,
                         root_kind=self._location.root_kind,
                         relationship_enabled=self._relationship_enabled,
                         _host_token=_HOST_RUNTIME_TOKEN,

@@ -75,3 +75,7 @@
 ## D-019：相对日计划绑定 canonical Admission
 
 2026-09-02，Slice-15 将新 plan/目标/承诺中唯一的今天、明天、后天或完整日期由 Python 绑定为 `Asia/Shanghai` day anchor；原文和逐字证据保持不变，UI 与既有 Provider content/terms 字段按当前日期渲染。旧记录不迁移，模糊或多时间表达不猜测；离线经过时间不产生 Experience、完成、提醒、主动行为或 Lifeworld 事实。每轮 Experience 时间同步改用该 Operation 的 canonical Admission，而非 QRI 发布时间。
+
+## D-020：封存身份只约束 capability-local reply
+
+2026-09-02，用户授权把当前 sealed identity 的 exact `{subject_name, subject_identity, canon_start}` 发送给六类 DeepSeek reply，不进入 proposal/classification。为避免身份影响状态候选，Living Memory、Knowledge、Relationship 拆为各自两阶段；Identity 只形成表达，Python 过滤无来源的第一人称当前活动句，reply 无效时使用原 proposal 已验证的 identity-free 回复。真实对抗曾暴露模型虚构“刚收到稿件”、把 voice 示例当口头禅和新 failure code 升级整轮失败，均按上述边界修正；不建立统一表达层、人格发展或 Lifeworld。

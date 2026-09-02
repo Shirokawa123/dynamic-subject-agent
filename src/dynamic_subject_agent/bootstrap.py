@@ -30,6 +30,7 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import OperationRef
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.source_character_authoring import (
     LocalIdentityListResponse,
     LocalIdentitySelectResponse,
@@ -118,6 +119,7 @@ def compose_application(
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
     | None = None,
     _knowledge_entries: tuple[KnowledgeEntry, ...] = (),
+    _runtime_identity: RuntimeIdentityProjection | None = None,
 ) -> _ApplicationComposition:
     """Build the one fresh QRI→Host→Runtime→Facade authority lane."""
 
@@ -157,6 +159,7 @@ def compose_application(
             _runtime_fault_hook=_runtime_fault_hook,
             _activation_plan=_activation_plan,
             _fault_hook=_host_fault_hook,
+            _runtime_identity=_runtime_identity,
         )
     else:
         if type(host_location) is not RuntimeHostRootRef:
@@ -171,6 +174,7 @@ def compose_application(
             _runtime_fault_hook=_runtime_fault_hook,
             _fault_hook=_host_fault_hook,
             _local_serving_authorization=_local_serving_authorization,
+            _runtime_identity=_runtime_identity,
         )
     try:
         route = (

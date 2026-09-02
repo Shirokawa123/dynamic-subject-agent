@@ -22,6 +22,7 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -187,15 +188,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         self,
         *,
         provider: object,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> None:
         split = callable(getattr(provider, "propose", None)) and callable(
             getattr(provider, "reply", None)
         )
         if not split and not callable(getattr(provider, "analyze", None)):
             raise TypeError("provider must expose propose/reply or analyze")
-        if split and not isinstance(runtime_identity, RuntimeIdentityProjection):
-            raise TypeError("split provider requires RuntimeIdentityProjection")
         provider_authority = getattr(
             provider,
             "provider_authority",
@@ -207,7 +205,6 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(LivingMemoryProviderAdapter(provider=provider))
         self._split = split
-        self._runtime_identity = runtime_identity
 
     @classmethod
     def for_profile(
@@ -216,7 +213,6 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         *,
         deepseek_transport: object | None = None,
         credential_ref: object | None = None,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> ControlledLivingMemoryCognition:
         if profile != "default":
             raise ValueError("Living Memory profile adapter is unavailable")
@@ -226,8 +222,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             provider=DeepSeekLivingMemoryProvider(
                 transport=deepseek_transport,
                 credential_ref=credential_ref,
-            ),
-            runtime_identity=runtime_identity,
+            )
         )
 
     def propose(
@@ -303,6 +298,14 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         )
         reply_text = result.reply_text
         if self._split:
+            if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    active,
+                    "living-memory-provider-invalid-output",
+                )
             selected = tuple(
                 LivingMemoryReplyMemory(memory.content)
                 for memory in active
@@ -315,42 +318,22 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                         LivingMemoryReplyRequest(
                             current_user_message=command.utterance,
                             selected_memories=selected,
-                            runtime_identity=self._runtime_identity,
+                            runtime_identity=context.runtime_identity,
                         ),
                     )
                 ).value
             except Exception:
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    active,
-                    "living-memory-provider-failed",
-                )
+                reply_result = None
             if (
-                not isinstance(reply_result, LivingMemoryReplyResult)
-                or not reply_result.reply_text.strip()
-                or reply_result.language != command.language
+                isinstance(reply_result, LivingMemoryReplyResult)
+                and reply_result.reply_text.strip()
+                and reply_result.language == command.language
             ):
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    active,
-                    "living-memory-provider-invalid-output",
+                guarded_reply = guard_runtime_identity_reply(
+                    reply_result.reply_text
                 )
-            guarded_reply = self._runtime_identity.guard_reply(
-                reply_result.reply_text
-            )
-            if guarded_reply is None:
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    active,
-                    "living-memory-provider-invalid-output",
-                )
-            reply_text = guarded_reply
+                if guarded_reply is not None:
+                    reply_text = guarded_reply
         if historical_memory is not None:
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"
             reply_text = f"你更正前说的是：「{historical_memory.content}」"

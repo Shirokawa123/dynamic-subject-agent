@@ -1000,62 +1000,12 @@ class DeepSeekLivingMemoryProvider:
         return self.analyze(request)
 
     def reply(self, request: LivingMemoryReplyRequest) -> LivingMemoryReplyResult:
-        body = self.reply_outbound_bytes(request)
-        content = self._post_reply_and_decode(body)
-        if (
-            set(content) != {"reply_text", "language"}
-            or content.get("language") != "zh"
-        ):
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
-        try:
-            reply_text = _bounded_identity_reply_text(content["reply_text"])
-        except (KeyError, TypeError, ProviderFailure):
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
-        return LivingMemoryReplyResult(reply_text=reply_text, language="zh")
-
-    def _post_reply_and_decode(self, body: bytes) -> dict[str, object]:
-        try:
-            response = self._transport.post_json(
-                endpoint=DEEPSEEK_ENDPOINT,
-                body=body,
-                credential_ref=self._credential_ref,
-                timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
-            )
-        except ProviderFailure:
-            raise
-        except TimeoutError:
-            raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
-        except Exception:
-            raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
-        if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
-            if isinstance(response, DeepSeekHttpResponse) and response.status_code == 429:
-                raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
-            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
-        try:
-            payload = json.loads(response.body.decode("utf-8"))
-            choices = payload["choices"]
-            message = choices[0]["message"]
-            content = json.loads(message["content"])
-            usage = payload["usage"]
-            prompt_tokens = int(usage["prompt_tokens"])
-            completion_tokens = int(usage["completion_tokens"])
-        except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
-        if (
-            payload.get("model") != DEEPSEEK_MODEL
-            or not isinstance(choices, list)
-            or len(choices) != 1
-            or not isinstance(message, dict)
-            or message.get("role") != "assistant"
-            or message.get("reasoning_content") not in (None, "")
-            or message.get("tool_calls") not in (None, [])
-            or not isinstance(content, dict)
-            or prompt_tokens < 0
-            or completion_tokens < 0
-            or completion_tokens > _IDENTITY_REPLY_MAX_OUTPUT_TOKENS
-        ):
-            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
-        return content
+        content = _post_identity_reply_content(
+            self._transport,
+            self._credential_ref,
+            self.reply_outbound_bytes(request),
+        )
+        return _identity_reply_result(content, LivingMemoryReplyResult)
 
 
 class DeepSeekKnowledgeProvider:

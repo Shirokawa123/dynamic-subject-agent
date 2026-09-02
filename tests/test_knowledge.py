@@ -139,7 +139,6 @@ def test_default_knowledge_profile_adapter_carries_deepseek_authority() -> None:
         DeepSeekTransport,
     )
     from dynamic_subject_agent.knowledge import ControlledKnowledgeCognition
-    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
     class _NoopTransport(DeepSeekTransport):
         def post_json(self, *, endpoint, body, credential_ref, timeout_seconds):
@@ -151,11 +150,6 @@ def test_default_knowledge_profile_adapter_carries_deepseek_authority() -> None:
         credential_ref=CredentialRef.reference(
             backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,
             key_id=DEEPSEEK_CREDENTIAL_KEY_ID,
-        ),
-        runtime_identity=RuntimeIdentityProjection(
-            "Avery",
-            "Avery 是社区刊物编辑。",
-            "此身份尚无运行时经历。",
         ),
     )
 

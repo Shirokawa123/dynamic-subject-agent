@@ -47,7 +47,7 @@ from dynamic_subject_agent.source_character_authoring import (
 )
 from dynamic_subject_agent.studio import QualifiedRuntimeInput
 
-DOGFOOD_BUILD_ID = "dogfood-s15"
+DOGFOOD_BUILD_ID = "dogfood-s16"
 
 
 class OpenedLocalProduct:
@@ -134,6 +134,7 @@ def _open_loaded_local_product(
             current=loaded,
         ),
         _knowledge_entries=loaded.knowledge_entries,
+        _runtime_identity=loaded.runtime_identity,
     )
     return OpenedLocalProduct(
         composition=composition,
@@ -210,7 +211,6 @@ def open_deepseek_local_product(
         participant_goal_gateway=participant_goal_gateway,
         situated_gateway=situated_gateway,
         medium_gateway=medium_gateway,
-        runtime_identity=loaded.runtime_identity,
     )
     source_authoring = TextSourceCharacterAuthoring(
         gateway=ModelGateway(

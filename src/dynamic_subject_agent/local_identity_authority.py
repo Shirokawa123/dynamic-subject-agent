@@ -37,6 +37,7 @@ from dynamic_subject_agent.studio import (
     CapabilityManifest,
     FreezeDecision,
     GenesisPremise,
+    GenesisSnapshot,
     ParticipantProfile,
     PolicyKernel,
     QualifiedRuntimeInput,
@@ -48,6 +49,7 @@ from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 
 
 _STATE_SCHEMA_VERSION = 1
+_LEGACY_AVERY_PUBLICATION_KEY = "local-product-deepseek-qri-v1"
 
 
 @dataclass(frozen=True)
@@ -220,6 +222,30 @@ class _ValidatedLocalIdentity:
     runtime_identity: RuntimeIdentityProjection
 
 
+def _runtime_identity_projection(
+    *,
+    qri: QualifiedRuntimeInput,
+    profile: ParticipantProfile,
+    snapshot: GenesisSnapshot,
+) -> RuntimeIdentityProjection:
+    if (
+        qri.profile_id != profile.profile_id
+        or qri.profile_id != snapshot.profile_id
+        or qri.genesis_snapshot_id != snapshot.snapshot_id
+        or qri.knowledge_snapshot_id != snapshot.knowledge_snapshot_id
+    ):
+        raise RuntimeError("local-runtime-identity-authority-mismatch")
+    return RuntimeIdentityProjection(
+        subject_name=(
+            "Avery"
+            if qri.publication_key == _LEGACY_AVERY_PUBLICATION_KEY
+            else profile.display_name
+        ),
+        subject_identity=snapshot.premise.subject_identity,
+        canon_start=snapshot.premise.canon_start,
+    )
+
+
 def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
     if not isinstance(record, dict):
         raise RuntimeError("local-identity-registry-invalid")
@@ -258,7 +284,7 @@ def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
         freeze_basis_digest=snapshot.source_freeze_basis_digest,
         knowledge_member_count=len(entries),
         knowledge_entries=entries,
-        runtime_identity=RuntimeIdentityProjection.from_sealed_authority(
+        runtime_identity=_runtime_identity_projection(
             qri=qri,
             profile=profile,
             snapshot=snapshot,

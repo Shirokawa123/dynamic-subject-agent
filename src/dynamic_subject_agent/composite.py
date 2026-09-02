@@ -29,7 +29,6 @@ from dynamic_subject_agent.runtime import (
     ExperienceBasis,
     ExpressionCandidate,
 )
-from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.relationship import RELATIONSHIP_POLICY_VERSION
 
 _COMPOSITE_ADAPTER_VERSION = "composite-cognition-1.0"
@@ -178,7 +177,6 @@ class ControlledCompositeCognition(CognitionEngine):
         participant_goal_gateway: object | None = None,
         situated_gateway: object | None = None,
         medium_gateway: object | None = None,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> None:
         from dynamic_subject_agent.knowledge import ControlledKnowledgeCognition
         from dynamic_subject_agent.living_memory import (
@@ -190,22 +188,18 @@ class ControlledCompositeCognition(CognitionEngine):
 
         self._memory = ControlledLivingMemoryCognition(
             provider=memory_provider,
-            runtime_identity=runtime_identity,
         )
         if not isinstance(knowledge_entries, tuple) or any(
             not isinstance(entry, KnowledgeEntry) for entry in knowledge_entries
         ):
             raise TypeError("knowledge_entries must be sealed KnowledgeEntry values")
         self._knowledge_entries = knowledge_entries
-        self._runtime_identity = runtime_identity
         self._knowledge = ControlledKnowledgeCognition(
             provider=knowledge_provider,
             entries=knowledge_entries,
-            runtime_identity=runtime_identity,
         )
         self._relationship = ControlledRelationshipCognition(
             provider=relationship_provider,
-            runtime_identity=runtime_identity,
         )
         self._participant_goals = None
         if participant_goal_gateway is not None:
@@ -265,7 +259,6 @@ class ControlledCompositeCognition(CognitionEngine):
         command,
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
-        context = replace(context, runtime_identity=self._runtime_identity)
         memory_proposal = self._propose_sub(self._memory, plan, context, command, basis)
         knowledge_hit = bool(
             select_knowledge_candidates(

@@ -244,6 +244,7 @@ class _RuntimeContext:
     kind: str
     relationship_enabled: bool
     experienced_at_us: int
+    runtime_identity: RuntimeIdentityProjection | None
     fixture: M0AFixture | None = None
 
     @classmethod
@@ -255,6 +256,7 @@ class _RuntimeContext:
             kind="m0-a-fixture",
             relationship_enabled=fixture.relationship_enabled,
             experienced_at_us=fixture.experienced_at_us,
+            runtime_identity=None,
             fixture=fixture,
         )
 
@@ -264,6 +266,7 @@ class _RuntimeContext:
         authority: _RuntimeBindingAuthority,
         *,
         experienced_at_us: int,
+        runtime_identity: RuntimeIdentityProjection | None,
         relationship_enabled: bool = False,
         _host_token: object,
     ) -> _RuntimeContext:
@@ -275,6 +278,7 @@ class _RuntimeContext:
             kind="published-qri-binding",
             relationship_enabled=relationship_enabled,
             experienced_at_us=experienced_at_us,
+            runtime_identity=runtime_identity,
         )
 
     def validate_command(self, command: SubjectCommand) -> None:
@@ -302,6 +306,7 @@ class _RuntimeContext:
             ),
             relationship_enabled=self.relationship_enabled,
             fixture=self.fixture is not None,
+            runtime_identity=self.runtime_identity,
         )
 
 
@@ -853,6 +858,7 @@ class SubjectRuntime:
         authority: _RuntimeBindingAuthority,
         cognition: CognitionEngine,
         experienced_at_us: int,
+        runtime_identity: RuntimeIdentityProjection | None,
         root_kind: str,
         relationship_enabled: bool = False,
         _host_token: object,
@@ -864,6 +870,7 @@ class SubjectRuntime:
         context = _RuntimeContext.from_binding(
             authority,
             experienced_at_us=experienced_at_us,
+            runtime_identity=runtime_identity,
             relationship_enabled=relationship_enabled,
             _host_token=_host_token,
         )
@@ -893,6 +900,7 @@ class SubjectRuntime:
         authority: _RuntimeBindingAuthority,
         cognition: CognitionEngine,
         experienced_at_us: int,
+        runtime_identity: RuntimeIdentityProjection | None,
         root_kind: str,
         relationship_enabled: bool = False,
         _host_token: object,
@@ -903,6 +911,7 @@ class SubjectRuntime:
         context = _RuntimeContext.from_binding(
             authority,
             experienced_at_us=experienced_at_us,
+            runtime_identity=runtime_identity,
             relationship_enabled=relationship_enabled,
             _host_token=_host_token,
         )

@@ -14,6 +14,7 @@
 - Memory、Knowledge、Relationship 同轮组合。
 - 参与者目标/承诺的创建、修订、终态变化与重启恢复（STABLE）。
 - 新 plan/目标/承诺中的闭集相对日表达绑定 canonical Admission；原文不改写，Memory/目标卡和既有 Provider 投影可跨日显示明天、今天或昨天。
+- 当前 sealed identity 的姓名、subject identity 与 canon start 只进入既有能力的 reply 阶段；有封存 voice 的身份可持续体现表达方式，无 voice 的 Avery 不伪装为已有性格。
 - Situated State 的 focused/gentle/cautious、一次 carry、30 分钟绝对过期与重启恢复（STABLE）。
 - Medium State 的 settled/concerned/encouraged、双独立证据、冷却、窗口与重启恢复（STABLE）。
 - 六项能力可在同一原子轮次并存；任一 Provider 子能力故障只形成该项 FailedClosed，其他无依赖能力继续裁决与回复（STABLE）。
@@ -47,6 +48,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s15`，会显示在聊天页身份名称下方。首次体验建议记录一条含“后天”的学习计划，关闭窗口后重新启动；次日 Memory 卡和召回应显示“明天”，同时历史原话仍保留“后天”。任何失败主文案都应说明是否提交及既有状态是否保持，不应出现裸路径、内部 ID 或 source digest。
+当前内部体验 build 为 `dogfood-s16`，会显示在聊天页身份名称下方。来源身份只有在 sealed Genesis 含 voice 时才承诺可辨识表达；原始 Avery 没有独立 voice。首次体验可在两个隔离身份下发送同一中性消息，再关闭重启核对各自历史；任何失败主文案都应说明是否提交及既有状态是否保持，不应出现裸路径、内部 ID 或 source digest。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

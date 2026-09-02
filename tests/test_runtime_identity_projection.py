@@ -92,7 +92,7 @@ class _SplitRelationshipProvider:
                 evidence_quote="谢谢你刚才认真听完了",
             ),
             experience_summary="提议记录一次稳定正向互动。",
-            reply_text="这条旧合并回复必须被忽略。",
+            reply_text="基础关系回复。",
             language="zh",
         )
 
@@ -207,9 +207,9 @@ def test_memory_proposal_is_identity_free_and_reply_receives_exact_projection(
         studio_location=studio_location,
         qualified_runtime_input=qri,
         timeline_id=timeline_id,
+        _runtime_identity=runtime_identity,
         _cognition=ControlledLivingMemoryCognition(
             provider=provider,
-            runtime_identity=runtime_identity,
         ),
     )
     try:
@@ -315,10 +315,10 @@ def test_knowledge_proposal_is_identity_free_and_reply_gets_selected_content(
         studio_location=studio_location,
         qualified_runtime_input=qri,
         timeline_id=timeline_id,
+        _runtime_identity=runtime_identity,
         _cognition=ControlledKnowledgeCognition(
             provider=provider,
             entries=(entry,),
-            runtime_identity=runtime_identity,
         ),
     )
     try:
@@ -375,9 +375,9 @@ def test_relationship_proposal_is_identity_free_and_reply_gets_stance(
         qualified_runtime_input=qri,
         timeline_id=timeline_id,
         relationship_mode="dynamic",
+        _runtime_identity=runtime_identity,
         _cognition=ControlledRelationshipCognition(
             provider=provider,
-            runtime_identity=runtime_identity,
         ),
     )
     try:
@@ -559,22 +559,26 @@ def test_medium_reply_adds_identity_without_changing_classification() -> None:
 
 
 def test_identity_projection_removes_only_invented_current_activity_sentences() -> None:
+    from dynamic_subject_agent.runtime_identity_reply import (
+        guard_runtime_identity_reply,
+    )
+
     identity = RuntimeIdentityProjection(
         "Avery",
         "Avery 是社区刊物编辑。",
         "此身份尚无运行时经历。",
     )
 
-    assert identity.guard_reply(
+    assert guard_runtime_identity_reply(
         "忙完一天确实该放松。想聊点什么？我正好也歇口气。"
     ) == "忙完一天确实该放松。想聊点什么？"
-    assert identity.guard_reply(
+    assert guard_runtime_identity_reply(
         "忙完了就好。今天有人送来稿子，我还没核对完。你想聊什么？"
     ) == "忙完了就好。你想聊什么？"
-    assert identity.guard_reply("我正在整理今天收到的稿件。") is None
+    assert guard_runtime_identity_reply("我正在整理今天收到的稿件。") is None
 
 
-def test_split_reply_failure_remains_capability_local_failed_closed(tmp_path) -> None:
+def test_split_reply_failure_preserves_grounded_candidate_and_base_reply(tmp_path) -> None:
     from uuid import uuid4
 
     from dynamic_subject_agent.bootstrap import compose_application
@@ -590,13 +594,13 @@ def test_split_reply_failure_remains_capability_local_failed_closed(tmp_path) ->
         qualified_runtime_input=qri,
         timeline_id=timeline_id,
         relationship_mode="dynamic",
+        _runtime_identity=RuntimeIdentityProjection(
+            "Mira",
+            "Mira 是一名谨慎的地图修复师。",
+            "表达方式：使用简短、克制的句子。",
+        ),
         _cognition=ControlledRelationshipCognition(
             provider=_SplitRelationshipProvider(fail_reply=True),
-            runtime_identity=RuntimeIdentityProjection(
-                "Mira",
-                "Mira 是一名谨慎的地图修复师。",
-                "表达方式：使用简短、克制的句子。",
-            ),
         ),
     )
     try:
@@ -621,4 +625,94 @@ def test_split_reply_failure_remains_capability_local_failed_closed(tmp_path) ->
 
     assert terminal.status.value == "terminal"
     assert terminal.projection is not None
-    assert terminal.projection.relationship_status == "failed-closed"
+    assert terminal.projection.relationship_status == "accepted"
+    assert terminal.projection.expression_text == "基础关系回复。"
+
+
+def test_runtime_forwards_identity_to_goal_situated_and_medium_reply_seams(
+    tmp_path,
+) -> None:
+    from dynamic_subject_agent.participant_goal_cognition import (
+        ParticipantGoalClassificationResult,
+    )
+    from test_medium_integration import (
+        _MediumProvider,
+        _composition as medium_composition,
+        _submit as medium_submit,
+    )
+    from test_participant_goal_integration import (
+        _ScriptedParticipantGoalProvider,
+        _composition as goal_composition,
+        _submit as goal_submit,
+    )
+    from test_situated_integration import (
+        _SituatedProvider,
+        _composition as situated_composition,
+        _submit as situated_submit,
+    )
+
+    class _SelectingGoalProvider(_ScriptedParticipantGoalProvider):
+        def classify(self, request):
+            if request.current_user_message == "关于目标，你怎么看？":
+                self.classification_requests.append(request)
+                return ParticipantGoalClassificationResult(
+                    candidate=None,
+                    selected_turn_refs=(request.active_records[0].turn_ref,),
+                    experience_summary="选中目标用于回复。",
+                    language="zh",
+                )
+            return super().classify(request)
+
+    identity = RuntimeIdentityProjection(
+        "Mira",
+        "Mira 是一名谨慎的地图修复师。",
+        "表达方式：使用简短、克制的句子。",
+    )
+
+    goal_provider = _SelectingGoalProvider()
+    _, goal_qri, goal_timeline, goal_app = goal_composition(
+        tmp_path / "goal",
+        goal_provider,
+        runtime_identity=identity,
+    )
+    try:
+        goal_submit(goal_app, goal_qri, goal_timeline, "我的目标是今年通过 N1。")
+        goal_submit(goal_app, goal_qri, goal_timeline, "关于目标，你怎么看？")
+    finally:
+        goal_app.close()
+
+    situated_provider = _SituatedProvider()
+    _, situated_qri, situated_timeline, situated_app = situated_composition(
+        tmp_path / "situated",
+        situated_provider,
+        runtime_identity=identity,
+    )
+    try:
+        situated_submit(
+            situated_app,
+            situated_qri,
+            situated_timeline,
+            "我现在有点紧张，希望你说慢一点。",
+        )
+    finally:
+        situated_app.close()
+
+    medium_provider = _MediumProvider()
+    _, medium_qri, medium_timeline, medium_app = medium_composition(
+        tmp_path / "medium",
+        medium_provider,
+        runtime_identity=identity,
+    )
+    try:
+        medium_submit(
+            medium_app,
+            medium_qri,
+            medium_timeline,
+            "最近压力很大。",
+        )
+    finally:
+        medium_app.close()
+
+    assert goal_provider.reply_requests[-1].runtime_identity == identity
+    assert situated_provider.replies[-1].runtime_identity == identity
+    assert medium_provider.replies[-1].runtime_identity == identity

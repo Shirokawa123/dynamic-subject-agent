@@ -43,6 +43,7 @@ from dynamic_subject_agent.runtime import (
     ExpressionCandidate,
 )
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
 from dynamic_subject_agent.timeline import SubjectCommand
 
 
@@ -561,7 +562,7 @@ class ControlledParticipantGoalCognition(CognitionEngine):
                     context.runtime_identity,
                     RuntimeIdentityProjection,
                 )
-                else context.runtime_identity.guard_reply(reply.reply_text)
+                else guard_runtime_identity_reply(reply.reply_text)
             )
             if expression is None:
                 return self._failure_proposal(

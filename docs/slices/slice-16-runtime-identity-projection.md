@@ -1,6 +1,6 @@
 # Slice-16：封存身份的 Runtime Identity / Voice Projection
 
-状态：active（2026-09-02，exact Provider 数据用途已获用户确认）。规模预算：≤ 3 个工作会话。
+状态：active（2026-09-02，真实验收完成，等待最终复审）。规模预算：≤ 3 个工作会话。
 
 ## 用户可见结果
 
@@ -45,7 +45,8 @@
 
 - `LocalIdentityAuthority.load_active()` 在同一次 Studio 打开中读取并验证 registry display name、QRI、Profile 和 GenesisSnapshot，返回 typed `RuntimeIdentityProjection`；`local_product` 不解析 Studio 或 registry。
 - production composition 将该值注入 `CognitionRuntimeView`。`SubjectRuntime` 只转发当前 authority 的不可变值，不建立 identity cache/store，也不从 Timeline 重建 Genesis。
-- 各能力 cognition 只把投影放入 reply request；DeepSeek Adapter 负责 exact JSON serialization 和仅用于表达的 system contract。Domain 与 composite 不 import DeepSeek。proposal/classification 失败与 reply 失败继续形成该能力自己的 FailedClosed proposal fragment，不扩大为整轮失败。
+- 各能力 cognition 只把投影放入 reply request；DeepSeek Adapter 负责 exact JSON serialization 和仅用于表达的 system contract。Domain 与 composite 不 import DeepSeek。proposal/classification 失败保持该能力 FailedClosed；新拆分的 Memory/Knowledge/Relationship identity reply 无效时退回同一 proposal 已验证的 identity-free reply，不能反向丢掉候选或改写 Outcome。目标/Situated/Medium 保持本切片前既有 reply 失败语义。
+- `RuntimeIdentityReply` safety 只对 identity-grounded 表达删除无来源的第一人称当前活动整句；它不是统一表达层，不读取或改写 identity、Domain 或 Timeline。整句以外的安全回应保留。
 - `ApplicationFacade` 与 Desktop 不直接读取或显示 projection 原文；页面继续只显示已验证 identity label。Interface 行为测试同时守护 v1、v2、多身份切换和重启。
 
 ## 实施与验证顺序
@@ -62,7 +63,7 @@
 - 当前 authority 可得到 byte-equivalent `RuntimeIdentityProjection`，重启不重新生成；切换身份后 projection 完整替换且不混合。
 - 六类 reply outbound 只新增 exact `runtime_identity` 三字段；所有 proposal/classification outbound 完全不变，禁止字段与其他 Domain 数据均不出现。
 - 同一中性消息在两个具有明确不同 sealed voice 的身份下产生可辨识且各自一致的表达；无 voice 的原始 Avery 不被伪装为已有性格。
-- Identity 只影响最终自然表达：相同输入的候选、Domain Outcome、Timeline 写入与无身份版本保持一致；任何身份指令注入不能成为状态证据。
+- Identity 只影响最终自然表达：相同输入的 proposal/classification、候选、Domain Outcome 与 Timeline 写入保持一致；Memory/Knowledge/Relationship identity reply 无效时回退原已验证回复。任何身份指令注入不能成为状态证据。
 - 普通对话、Memory、Knowledge、Relationship、目标、Situated、Medium 均至少有一条行为测试证明投影到达正确 reply seam；单项失败不泄漏 projection、不终止其他无依赖能力。
 - 真实 DeepSeek/Windows A/B、身份切换与重启通过；全量测试与 Standards/Spec 复审无阻塞。
 
@@ -85,3 +86,11 @@
 - 原始 Avery 没有 sealed voice；若实际表达仍不鲜明，这可能是内容缺失而非投影故障，不能在本切片内补写人格。
 - v1 的 Profile display name 表示 participant 而 registry label 表示 Avery；`subject_name` 必须由 `LocalIdentityAuthority` 的既有兼容规则确定，不能让 Adapter 猜测。
 - 两阶段拆分可能改变故障时机或候选选择；以 byte-equivalent proposal outbound、Domain Outcome 对照和局部 FailedClosed 测试作为阻塞门槛。
+
+## 真实验收记录
+
+- 初次真实根 `dsa-s16-real-k83u1wo9` 暴露模型虚构“今天收到稿件/还没核对”和把 voice 示例“资料里没有写”当口头禅；未选择性丢弃该失败数据。
+- 第二次根 `dsa-s16-final-real-aroob91z` 证明 prompt 修复前半，但 legacy 仍虚构“我正好也歇口气”；因此增加 provider-neutral identity reply safety，而不是把该输出算作成功。
+- 最终对抗根 `dsa-s16-adversarial-real-bgy6tmkq` 使用 project-original Lyra：中性闲聊、Memory 创建/召回、Knowledge、目标和 Situated 回复可辨识地使用天气/光线简短比喻；legacy Avery 同消息保持无 voice 的普通自然回复。真实 guard/failure 曾因新 code 破坏局部失败，修正为既有 code 并进一步让三项新 identity reply 失败回退 base reply、不改变候选。
+- 单次普通会话真实计数为 6 个 Provider 调用（Memory proposal/reply、Relationship proposal/reply、Situated classification、Medium classification），端到端 5.722 秒；各场景观测约 4.8～9.7 秒，未用缓存或并发掩盖。
+- Windows 页面显示 Lyra 独立历史、2 条 Memory、1 条 Knowledge、1 条目标；切到 Avery 后只显示其自己的 2 轮历史，Lyra 状态未混入，重启恢复一致，console 无 warning/error。浏览器确认框有一次自动化结果不确定，最终只以页面权威身份状态记为成功，不把未观察的反向点击计入证据。

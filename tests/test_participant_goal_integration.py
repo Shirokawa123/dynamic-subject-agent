@@ -180,7 +180,12 @@ def _goal_gateway(provider: _ScriptedParticipantGoalProvider):
     )
 
 
-def _composition(tmp_path: Path, provider: _ScriptedParticipantGoalProvider):
+def _composition(
+    tmp_path: Path,
+    provider: _ScriptedParticipantGoalProvider,
+    *,
+    runtime_identity=None,
+):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.composite import ControlledCompositeCognition
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
@@ -212,6 +217,7 @@ def _composition(tmp_path: Path, provider: _ScriptedParticipantGoalProvider):
         timeline_id=timeline_id,
         host_location=host_location,
         _cognition=cognition,
+        _runtime_identity=runtime_identity,
         relationship_mode="dynamic",
     )
     return prepared, qri, timeline_id, composition

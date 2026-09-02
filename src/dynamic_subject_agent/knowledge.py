@@ -37,6 +37,7 @@ from dynamic_subject_agent.model_gateway import (
 )
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
 
 
 _NO_KNOWLEDGE_EXPRESSION = "（无知识相关内容）"
@@ -131,15 +132,12 @@ class ControlledKnowledgeCognition(CognitionEngine):
         *,
         provider: object,
         entries: tuple[KnowledgeEntry, ...] = SEALED_KNOWLEDGE_ENTRIES,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> None:
         split = callable(getattr(provider, "propose", None)) and callable(
             getattr(provider, "reply", None)
         )
         if not split and not callable(getattr(provider, "analyze", None)):
             raise TypeError("provider must expose propose/reply or analyze")
-        if split and not isinstance(runtime_identity, RuntimeIdentityProjection):
-            raise TypeError("split provider requires RuntimeIdentityProjection")
         provider_authority = getattr(
             provider,
             "provider_authority",
@@ -151,7 +149,6 @@ class ControlledKnowledgeCognition(CognitionEngine):
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(KnowledgeProviderAdapter(provider=provider))
         self._split = split
-        self._runtime_identity = runtime_identity
         if not isinstance(entries, tuple) or any(
             not isinstance(entry, KnowledgeEntry) for entry in entries
         ):
@@ -215,6 +212,13 @@ class ControlledKnowledgeCognition(CognitionEngine):
         )
         reply_text = result.reply_text
         if self._split:
+            if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
+                return self._failure(
+                    context,
+                    basis,
+                    command,
+                    "knowledge-provider-invalid-output",
+                )
             selected_by_id = {entry.entry_id: entry for entry in candidates}
             selected_entries = tuple(
                 KnowledgeReplyEntry(
@@ -230,39 +234,22 @@ class ControlledKnowledgeCognition(CognitionEngine):
                         KnowledgeReplyRequest(
                             command.utterance,
                             selected_entries,
-                            self._runtime_identity,
+                            context.runtime_identity,
                         ),
                     )
                 ).value
             except Exception:
-                return self._failure(
-                    context,
-                    basis,
-                    command,
-                    "knowledge-provider-failed",
-                )
+                reply_result = None
             if (
-                not isinstance(reply_result, KnowledgeReplyResult)
-                or not reply_result.reply_text.strip()
-                or reply_result.language != command.language
+                isinstance(reply_result, KnowledgeReplyResult)
+                and reply_result.reply_text.strip()
+                and reply_result.language == command.language
             ):
-                return self._failure(
-                    context,
-                    basis,
-                    command,
-                    "knowledge-provider-invalid-output",
+                guarded_reply = guard_runtime_identity_reply(
+                    reply_result.reply_text
                 )
-            guarded_reply = self._runtime_identity.guard_reply(
-                reply_result.reply_text
-            )
-            if guarded_reply is None:
-                return self._failure(
-                    context,
-                    basis,
-                    command,
-                    "knowledge-provider-invalid-output",
-                )
-            reply_text = guarded_reply
+                if guarded_reply is not None:
+                    reply_text = guarded_reply
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
@@ -328,7 +315,6 @@ class ControlledKnowledgeCognition(CognitionEngine):
         *,
         deepseek_transport: object | None = None,
         credential_ref: object | None = None,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> "ControlledKnowledgeCognition":
         if profile != "default":
             raise ValueError("Knowledge profile adapter is unavailable")
@@ -338,8 +324,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
             provider=DeepSeekKnowledgeProvider(
                 transport=deepseek_transport,
                 credential_ref=credential_ref,
-            ),
-            runtime_identity=runtime_identity,
+            )
         )
 
 

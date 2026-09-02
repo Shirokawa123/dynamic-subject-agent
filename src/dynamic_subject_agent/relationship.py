@@ -31,6 +31,7 @@ from dynamic_subject_agent.model_gateway import (
 )
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
 
 
 RELATIONSHIP_POLICY_VERSION = "relationship-stance-v1"
@@ -125,15 +126,12 @@ class ControlledRelationshipCognition(CognitionEngine):
         self,
         *,
         provider: object,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> None:
         split = callable(getattr(provider, "propose", None)) and callable(
             getattr(provider, "reply", None)
         )
         if not split and not callable(getattr(provider, "analyze", None)):
             raise TypeError("provider must expose propose/reply or analyze")
-        if split and not isinstance(runtime_identity, RuntimeIdentityProjection):
-            raise TypeError("split provider requires RuntimeIdentityProjection")
         provider_authority = getattr(
             provider,
             "provider_authority",
@@ -145,7 +143,6 @@ class ControlledRelationshipCognition(CognitionEngine):
         self.test_only = bool(getattr(provider, "test_only", True))
         self._gateway = ModelGateway(RelationshipProviderAdapter(provider=provider))
         self._split = split
-        self._runtime_identity = runtime_identity
 
     def propose(
         self,
@@ -204,6 +201,13 @@ class ControlledRelationshipCognition(CognitionEngine):
         )
         reply_text = result.reply_text
         if self._split:
+            if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
+                return self._failure(
+                    context,
+                    command,
+                    basis,
+                    "relationship-provider-invalid-output",
+                )
             try:
                 reply_result = self._gateway.execute(
                     ModelTask(
@@ -211,39 +215,22 @@ class ControlledRelationshipCognition(CognitionEngine):
                         RelationshipReplyRequest(
                             command.utterance,
                             stance_summary,
-                            self._runtime_identity,
+                            context.runtime_identity,
                         ),
                     )
                 ).value
             except Exception:
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    "relationship-provider-failed",
-                )
+                reply_result = None
             if (
-                not isinstance(reply_result, RelationshipReplyResult)
-                or not reply_result.reply_text.strip()
-                or reply_result.language != command.language
+                isinstance(reply_result, RelationshipReplyResult)
+                and reply_result.reply_text.strip()
+                and reply_result.language == command.language
             ):
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    "relationship-provider-invalid-output",
+                guarded_reply = guard_runtime_identity_reply(
+                    reply_result.reply_text
                 )
-            guarded_reply = self._runtime_identity.guard_reply(
-                reply_result.reply_text
-            )
-            if guarded_reply is None:
-                return self._failure(
-                    context,
-                    command,
-                    basis,
-                    "relationship-provider-invalid-output",
-                )
-            reply_text = guarded_reply
+                if guarded_reply is not None:
+                    reply_text = guarded_reply
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
@@ -321,7 +308,6 @@ class ControlledRelationshipCognition(CognitionEngine):
         *,
         deepseek_transport: object | None = None,
         credential_ref: object | None = None,
-        runtime_identity: RuntimeIdentityProjection | None = None,
     ) -> "ControlledRelationshipCognition":
         if profile != "default":
             raise ValueError("Relationship profile adapter is unavailable")
@@ -331,8 +317,7 @@ class ControlledRelationshipCognition(CognitionEngine):
             provider=DeepSeekRelationshipProvider(
                 transport=deepseek_transport,
                 credential_ref=credential_ref,
-            ),
-            runtime_identity=runtime_identity,
+            )
         )
 
 

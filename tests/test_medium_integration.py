@@ -67,7 +67,7 @@ def _gateway(provider):
     )
 
 
-def _composition(tmp_path: Path, provider: _MediumProvider):
+def _composition(tmp_path: Path, provider: _MediumProvider, *, runtime_identity=None):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.composite import ControlledCompositeCognition
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
@@ -98,6 +98,7 @@ def _composition(tmp_path: Path, provider: _MediumProvider):
             relationship_provider=_NoopRelationshipProvider(),
             medium_gateway=_gateway(provider),
         ),
+        _runtime_identity=runtime_identity,
         relationship_mode="dynamic",
     )
     return prepared, qri, timeline_id, composition
