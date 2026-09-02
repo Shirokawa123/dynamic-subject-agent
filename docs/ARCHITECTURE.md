@@ -20,6 +20,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 - `PolicyKernel`：能力、访问、外发与反操纵政策。
 - `TemporalGrounding`：以 canonical Admission 时间为唯一事实，将计划中的闭集相对日表达封存为 Civil Time anchor；canonical 原文不改写，当前 UI/Provider 只读投影按当天重渲染。
 - `RuntimeIdentityProjection`：由 `LocalIdentityAuthority` 从当前 registry、QRI 与 sealed Genesis 校验后形成的三字段纯值；经 composition、RuntimeHost 与 SubjectRuntime 进入 CognitionRuntimeView，不建立第二个身份 store。
+- `SubjectTimeContinuity`：单一 typed `evaluate()` Interface；仅命中四条闭集查询时惰性读取当前 identity 最近 committed publication，以本轮 canonical Admission 和固定上海日期返回 Answer/NoOp/FailedClosed。
 
 ## Experience Cycle
 
@@ -44,6 +45,8 @@ Runtime identity 只进入六类 capability-local reply request，proposal/class
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
 
 每轮 `ExperienceBasis.observed_at_us` 与 `ExperienceRecord.experienced_at_us` 来自同一 canonical Admission。新 Living Memory plan 或参与者目标/承诺只在消息含唯一受支持时间表达时附加 `TemporalAnchor`；旧记录不回填。离线时间只改变投影，不生成 Experience、状态转换、提醒或主动消息；Provider 仍只见原有 content/terms 字段，不见 timestamp、时区或 anchor 结构。
+
+Interaction Recency 不持久化：明确查询从当前 Admission 与最近完整 TimelineOutcome 的 publication time 现场派生；pending、interrupted、FailedClosed 和 UI 20 轮窗口不参与。查询本身提交后就是下一次查询的最近 turn。非闭集消息不读取 history；四条闭集命中时六类 Provider 零调用，timestamp、日期差和历史文本均不外发。
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 

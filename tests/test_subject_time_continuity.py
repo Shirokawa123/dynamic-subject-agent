@@ -106,6 +106,14 @@ class _CountingRelationshipProvider:
             RelationshipProviderResult,
         )
 
+        self.calls.append(request)
+        return RelationshipProviderResult(
+            RelationshipProposal("no_persistent_evidence", ""),
+            "无关系变化。",
+            "普通 Relationship 回复。",
+            "zh",
+        )
+
 
 class _FailingDeepSeekCognition(CognitionEngine):
     provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
@@ -127,14 +135,6 @@ class _FailingDeepSeekCognition(CognitionEngine):
             "cognition",
             "forced-pre-publication-failure",
             "test-only failure before Publication",
-        )
-
-        self.calls.append(request)
-        return RelationshipProviderResult(
-            RelationshipProposal("no_persistent_evidence", ""),
-            "无关系变化。",
-            "普通 Relationship 回复。",
-            "zh",
         )
 
 
@@ -676,6 +676,7 @@ def test_subject_time_history_integrity_failure_is_terminal_failed_closed(
 def test_subject_time_typed_interface_is_lazy_and_rejects_extreme_clock() -> None:
     from dynamic_subject_agent.subject_time_continuity import (
         SubjectTimeContinuity,
+        SubjectTimeResult,
         SubjectTimeStatus,
     )
 
@@ -702,6 +703,8 @@ def test_subject_time_typed_interface_is_lazy_and_rejects_extreme_clock() -> Non
     assert calls == 0
     assert extreme.status is SubjectTimeStatus.FAILED_CLOSED
     assert extreme.problem_code == "subject-time-civil-time-invalid"
+    with pytest.raises(ValueError):
+        SubjectTimeResult(SubjectTimeStatus.ANSWER)
 
 
 def test_subject_time_uses_shanghai_midnight_boundary(
@@ -817,15 +820,37 @@ def test_nonmatch_provider_outbound_matches_slice16_baseline() -> None:
         DeepSeekSituatedProvider,
     )
     from dynamic_subject_agent.knowledge import KnowledgeProviderRequest
-    from dynamic_subject_agent.living_memory import LivingMemoryProviderRequest
-    from dynamic_subject_agent.medium_cognition import MediumClassificationRequest
+    from dynamic_subject_agent.knowledge import KnowledgeReplyEntry, KnowledgeReplyRequest
+    from dynamic_subject_agent.living_memory import (
+        LivingMemoryProviderRequest,
+        LivingMemoryReplyMemory,
+        LivingMemoryReplyRequest,
+    )
+    from dynamic_subject_agent.medium_cognition import (
+        MediumClassificationRequest,
+        MediumReplyRequest,
+    )
     from dynamic_subject_agent.participant_goal_cognition import (
         ParticipantGoalClassificationRequest,
+        ParticipantGoalReplyRecord,
+        ParticipantGoalReplyRequest,
     )
-    from dynamic_subject_agent.relationship import RelationshipProviderRequest
-    from dynamic_subject_agent.situated_cognition import SituatedClassificationRequest
+    from dynamic_subject_agent.relationship import (
+        RelationshipProviderRequest,
+        RelationshipReplyRequest,
+    )
+    from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+    from dynamic_subject_agent.situated_cognition import (
+        SituatedClassificationRequest,
+        SituatedReplyRequest,
+    )
 
     message = "你还记得我们上次聊了什么吗？"
+    identity = RuntimeIdentityProjection(
+        "Avery",
+        "Avery 是社区刊物编辑。",
+        "此身份尚无运行时经历。",
+    )
     outbound = {
         "living": DeepSeekLivingMemoryProvider.outbound_bytes(
             LivingMemoryProviderRequest(message, ())
@@ -845,6 +870,36 @@ def test_nonmatch_provider_outbound_matches_slice16_baseline() -> None:
         "medium": DeepSeekMediumProvider.classification_outbound_bytes(
             MediumClassificationRequest(message)
         ),
+        "living-reply": DeepSeekLivingMemoryProvider.reply_outbound_bytes(
+            LivingMemoryReplyRequest(
+                message,
+                (LivingMemoryReplyMemory("我每周三学习"),),
+                identity,
+            )
+        ),
+        "knowledge-reply": DeepSeekKnowledgeProvider.reply_outbound_bytes(
+            KnowledgeReplyRequest(
+                message,
+                (KnowledgeReplyEntry("标题", "封存内容。"),),
+                identity,
+            )
+        ),
+        "relationship-reply": DeepSeekRelationshipProvider.reply_outbound_bytes(
+            RelationshipReplyRequest(message, "尚无立场互动记录。", identity)
+        ),
+        "goal-reply": DeepSeekParticipantGoalProvider.reply_outbound_bytes(
+            ParticipantGoalReplyRequest(
+                message,
+                (ParticipantGoalReplyRecord("goal", "通过 N1", "active"),),
+                identity,
+            )
+        ),
+        "situated-reply": DeepSeekSituatedProvider.reply_outbound_bytes(
+            SituatedReplyRequest(message, "gentle", identity)
+        ),
+        "medium-reply": DeepSeekMediumProvider.reply_outbound_bytes(
+            MediumReplyRequest(message, "settled", identity)
+        ),
     }
     expected = {
         "living": "77989ff3c6b6aacd6c50564a203db11017768f896f085662b874226132b945f1",
@@ -853,6 +908,12 @@ def test_nonmatch_provider_outbound_matches_slice16_baseline() -> None:
         "goal": "4c037a29bb43a5f5c0fc3e70813b5f27704ad4dac6333730dfc6c394c8b6b44c",
         "situated": "04f167a465671bd452a8dbd4593dc98b7db0f6c3082e4a0455f5da5314e6803e",
         "medium": "5d3bcb4c0dcb73396bd2c49744ee7424da9b691c26c461d242511e1a71af25fa",
+        "living-reply": "87104c317cd3d797a8d0e81386d79c1d113afa0cc3c9f82ed0be2549697cce8e",
+        "knowledge-reply": "c7a56c64dafe34e8f94cd263bbaa9d17f897d6cc97e7da8a8f5b26e59c859295",
+        "relationship-reply": "30e65c081d2bbc2c6c0096381577366a983d7cceb6597cd3f3d9537465be7c20",
+        "goal-reply": "d544b15ca979461e93f91ee3d07409d72479e1f25174db1eec2edfb751123d62",
+        "situated-reply": "b329332347fc77f1a90b24e29fed529629478d7fb849043b2651362974304826",
+        "medium-reply": "18df22292cc427404a3120100be7b74db758d47ad90bfeb5a0b9e71f34953d20",
     }
 
     assert {name: sha256(body).hexdigest() for name, body in outbound.items()} == (

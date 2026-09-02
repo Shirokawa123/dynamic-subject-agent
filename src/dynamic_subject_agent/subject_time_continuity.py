@@ -48,6 +48,24 @@ class SubjectTimeResult:
     answer: SubjectTimeAnswer | None = None
     problem_code: str | None = None
 
+    def __post_init__(self) -> None:
+        valid = (
+            self.status is SubjectTimeStatus.ANSWER
+            and isinstance(self.answer, SubjectTimeAnswer)
+            and self.problem_code is None
+        ) or (
+            self.status is SubjectTimeStatus.NO_OP
+            and self.answer is None
+            and self.problem_code is None
+        ) or (
+            self.status is SubjectTimeStatus.FAILED_CLOSED
+            and self.answer is None
+            and isinstance(self.problem_code, str)
+            and bool(self.problem_code)
+        )
+        if not valid:
+            raise ValueError("SubjectTimeResult state is inconsistent")
+
     @classmethod
     def answered(cls, text: str) -> SubjectTimeResult:
         return cls(SubjectTimeStatus.ANSWER, SubjectTimeAnswer(text))

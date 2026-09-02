@@ -270,7 +270,12 @@ class ControlledCompositeCognition(CognitionEngine):
                 "canonical Interaction Recency could not be safely derived",
             )
         if subject_time.status is SubjectTimeStatus.ANSWER:
-            assert subject_time.answer is not None
+            if subject_time.answer is None:
+                raise CognitionFailedClosed(
+                    "subject-time",
+                    "subject-time-result-invalid",
+                    "typed Subject Time answer is absent",
+                )
             return self._bounded_noop_proposal(
                 context=context,
                 basis=basis,

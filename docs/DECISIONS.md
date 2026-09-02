@@ -79,3 +79,7 @@
 ## D-020：封存身份只约束 capability-local reply
 
 2026-09-02，用户授权把当前 sealed identity 的 exact `{subject_name, subject_identity, canon_start}` 发送给六类 DeepSeek reply，不进入 proposal/classification。为避免身份影响状态候选，Living Memory、Knowledge、Relationship 拆为各自两阶段；Identity 只形成表达，Python 过滤无来源的第一人称当前活动句，reply 无效时使用原 proposal 已验证的 identity-free 回复。真实对抗曾暴露模型虚构“刚收到稿件”、把 voice 示例当口头禅和新 failure code 升级整轮失败，均按上述边界修正；不建立统一表达层、人格发展或 Lifeworld。
+
+## D-021：Interaction Recency 只由 committed Timeline 派生
+
+2026-09-02，Slice-17 只对四条明确查询以 Python 回答 day-precision“上次聊天”。当前时间取本轮 canonical Admission，上次时间取同一 identity 最近完整 TimelineOutcome 的 publication；查询轮本身正常提交并成为下一次的上次。该值不建 store、不进入 Provider、不跳过时间查询轮，也不解释为离线经历、等待或想念；时钟倒退与 history integrity 失败显式 FailedClosed。
