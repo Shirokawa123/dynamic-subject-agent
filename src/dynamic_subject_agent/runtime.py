@@ -54,6 +54,7 @@ from dynamic_subject_agent.timeline import (
     OperationRef,
     OperationState,
     PreAdmissionRejected,
+    PublicationFailedClosed,
     RevisionSet,
     SubjectCommand,
     TimelineBasis,
@@ -68,6 +69,7 @@ from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_sta
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.subject_time_continuity import SubjectTimeContinuity
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -342,6 +344,7 @@ class CognitionRuntimeView:
     medium_state: MediumStateRecord | None = None
     medium_signals: tuple[MediumSignalRecord, ...] = ()
     runtime_identity: RuntimeIdentityProjection | None = None
+    last_committed_turn: ConversationTurnRecord | None = None
 
 
 @dataclass(frozen=True)
@@ -941,6 +944,7 @@ class SubjectRuntime:
         self,
         *,
         observed_at_us: int | None = None,
+        query_text: object | None = None,
     ) -> CognitionRuntimeView:
         observed_at_us = (
             time_ns() // 1_000
@@ -967,6 +971,11 @@ class SubjectRuntime:
         )
         medium_state = self._engine.current_medium_state()
         medium_signals = self._engine.list_medium_signals(limit=7)
+        conversation_turns = (
+            self._engine.list_conversation_turns(limit=1)
+            if SubjectTimeContinuity.is_query(query_text)
+            else ()
+        )
         projected_memory_history = tuple(
             (
                 memory
@@ -1019,6 +1028,9 @@ class SubjectRuntime:
             observed_at_us=observed_at_us,
             medium_state=medium_state,
             medium_signals=medium_signals,
+            last_committed_turn=(
+                conversation_turns[-1] if conversation_turns else None
+            ),
         )
 
     def list_living_memories(
@@ -1218,10 +1230,18 @@ class SubjectRuntime:
             proposal = self._cognition.propose(
                 plan=cycle_plan,
                 context=self._cognition_view(
-                    observed_at_us=experience_basis.observed_at_us
+                    observed_at_us=experience_basis.observed_at_us,
+                    query_text=command.utterance,
                 ),
                 command=command,
                 basis=experience_basis,
+            )
+        except PublicationFailedClosed:
+            self._fail_cycle(
+                operation_ref,
+                stage="subject-time",
+                code="subject-time-history-failed-closed",
+                detail="canonical conversation history failed integrity validation",
             )
         except CognitionFailedClosed as error:
             self._fail_cycle(
@@ -1265,7 +1285,7 @@ class SubjectRuntime:
         expression_candidate = self._cognition.express(
             proposal=proposal,
             context=self._cognition_view(
-                observed_at_us=experience_basis.observed_at_us
+                observed_at_us=experience_basis.observed_at_us,
             ),
             command=command,
             outcomes=outcomes,
