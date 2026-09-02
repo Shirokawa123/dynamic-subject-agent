@@ -10,9 +10,10 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 class _SplitMemoryProvider:
-    def __init__(self) -> None:
+    def __init__(self, *, fail_reply: bool = False) -> None:
         self.proposal_requests = []
         self.reply_requests = []
+        self.fail_reply = fail_reply
 
     def propose(self, request):
         from dynamic_subject_agent.living_memory import (
@@ -29,7 +30,7 @@ class _SplitMemoryProvider:
                 memory_kind="plan",
             ),
             experience_summary="提议记录学习计划。",
-            reply_text="这条旧合并回复必须被忽略。",
+            reply_text="基础记忆回复。",
             language="zh",
         )
 
@@ -37,6 +38,8 @@ class _SplitMemoryProvider:
         from dynamic_subject_agent.living_memory import LivingMemoryReplyResult
 
         self.reply_requests.append(request)
+        if self.fail_reply:
+            raise RuntimeError("memory identity reply unavailable")
         return LivingMemoryReplyResult(
             reply_text=f"我是{request.runtime_identity.subject_name}，我记下了。",
             language="zh",
@@ -44,10 +47,11 @@ class _SplitMemoryProvider:
 
 
 class _SplitKnowledgeProvider:
-    def __init__(self, entry_id: str) -> None:
+    def __init__(self, entry_id: str, *, fail_reply: bool = False) -> None:
         self.entry_id = entry_id
         self.proposal_requests = []
         self.reply_requests = []
+        self.fail_reply = fail_reply
 
     def propose(self, request):
         from dynamic_subject_agent.knowledge import (
@@ -59,7 +63,7 @@ class _SplitKnowledgeProvider:
         return KnowledgeProviderResult(
             proposal=KnowledgeProposal((self.entry_id,)),
             experience_summary="提议引用封存知识。",
-            reply_text="这条旧合并回复必须被忽略。",
+            reply_text="基础知识回复。",
             language="zh",
         )
 
@@ -67,6 +71,8 @@ class _SplitKnowledgeProvider:
         from dynamic_subject_agent.knowledge import KnowledgeReplyResult
 
         self.reply_requests.append(request)
+        if self.fail_reply:
+            raise RuntimeError("knowledge identity reply unavailable")
         return KnowledgeReplyResult(
             reply_text=f"{request.runtime_identity.subject_name}：周五截单。",
             language="zh",
@@ -627,6 +633,121 @@ def test_split_reply_failure_preserves_grounded_candidate_and_base_reply(tmp_pat
     assert terminal.projection is not None
     assert terminal.projection.relationship_status == "accepted"
     assert terminal.projection.expression_text == "基础关系回复。"
+
+
+def test_memory_and_knowledge_identity_reply_failure_preserves_canonical_state(
+    tmp_path,
+) -> None:
+    from uuid import uuid4
+
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        LivingMemoryApplicationProjection,
+    )
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.knowledge import ControlledKnowledgeCognition
+    from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+    from dynamic_subject_agent.living_memory import ControlledLivingMemoryCognition
+    from dynamic_subject_agent.timeline import SubjectCommand
+    from test_runtime_host_binding import _publish_qri
+
+    identity = RuntimeIdentityProjection(
+        "Mira",
+        "Mira 是一名谨慎的地图修复师。",
+        "表达方式：使用简短、克制的句子。",
+    )
+
+    memory_studio, memory_qri = _publish_qri(tmp_path / "memory-fallback")
+    memory_timeline = str(uuid4())
+    memory_app = compose_application(
+        m0_root=tmp_path / "memory-fallback",
+        studio_location=memory_studio,
+        qualified_runtime_input=memory_qri,
+        timeline_id=memory_timeline,
+        _runtime_identity=identity,
+        _cognition=ControlledLivingMemoryCognition(
+            provider=_SplitMemoryProvider(fail_reply=True),
+        ),
+    )
+    try:
+        command = SubjectCommand.contribute_utterance(
+            target_profile_id=memory_qri.profile_id,
+            target_timeline_id=memory_timeline,
+            declared_intent="ask-collaborator-status",
+            utterance="我每周三晚上学习。",
+            language="zh",
+            provenance="project-original",
+        )
+        submitted = memory_app.application.submit(
+            command,
+            idempotency_key="identity-memory-fallback-0001",
+        )
+        memory_terminal = memory_app.application.wait(
+            submitted.operation_ref,
+            timeout_seconds=5,
+        )
+        memory_query = memory_app.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.LIVING_MEMORY,
+                memory_qri.profile_id,
+                memory_timeline,
+            )
+        )
+        assert isinstance(
+            memory_query.projection,
+            LivingMemoryApplicationProjection,
+        )
+        memories = memory_query.projection.memories
+    finally:
+        memory_app.close()
+
+    entry = KnowledgeEntry(
+        "a1f4c2d8-0001-4a61-9e1f-3b5c7d9e0a01",
+        "截单时间",
+        "社区刊物每周五 17:00 截单。",
+        "project-original:test",
+    )
+    knowledge_studio, knowledge_qri = _publish_qri(tmp_path / "knowledge-fallback")
+    knowledge_timeline = str(uuid4())
+    knowledge_app = compose_application(
+        m0_root=tmp_path / "knowledge-fallback",
+        studio_location=knowledge_studio,
+        qualified_runtime_input=knowledge_qri,
+        timeline_id=knowledge_timeline,
+        _runtime_identity=identity,
+        _cognition=ControlledKnowledgeCognition(
+            provider=_SplitKnowledgeProvider(entry.entry_id, fail_reply=True),
+            entries=(entry,),
+        ),
+    )
+    try:
+        command = SubjectCommand.contribute_utterance(
+            target_profile_id=knowledge_qri.profile_id,
+            target_timeline_id=knowledge_timeline,
+            declared_intent="ask-collaborator-status",
+            utterance="社区刊物什么时候截单？",
+            language="zh",
+            provenance="project-original",
+        )
+        submitted = knowledge_app.application.submit(
+            command,
+            idempotency_key="identity-knowledge-fallback-0001",
+        )
+        knowledge_terminal = knowledge_app.application.wait(
+            submitted.operation_ref,
+            timeout_seconds=5,
+        )
+    finally:
+        knowledge_app.close()
+
+    assert memory_terminal.projection is not None
+    assert memory_terminal.projection.living_memory_status == "accepted"
+    assert memory_terminal.projection.expression_text == "基础记忆回复。"
+    assert memories[0].content == "我每周三晚上学习"
+    assert knowledge_terminal.projection is not None
+    assert knowledge_terminal.projection.knowledge_status == "accepted"
+    assert knowledge_terminal.projection.expression_text == "基础知识回复。"
 
 
 def test_runtime_forwards_identity_to_goal_situated_and_medium_reply_seams(

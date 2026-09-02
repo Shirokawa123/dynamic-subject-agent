@@ -21,7 +21,7 @@ _UNSUPPORTED_CURRENT_ACTIVITY_MARKERS = (
 
 
 def guard_runtime_identity_reply(text: object) -> str | None:
-    """Remove clauses that invent a current first-person subject activity."""
+    """Remove current subject activity; no Slice-16 reply input can ground one."""
 
     if not isinstance(text, str) or not text.strip():
         return None

@@ -46,7 +46,7 @@ Dogfood 连续体验基线已完成：页面显示 `dogfood-s16`，仅从当前 
 - `LocalIdentityAuthority` 独占本地 identity registry、v1/v2 state、freeze/replay/select、authority 校验和 Host/Timeline 准备；`local_product` 只消费已验证 active authority 并装配 cognition/ApplicationFacade。
 - 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
 - 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。
-- 六项 Provider 子任务分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。
+- 六项 state-bearing proposal/classification 与既有 required reply 分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是不承载状态的可选表达 refinement；失败时只退回同一 proposal 已验证的 identity-free reply，不取消候选或伪装成 identity-grounded 成功。
 - 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
 - Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
 - 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。

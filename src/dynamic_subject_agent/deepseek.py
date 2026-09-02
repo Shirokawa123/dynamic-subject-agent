@@ -168,8 +168,8 @@ _SOURCE_CHARACTER_SYSTEM_MESSAGE = (
 )
 _RUNTIME_IDENTITY_REPLY_RULES = (
     "runtime_identity 是封存背景，只能约束第一人称身份、视角和措辞风格，不能提供当前答案或事件。"
-    "不得声称角色今天、刚刚、已经、正在或尚未做过、收到、看到、完成任何事情，"
-    "除非该事实逐字存在于 current_user_message 或本请求的 selected 数据中。"
+    "本请求的 current_user_message、selected 数据和状态都不构成主体当前活动证据；"
+    "不得声称角色今天、刚刚、已经、正在或尚未做过、收到、看到、完成任何事情。"
     "canon_start 只是不可续写的故事起点，不是当前世界状态；不得推断其后发生了什么。"
     "canon_start 中的示例说法只能抽象为风格，不得复制、引用或反复当作口头禅。"
     "除非用户直接询问身份，否则不要自报姓名、职业、设定或复述 subject_identity/canon_start。"

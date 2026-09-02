@@ -46,7 +46,7 @@
 - `LocalIdentityAuthority.load_active()` 在同一次 Studio 打开中读取并验证 registry display name、QRI、Profile 和 GenesisSnapshot，返回 typed `RuntimeIdentityProjection`；`local_product` 不解析 Studio 或 registry。
 - production composition 将该值注入 `CognitionRuntimeView`。`SubjectRuntime` 只转发当前 authority 的不可变值，不建立 identity cache/store，也不从 Timeline 重建 Genesis。
 - 各能力 cognition 只把投影放入 reply request；DeepSeek Adapter 负责 exact JSON serialization 和仅用于表达的 system contract。Domain 与 composite 不 import DeepSeek。proposal/classification 失败保持该能力 FailedClosed；新拆分的 Memory/Knowledge/Relationship identity reply 无效时退回同一 proposal 已验证的 identity-free reply，不能反向丢掉候选或改写 Outcome。目标/Situated/Medium 保持本切片前既有 reply 失败语义。
-- `RuntimeIdentityReply` safety 只对 identity-grounded 表达删除无来源的第一人称当前活动整句；它不是统一表达层，不读取或改写 identity、Domain 或 Timeline。整句以外的安全回应保留。
+- `RuntimeIdentityReply` safety 保守删除第一人称当前活动整句；本切片六类 reply 的 current message、参与者 Memory/目标、Knowledge、stance 与状态都不是 canonical 主体当前活动来源，用户直接声称也不能授权一段主体经历。它不是统一表达层，不读取或改写 identity、Domain 或 Timeline；未来只有新的 Experience/Lifeworld 授权可扩展允许来源。整句以外的安全回应保留。
 - `ApplicationFacade` 与 Desktop 不直接读取或显示 projection 原文；页面继续只显示已验证 identity label。Interface 行为测试同时守护 v1、v2、多身份切换和重启。
 
 ## 实施与验证顺序
@@ -63,7 +63,7 @@
 - 当前 authority 可得到 byte-equivalent `RuntimeIdentityProjection`，重启不重新生成；切换身份后 projection 完整替换且不混合。
 - 六类 reply outbound 只新增 exact `runtime_identity` 三字段；所有 proposal/classification outbound 完全不变，禁止字段与其他 Domain 数据均不出现。
 - 同一中性消息在两个具有明确不同 sealed voice 的身份下产生可辨识且各自一致的表达；无 voice 的原始 Avery 不被伪装为已有性格。
-- Identity 只影响最终自然表达：相同输入的 proposal/classification、候选、Domain Outcome 与 Timeline 写入保持一致；Memory/Knowledge/Relationship identity reply 无效时回退原已验证回复。任何身份指令注入不能成为状态证据。
+- Identity 只影响最终自然表达：相同输入的 proposal/classification、候选、Domain status 与 canonical state revision 保持一致；Expression 变化会正常改变 TimelineOutcome digest，不声称整轮 byte-equivalent。Memory/Knowledge/Relationship identity reply 无效时回退原已验证回复。任何身份指令注入不能成为状态证据。
 - 普通对话、Memory、Knowledge、Relationship、目标、Situated、Medium 均至少有一条行为测试证明投影到达正确 reply seam；单项失败不泄漏 projection、不终止其他无依赖能力。
 - 真实 DeepSeek/Windows A/B、身份切换与重启通过；全量测试与 Standards/Spec 复审无阻塞。
 

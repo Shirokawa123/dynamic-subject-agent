@@ -37,7 +37,7 @@ Source Identity Freeze 仍只经 `ApplicationFacade`：`LocalIdentityAuthority` 
 
 Runtime identity 只进入六类 capability-local reply request，proposal/classification outbound 不含身份。Living Memory、Knowledge、Relationship 保留原 proposal outbound 并新增各自 reply task；identity reply 无效时退回同一 proposal 已验证的 identity-free reply，因此不反向改变候选、Domain Outcome 或 Timeline 写入。目标、Situated、Medium 保持既有两阶段失败语义。Python 的 identity-scoped expression guard 只删除无来源的第一人称当前活动句，不产生或改写状态。
 
-明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项单项 Provider 失败都形成所属 Domain 的 FailedClosed 片段，与其他候选一起进入同一个原子 Outcome；失败项不写状态，也不阻断无依赖的其他 Domain 与表达。
+明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项 state-bearing proposal/classification 或既有 required reply 失败形成所属 Domain 的 FailedClosed 片段；失败项不写状态，也不阻断无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是 proposal 之后、不承载状态的可选 expression refinement；失败只回退该 proposal 已验证的 identity-free reply，不能取消候选或声称 identity grounding 成功。
 
 ## 数据
 
