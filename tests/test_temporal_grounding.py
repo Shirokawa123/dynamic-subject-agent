@@ -28,6 +28,30 @@ def _us(year: int, month: int, day: int, hour: int = 12) -> int:
     )
 
 
+def _utc_us(
+    year: int,
+    month: int,
+    day: int,
+    hour: int,
+    minute: int,
+    second: int,
+) -> int:
+    from datetime import UTC
+
+    return int(
+        datetime(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            tzinfo=UTC,
+        ).timestamp()
+        * 1_000_000
+    )
+
+
 def test_relative_day_anchor_keeps_evidence_and_rerenders_across_days() -> None:
     grounding = TemporalGrounding()
     original = "我后天要学习 LLM"
@@ -51,6 +75,20 @@ def test_relative_day_anchor_keeps_evidence_and_rerenders_across_days() -> None:
 
 def test_explicit_dates_and_timezone_day_boundary_are_deterministic() -> None:
     grounding = TemporalGrounding()
+    before_midnight = grounding.anchor(
+        "我明天学习 LLM",
+        observed_at_us=_utc_us(2026, 9, 1, 15, 59, 59),
+    )
+    after_midnight = grounding.anchor(
+        "我明天学习 LLM",
+        observed_at_us=_utc_us(2026, 9, 1, 16, 0, 0),
+    )
+    assert before_midnight is not None and after_midnight is not None
+    assert before_midnight.anchor_date == "2026-09-01"
+    assert before_midnight.target_date == "2026-09-02"
+    assert after_midnight.anchor_date == "2026-09-02"
+    assert after_midnight.target_date == "2026-09-03"
+
     anchored = grounding.anchor(
         "我计划在 2026年9月3日 学习 LLM",
         observed_at_us=_us(2026, 9, 1, 23),
@@ -90,6 +128,8 @@ def test_anchor_round_trip_and_render_integrity_fail_closed() -> None:
     payload["target_date"] = "not-a-date"
     with pytest.raises(TemporalGroundingFailedClosed):
         TemporalAnchor.from_dict(payload)
+    with pytest.raises(TemporalGroundingFailedClosed):
+        grounding.anchor("我明天学习", observed_at_us=10**40)
     payload = anchor.to_dict()
     payload["target_date"] = "2026-09-04"
     with pytest.raises(TemporalGroundingFailedClosed):

@@ -26,7 +26,7 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-Dogfood 连续体验基线已完成：页面显示 `dogfood-s14`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言，内部裁决规则只进入 Outcome explanation；关系直接声称由 Python 精确分句闭集保护，不能依赖 Provider 正确分类。
+Dogfood 连续体验基线已完成：页面显示 `dogfood-s15`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言，内部裁决规则只进入 Outcome explanation；关系直接声称由 Python 精确分句闭集保护，不能依赖 Provider 正确分类。新 plan/目标/承诺可由 canonical Admission 建立 `Asia/Shanghai` TemporalAnchor；原文不改写，跨日只重渲染 UI/既有 Provider 字段，离线时间不产生 Experience 或主动行为。
 
 来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
 
@@ -53,10 +53,10 @@ Dogfood 连续体验基线已完成：页面显示 `dogfood-s14`，仅从当前 
 
 ## Provider 数据边界
 
-- Living Memory：当前消息 1 条 + 最多 20 条 active `{memory_id, content, source_user_message_id}`。
+- Living Memory：当前消息 1 条 + 最多 20 条 active `{memory_id, content, source_user_message_id}`；有 anchor 的 plan 仅在既有 `content` 字段按当天渲染。
 - Knowledge：当前消息 1 条 + 最多 6 条 sealed `{entry_id, title, content}`。
 - Relationship：当前消息 1 条 + 当前立场摘要 + 固定策略版本。
-- 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`。
+- 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；回复使用当前消息且只附加本轮选中的最多 5 条 `{kind, terms, status}`；有 anchor 的记录仅在既有 `terms` 字段按当天渲染。
 - Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；回复使用当前消息且只附加本轮选中的 `{posture}`。
 - Medium State：分类只发送当前消息 + 固定版本策略；回复使用当前消息且只附加本轮选中的 `{baseline}`。
 - 文本来源建角：只在用户逐次确认权利与用途后发送单份 `{source_title, source_text, policy}`；source_text 最多 16,000 字符，仅用于未发布 Genesis/Knowledge 候选提取，不发送任何 runtime 状态或聊天历史。

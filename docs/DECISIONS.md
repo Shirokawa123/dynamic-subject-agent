@@ -71,3 +71,7 @@
 ## D-018：主表达不朗读裁决规则
 
 2026-09-02，真实体验证明直接姿态命令的硬编码主回复像状态机说明书，普通会话入口会错误退化为“没有记忆或知识”，关系声称在 Provider 漏判时甚至被直接接受。Slice-14 保持 Domain/Outcome/explanation 不变：Situated 自然询问具体情境；五条精确普通会话入口使用本地自然回复；关系声称按分句精确闭集生成 Python `relationship_claim` NoUpdate candidate，并与合法 Knowledge/目标表达合并。该保护不覆盖 Relationship Provider FailedClosed，不新增统一表达层、Identity 投影或 Provider 字段。build 升为 `dogfood-s14`。
+
+## D-019：相对日计划绑定 canonical Admission
+
+2026-09-02，Slice-15 将新 plan/目标/承诺中唯一的今天、明天、后天或完整日期由 Python 绑定为 `Asia/Shanghai` day anchor；原文和逐字证据保持不变，UI 与既有 Provider content/terms 字段按当前日期渲染。旧记录不迁移，模糊或多时间表达不猜测；离线经过时间不产生 Experience、完成、提醒、主动行为或 Lifeworld 事实。每轮 Experience 时间同步改用该 Operation 的 canonical Admission，而非 QRI 发布时间。

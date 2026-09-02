@@ -1,3 +1,3 @@
 # 当前工作
 
-当前唯一执行切片：[Slice-15：现实时间锚定基础](slice-15-temporal-anchor-foundation.md)。本切片只为新 plan/目标/承诺建立 `Asia/Shanghai` TemporalAnchor 与当前投影，不做 Lifeworld、提醒、Agency 或新 Provider 数据用途。
+Slice-15 已完成，当前无活跃切片。下一项工作等待用户选择；在新任务书前不扩展 Lifeworld、提醒、Agency、effect、人格发展、Reflection、主动消息或新的 Provider 数据用途。

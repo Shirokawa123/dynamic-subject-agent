@@ -125,10 +125,16 @@ def _local_date(observed_at_us: int, timezone_id: str) -> date:
         timezone = ZoneInfo(timezone_id)
     except ZoneInfoNotFoundError as error:
         raise TemporalGroundingFailedClosed("temporal-timezone-invalid") from error
-    return datetime.fromtimestamp(
-        observed_at_us / 1_000_000,
-        tz=UTC,
-    ).astimezone(timezone).date()
+    try:
+        observed_at_seconds = observed_at_us // 1_000_000
+        return datetime.fromtimestamp(
+            observed_at_seconds,
+            tz=UTC,
+        ).astimezone(timezone).date()
+    except (OverflowError, OSError, ValueError) as error:
+        raise TemporalGroundingFailedClosed(
+            "temporal-observation-out-of-range"
+        ) from error
 
 
 def _absolute_date(year: str, month: str, day: str) -> date | None:
@@ -141,14 +147,8 @@ def _absolute_date(year: str, month: str, day: str) -> date | None:
 class TemporalGrounding:
     """Pure deep Module for anchoring and rendering day-precision expressions."""
 
-    def __init__(self, *, timezone_id: str = DEFAULT_TIMEZONE_ID) -> None:
-        try:
-            ZoneInfo(timezone_id)
-        except ZoneInfoNotFoundError as error:
-            raise TemporalGroundingFailedClosed(
-                "temporal-timezone-invalid"
-            ) from error
-        self.timezone_id = timezone_id
+    def __init__(self) -> None:
+        self.timezone_id = DEFAULT_TIMEZONE_ID
 
     def anchor(self, text: object, *, observed_at_us: int) -> TemporalAnchor | None:
         if not isinstance(text, str) or not text.strip():

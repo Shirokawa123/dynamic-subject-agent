@@ -18,6 +18,7 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 - `SubjectStudio`：Genesis、Knowledge、封存和 QualifiedRuntimeInput。
 - `LocalIdentityAuthority`：本地 identity registry、exact freeze/replay、active 选择、跨 Studio/QRI/Host/Timeline authority 校验与首次 Host/Timeline 准备。
 - `PolicyKernel`：能力、访问、外发与反操纵政策。
+- `TemporalGrounding`：以 canonical Admission 时间为唯一事实，将计划中的闭集相对日表达封存为 Civil Time anchor；canonical 原文不改写，当前 UI/Provider 只读投影按当天重渲染。
 
 ## Experience Cycle
 
@@ -38,6 +39,8 @@ Source Identity Freeze 仍只经 `ApplicationFacade`：`LocalIdentityAuthority` 
 ## 数据
 
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
+
+每轮 `ExperienceBasis.observed_at_us` 与 `ExperienceRecord.experienced_at_us` 来自同一 canonical Admission。新 Living Memory plan 或参与者目标/承诺只在消息含唯一受支持时间表达时附加 `TemporalAnchor`；旧记录不回填。离线时间只改变投影，不生成 Experience、状态转换、提醒或主动消息；Provider 仍只见原有 content/terms 字段，不见 timestamp、时区或 anchor 结构。
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 

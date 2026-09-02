@@ -1,6 +1,6 @@
 # Slice-15：现实时间锚定基础
 
-状态：active（2026-09-02）。规模预算：≤ 3 个工作会话。
+状态：done（2026-09-02，真实 DeepSeek/Windows 与重启验收通过）。规模预算：≤ 3 个工作会话。
 
 ## 用户可见结果
 
@@ -52,3 +52,10 @@
 - 每轮 ExperienceRecord 时间等于该 Operation canonical Admission 时间，连续轮次不再共享 QRI 发布时间。
 - Living Memory/participant goal Provider outbound schema 不变且不含 anchor/timezone/date 字段；模型不能覆盖 Python anchor。
 - UI Memory/目标卡显示当前投影，Timeline head/Publication/六能力状态语义不变；全量测试与两轴审查无阻塞。
+
+## 收口证据
+
+- fake observed time 覆盖 2026-09-01→02→03→04、上海午夜前后、无效/多表达、anchor 篡改、旧无 anchor、目标 transition、Provider schema 和逐轮 Experience 时间；全量 `277 passed`。
+- 隔离 root `dsa-s15-real-ryaz6x9y` 使用 production composition、Windows Credential Manager 与真实 DeepSeek：canonical 保留“我后天要学习 LLM。”及 target `2026-09-03`，9 月 2 日重启页面 Memory 卡显示“我明天要学习 LLM。”。
+- 真实召回回复为“你之前说，明天要学习 LLM。”；Timeline 两轮、重启 byte-equivalent，Windows 页面无 console error。验收仅使用本次 project-original 文本，没有读取默认产品根、私人来源或旧仓库。
+- Standards 轴无阻塞；Spec 初审指出午夜边界测试名实不符与收口证据未落盘，补齐后复审通过。离线时间仍不产生 Experience、完成、提醒、主动消息或虚构经历。
