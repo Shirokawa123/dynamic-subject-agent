@@ -261,6 +261,7 @@ def _basis_stub():
         verified_prefix_digest="a" * 64,
         source_provenance="project-original",
         integrity_verified=True,
+        observed_at_us=1_800_000_000_000_000,
     )
 
 

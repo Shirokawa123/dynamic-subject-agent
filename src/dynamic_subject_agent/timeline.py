@@ -44,6 +44,7 @@ from dynamic_subject_agent.medium_state import (
     MediumSignalRecord,
     MediumStateRecord,
 )
+from dynamic_subject_agent.temporal_grounding import TemporalAnchor
 
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -864,6 +865,7 @@ class AdmissionSnapshot:
     subject_event_id: str
     timeline_head_sequence: int
     timeline_basis: TimelineBasis
+    admitted_at_us: int
     timeline_outcome_id: str | None = None
 
 
@@ -1043,6 +1045,7 @@ class LivingMemoryRecord:
     status: str
     supersedes_memory_id: str | None = None
     memory_kind: str = "durable"
+    temporal_anchor: TemporalAnchor | None = None
 
 
 @dataclass(frozen=True)
@@ -5824,9 +5827,11 @@ class TimelineEngine:
         try:
             event = self._writer.execute(
                 """
-                SELECT event_id
-                FROM subject_event
-                WHERE operation_id = ?
+                SELECT event.event_id, operation.admitted_at_us
+                FROM subject_event AS event
+                JOIN subject_operation AS operation
+                  ON operation.operation_id = event.operation_id
+                WHERE event.operation_id = ?
                 """,
                 (operation_id,),
             ).fetchone()
@@ -5860,6 +5865,12 @@ class TimelineEngine:
             raise AdmissionFailedClosed(
                 "operation-event-missing",
                 "canonical SubjectEvent is absent",
+            )
+        admitted_at_us = int(event[1])
+        if admitted_at_us <= 0:
+            raise AdmissionFailedClosed(
+                "operation-admission-time-invalid",
+                "canonical Operation admission time is invalid",
             )
         operation_state = OperationState.ADMITTED_PENDING
         attempt_state = AttemptState.PENDING
@@ -5901,6 +5912,7 @@ class TimelineEngine:
             subject_event_id=str(UUID(bytes=bytes(event[0]))),
             timeline_head_sequence=basis.head_sequence,
             timeline_basis=basis,
+            admitted_at_us=admitted_at_us,
             timeline_outcome_id=outcome_id,
         )
 
@@ -5939,6 +5951,12 @@ class TimelineEngine:
             if memory.get("status") != LivingMemoryDecisionStatus.ACCEPTED.value:
                 continue
             try:
+                raw_temporal_anchor = memory.get("temporal_anchor")
+                temporal_anchor = (
+                    None
+                    if raw_temporal_anchor is None
+                    else TemporalAnchor.from_dict(raw_temporal_anchor)
+                )
                 record = LivingMemoryRecord(
                     memory_id=str(UUID(str(memory["memory_id"]))),
                     content=str(memory["content"]),
@@ -5952,6 +5970,7 @@ class TimelineEngine:
                         else str(UUID(str(memory["supersedes_memory_id"])))
                     ),
                     memory_kind=str(memory.get("memory_kind", "durable")),
+                    temporal_anchor=temporal_anchor,
                 )
             except (KeyError, TypeError, ValueError):
                 raise PublicationFailedClosed(
@@ -6025,6 +6044,12 @@ class TimelineEngine:
                     if payload.get("target_record_id") is None
                     else str(UUID(str(payload["target_record_id"])))
                 )
+                raw_temporal_anchor = payload.get("temporal_anchor")
+                temporal_anchor = (
+                    None
+                    if raw_temporal_anchor is None
+                    else TemporalAnchor.from_dict(raw_temporal_anchor)
+                )
             except (KeyError, TypeError, ValueError):
                 raise PublicationFailedClosed(
                     "canonical-participant-goal-invalid",
@@ -6076,6 +6101,7 @@ class TimelineEngine:
                     policy_id=policy_id,
                     policy_version=policy_version,
                     policy_hash=policy_hash,
+                    temporal_anchor=temporal_anchor,
                 )
                 positions[record_id] = len(records)
                 records.append(record)
@@ -6111,6 +6137,7 @@ class TimelineEngine:
                     policy_id=policy_id,
                     policy_version=policy_version,
                     policy_hash=policy_hash,
+                    temporal_anchor=temporal_anchor,
                 )
                 positions[record_id] = len(records)
                 records.append(record)

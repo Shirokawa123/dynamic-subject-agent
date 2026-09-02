@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from hashlib import sha256
 from threading import RLock
@@ -43,6 +43,7 @@ from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRec
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.source_character_authoring import (
     LocalIdentityListResponse,
     LocalIdentitySelectResponse,
@@ -750,7 +751,23 @@ class _ApplicationRouter:
 
     def _list_living_memories(self) -> tuple[LivingMemoryRecord, ...]:
         with self._lease() as lease:
-            return lease.list_living_memories(active_only=False, limit=100)
+            records = lease.list_living_memories(active_only=False, limit=100)
+        observed_at_us = time_ns() // 1_000
+        return tuple(
+            (
+                record
+                if record.temporal_anchor is None
+                else replace(
+                    record,
+                    content=_TEMPORAL_GROUNDING.render(
+                        record.content,
+                        record.temporal_anchor,
+                        observed_at_us=observed_at_us,
+                    ),
+                )
+            )
+            for record in records
+        )
 
     def _list_conversation_turns(self) -> tuple[ConversationTurnRecord, ...]:
         with self._lease() as lease:
@@ -766,10 +783,26 @@ class _ApplicationRouter:
         self,
     ) -> tuple[ParticipantGoalCommitmentRecord, ...]:
         with self._lease() as lease:
-            return lease.list_participant_goal_commitments(
+            records = lease.list_participant_goal_commitments(
                 active_only=False,
                 limit=100,
             )
+        observed_at_us = time_ns() // 1_000
+        return tuple(
+            (
+                record
+                if record.temporal_anchor is None
+                else replace(
+                    record,
+                    terms=_TEMPORAL_GROUNDING.render(
+                        record.terms,
+                        record.temporal_anchor,
+                        observed_at_us=observed_at_us,
+                    ),
+                )
+            )
+            for record in records
+        )
 
     def _current_situated_state(self) -> SituatedStateRecord | None:
         with self._lease() as lease:
@@ -793,6 +826,7 @@ class _ApplicationRouter:
 
 
 _APPLICATION_FACADE_TOKEN = object()
+_TEMPORAL_GROUNDING = TemporalGrounding()
 
 
 class ApplicationFacade:

@@ -66,12 +66,14 @@ from dynamic_subject_agent.timeline import (
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
+from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
 M0_A_EPISTEMIC_ROUTE_VERSION = "m0-epistemic-route-1"
 M0_A_FAKE_COGNITION_VERSION = "m0-fake-cognition-1.0"
 M0_A_PROVIDER_AUTHORITY = "fake-cognition:m0-a-cycle-1.0"
+_TEMPORAL_GROUNDING = TemporalGrounding()
 M0_A_STAGE_ORDER = (
     "load-exact-canonical-basis",
     "build-experience-basis",
@@ -924,8 +926,16 @@ class SubjectRuntime:
     def location(self) -> CanonicalRootRef:
         return self._engine.location
 
-    def _cognition_view(self) -> CognitionRuntimeView:
-        observed_at_us = time_ns() // 1_000
+    def _cognition_view(
+        self,
+        *,
+        observed_at_us: int | None = None,
+    ) -> CognitionRuntimeView:
+        observed_at_us = (
+            time_ns() // 1_000
+            if observed_at_us is None
+            else observed_at_us
+        )
         interactions = self._engine.list_relationship_interactions(limit=20)
         memory_history = self._engine.list_living_memories(
             active_only=False,
@@ -946,6 +956,36 @@ class SubjectRuntime:
         )
         medium_state = self._engine.current_medium_state()
         medium_signals = self._engine.list_medium_signals(limit=7)
+        projected_memory_history = tuple(
+            (
+                memory
+                if memory.temporal_anchor is None
+                else replace(
+                    memory,
+                    content=_TEMPORAL_GROUNDING.render(
+                        memory.content,
+                        memory.temporal_anchor,
+                        observed_at_us=observed_at_us,
+                    ),
+                )
+            )
+            for memory in memory_history
+        )
+        projected_participant_goals = tuple(
+            (
+                record
+                if record.temporal_anchor is None
+                else replace(
+                    record,
+                    terms=_TEMPORAL_GROUNDING.render(
+                        record.terms,
+                        record.temporal_anchor,
+                        observed_at_us=observed_at_us,
+                    ),
+                )
+            )
+            for record in participant_goals
+        )
         if interactions:
             accepted = [i for i in interactions if i.status == "accepted"]
             stance_summary = (
@@ -957,11 +997,13 @@ class SubjectRuntime:
         return replace(
             self._context.cognition_view(),
             active_memories=tuple(
-                memory for memory in memory_history if memory.status == "active"
+                memory
+                for memory in projected_memory_history
+                if memory.status == "active"
             )[:20],
-            living_memory_history=memory_history,
+            living_memory_history=projected_memory_history,
             relationship_stance_summary=stance_summary,
-            participant_goal_commitments=participant_goals,
+            participant_goal_commitments=projected_participant_goals,
             situated_state=situated_state,
             observed_at_us=observed_at_us,
             medium_state=medium_state,
@@ -1156,11 +1198,17 @@ class SubjectRuntime:
             frozen_basis,
         )
         self._hit(RuntimeFaultPoint.AFTER_CYCLE_PLAN, operation_ref)
-        experience_basis = self._build_experience_basis(cycle_plan, command)
+        experience_basis = self._build_experience_basis(
+            cycle_plan,
+            command,
+            snapshot,
+        )
         try:
             proposal = self._cognition.propose(
                 plan=cycle_plan,
-                context=self._cognition_view(),
+                context=self._cognition_view(
+                    observed_at_us=experience_basis.observed_at_us
+                ),
                 command=command,
                 basis=experience_basis,
             )
@@ -1205,7 +1253,9 @@ class SubjectRuntime:
         self._hit(RuntimeFaultPoint.AFTER_DOMAIN_OUTCOMES, operation_ref)
         expression_candidate = self._cognition.express(
             proposal=proposal,
-            context=self._cognition_view(),
+            context=self._cognition_view(
+                observed_at_us=experience_basis.observed_at_us
+            ),
             command=command,
             outcomes=outcomes,
         )
@@ -1421,6 +1471,7 @@ class SubjectRuntime:
         self,
         plan: CyclePlan,
         command: SubjectCommand,
+        snapshot: AdmissionSnapshot,
     ) -> ExperienceBasis:
         return ExperienceBasis(
             operation_id=plan.operation_ref.operation_id,
@@ -1441,6 +1492,7 @@ class SubjectRuntime:
             verified_prefix_digest=plan.expected_basis.verified_prefix_digest,
             source_provenance=command.provenance,
             integrity_verified=True,
+            observed_at_us=snapshot.admitted_at_us,
         )
 
     def _build_commit_plan(
@@ -1472,7 +1524,9 @@ class SubjectRuntime:
             experience=ExperienceRecord(
                 experience_id=proposal.impact_envelope.basis.experience_id,
                 summary=proposal.experience_summary,
-                experienced_at_us=self._context.experienced_at_us,
+                experienced_at_us=(
+                    proposal.impact_envelope.basis.observed_at_us
+                ),
             ),
             epistemic_outcome=proposal.epistemic_outcome,
             experience_outcome=outcomes.experience,

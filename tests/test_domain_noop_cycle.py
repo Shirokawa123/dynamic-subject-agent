@@ -96,6 +96,7 @@ def _envelope(admitted, pending) -> ExperienceImpactEnvelope:
         verified_prefix_digest=pending.timeline_basis.verified_prefix_digest,
         source_provenance="project-original",
         integrity_verified=True,
+        observed_at_us=1_800_000_000_000_000,
     )
     return ExperienceImpactEnvelope(
         experience=ExperienceAdjudicationRequest(

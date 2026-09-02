@@ -33,6 +33,7 @@ from dynamic_subject_agent.participant_goals import (
     ParticipantGoalCommitmentRecord,
     active_targets,
 )
+from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 
 
 @dataclass(frozen=True)
@@ -468,16 +469,27 @@ class ExperienceDomain:
                     "memory_id": candidate.candidate_id,
                 },
             )
+        payload: dict[str, object] = {
+            "status": LivingMemoryDecisionStatus.ACCEPTED.value,
+            "memory_id": candidate.candidate_id,
+            "content": evidence,
+            "source_user_message_id": request.source_user_message_id,
+            "supersedes_memory_id": candidate.supersedes_memory_id,
+            "memory_kind": candidate.memory_kind,
+        }
+        if candidate.memory_kind == "plan":
+            temporal_anchor = TemporalGrounding().anchor(
+                request.current_user_message,
+                observed_at_us=basis.observed_at_us,
+            )
+            if (
+                temporal_anchor is not None
+                and temporal_anchor.original_expression in evidence
+            ):
+                payload["temporal_anchor"] = temporal_anchor.to_dict()
         return (
             "living-memory.accepted",
-            {
-                "status": LivingMemoryDecisionStatus.ACCEPTED.value,
-                "memory_id": candidate.candidate_id,
-                "content": evidence,
-                "source_user_message_id": request.source_user_message_id,
-                "supersedes_memory_id": candidate.supersedes_memory_id,
-                "memory_kind": candidate.memory_kind,
-            },
+            payload,
         )
 
     def _knowledge_fragment(
@@ -562,6 +574,17 @@ class ExperienceDomain:
             "policy_hash": plan.policy_hash,
         }
         if plan.decision == "accepted":
+            if plan.action in {"create", "revise"}:
+                temporal_anchor = TemporalGrounding().anchor(
+                    request.current_user_message,
+                    observed_at_us=basis.observed_at_us,
+                )
+                if (
+                    temporal_anchor is not None
+                    and plan.terms is not None
+                    and temporal_anchor.original_expression in plan.terms
+                ):
+                    payload["temporal_anchor"] = temporal_anchor.to_dict()
             payload["record_id"] = (
                 change.candidate_id
                 if plan.action in {"create", "revise"}

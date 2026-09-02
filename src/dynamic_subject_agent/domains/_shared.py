@@ -40,6 +40,7 @@ class ExperienceBasis:
     verified_prefix_digest: str
     source_provenance: str
     integrity_verified: bool
+    observed_at_us: int
 
 
 class DomainAdjudicationFailedClosed(Exception):
@@ -93,6 +94,16 @@ def validate_basis(basis: object, *, domain: str) -> ExperienceBasis:
             domain,
             "experience-basis-unverified",
             "the Experience basis integrity was not verified",
+        )
+    if (
+        isinstance(basis.observed_at_us, bool)
+        or not isinstance(basis.observed_at_us, int)
+        or basis.observed_at_us <= 0
+    ):
+        raise DomainAdjudicationFailedClosed(
+            domain,
+            "experience-observed-time-invalid",
+            "Experience basis requires one positive canonical Admission time",
         )
     if not _SHA256_PATTERN.fullmatch(basis.verified_prefix_digest):
         raise DomainAdjudicationFailedClosed(

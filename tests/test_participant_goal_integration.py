@@ -106,6 +106,15 @@ class _ScriptedParticipantGoalProvider:
                 "active",
                 "我的目标是今年通过 N1",
             )
+        elif message == "我的目标是后天学习 LLM。":
+            candidate = ParticipantGoalCommitmentCandidate(
+                "create",
+                "goal",
+                "后天学习 LLM",
+                None,
+                "active",
+                "我的目标是后天学习 LLM",
+            )
         elif message == "我的目标改为明年通过 N1。":
             candidate = ParticipantGoalCommitmentCandidate(
                 "revise",

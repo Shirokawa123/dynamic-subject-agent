@@ -6,6 +6,8 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from dynamic_subject_agent.temporal_grounding import TemporalAnchor
+
 
 POLICY_ID = "participant-goal-commitment"
 POLICY_VERSION = 1
@@ -97,6 +99,7 @@ class ParticipantGoalCommitmentRecord:
     policy_id: str = POLICY_ID
     policy_version: int = POLICY_VERSION
     policy_hash: str = POLICY_HASH
+    temporal_anchor: TemporalAnchor | None = None
 
 
 @dataclass(frozen=True)
