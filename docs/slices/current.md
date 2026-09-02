@@ -1,3 +1,3 @@
 # 当前工作
 
-当前唯一执行切片：[Slice-17：Subject Time Continuity](slice-17-subject-time-continuity.md)。仅实现四条本地 day-precision 查询，Provider 零新增用途；不扩展 Lifeworld、Agency、主动消息或任意自然语言时间解析。
+Slice-17 已完成，当前无活跃切片。下一项工作等待用户选择；在新任务书与授权前不扩展 Lifeworld、Agency、人格发展、Reflection、主动消息、视频/音频来源或新的 Provider 数据用途。

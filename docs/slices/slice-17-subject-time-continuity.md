@@ -1,6 +1,6 @@
 # Slice-17：Subject Time Continuity
 
-状态：active（2026-09-02，真实验收与全量通过，等待最终复审）。规模预算：≤ 2 个工作会话。
+状态：done（2026-09-02，真实 DeepSeek/Windows、全量与最终复审通过）。规模预算：≤ 2 个工作会话。
 
 ## 用户可见结果
 
@@ -91,7 +91,7 @@
 - 关闭重开后的连续查询返回今天、0 调用/0.376 秒；切换到空来源身份后返回无更早对话、0 调用/0.263 秒。查询轮自身成为下一次上次，legacy/source Timeline 未混合。
 - Windows 页面显示 `dogfood-s17`、来源身份唯一时间查询历史和首次文案，重启恢复一致，console 无 warning/error。身份切换按钮的原生 confirm 使自动化结果不确定，因此该次 UI 点击未计为成功；身份切换证据只采用 production authority 返回与重开后的页面权威状态。
 - 自动测试覆盖四条闭集、同日/昨天/前天/N天/绝对日期、上海午夜、极大时间、时钟倒退、pending/FailedClosed/interrupted、history 篡改、21 轮 UI 窗口、重启、连续查询和双身份隔离；六类 proposal/classification 与六类 reply outbound 均锁定 Slice-16 SHA-256 baseline。
-- 全量 `310 passed`。两轴初审发现时区常量重复、Module Interface 未 typed/lazy、测试夹具误缩进导致 Relationship 假绿、non-committed/byte baseline/Windows 证据不足；逐项修复后等待最终复审。
+- 全量 `310 passed`。两轴初审发现时区常量重复、Module Interface 未 typed/lazy、测试夹具误缩进导致 Relationship 假绿、non-committed/byte baseline/Windows 证据不足；逐项修复后最终 Standards/Spec 复审无阻塞。
 
 ## 已确认授权
 
