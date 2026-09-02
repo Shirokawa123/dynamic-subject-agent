@@ -40,6 +40,10 @@ _Avoid_: Reminder, schedule, rewritten memory
 主体在单一 RuntimeTimeline 中实际提交的 Experience 次序；只有 committed Experience 才属于主体经历。
 _Avoid_: Wall clock, elapsed offline time
 
+**Interaction Recency**:
+当前 canonical Admission 与同一身份最近一个 committed conversation turn 之间的 Civil Time 关系；它描述多久没有已提交互动，不代表期间发生了主体经历。
+_Avoid_: Absence experience, offline life, last app open
+
 **Lifeworld**:
 主体从封存前提、已提交经历和获授权现实观察中形成的有意义环境；Civil Time 只是其未来坐标之一，不能单独生成世界事件。
 _Avoid_: World clock, invented offline life, omniscient world state
