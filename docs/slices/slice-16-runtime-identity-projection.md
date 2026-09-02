@@ -1,6 +1,6 @@
 # Slice-16：封存身份的 Runtime Identity / Voice Projection
 
-状态：active（2026-09-02，真实验收完成，等待最终复审）。规模预算：≤ 3 个工作会话。
+状态：done（2026-09-02，真实 DeepSeek/Windows A/B 与最终复审通过）。规模预算：≤ 3 个工作会话。
 
 ## 用户可见结果
 
@@ -85,7 +85,7 @@
 - Provider 可能机械复述 `subject_identity/canon_start` 或把起点当当前进展；system contract、输出测试和真实对抗必须共同阻止，不能只看“更像角色”。
 - 原始 Avery 没有 sealed voice；若实际表达仍不鲜明，这可能是内容缺失而非投影故障，不能在本切片内补写人格。
 - v1 的 Profile display name 表示 participant 而 registry label 表示 Avery；`subject_name` 必须由 `LocalIdentityAuthority` 的既有兼容规则确定，不能让 Adapter 猜测。
-- 两阶段拆分可能改变故障时机或候选选择；以 byte-equivalent proposal outbound、Domain Outcome 对照和局部 FailedClosed 测试作为阻塞门槛。
+- 两阶段拆分可能改变故障时机或候选选择；阻塞门槛同时要求 byte-equivalent proposal outbound、state-bearing proposal 失败保持局部 FailedClosed，以及 optional identity reply 失败保持 candidate、Domain status 与 canonical state revision。
 
 ## 真实验收记录
 
@@ -94,3 +94,4 @@
 - 最终对抗根 `dsa-s16-adversarial-real-bgy6tmkq` 使用 project-original Lyra：中性闲聊、Memory 创建/召回、Knowledge、目标和 Situated 回复可辨识地使用天气/光线简短比喻；legacy Avery 同消息保持无 voice 的普通自然回复。真实 guard/failure 曾因新 code 破坏局部失败，修正为既有 code 并进一步让三项新 identity reply 失败回退 base reply、不改变候选。
 - 单次普通会话真实计数为 6 个 Provider 调用（Memory proposal/reply、Relationship proposal/reply、Situated classification、Medium classification），端到端 5.722 秒；各场景观测约 4.8～9.7 秒，未用缓存或并发掩盖。
 - Windows 页面显示 Lyra 独立历史、2 条 Memory、1 条 Knowledge、1 条目标；切到 Avery 后只显示其自己的 2 轮历史，Lyra 状态未混入，重启恢复一致，console 无 warning/error。浏览器确认框有一次自动化结果不确定，最终只以页面权威身份状态记为成功，不把未观察的反向点击计入证据。
+- 全量 `291 passed`；Standards/Spec 初审发现 authority 越界、伪 Runtime seam、wire 重复、guard/Outcome 合同与权威失败语义冲突，逐项修复后最终两轴复审无阻塞。split/legacy 探测仍有非阻塞重复，等待第三种真实 Provider 形状再提炼。
