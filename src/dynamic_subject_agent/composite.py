@@ -31,8 +31,7 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.relationship import RELATIONSHIP_POLICY_VERSION
 from dynamic_subject_agent.subject_time_continuity import (
-    SubjectTimeContinuity,
-    SubjectTimeFailedClosed,
+    SubjectTimeStatus,
 )
 
 _COMPOSITE_ADAPTER_VERSION = "composite-cognition-1.0"
@@ -263,29 +262,21 @@ class ControlledCompositeCognition(CognitionEngine):
         command,
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
-        try:
-            subject_time = SubjectTimeContinuity().answer(
-                query_text=command.utterance,
-                current_admitted_at_us=basis.observed_at_us,
-                last_committed_at_us=(
-                    None
-                    if context.last_committed_turn is None
-                    else context.last_committed_turn.published_at_us
-                ),
-            )
-        except SubjectTimeFailedClosed as error:
+        subject_time = context.subject_time_result
+        if subject_time.status is SubjectTimeStatus.FAILED_CLOSED:
             raise CognitionFailedClosed(
                 "subject-time",
-                str(error),
+                subject_time.problem_code or "subject-time-failed-closed",
                 "canonical Interaction Recency could not be safely derived",
-            ) from error
-        if subject_time is not None:
+            )
+        if subject_time.status is SubjectTimeStatus.ANSWER:
+            assert subject_time.answer is not None
             return self._bounded_noop_proposal(
                 context=context,
                 basis=basis,
                 experience_summary="本轮以 canonical Subject Time 回答明确查询。",
                 expression_candidate=ExpressionCandidate(
-                    subject_time.text,
+                    subject_time.answer.text,
                     command.language,
                 ),
             )

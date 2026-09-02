@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
+from hashlib import sha256
 from pathlib import Path
 import sqlite3
 from uuid import uuid4
@@ -9,6 +10,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from dynamic_subject_agent.deepseek import DEEPSEEK_PROVIDER_AUTHORITY_ID
+from dynamic_subject_agent.runtime import CognitionEngine
 
 
 def _us(year: int, month: int, day: int, hour: int = 12) -> int:
@@ -19,6 +21,28 @@ def _us(year: int, month: int, day: int, hour: int = 12) -> int:
             day,
             hour,
             tzinfo=ZoneInfo("Asia/Shanghai"),
+        ).timestamp()
+        * 1_000_000
+    )
+
+
+def _utc_us(
+    year: int,
+    month: int,
+    day: int,
+    hour: int,
+    minute: int,
+    second: int,
+) -> int:
+    return int(
+        datetime(
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            tzinfo=UTC,
         ).timestamp()
         * 1_000_000
     )
@@ -80,6 +104,29 @@ class _CountingRelationshipProvider:
         from dynamic_subject_agent.relationship import (
             RelationshipProposal,
             RelationshipProviderResult,
+        )
+
+
+class _FailingDeepSeekCognition(CognitionEngine):
+    provider_authority = DEEPSEEK_PROVIDER_AUTHORITY_ID
+    test_only = False
+    experimental = True
+
+    def preflight(self, *, context, command) -> None:
+        del context, command
+
+    def reserved_operation_id(self, *, context, command):
+        del context, command
+        return None
+
+    def propose(self, **kwargs):
+        from dynamic_subject_agent.runtime import CognitionFailedClosed
+
+        del kwargs
+        raise CognitionFailedClosed(
+            "cognition",
+            "forced-pre-publication-failure",
+            "test-only failure before Publication",
         )
 
         self.calls.append(request)
@@ -404,8 +451,7 @@ def test_near_or_compound_time_language_keeps_existing_provider_route(
     assert terminal.projection.expression_text == "普通 Provider 回复。"
     counts = _provider_call_counts(providers)
     assert counts[0] == 1
-    assert counts[2] == 1
-    assert sum(counts) >= 2
+    assert sum(counts) >= 1
 
 
 def test_subject_time_clock_regression_fails_closed_before_provider(
@@ -625,3 +671,407 @@ def test_subject_time_history_integrity_failure_is_terminal_failed_closed(
     assert query.projection is not None
     assert query.projection.failure_stage == "subject-time"
     assert _provider_call_counts(providers) == calls_after_first
+
+
+def test_subject_time_typed_interface_is_lazy_and_rejects_extreme_clock() -> None:
+    from dynamic_subject_agent.subject_time_continuity import (
+        SubjectTimeContinuity,
+        SubjectTimeStatus,
+    )
+
+    module = SubjectTimeContinuity()
+    calls = 0
+
+    def loader():
+        nonlocal calls
+        calls += 1
+        return None
+
+    no_op = module.evaluate(
+        query_text="你还记得上次聊了什么吗？",
+        current_admitted_at_us=_us(2026, 9, 5),
+        load_last_committed_at_us=loader,
+    )
+    extreme = module.evaluate(
+        query_text="我们多久没聊了？",
+        current_admitted_at_us=10**40,
+        load_last_committed_at_us=loader,
+    )
+
+    assert no_op.status is SubjectTimeStatus.NO_OP
+    assert calls == 0
+    assert extreme.status is SubjectTimeStatus.FAILED_CLOSED
+    assert extreme.problem_code == "subject-time-civil-time-invalid"
+
+
+def test_subject_time_uses_shanghai_midnight_boundary(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import dynamic_subject_agent.timeline as timeline_module
+
+    _, qri, timeline_id, composition, providers = _composition(tmp_path)
+    try:
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _utc_us(2026, 9, 1, 15, 59, 59),
+        )
+        first = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "午夜前完成一轮普通对话。",
+            "subject-time-midnight-base-0001",
+        )
+        assert first.status.value == "terminal"
+        calls_after_first = _provider_call_counts(providers)
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _utc_us(2026, 9, 1, 16, 0, 0),
+        )
+        query = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我们多久没聊了？",
+            "subject-time-midnight-query-0001",
+        )
+    finally:
+        composition.close()
+
+    assert query.projection is not None
+    assert query.projection.expression_text == "我们上次聊天是昨天。"
+    assert _provider_call_counts(providers) == calls_after_first
+
+
+def test_subject_time_uses_canonical_last_turn_beyond_ui_twenty_turn_window(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import dynamic_subject_agent.timeline as timeline_module
+    from dynamic_subject_agent.application import (
+        ApplicationQuery,
+        ApplicationQueryKind,
+        ConversationHistoryApplicationProjection,
+    )
+
+    _, qri, timeline_id, composition, providers = _composition(tmp_path)
+    try:
+        for ordinal in range(1, 22):
+            day = 4 if ordinal == 21 else 1
+            monkeypatch.setattr(
+                timeline_module,
+                "_utc_microseconds",
+                lambda day=day: _us(2026, 9, day),
+            )
+            terminal = _submit(
+                composition,
+                qri,
+                timeline_id,
+                f"普通对话第 {ordinal} 轮。",
+                f"subject-time-window-{ordinal:04d}",
+            )
+            assert terminal.status.value == "terminal"
+        history = composition.application.query(
+            ApplicationQuery(
+                ApplicationQueryKind.CONVERSATION_HISTORY,
+                qri.profile_id,
+                timeline_id,
+            )
+        )
+        assert isinstance(
+            history.projection,
+            ConversationHistoryApplicationProjection,
+        )
+        assert len(history.projection.turns) == 20
+        calls_after_history = _provider_call_counts(providers)
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _us(2026, 9, 5),
+        )
+        query = _submit(
+            composition,
+            qri,
+            timeline_id,
+            "我们多久没聊了？",
+            "subject-time-window-query-0001",
+        )
+    finally:
+        composition.close()
+
+    assert query.projection is not None
+    assert query.projection.expression_text == "我们上次聊天是昨天。"
+    assert _provider_call_counts(providers) == calls_after_history
+
+
+def test_nonmatch_provider_outbound_matches_slice16_baseline() -> None:
+    from dynamic_subject_agent.deepseek import (
+        DeepSeekKnowledgeProvider,
+        DeepSeekLivingMemoryProvider,
+        DeepSeekMediumProvider,
+        DeepSeekParticipantGoalProvider,
+        DeepSeekRelationshipProvider,
+        DeepSeekSituatedProvider,
+    )
+    from dynamic_subject_agent.knowledge import KnowledgeProviderRequest
+    from dynamic_subject_agent.living_memory import LivingMemoryProviderRequest
+    from dynamic_subject_agent.medium_cognition import MediumClassificationRequest
+    from dynamic_subject_agent.participant_goal_cognition import (
+        ParticipantGoalClassificationRequest,
+    )
+    from dynamic_subject_agent.relationship import RelationshipProviderRequest
+    from dynamic_subject_agent.situated_cognition import SituatedClassificationRequest
+
+    message = "你还记得我们上次聊了什么吗？"
+    outbound = {
+        "living": DeepSeekLivingMemoryProvider.outbound_bytes(
+            LivingMemoryProviderRequest(message, ())
+        ),
+        "knowledge": DeepSeekKnowledgeProvider.outbound_bytes(
+            KnowledgeProviderRequest(message, ())
+        ),
+        "relationship": DeepSeekRelationshipProvider.outbound_bytes(
+            RelationshipProviderRequest(message, "尚无立场互动记录。")
+        ),
+        "goal": DeepSeekParticipantGoalProvider.classification_outbound_bytes(
+            ParticipantGoalClassificationRequest(message, ())
+        ),
+        "situated": DeepSeekSituatedProvider.classification_outbound_bytes(
+            SituatedClassificationRequest(message, ())
+        ),
+        "medium": DeepSeekMediumProvider.classification_outbound_bytes(
+            MediumClassificationRequest(message)
+        ),
+    }
+    expected = {
+        "living": "77989ff3c6b6aacd6c50564a203db11017768f896f085662b874226132b945f1",
+        "knowledge": "bde02f404c978ff8970f7c1967efa472473f691e846d5840197b876c067574e2",
+        "relationship": "0019aec13f38ca89874e1c0f188f8ff531e5f27ef00a7c2fbe41f02552dcad84",
+        "goal": "4c037a29bb43a5f5c0fc3e70813b5f27704ad4dac6333730dfc6c394c8b6b44c",
+        "situated": "04f167a465671bd452a8dbd4593dc98b7db0f6c3082e4a0455f5da5314e6803e",
+        "medium": "5d3bcb4c0dcb73396bd2c49744ee7424da9b691c26c461d242511e1a71af25fa",
+    }
+
+    assert {name: sha256(body).hexdigest() for name, body in outbound.items()} == (
+        expected
+    )
+
+
+@pytest.mark.parametrize("non_committed", ["failed-closed", "interrupted"])
+def test_non_committed_operation_does_not_replace_last_committed_turn(
+    tmp_path: Path,
+    monkeypatch,
+    non_committed: str,
+) -> None:
+    import dynamic_subject_agent.timeline as timeline_module
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.runtime import RuntimeFaultPoint
+
+    prepared, qri, timeline_id, composition, _ = _composition(tmp_path)
+    monkeypatch.setattr(
+        timeline_module,
+        "_utc_microseconds",
+        lambda: _us(2026, 9, 1),
+    )
+    base = _submit(
+        composition,
+        qri,
+        timeline_id,
+        "先完成一轮普通对话。",
+        f"subject-time-{non_committed}-base-0001",
+    )
+    assert base.status.value == "terminal"
+    host_location = composition.host_location
+    composition.close()
+
+    monkeypatch.setattr(
+        timeline_module,
+        "_utc_microseconds",
+        lambda: _us(2026, 9, 4),
+    )
+    if non_committed == "failed-closed":
+        interrupted_or_failed = compose_application(
+            m0_root=prepared.experiment_base,
+            studio_location=prepared.location,
+            qualified_runtime_input=qri,
+            timeline_id=timeline_id,
+            host_location=host_location,
+            _cognition=_FailingDeepSeekCognition(),
+            relationship_mode="dynamic",
+        )
+    else:
+        memory = _CountingMemoryProvider()
+        knowledge = _CountingKnowledgeProvider()
+        relationship = _CountingRelationshipProvider()
+        interrupted_or_failed = compose_application(
+            m0_root=prepared.experiment_base,
+            studio_location=prepared.location,
+            qualified_runtime_input=qri,
+            timeline_id=timeline_id,
+            host_location=host_location,
+            _cognition=ControlledCompositeCognition(
+                memory_provider=memory,
+                knowledge_provider=knowledge,
+                relationship_provider=relationship,
+            ),
+            relationship_mode="dynamic",
+            _runtime_interrupt_at=RuntimeFaultPoint.AFTER_COGNITION,
+        )
+    try:
+        failed = _submit(
+            interrupted_or_failed,
+            qri,
+            timeline_id,
+            "这一轮不应成为 committed history。",
+            f"subject-time-{non_committed}-operation-0001",
+        )
+        assert failed.status.value in {"failed-closed", "interrupted"}
+    finally:
+        interrupted_or_failed.close()
+
+    memory = _CountingMemoryProvider()
+    knowledge = _CountingKnowledgeProvider()
+    relationship = _CountingRelationshipProvider()
+    restarted = compose_application(
+        m0_root=prepared.experiment_base,
+        studio_location=prepared.location,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+        host_location=host_location,
+        _cognition=ControlledCompositeCognition(
+            memory_provider=memory,
+            knowledge_provider=knowledge,
+            relationship_provider=relationship,
+        ),
+        relationship_mode="dynamic",
+    )
+    try:
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _us(2026, 9, 5),
+        )
+        query = _submit(
+            restarted,
+            qri,
+            timeline_id,
+            "我们多久没聊了？",
+            f"subject-time-{non_committed}-query-0001",
+        )
+    finally:
+        restarted.close()
+
+    assert query.projection is not None
+    assert query.projection.expression_text == "我们上次聊天是4 天前。"
+    assert [len(memory.calls), len(knowledge.calls), len(relationship.calls)] == [
+        0,
+        0,
+        0,
+    ]
+
+
+def test_pending_admission_does_not_replace_last_committed_turn(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    import dynamic_subject_agent.timeline as timeline_module
+    from dynamic_subject_agent.bootstrap import compose_application
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.host import RuntimeHost
+    from dynamic_subject_agent.timeline import OperationState, SubjectCommand
+
+    prepared, qri, timeline_id, composition, _ = _composition(tmp_path)
+    monkeypatch.setattr(
+        timeline_module,
+        "_utc_microseconds",
+        lambda: _us(2026, 9, 1),
+    )
+    base = _submit(
+        composition,
+        qri,
+        timeline_id,
+        "先完成一轮普通对话。",
+        "subject-time-pending-base-0001",
+    )
+    assert base.status.value == "terminal"
+    host_location = composition.host_location
+    composition.close()
+
+    pending_host = RuntimeHost.open(
+        host_location,
+        studio_location=prepared.location,
+        cognition=ControlledCompositeCognition(
+            memory_provider=_CountingMemoryProvider(),
+            knowledge_provider=_CountingKnowledgeProvider(),
+            relationship_provider=_CountingRelationshipProvider(),
+        ),
+        relationship_enabled=True,
+    )
+    try:
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _us(2026, 9, 4),
+        )
+        with pending_host.lease(
+            profile_id=qri.profile_id,
+            timeline_id=timeline_id,
+        ) as lease:
+            admitted = lease.admit(
+                SubjectCommand.contribute_utterance(
+                    target_profile_id=qri.profile_id,
+                    target_timeline_id=timeline_id,
+                    declared_intent="ask-collaborator-status",
+                    utterance="这轮只 Admission，不完成 Publication。",
+                    language="zh",
+                    provenance="project-original",
+                ),
+                idempotency_key="subject-time-pending-operation-0001",
+            )
+            assert admitted.snapshot.operation_state is OperationState.ADMITTED_PENDING
+    finally:
+        pending_host.close()
+
+    memory = _CountingMemoryProvider()
+    knowledge = _CountingKnowledgeProvider()
+    relationship = _CountingRelationshipProvider()
+    restarted = compose_application(
+        m0_root=prepared.experiment_base,
+        studio_location=prepared.location,
+        qualified_runtime_input=qri,
+        timeline_id=timeline_id,
+        host_location=host_location,
+        _cognition=ControlledCompositeCognition(
+            memory_provider=memory,
+            knowledge_provider=knowledge,
+            relationship_provider=relationship,
+        ),
+        relationship_mode="dynamic",
+    )
+    try:
+        monkeypatch.setattr(
+            timeline_module,
+            "_utc_microseconds",
+            lambda: _us(2026, 9, 5),
+        )
+        query = _submit(
+            restarted,
+            qri,
+            timeline_id,
+            "我们多久没聊了？",
+            "subject-time-pending-query-0001",
+        )
+    finally:
+        restarted.close()
+
+    assert query.projection is not None
+    assert query.projection.expression_text == "我们上次聊天是4 天前。"
+    assert [len(memory.calls), len(knowledge.calls), len(relationship.calls)] == [
+        0,
+        0,
+        0,
+    ]

@@ -42,9 +42,9 @@
 
 ## Module 与 Interface
 
-- 新 `SubjectTimeContinuity` 为纯 Python 深 Module，唯一 Interface 接受 `{query_text, current_admitted_at_us, last_committed_at_us?}`，返回 typed `SubjectTimeAnswer | NoOp | FailedClosed`；它隐藏闭集路由、上海日期换算、首次互动和渲染规则。
+- 新 `SubjectTimeContinuity` 为纯 Python 深 Module，唯一 `evaluate()` Interface 接受 `{query_text, current_admitted_at_us, load_last_committed_at_us}`，返回 typed `Answer | NoOp | FailedClosed`；history loader 只在闭集命中且当前时间有效后惰性调用。Module 隐藏闭集路由、上海日期换算、首次互动和渲染规则。
 - `TimelineEngine.list_conversation_turns(limit=1)` 继续验证完整 canonical outcome chain 后返回最近 committed turn；不增加新查询表、缓存或 recency store。
-- `SubjectRuntime` 将最近 committed turn 作为只读 internal context，与本轮 `ExperienceBasis.observed_at_us` 一起交给本地确定性 cognition；非明确查询不使用、表达或外发 recency。
+- `SubjectRuntime` 只在明确查询时从完整 canonical history 派生最近 `published_at_us`，把 typed result 放入 internal context；非明确查询不读 history，也不使用、表达或外发 recency。
 - `ControlledCompositeCognition` 在任何 Provider 子任务前调用该 Module；命中时形成全 Domain NoOp 的本地 grounded Expression，未命中时现有六能力路径 byte-equivalent。
 - `ApplicationFacade` 和 Desktop 不新增业务 Interface 或第二份 history；结果仍作为普通已提交 conversation turn 出现在当前 identity 的 canonical history。
 

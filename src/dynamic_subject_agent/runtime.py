@@ -69,7 +69,11 @@ from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_sta
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.subject_time_continuity import SubjectTimeContinuity
+from dynamic_subject_agent.subject_time_continuity import (
+    SubjectTimeContinuity,
+    SubjectTimeHistoryFailedClosed,
+    SubjectTimeResult,
+)
 
 
 M0_A_CYCLE_VERSION = "m0-a-cycle-1.0"
@@ -344,7 +348,7 @@ class CognitionRuntimeView:
     medium_state: MediumStateRecord | None = None
     medium_signals: tuple[MediumSignalRecord, ...] = ()
     runtime_identity: RuntimeIdentityProjection | None = None
-    last_committed_turn: ConversationTurnRecord | None = None
+    subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
 
 
 @dataclass(frozen=True)
@@ -971,10 +975,17 @@ class SubjectRuntime:
         )
         medium_state = self._engine.current_medium_state()
         medium_signals = self._engine.list_medium_signals(limit=7)
-        conversation_turns = (
-            self._engine.list_conversation_turns(limit=1)
-            if SubjectTimeContinuity.is_query(query_text)
-            else ()
+        def load_last_committed_at_us() -> int | None:
+            try:
+                turns = self._engine.list_conversation_turns(limit=1)
+            except PublicationFailedClosed as error:
+                raise SubjectTimeHistoryFailedClosed from error
+            return turns[-1].published_at_us if turns else None
+
+        subject_time_result = SubjectTimeContinuity().evaluate(
+            query_text=query_text,
+            current_admitted_at_us=observed_at_us,
+            load_last_committed_at_us=load_last_committed_at_us,
         )
         projected_memory_history = tuple(
             (
@@ -1028,9 +1039,7 @@ class SubjectRuntime:
             observed_at_us=observed_at_us,
             medium_state=medium_state,
             medium_signals=medium_signals,
-            last_committed_turn=(
-                conversation_turns[-1] if conversation_turns else None
-            ),
+            subject_time_result=subject_time_result,
         )
 
     def list_living_memories(
@@ -1235,13 +1244,6 @@ class SubjectRuntime:
                 ),
                 command=command,
                 basis=experience_basis,
-            )
-        except PublicationFailedClosed:
-            self._fail_cycle(
-                operation_ref,
-                stage="subject-time",
-                code="subject-time-history-failed-closed",
-                detail="canonical conversation history failed integrity validation",
             )
         except CognitionFailedClosed as error:
             self._fail_cycle(
