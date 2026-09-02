@@ -24,6 +24,10 @@ _Avoid_: Draft digest, source digest
 经用户明确确认 Freeze Basis 后形成的不可变 Profile、Genesis 与 Knowledge 快照集合；只有封存后才可成为新 runtime 身份。
 _Avoid_: Preview, draft, candidate character
 
+**Runtime Identity Projection**:
+从当前 Sealed Identity 确定性读取、供本轮回复形成使用的最小不可变身份视图；它不增加身份内容，也不是可发展的性格状态。
+_Avoid_: Personality state, identity prompt, generated persona
+
 **Civil Time**:
 现实世界的日期与时区坐标；它说明一条陈述发生在什么时候，但不证明离线期间发生过任何主体经历。
 _Avoid_: Timeline, lived time

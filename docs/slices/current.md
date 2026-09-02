@@ -1,3 +1,3 @@
 # 当前工作
 
-Slice-15 已完成，当前无活跃切片。下一项工作等待用户选择；在新任务书前不扩展 Lifeworld、提醒、Agency、effect、人格发展、Reflection、主动消息或新的 Provider 数据用途。
+当前候选切片：[Slice-16：封存身份的 Runtime Identity / Voice Projection](slice-16-runtime-identity-projection.md)。状态为等待用户确认 exact Provider 数据用途；确认前不修改运行时代码、不调用 Provider，也不扩展 Lifeworld、Agency、人格发展或统一表达层。
