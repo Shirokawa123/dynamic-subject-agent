@@ -348,7 +348,8 @@ def test_knowledge_proposal_is_identity_free_and_reply_gets_selected_content(
         composition.close()
 
     assert terminal.projection is not None
-    assert terminal.projection.expression_text == "Mira：周五截单。"
+    assert '社区刊物每周五 17:00 截单。' in terminal.projection.expression_text
+    assert '资料《截单时间》' in terminal.projection.expression_text
     assert not hasattr(provider.proposal_requests[0], "runtime_identity")
     assert provider.reply_requests[0].runtime_identity == runtime_identity
     assert [
@@ -747,7 +748,8 @@ def test_memory_and_knowledge_identity_reply_failure_preserves_canonical_state(
     assert memories[0].content == "我每周三晚上学习"
     assert knowledge_terminal.projection is not None
     assert knowledge_terminal.projection.knowledge_status == "accepted"
-    assert knowledge_terminal.projection.expression_text == "基础知识回复。"
+    assert '社区刊物每周五 17:00 截单。' in knowledge_terminal.projection.expression_text
+    assert '基础知识回复' not in knowledge_terminal.projection.expression_text
 
 
 def test_runtime_forwards_identity_to_goal_situated_and_medium_reply_seams(

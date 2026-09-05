@@ -376,7 +376,7 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
     }, "只有命中检索的两轮应调用知识 provider"
 
     assert knowledge_turn.projection.expression_text.startswith(
-        "根据条目《创刊号规格》"
+        "资料《创刊号规格》"
     )
     assert knowledge_turn.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
     assert KNOWLEDGE_MESSAGE in {r.current_user_message for r in memory.requests}
@@ -564,7 +564,7 @@ def test_memory_failure_is_typed_while_knowledge_still_commits(tmp_path: Path) -
     assert terminal.projection.living_memory_status == "failed-closed"
     assert terminal.projection.knowledge_status == "accepted"
     assert terminal.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
-    assert terminal.projection.expression_text.startswith("根据条目《创刊号规格》")
+    assert terminal.projection.expression_text.startswith("资料《创刊号规格》")
 
 
 def test_relationship_claim_does_not_hide_relationship_provider_failure(
@@ -875,7 +875,7 @@ def test_each_model_gateway_failure_isolated_from_knowledge(
     assert getattr(turn.projection, projection_field) == "failed-closed"
     assert turn.projection.knowledge_status == "accepted"
     assert turn.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
-    assert turn.projection.expression_text.startswith("根据条目《创刊号规格》")
+    assert turn.projection.expression_text.startswith("资料《创刊号规格》")
 
 
 def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:

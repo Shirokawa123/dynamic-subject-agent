@@ -314,7 +314,11 @@ _KNOWLEDGE_REPLY_SYSTEM_MESSAGE = (
     "selected_entries 是唯一可引用的事实。"
     + _RUNTIME_IDENTITY_REPLY_RULES
     + "不得提出 citation、Memory、Relationship、目标、状态、提醒、行动或身份修改。"
-    "只返回字段恰为 reply_text、language 的 JSON 对象；language 必须为 zh。"
+    "只返回 JSON，字段恰为 reply_kind、source_quotes、reply_text、language；language=zh。"
+    "reply_kind=source 时，只从 selected_entries 选择能回答问题的完整原文句，"
+    "source_quotes 是最多6项的数组，每项恰为 title、quote，title逐字匹配条目，quote保留完整句的条件和否定；reply_text为空。"
+    "资料不足以回答的部分必须使用 reply_kind=unknown，仍可给已有原文句，reply_text为空；不补充位置、人群、经历等资料外细节。"
+    "只有用户明确要求即兴创作才用 reply_kind=creative，source_quotes为空，reply_text写当前创作；不能把生成内容说成资料原文或已经发生的事。"
 )
 _RELATIONSHIP_REPLY_SYSTEM_MESSAGE = (
     "你只负责基于当前消息、当前 stance_summary 与 runtime_identity 形成一个简洁自然中文回复。"
@@ -329,7 +333,11 @@ _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE = (
     + _RUNTIME_IDENTITY_REPLY_RULES
     + "不得把『尚无运行时经历』说成当前没有记忆。"
     + "不得提出或修改 Memory 候选、Relationship、目标、状态、提醒、后台行动或身份。"
-    "只返回字段恰为 reply_text、language 的 JSON 对象；language 必须为 zh。"
+    "只返回字段恰为 reply_kind、reply_text、language 的 JSON 对象；language=zh。"
+    "reply_kind仅为conversation、creative、activity。conversation用于当前对话、用户记忆和建议；creative仅用于用户明确请求的当前即兴创作。"
+    "用户让你写一句/一首时，即使措辞为『如果让你写，你会写什么』，交付诗句也必须标为creative，不能标为conversation。"
+    "用户询问你当前、刚才、离线或应用关闭期间做了什么、想了什么，使用activity，坦白没有后台活动；可邀请现在一起继续。"
+    "当前生成的想法不能声称是用户离开期间替他想好、等候或预留的。分类标签不授予任何活动或状态写权。"
 )
 _CONFIRMED_COMMAND = (
     "Avery，我们正在筹备 Lantern Zine。给出三条下一步的建议，说明一下你缺少哪些信息，我告诉你。"
@@ -1005,7 +1013,10 @@ class DeepSeekLivingMemoryProvider:
             self._credential_ref,
             self.reply_outbound_bytes(request),
         )
-        return _identity_reply_result(content, LivingMemoryReplyResult)
+        try:
+            return LivingMemoryReplyResult.from_mapping(content)
+        except (TypeError, ValueError):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
 
 
 class DeepSeekKnowledgeProvider:
@@ -1213,7 +1224,10 @@ class DeepSeekKnowledgeProvider:
             self._credential_ref,
             self.reply_outbound_bytes(request),
         )
-        return _identity_reply_result(content, KnowledgeReplyResult)
+        try:
+            return KnowledgeReplyResult.from_mapping(content)
+        except (TypeError, ValueError):
+            raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
 
 
 class DeepSeekRelationshipProvider:

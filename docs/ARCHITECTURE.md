@@ -36,9 +36,15 @@ Freeze Mapping 是 Source Draft 的纯 Python、只读投影：identity→Profil
 
 Source Identity Freeze 仍只经 `ApplicationFacade`：`LocalIdentityAuthority` 让 SubjectStudio 在写前重读 Source Draft 完整 revision 链并重算 exact basis，以 basis 派生稳定的新 Studio/Profile/draft/snapshot/QRI identity。ProfileStore schema v2 在 KnowledgeSnapshot 内封存最多 6 条有摘要的 member；v1 root migration-free 兼容读取，只有旧 `local-product-deepseek-qri-v1` 可使用代码内 fixture。identity registry 原子保存多个隔离 authority 与 active selector；首次选择才创建该身份自己的 Host/Timeline。切换重组 production composition 并清空 Presentation 会话 DOM，不复制或合并 Timeline。QRI 已发布但 registry 未写可幂等恢复；已封存 snapshot 可由同一 exact PolicyQuestion 的新 PolicyDecision 恢复 QRI 发布。`local_product` 不解析 registry 或编排 freeze/select，只消费 Module 返回的已验证 active authority 来装配 cognition 与 ApplicationFacade。
 
-Runtime identity 只进入六类 capability-local reply request，proposal/classification outbound 不含身份。Living Memory、Knowledge、Relationship 保留原 proposal outbound 并新增各自 reply task；identity reply 无效时退回同一 proposal 已验证的 identity-free reply，因此不反向改变候选、Domain Outcome 或 Timeline 写入。目标、Situated、Medium 保持既有两阶段失败语义。Python 的 identity-scoped expression guard 只删除无来源的第一人称当前活动句，不产生或改写状态。
+Runtime identity 只进入六类 capability-local reply request，proposal/classification outbound 不含身份。Living Memory、Knowledge、Relationship 保留原 proposal outbound 并新增各自 reply task。Slice-19 用户批准 Living Memory/Knowledge 的正常与基础回退表达接受同级校验，基础回复不合格时使用安全本地表达，不能反向取消合法候选、改变 Domain Outcome 或 Timeline 写入。Relationship 仍退回同一 proposal 已验证的 identity-free reply；目标、Situated、Medium 保持既有两阶段失败语义。表达检查不产生或改写状态。
 
-明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项 state-bearing proposal/classification 或既有 required reply 失败形成所属 Domain 的 FailedClosed 片段；失败项不写状态，也不阻断无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是 proposal 之后、不承载状态的可选 expression refinement；失败只回退该 proposal 已验证的 identity-free reply，不能取消候选或声称 identity grounding 成功。
+Knowledge reply 返回 `reply_kind/source_quotes/reply_text/language`：source/unknown 的 quote 必须与本次已选条目的 title 和完整原句匹配；可见事实展开到所匹配条目的完整上下文，保留跨句否定/条件，不能用 citation accepted 证明自由改写。无效或失败的 refinement 回退到同一候选所选 sealed 原文；无来源时给自然的未知答复。creative 仅在本地明确请求检查通过时显示为当前创作，引用说明为创作背景。
+
+Living Memory reply 返回 `reply_kind/reply_text/language`：conversation、creative、activity 均不承载状态。正常与 base fallback 经过同一 context-aware 检查；明确活动询问使用本地真实能力边界，不把 elapsed Civil Time 说成离线经历。模型标签不能豁免本地检查。`ExpressionCandidate.is_creative` 仅为 cognition 本地核准的临时表达元数据，不进 Provider 或 canonical Expression；只有已标明的创作文本才可保留为创作，不因同轮出现某个创作分句就放开事实文本。
+
+Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用户原话或已校验的 canonical recalled 内容，不夹带该能力自由生成的 Knowledge 事实。已有目标/姿态/中期表达优先级继续执行；含 Knowledge 的后续合并把来源与记忆引用作为完整证据保留，不做未知句剥除或近似去重。检查只覆盖有界契约和明确语法，不等于对任意自然语言真实性的证明。
+
+明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项 state-bearing proposal/classification 或既有 required reply 失败形成所属 Domain 的 FailedClosed 片段；失败项不写状态，也不阻断无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是 proposal 之后、不承载状态的可选 expression refinement；失败按上述能力本地规则回退，不能取消候选或声称 identity grounding 成功。
 
 ## 数据
 

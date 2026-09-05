@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+import re
 from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.domains import (
@@ -37,7 +38,7 @@ from dynamic_subject_agent.model_gateway import (
 )
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply
 
 
 _NO_KNOWLEDGE_EXPRESSION = "（无知识相关内容）"
@@ -63,9 +64,72 @@ class KnowledgeReplyRequest:
 
 
 @dataclass(frozen=True)
+class KnowledgeReplyQuote:
+    title: str
+    quote: str
+
+
+@dataclass(frozen=True)
 class KnowledgeReplyResult:
     reply_text: str
     language: str
+    reply_kind: str = 'source'
+    source_quotes: tuple[KnowledgeReplyQuote, ...] = ()
+
+    @classmethod
+    def from_mapping(cls, value: object) -> KnowledgeReplyResult:
+        if not isinstance(value, dict) or set(value) != {'reply_text', 'language', 'reply_kind', 'source_quotes'}:
+            raise ValueError('knowledge-reply-fields-invalid')
+        text, kind, quotes = value['reply_text'], value['reply_kind'], value['source_quotes']
+        if (value['language'] != 'zh' or kind not in {'source', 'unknown', 'creative'}
+            or not isinstance(text, str) or len(text) > 8_000
+            or not isinstance(quotes, list) or len(quotes) > KNOWLEDGE_CANDIDATE_LIMIT):
+            raise ValueError('knowledge-reply-shape-invalid')
+        parsed = []
+        for item in quotes:
+            if (not isinstance(item, dict) or set(item) != {'title', 'quote'}
+                or not isinstance(item['title'], str) or not 0 < len(item['title']) <= 200
+                or not isinstance(item['quote'], str) or not 0 < len(item['quote']) <= 4_000):
+                raise ValueError('knowledge-reply-quote-invalid')
+            parsed.append(KnowledgeReplyQuote(item['title'], item['quote']))
+        if kind == 'creative' and (not text.strip() or parsed):
+            raise ValueError('knowledge-reply-creative-invalid')
+        return cls(text, 'zh', kind, tuple(parsed))
+
+
+def _source_sentences(content: str) -> tuple[str, ...]:
+    return tuple(part.strip() for part in re.findall(r'[^。！？!?]+[。！？!?]?', content) if part.strip())
+
+
+def render_source_reply(entries: tuple[KnowledgeReplyEntry, ...], reply: KnowledgeReplyResult | None = None) -> str:
+    """Render checked source text, never treat citation membership as entailment."""
+    if not entries:
+        return '这个问题我还没有可引用的来源。'
+    quotes = ()
+    if reply is not None and reply.reply_kind in ('source', 'unknown') and isinstance(reply.source_quotes, tuple):
+        proposed = reply.source_quotes
+        if 0 < len(proposed) <= KNOWLEDGE_CANDIDATE_LIMIT and all(
+            isinstance(item, KnowledgeReplyQuote) and any(
+                item.title == entry.title and item.quote in _source_sentences(entry.content)
+                for entry in entries
+            ) for item in proposed
+        ):
+            # Keep the enclosing entry: even a complete sentence may be an
+            # explicitly false example or depend on a preceding qualification.
+            quotes = tuple(KnowledgeReplyQuote(entry.title, entry.content) for entry in entries
+                if any(item.title == entry.title and item.quote in _source_sentences(entry.content) for item in proposed))
+    if not quotes:
+        # A failed refinement cannot revive the proposal's ungrounded free text.
+        quotes = tuple(KnowledgeReplyQuote(entry.title, entry.content) for entry in entries)
+    parts = []
+    for item in dict.fromkeys(quotes):
+        part = f'资料《{item.title}》写的是：「{item.quote}」'
+        if sum(map(len, parts)) + len(part) > 5_000:
+            parts.append('其余资料本轮未展开。')
+            break
+        parts.append(part)
+    parts.append('资料没有说明的细节，我不能据此确定。')
+    return '\n\n'.join(parts)
 
 
 @dataclass(frozen=True)
@@ -210,7 +274,12 @@ class ControlledKnowledgeCognition(CognitionEngine):
             if result.proposal.citation_ids
             else "本轮无适用的封存知识条目。"
         )
-        reply_text = result.reply_text
+        selected_by_id = {entry.entry_id: entry for entry in candidates}
+        selected_entries = tuple(
+            KnowledgeReplyEntry(selected_by_id[entry_id].title, selected_by_id[entry_id].content)
+            for entry_id in result.proposal.citation_ids
+        )
+        reply_result = None
         if self._split:
             if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
                 return self._failure(
@@ -219,14 +288,6 @@ class ControlledKnowledgeCognition(CognitionEngine):
                     command,
                     "knowledge-provider-invalid-output",
                 )
-            selected_by_id = {entry.entry_id: entry for entry in candidates}
-            selected_entries = tuple(
-                KnowledgeReplyEntry(
-                    selected_by_id[entry_id].title,
-                    selected_by_id[entry_id].content,
-                )
-                for entry_id in result.proposal.citation_ids
-            )
             try:
                 reply_result = self._gateway.execute(
                     ModelTask(
@@ -240,16 +301,15 @@ class ControlledKnowledgeCognition(CognitionEngine):
                 ).value
             except Exception:
                 reply_result = None
-            if (
-                isinstance(reply_result, KnowledgeReplyResult)
-                and reply_result.reply_text.strip()
-                and reply_result.language == command.language
-            ):
-                guarded_reply = guard_runtime_identity_reply(
-                    reply_result.reply_text
-                )
-                if guarded_reply is not None:
-                    reply_text = guarded_reply
+        reply_text = render_source_reply(selected_entries,
+            reply_result if isinstance(reply_result, KnowledgeReplyResult) and reply_result.language == command.language else None)
+        activity = activity_boundary_reply(command.utterance)
+        if activity is not None:
+            reply_text = activity
+        elif isinstance(reply_result, KnowledgeReplyResult) and reply_result.language == command.language and reply_result.reply_kind == 'creative':
+            creative = contextual_reply(reply_result.reply_text, message=command.utterance, reply_kind='creative')
+            if creative is not None:
+                reply_text = creative + ('\n引用仅作为创作背景。' if selected_entries else '')
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,

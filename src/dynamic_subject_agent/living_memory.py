@@ -22,7 +22,7 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.runtime_identity_reply import guard_runtime_identity_reply
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -63,6 +63,17 @@ class LivingMemoryReplyRequest:
 class LivingMemoryReplyResult:
     reply_text: str
     language: str
+    reply_kind: str = 'conversation'
+
+    @classmethod
+    def from_mapping(cls, value: object) -> LivingMemoryReplyResult:
+        if not isinstance(value, dict) or set(value) != {'reply_text', 'language', 'reply_kind'}:
+            raise ValueError('memory-reply-fields-invalid')
+        text, kind = value['reply_text'], value['reply_kind']
+        if (value['language'] != 'zh' or kind not in {'conversation', 'creative', 'activity'}
+            or not isinstance(text, str) or not text.strip() or len(text) > 8_000):
+            raise ValueError('memory-reply-shape-invalid')
+        return cls(text, 'zh', kind)
 
 
 MEMORY_KINDS = frozenset({"durable", "plan"})
@@ -296,7 +307,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             active_memories=active,
             memory_history=context.living_memory_history,
         )
-        reply_text = result.reply_text
+        reply_text = contextual_reply(result.reply_text, message=command.utterance)
+        is_creative = False
         if self._split:
             if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
                 return self._failure(
@@ -326,15 +338,19 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 reply_result = None
             if (
                 isinstance(reply_result, LivingMemoryReplyResult)
+                and isinstance(reply_result.reply_text, str)
                 and reply_result.reply_text.strip()
                 and reply_result.language == command.language
             ):
-                guarded_reply = guard_runtime_identity_reply(
-                    reply_result.reply_text
-                )
+                guarded_reply = contextual_reply(reply_result.reply_text,
+                    message=command.utterance, reply_kind=reply_result.reply_kind)
                 if guarded_reply is not None:
                     reply_text = guarded_reply
+                    is_creative = reply_result.reply_kind == 'creative' and activity_boundary_reply(command.utterance) is None
+        if reply_text is None:
+            reply_text = '这件事我还没有可靠的内容可以说。我们可以先从你现在想聊的部分说起。'
         if historical_memory is not None:
+            is_creative = False
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"
             reply_text = f"你更正前说的是：「{historical_memory.content}」"
         candidates: tuple[ExperienceChangeCandidate, ...] = ()
@@ -369,6 +385,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             expression_candidate=ExpressionCandidate(
                 text=reply_text,
                 language=result.language,
+                is_creative=is_creative,
             ),
         )
         experience_request = ExperienceAdjudicationRequest(

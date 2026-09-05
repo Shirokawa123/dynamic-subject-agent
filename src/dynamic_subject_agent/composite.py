@@ -35,6 +35,7 @@ from dynamic_subject_agent.participant_goal_cognition import (
 )
 from dynamic_subject_agent.participant_goals import active_targets, participant_operation_requested
 from dynamic_subject_agent.timeline import SubjectCommand
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeStatus,
 )
@@ -145,7 +146,11 @@ def _supported_clauses(text: str) -> str:
     return "".join(supported)
 
 
-def _merge_expression_text(base: str, addition: str) -> str:
+def _merge_expression_text(base: str, addition: str, *, preserve_evidence: bool = False) -> str:
+    if preserve_evidence:
+        # Quoted source/memory text is opaque evidence, not free prose to prune
+        # or approximately deduplicate. In particular, retain qualifications.
+        return '\n\n'.join(dict.fromkeys(part for part in (base, addition) if part.strip()))
     supported_base = _supported_clauses(base)
     supported_addition = _supported_clauses(addition)
     if not supported_base and not supported_addition:
@@ -507,10 +512,19 @@ class ControlledCompositeCognition(CognitionEngine):
         ) and not participant_goal_selection_priority
         memory_relevant = memory_recalled or memory_changed
         if knowledge_cited and memory_relevant:
+            memory_text = memory_proposal.expression_candidate.text
+            if not memory_proposal.expression_candidate.is_creative:
+                recalled_ids = {memory_id for candidate in experience_request.candidates for memory_id in candidate.recalled_memory_ids}
+                facts = [f'你之前说的是：「{item.content}」' for item in context.active_memories if item.memory_id in recalled_ids]
+                if memory_changed:
+                    facts.append(f'你这次说的是：「{command.utterance}」' if len(command.utterance) <= 800
+                        else '本轮记忆处理的结果会在说明中列出。')
+                memory_text = '\n\n'.join(facts)
             expression = ExpressionCandidate(
                 text=_merge_expression_text(
-                    memory_proposal.expression_candidate.text,
+                    memory_text,
                     knowledge_proposal.expression_candidate.text,
+                    preserve_evidence=True,
                 ),
                 language=memory_proposal.expression_candidate.language,
             )
@@ -528,9 +542,9 @@ class ControlledCompositeCognition(CognitionEngine):
                 if not participant_goal_mutation:
                     expression = ExpressionCandidate(
                         text=(
-                            _merge_expression_text(goal_text, expression.text)
+                            _merge_expression_text(goal_text, expression.text, preserve_evidence=knowledge_cited)
                             if participant_goal_expression_priority
-                            else _merge_expression_text(expression.text, goal_text)
+                            else _merge_expression_text(expression.text, goal_text, preserve_evidence=knowledge_cited)
                         ),
                         language=expression.language,
                     )
@@ -571,7 +585,7 @@ class ControlledCompositeCognition(CognitionEngine):
             )
             if knowledge_cited or memory_relevant or participant_goal_relevant:
                 expression = ExpressionCandidate(
-                    text=_merge_expression_text(expression.text, situated_text),
+                    text=_merge_expression_text(expression.text, situated_text, preserve_evidence=knowledge_cited),
                     language=expression.language,
                 )
             else:
@@ -585,7 +599,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 or situated_should_speak
             ):
                 expression = ExpressionCandidate(
-                    text=_merge_expression_text(expression.text, medium_text),
+                    text=_merge_expression_text(expression.text, medium_text, preserve_evidence=knowledge_cited),
                     language=expression.language,
                 )
             else:
@@ -595,6 +609,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 text=_merge_expression_text(
                     _claim_reply(relationship_claims),
                     expression.text,
+                    preserve_evidence=knowledge_cited,
                 ),
                 language=expression.language,
             )
@@ -631,7 +646,7 @@ class ControlledCompositeCognition(CognitionEngine):
     ) -> ExpressionCandidate:
         """Confirm goal operations only after the authoritative Domain decision."""
         if self._participant_goals is None:
-            return proposal.expression_candidate
+            return self._grounded_primary(proposal, command)
         outcome = outcomes.experience
         status = outcome.participant_goal_commitment_status
         action = outcome.participant_goal_commitment_action
@@ -685,6 +700,13 @@ class ControlledCompositeCognition(CognitionEngine):
                 independent.append(_claim_reply(claims))
             text = '\n\n'.join((*independent, text))
             return ExpressionCandidate(text, command.language)
+        return self._grounded_primary(proposal, command)
+
+    @staticmethod
+    def _grounded_primary(proposal: CognitiveProposal, command: SubjectCommand) -> ExpressionCandidate:
+        activity = activity_boundary_reply(command.utterance)
+        if activity is not None:
+            return ExpressionCandidate(activity, command.language)
         return proposal.expression_candidate
 
     def _propose_sub(

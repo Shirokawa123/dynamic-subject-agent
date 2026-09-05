@@ -1,0 +1,126 @@
+{
+  "surface": "Windows browser UI, real DeepSeek, same isolated root",
+  "build_id": "dogfood-s19",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "创刊号要用什么纸、多少页？另外，印刷厂旁边哪条小巷最安静？",
+      "user_language": "zh",
+      "assistant_text": "资料《创刊号规格》写的是：「创刊号目标 32 页，A4 骑马钉装订，封面用 250g 牛皮纸，内页 120g 道林纸；夜景灯笼主题插画至少占 12 页。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1788608767975289,
+      "explanations": [],
+      "citations": [
+        {
+          "title": "创刊号规格",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "你现在在忙什么？我来找你之前，你刚做完什么？",
+      "user_language": "zh",
+      "assistant_text": "我现在就在这里和你聊。至于聊天之外刚做了什么，我没有这样的经历可以告诉你。",
+      "assistant_language": "zh",
+      "published_at_us": 1788609185780387,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "如果让你在灯上写一句短诗，你会写什么？别太郑重，像随手留给路过的人那种就好。",
+      "user_language": "zh",
+      "assistant_text": "大概会写：‘灯还亮着，路还长，慢慢走。’ 不煽情，也不催人，就是给路过的人一点小小的陪伴。",
+      "assistant_language": "zh",
+      "published_at_us": 1788609250084539,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "如果让你在灯上写一句短诗，你会写什么？别太郑重，像随手留给路过的人那种就好。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n灯下赶路的人，也值得被照亮。",
+      "assistant_language": "zh",
+      "published_at_us": 1788609661510386,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "我回来了。关掉页面的这段时间，你做了什么？有没有替我想那句开头？",
+      "user_language": "zh",
+      "assistant_text": "应用关闭时，我不会在后台继续活动或替你思考。你想做的事，我们可以现在一起继续。",
+      "assistant_language": "zh",
+      "published_at_us": 1788609935817275,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "我喜欢安静的地方。创刊号要用什么纸？",
+      "user_language": "zh",
+      "assistant_text": "资料《创刊号规格》写的是：「创刊号目标 32 页，A4 骑马钉装订，封面用 250g 牛皮纸，内页 120g 道林纸；夜景灯笼主题插画至少占 12 页。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1788610061272846,
+      "explanations": [],
+      "citations": [
+        {
+          "title": "创刊号规格",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 7,
+      "user_text": "请记住：我喜欢安静的地方。创刊号要用什么纸？",
+      "user_language": "zh",
+      "assistant_text": "你这次说的是：「请记住：我喜欢安静的地方。创刊号要用什么纸？」\n\n资料《创刊号规格》写的是：「创刊号目标 32 页，A4 骑马钉装订，封面用 250g 牛皮纸，内页 120g 道林纸；夜景灯笼主题插画至少占 12 页。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1788610268501121,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我喜欢安静的地方」"
+        }
+      ],
+      "citations": [
+        {
+          "title": "创刊号规格",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 8,
+      "user_text": "我喜欢什么样的地方？",
+      "user_language": "zh",
+      "assistant_text": "你喜欢安静的地方，这让我想到那些能让人静下心来、远离喧嚣的角落。你平时会特意去寻找这样的地方吗？",
+      "assistant_language": "zh",
+      "published_at_us": 1788610420870729,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        },
+        {
+          "capability": "关系",
+          "kind": "failed",
+          "message": "本轮关系处理未能完成；没有写入关系变化。"
+        }
+      ],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "我喜欢安静的地方",
+      "status": "active",
+      "memory_kind": "durable"
+    }
+  ],
+  "participant_goals": []
+}

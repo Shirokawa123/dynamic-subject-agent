@@ -364,6 +364,8 @@ class CognitiveProposal:
 class ExpressionCandidate:
     text: str
     language: str
+    # Ephemeral permission checked by capability cognition, never a state fact.
+    is_creative: bool = False
 
 
 class CognitionEngine(ABC):

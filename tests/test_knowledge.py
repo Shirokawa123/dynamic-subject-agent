@@ -301,7 +301,9 @@ def test_facade_grounds_reply_in_sealed_knowledge_and_recovers_after_restart(
 
     assert covered.status.value == "terminal"
     assert covered.projection is not None
-    assert covered.projection.expression_text == "根据封存设定：创刊号目标 32 页。"
+    assert '资料《创刊号规格》' in covered.projection.expression_text
+    assert '创刊号目标 32 页' in covered.projection.expression_text
+    assert '内页 120g 道林纸' in covered.projection.expression_text
     assert covered.projection.knowledge_citation_ids == (PRINT_SPEC_ENTRY_ID,)
     assert provider.requests[0].candidate_entries[0].entry_id == PRINT_SPEC_ENTRY_ID
 

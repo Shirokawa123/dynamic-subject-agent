@@ -26,9 +26,11 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-Dogfood 连续体验基线已完成：页面显示 `dogfood-s18`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。
+Dogfood 连续体验基线已完成：页面显示 `dogfood-s19`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。
 
 目标/承诺操作确认在裁决后 express 读取最终 Outcome；Memory 成功不代表目标成功，无关目标失败不替换独立回复。历史主回复保持原文；旧错误台词只能配回当轮真实说明，不重写。自然目标语法与完整消息/命名旧目标限制见 ARCHITECTURE。
+
+Knowledge 事实表达保留完整来源上下文，后续合并不得删改限定句；明确创作与活动询问接受能力本地检查。`ExpressionCandidate.is_creative` 是已核准的临时表达标记，不进 Provider 或 canonical 状态；完整契约和有限句式限制见 ARCHITECTURE 与 Slice-19 报告。
 
 来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
 
@@ -48,7 +50,7 @@ Dogfood 连续体验基线已完成：页面显示 `dogfood-s18`，仅从当前 
 - `LocalIdentityAuthority` 独占本地 identity registry、v1/v2 state、freeze/replay/select、authority 校验和 Host/Timeline 准备；`local_product` 只消费已验证 active authority 并装配 cognition/ApplicationFacade。
 - 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
 - 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。
-- 六项 state-bearing proposal/classification 与既有 required reply 分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是不承载状态的可选表达 refinement；失败时只退回同一 proposal 已验证的 identity-free reply，不取消候选或伪装成 identity-grounded 成功。
+- 六项 state-bearing proposal/classification 与既有 required reply 分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是不承载状态的可选表达 refinement。Slice-19 用户批准 Living Memory/Knowledge 的正常及基础回退表达接受同级校验，不合格时使用安全本地表达，保留合法状态候选；Relationship 的既有回退和其他 required reply 失败语义不变。
 - 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
 - Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
 - 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。
@@ -62,7 +64,7 @@ Dogfood 连续体验基线已完成：页面显示 `dogfood-s18`，仅从当前 
 - Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；reply 发送当前消息 + `{posture}` + runtime identity。
 - Medium State：分类发送当前消息 + 固定版本策略；reply 发送当前消息 + `{baseline}` + runtime identity。
 - Runtime identity exact 为 `{subject_name, subject_identity, canon_start}`；不含 Profile/Genesis/QRI ID、identity_core、初始关系、来源、证据或 Timeline 数据。
-- Interaction Recency、ConversationTurnRecord、publication timestamp、日期差和当前 Civil Time 不发送给 Provider；非闭集消息的十二类 proposal/classification/reply outbound 保持 Slice-16 byte-equivalent。
+- Interaction Recency、ConversationTurnRecord、publication timestamp、日期差和当前 Civil Time 不发送给 Provider。Slice-19 用户仅批准更新 Living Memory/Knowledge 两类 reply 提示和返回契约，原投影字段/上限/用途、调用预算不变；六类 proposal/classification 与另外四类 reply outbound 保持 Slice-16 byte-equivalent。
 - 文本来源建角：只在用户逐次确认权利与用途后发送单份 `{source_title, source_text, policy}`；source_text 最多 16,000 字符，仅用于未发布 Genesis/Knowledge 候选提取，不发送任何 runtime 状态或聊天历史。
 - 六类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。

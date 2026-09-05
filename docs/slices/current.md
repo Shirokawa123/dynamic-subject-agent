@@ -1,3 +1,3 @@
 # 当前工作
 
-当前唯一切片：[Slice-19：角色表达的事实依据](slice-19-grounded-role-expression.md)，诊断完成，等待用户确认两类 reply 契约和不合格 base reply 的回退规则。产品仍为 `dogfood-s18`，尚未修改产品代码；详见[诊断报告](../reports/2026-09-05-slice-19-diagnosis/REPORT.md)，确认前不改现有 outbound 约束。
+当前没有执行中的切片。[Slice-19：角色表达的事实依据](slice-19-grounded-role-expression.md) 已完成，`dogfood-s19` / 364 passed。[验收报告](../reports/2026-09-05-slice-19/REPORT.md) 保留真实失败和有限句式/语境限制。下一切片等待用户选择；新增 Provider 数据用途仍须另行批准。

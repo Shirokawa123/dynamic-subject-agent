@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s18`，会显示在聊天页身份名称下方。重点可体验“我给自己定个目标：每天阅读。”、修订及“我现在有哪些目标？”，核对主回复与目标卡，并在下一轮、刷新、重启后检查历史说明和引用。目标未保存时，Memory 成功不会替代目标成功确认。四条上次聊天查询仍只使用 committed turn。来源身份仅在 sealed Genesis 含 voice 时承诺可辨识表达；原始 Avery 没有独立 voice。知识补造、无来源活动声称及对话上下文缺口仍未解决，见切片验收报告。
+当前内部体验 build 为 `dogfood-s19`，会显示在聊天页身份名称下方。可重点问一个有资料的事实，再追问资料外细节；事实回答保留来源上下文，未知不借 citation 补写。明确当前/离线活动询问说明真实能力边界，明确创作单独标明。此保护是有界契约与有限句式，不是任意自然语言真实性保证；混合活动/创作请求可能优先回答活动边界。目标操作与历史说明继续按 Slice-18 恢复；四条时间查询仍本地回答。来源身份仅在 sealed Genesis 含 voice 时承诺可辨识表达，原始 Avery 没有独立 voice。用户经历润色、省略上下文续写及整体自然度仍待后续切片，见 [Slice-19 报告](docs/reports/2026-09-05-slice-19/REPORT.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。
