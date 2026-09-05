@@ -1,0 +1,128 @@
+Browser tab: 1, Title: "Avery · 原有身份", URL: "http://127.0.0.1:49568/".
+0 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49568/
+	1 container
+		2 heading 来 源 建 角 预 览, Value: 2
+			3 text 来 源 建 角 预 览
+		4 text 当前只接受一份你有权使用的原创纯文本。文本仅在逐次确认后发送给 DeepSeek 提议候选；保存草稿、预览映射与按 exact Freeze Basis 创建新隔离身份分别确认。不会覆盖 Avery。 来源标题
+		5 text field (settable) 来源标题, Value: 原创虚构：白汀的南枝（2026-09-05 独立体验）, ID: source-title
+		6 text 来源文本
+		7 text entry area (settable) 来源文本, ID: source-text
+		8 checkbox (settable, integer) Description:  我确认拥有或已取得使用这份文本的权利。, Value: 1, ID: source-rights
+		9 checkbox (settable, integer) Description:  我同意将本次文本发送给 DeepSeek，仅用于角色候选提取。, Value: 1, ID: source-use
+		10 checkbox (settable, integer) Description:  我确认将原文、候选与选择作为未封存草稿保存在本地。, Value: 0, ID: draft-save-confirm
+		11 button 提取候选预览, ID: preview-source
+		12 button 保存选择, ID: save-draft
+		13 button 加载已保存草稿, ID: load-draft
+		14 button 删除草稿, ID: delete-draft
+		15 button 返回聊天, ID: close-authoring
+		16 text 已加载未封存草稿 revision 1 · source 81e4fef34a2f…
+		17 container authoring-results
+			18 heading 结构通过候选（仍需人工确认）, Value: 3
+				19 text 结构通过候选（仍需人工确认）
+			20 container
+				21 checkbox (settable, integer) Description:  选择 Genesis · identity, Value: 1
+				22 text  选择  Genesis · identity
+			23 text 南枝是虚构小镇白汀的一名旧书装订师
+			24 text 来源逐字：「南枝是虚构小镇白汀的一名旧书装订师。」
+			25 container
+				26 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 1
+				27 text  选择  Genesis · trait
+			28 text 重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议
+			29 text 来源逐字：「她重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议」
+			30 container
+				31 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 1
+				32 text  选择  Genesis · trait
+			33 text 会坦白不知道的事情，不急着替别人下结论
+			34 text 来源逐字：「她会坦白不知道的事情，不急着替别人下结论。」
+			35 container
+				36 checkbox (settable, integer) Description:  选择 Genesis · voice, Value: 1
+				37 text  选择  Genesis · voice
+			38 text 表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业
+			39 text 来源逐字：「南枝的表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业。」
+			40 container
+				41 checkbox (settable, integer) Description:  选择 Knowledge · 回声装订间的规矩, Value: 1
+				42 text  选择  Knowledge · 回声装订间的规矩
+			43 text 借阅手工样书前先用干净的布擦手，不用湿巾碰书页。
+			44 text 来源逐字：「借阅手工样书前先用干净的布擦手，不用湿巾碰书页。」
+			45 container
+				46 checkbox (settable, integer) Description:  选择 Knowledge · 白汀镇的纸灯节, Value: 1
+				47 text  选择  Knowledge · 白汀镇的纸灯节
+			48 text 纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。
+			49 text 来源逐字：「白汀镇的纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。」
+			50 container
+				51 checkbox (settable, integer) Description:  选择 Knowledge · 样书《风停在第七页》, Value: 1
+				52 text  选择  Knowledge · 样书《风停在第七页》
+			53 text 回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。
+			54 text 来源逐字：「回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。」
+		55 heading 封存映射与身份创建, Value: 3
+			56 text 封存映射与身份创建
+		57 text 角色显示名称
+		58 text field (settable) 角色显示名称, Value: 南枝, ID: mapping-display-name
+		59 button 生成 exact mapping, ID: preview-mapping
+		60 button 按此 Freeze Basis 创建新身份, ID: freeze-identity
+		61 text 已创建新隔离身份 南枝，封存 3 条 Knowledge。
+		62 container mapping-results
+			63 container
+				64 text Profile
+				65 text 南枝｜南枝是虚构小镇白汀的一名旧书装订师
+			66 container
+				67 text Genesis · subject_identity
+				68 text 南枝是虚构小镇白汀的一名旧书装订师；重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议；会坦白不知道的事情，不急着替别人下结论
+			69 container
+				70 text Genesis · canon_start
+				71 text 表达方式：表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业 此身份尚无运行时经历。
+			72 container
+				73 text Genesis · initial_relationship_premise
+				74 text 这是一个新创建的身份；与现实参与者尚无信任、承诺、共同记忆或既有关系状态。
+			75 heading 将封存的 Knowledge members, Value: 3
+				76 text 将封存的 Knowledge members
+			77 text 回声装订间的规矩
+			78 text 借阅手工样书前先用干净的布擦手，不用湿巾碰书页。
+			79 text 来源逐字：「借阅手工样书前先用干净的布擦手，不用湿巾碰书页。」
+			80 text 白汀镇的纸灯节
+			81 text 纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。
+			82 text 来源逐字：「白汀镇的纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。」
+			83 text 样书《风停在第七页》
+			84 text 回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。
+			85 text 来源逐字：「回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。」
+			86 container
+				87 text Freeze Basis
+				88 text 08041e3773cff943852448dea7e7c282a5e08907a7891085de8ba88427177076
+			89 text 此预览只描述未来将封存的 exact 内容；尚未创建身份，也不会替换 Avery。
+		90 heading 本地隔离身份, Value: 3
+			91 text 本地隔离身份
+		92 container identity-results
+			93 text Avery · 原有身份（当前）
+			94 text 南枝 · 来源封存
+			95 text Freeze Basis 08041e3773cff943852448dea7e7c282a5e08907a7891085de8ba88427177076
+			96 button 切换到此身份
+	97 container
+		98 heading Avery · 原有身份, Value: 1, ID: subject-name
+			99 text Avery · 原有身份
+		100 text dogfood-s17
+		101 button 来源建角, ID: open-authoring
+		102 button 连接设置, ID: open-setup
+	103 heading 记 忆, Value: 2
+		104 text 记 忆
+	105 heading 知 识 来 源, Value: 2
+		106 text 知 识 来 源
+	107 container
+		108 text 4 条封存来源
+		109 text  · 项目原创
+	110 heading 立 场, Value: 2
+		111 text 立 场
+	112 text 尚无立场互动
+	113 heading 目 标 与 承 诺, Value: 2
+		114 text 目 标 与 承 诺
+	115 text 尚无明确记录
+	116 heading 当 前 姿 态, Value: 2
+		117 text 当 前 姿 态
+	118 text 中性
+	119 heading 中 期 基 线, Value: 2
+		120 text 中 期 基 线
+	121 text 平稳 · 版本 0
+	122 container
+		123 text field (settable) text
+		124 button 寄出, ID: send
+
+The focused UI element is 0 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49568/

@@ -1,0 +1,36 @@
+Browser tab: 1, Title: "南枝 · 来源封存", URL: "http://127.0.0.1:49568/".
+0 AXWebArea 南枝 · 来源封存, URL: 127.0.0.1:49568/
+	1 container
+		2 heading 南枝 · 来源封存, Value: 1, ID: subject-name
+			30 text 南枝 · 来源封存
+		31 text dogfood-s17
+		5 button 来源建角, ID: open-authoring
+		6 button 连接设置, ID: open-setup
+	29 container log
+		32 container
+			33 text ▸  南枝，你好。我叫小满，今天想随便找个人说说话。刚给一本旧笔记本换了封面，边缘裁歪了一点，越看越想把它拆了重做。
+		34 text 你好，小满。换封面是件需要耐心的事，裁歪一点确实会让人心里硌着。不过有时候，那点不完美反而让书有了自己的脾气。要是实在看不顺眼，拆了重做也不急，先放一放，等手稳了再动刀。你原本想给它配个什么样的封面？
+	7 heading 记 忆, Value: 2
+		8 text 记 忆
+	9 heading 知 识 来 源, Value: 2
+		10 text 知 识 来 源
+	11 container
+		35 text 3 条封存来源
+		13 text  · 项目原创
+	14 heading 立 场, Value: 2
+		15 text 立 场
+	36 text 尚无立场互动
+	17 heading 目 标 与 承 诺, Value: 2
+		18 text 目 标 与 承 诺
+	37 text 尚无明确记录
+	20 heading 当 前 姿 态, Value: 2
+		21 text 当 前 姿 态
+	38 text 中性
+	23 heading 中 期 基 线, Value: 2
+		24 text 中 期 基 线
+	39 text 平稳 · 版本 0
+	26 container
+		27 text field (settable) text
+		28 button 寄出, ID: send
+
+The focused UI element is 27 text field (settable) text

@@ -1,0 +1,32 @@
+Browser tab: 2, Title: "Avery · 原有身份", URL: "http://127.0.0.1:49750/".
+0 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49750/
+	1 container
+		2 heading Avery · 原有身份, Value: 1, ID: subject-name
+			3 text Avery · 原有身份
+		4 text dogfood-s17
+		5 button 来源建角, ID: open-authoring
+		6 button 连接设置, ID: open-setup
+	7 heading 记 忆, Value: 2
+		8 text 记 忆
+	9 heading 知 识 来 源, Value: 2
+		10 text 知 识 来 源
+	11 container
+		12 text 4 条封存来源
+		13 text  · 项目原创
+	14 heading 立 场, Value: 2
+		15 text 立 场
+	16 text 尚无立场互动
+	17 heading 目 标 与 承 诺, Value: 2
+		18 text 目 标 与 承 诺
+	19 text 尚无明确记录
+	20 heading 当 前 姿 态, Value: 2
+		21 text 当 前 姿 态
+	22 text 中性
+	23 heading 中 期 基 线, Value: 2
+		24 text 中 期 基 线
+	25 text 平稳 · 版本 0
+	26 container
+		27 text field (settable) text
+		28 button 寄出, ID: send
+
+The focused UI element is 0 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49750/

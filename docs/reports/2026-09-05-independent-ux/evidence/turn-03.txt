@@ -1,0 +1,51 @@
+Browser tab: 1, Title: "南枝 · 来源封存", URL: "http://127.0.0.1:49568/".
+0 AXWebArea 南枝 · 来源封存, URL: 127.0.0.1:49568/
+	1 container
+		2 heading 南枝 · 来源封存, Value: 1, ID: subject-name
+			30 text 南枝 · 来源封存
+		31 text dogfood-s17
+		5 button 来源建角, ID: open-authoring
+		6 button 连接设置, ID: open-setup
+	29 container log
+		32 container
+			33 text ▸  南枝，你好。我叫小满，今天想随便找个人说说话。刚给一本旧笔记本换了封面，边缘裁歪了一点，越看越想把它拆了重做。
+		34 text 你好，小满。换封面是件需要耐心的事，裁歪一点确实会让人心里硌着。不过有时候，那点不完美反而让书有了自己的脾气。要是实在看不顺眼，拆了重做也不急，先放一放，等手稳了再动刀。你原本想给它配个什么样的封面？
+		35 container
+			36 text ▸  灰蓝色的，想配浅黄色的线。我本来只想弄个能带出门的小本子，结果光挑颜色就磨蹭了半天。你会觉得我有点小题大做吗？
+		37 text 不会啊，挑颜色本来就是做东西最开心的一步。灰蓝配浅黄，像阴天里透出来的一点光，挺耐看的。慢慢挑，反而说明你在意它。
+
+灰蓝配浅黄，是很安静又带一点暖意的搭配，像清晨的天色里透出第一缕光。挑颜色磨蹭半天，说明你在意它要陪你出门的样子，这不算小题大做。选定了，做出来，就会觉得那段时间花得值。
+		38 container
+			39 text ▸  那我先不拆了。其实不是颜色拿不定，是总觉得做得不够好就不敢拿给朋友看。你刚才说它会有自己的脾气，我有点被这句话安慰到。
+		40 text 能理解。有时候不是东西不够好，是心里那杆尺太紧了。等哪天你觉得可以了，再拿出去也不迟。它不会跑的。
+		41 container
+			42 text 记忆 本轮召回了 1 条既有记忆。
+		43 container
+			44 text 关系 关系候选没有通过证据规则，关系保持不变。
+	7 heading 记 忆, Value: 2
+		8 text 记 忆
+	45 container
+		46 text 【长期】
+		47 text 「灰蓝色的，想配浅黄色的线。我本来只想弄个能带出门的小本子，结果光挑颜色就磨蹭了半天。」
+	9 heading 知 识 来 源, Value: 2
+		10 text 知 识 来 源
+	11 container
+		48 text 3 条封存来源
+		13 text  · 项目原创
+	14 heading 立 场, Value: 2
+		15 text 立 场
+	49 text 尚无立场互动
+	17 heading 目 标 与 承 诺, Value: 2
+		18 text 目 标 与 承 诺
+	50 text 尚无明确记录
+	20 heading 当 前 姿 态, Value: 2
+		21 text 当 前 姿 态
+	51 text 中性
+	23 heading 中 期 基 线, Value: 2
+		24 text 中 期 基 线
+	52 text 平稳 · 版本 0
+	26 container
+		27 text field (settable) text
+		28 button 寄出, ID: send
+
+The focused UI element is 27 text field (settable) text

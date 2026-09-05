@@ -1,0 +1,107 @@
+Browser tab: 1, Title: "Avery · 原有身份", URL: "http://127.0.0.1:49568/".
+1 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49568/
+	37 container
+		38 heading 来 源 建 角 预 览, Value: 2
+			39 text 来 源 建 角 预 览
+		40 text 当前只接受一份你有权使用的原创纯文本。文本仅在逐次确认后发送给 DeepSeek 提议候选；保存草稿、预览映射与按 exact Freeze Basis 创建新隔离身份分别确认。不会覆盖 Avery。 来源标题
+		41 text field (settable) 来源标题, Value: 原创虚构：白汀的南枝（2026-09-05 独立体验）, ID: source-title
+		42 text 来源文本
+		43 text entry area (settable) 来源文本, ID: source-text, Value: 以下全部为本次体验原创的虚构角色资料，不对应真实人物。
+南枝是虚构小镇白汀的一名旧书装订师。她重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议；她会坦白不知道的事情，不急着替别人下结论。
+南枝的表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业。
+南枝的起点是白汀镇的回声装订间。这只是封存的故事背景，不代表她此刻正在工作；她尚无运行时经历，与新访客此前不相识。
+回声装订间有一个虚构规矩：借阅手工样书前先用干净的布擦手，不用湿巾碰书页。
+白汀镇的纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。
+回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。
+		44 checkbox (settable, integer) Description:  我确认拥有或已取得使用这份文本的权利。, Value: 1, ID: source-rights
+		45 checkbox (settable, integer) Description:  我同意将本次文本发送给 DeepSeek，仅用于角色候选提取。, Value: 1, ID: source-use
+		46 checkbox (settable, integer) Description:  我确认将原文、候选与选择作为未封存草稿保存在本地。, Value: 0, ID: draft-save-confirm
+		47 button 提取候选预览, ID: preview-source
+		48 button 保存选择, ID: save-draft
+		49 button 加载已保存草稿, ID: load-draft
+		50 button 删除草稿, ID: delete-draft
+		51 button 返回聊天, ID: close-authoring
+		62 text 预览完成：7 条结构通过（仍需人工确认），1 条未通过。刷新页面后本预览消失。
+		63 container authoring-results
+			64 heading 结构通过候选（仍需人工确认）, Value: 3
+				65 text 结构通过候选（仍需人工确认）
+			66 container
+				67 checkbox (settable, integer) Description:  选择 Genesis · identity, Value: 0
+				68 text  选择  Genesis · identity
+			69 text 南枝是虚构小镇白汀的一名旧书装订师
+			70 text 来源逐字：「南枝是虚构小镇白汀的一名旧书装订师。」
+			71 container
+				72 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 0
+				73 text  选择  Genesis · trait
+			74 text 重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议
+			75 text 来源逐字：「她重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议」
+			76 container
+				77 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 0
+				78 text  选择  Genesis · trait
+			79 text 会坦白不知道的事情，不急着替别人下结论
+			80 text 来源逐字：「她会坦白不知道的事情，不急着替别人下结论。」
+			81 container
+				82 checkbox (settable, integer) Description:  选择 Genesis · voice, Value: 0
+				83 text  选择  Genesis · voice
+			84 text 表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业
+			85 text 来源逐字：「南枝的表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业。」
+			86 container
+				87 checkbox (settable, integer) Description:  选择 Knowledge · 回声装订间的规矩, Value: 0
+				88 text  选择  Knowledge · 回声装订间的规矩
+			89 text 借阅手工样书前先用干净的布擦手，不用湿巾碰书页。
+			90 text 来源逐字：「借阅手工样书前先用干净的布擦手，不用湿巾碰书页。」
+			91 container
+				92 checkbox (settable, integer) Description:  选择 Knowledge · 白汀镇的纸灯节, Value: 0
+				93 text  选择  Knowledge · 白汀镇的纸灯节
+			94 text 纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。
+			95 text 来源逐字：「白汀镇的纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。」
+			96 container
+				97 checkbox (settable, integer) Description:  选择 Knowledge · 样书《风停在第七页》, Value: 0
+				98 text  选择  Knowledge · 样书《风停在第七页》
+			99 text 回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。
+			100 text 来源逐字：「回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。」
+			101 heading 未通过候选, Value: 3
+				102 text 未通过候选
+			103 text Genesis · origin
+			104 text 南枝的起点是白汀镇的回声装订间
+			105 text 来源逐字：「南枝的起点是白汀镇的回声装订间。」
+			106 text 未通过：genesis-origin-evidence-insufficient
+		53 heading 封存映射与身份创建, Value: 3
+			54 text 封存映射与身份创建
+		55 text 角色显示名称
+		56 text field (settable) 角色显示名称, ID: mapping-display-name
+		57 button 生成 exact mapping, ID: preview-mapping
+		58 button (disabled) 按此 Freeze Basis 创建新身份, ID: freeze-identity
+		59 heading 本地隔离身份, Value: 3
+			60 text 本地隔离身份
+		61 text Avery · 原有身份（当前）
+	2 container
+		3 heading Avery · 原有身份, Value: 1, ID: subject-name
+			30 text Avery · 原有身份
+		31 text dogfood-s17
+		6 button 来源建角, ID: open-authoring
+		7 button 连接设置, ID: open-setup
+	8 heading 记 忆, Value: 2
+		9 text 记 忆
+	10 heading 知 识 来 源, Value: 2
+		11 text 知 识 来 源
+	12 container
+		32 text 4 条封存来源
+		14 text  · 项目原创
+	15 heading 立 场, Value: 2
+		16 text 立 场
+	33 text 尚无立场互动
+	18 heading 目 标 与 承 诺, Value: 2
+		19 text 目 标 与 承 诺
+	34 text 尚无明确记录
+	21 heading 当 前 姿 态, Value: 2
+		22 text 当 前 姿 态
+	35 text 中性
+	24 heading 中 期 基 线, Value: 2
+		25 text 中 期 基 线
+	36 text 平稳 · 版本 0
+	27 container
+		28 text field (settable) text
+		29 button 寄出, ID: send
+
+The focused UI element is 1 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49568/

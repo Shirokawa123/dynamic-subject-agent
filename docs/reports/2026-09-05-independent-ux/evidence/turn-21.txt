@@ -1,0 +1,103 @@
+Browser tab: 2, Title: "Avery · 原有身份", URL: "http://127.0.0.1:49750/".
+0 AXWebArea Avery · 原有身份, URL: 127.0.0.1:49750/
+	30 container
+		31 heading 来 源 建 角 预 览, Value: 2
+			32 text 来 源 建 角 预 览
+		33 text 当前只接受一份你有权使用的原创纯文本。文本仅在逐次确认后发送给 DeepSeek 提议候选；保存草稿、预览映射与按 exact Freeze Basis 创建新隔离身份分别确认。不会覆盖 Avery。 来源标题
+		34 text field (settable) 来源标题, Value: 原创虚构：白汀的南枝（2026-09-05 独立体验）, ID: source-title
+		35 text 来源文本
+		36 text entry area (settable) 来源文本, ID: source-text
+		37 checkbox (settable, integer) Description:  我确认拥有或已取得使用这份文本的权利。, Value: 0, ID: source-rights
+		38 checkbox (settable, integer) Description:  我同意将本次文本发送给 DeepSeek，仅用于角色候选提取。, Value: 0, ID: source-use
+		39 checkbox (settable, integer) Description:  我确认将原文、候选与选择作为未封存草稿保存在本地。, Value: 0, ID: draft-save-confirm
+		40 button 提取候选预览, ID: preview-source
+		41 button 保存选择, ID: save-draft
+		42 button 加载已保存草稿, ID: load-draft
+		43 button 删除草稿, ID: delete-draft
+		44 button 返回聊天, ID: close-authoring
+		45 text 已加载未封存草稿 revision 1 · source 81e4fef34a2f…
+		46 container authoring-results
+			47 heading 结构通过候选（仍需人工确认）, Value: 3
+				48 text 结构通过候选（仍需人工确认）
+			49 container
+				50 checkbox (settable, integer) Description:  选择 Genesis · identity, Value: 1
+				51 text  选择  Genesis · identity
+			52 text 南枝是虚构小镇白汀的一名旧书装订师
+			53 text 来源逐字：「南枝是虚构小镇白汀的一名旧书装订师。」
+			54 container
+				55 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 1
+				56 text  选择  Genesis · trait
+			57 text 重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议
+			58 text 来源逐字：「她重视手工的细节，遇事喜欢先听清楚，再给出简短而具体的建议」
+			59 container
+				60 checkbox (settable, integer) Description:  选择 Genesis · trait, Value: 1
+				61 text  选择  Genesis · trait
+			62 text 会坦白不知道的事情，不急着替别人下结论
+			63 text 来源逐字：「她会坦白不知道的事情，不急着替别人下结论。」
+			64 container
+				65 checkbox (settable, integer) Description:  选择 Genesis · voice, Value: 1
+				66 text  选择  Genesis · voice
+			67 text 表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业
+			68 text 来源逐字：「南枝的表达方式温和、利落，偶尔用纸张和针线作比喻，但不在每句话里比喻，不固定重复口头禅，不反复介绍自己的职业。」
+			69 container
+				70 checkbox (settable, integer) Description:  选择 Knowledge · 回声装订间的规矩, Value: 1
+				71 text  选择  Knowledge · 回声装订间的规矩
+			72 text 借阅手工样书前先用干净的布擦手，不用湿巾碰书页。
+			73 text 来源逐字：「借阅手工样书前先用干净的布擦手，不用湿巾碰书页。」
+			74 container
+				75 checkbox (settable, integer) Description:  选择 Knowledge · 白汀镇的纸灯节, Value: 1
+				76 text  选择  Knowledge · 白汀镇的纸灯节
+			77 text 纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。
+			78 text 来源逐字：「白汀镇的纸灯节在每年十月第二个星期六举行，人们把写有短诗的纸灯放在旧桥栏杆上。」
+			79 container
+				80 checkbox (settable, integer) Description:  选择 Knowledge · 样书《风停在第七页》, Value: 1
+				81 text  选择  Knowledge · 样书《风停在第七页》
+			82 text 回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。
+			83 text 来源逐字：「回声装订间的一本样书名叫《风停在第七页》，封面是灰蓝色，书脊使用浅黄色棉线。」
+		84 heading 封存映射与身份创建, Value: 3
+			85 text 封存映射与身份创建
+		86 text 角色显示名称
+		87 text field (settable) 角色显示名称, ID: mapping-display-name
+		88 button 生成 exact mapping, ID: preview-mapping
+		89 button (disabled) 按此 Freeze Basis 创建新身份, ID: freeze-identity
+		90 heading 本地隔离身份, Value: 3
+			91 text 本地隔离身份
+		92 container identity-results
+			93 text Avery · 原有身份（当前）
+			94 text 南枝 · 来源封存
+			95 text Freeze Basis 08041e3773cff943852448dea7e7c282a5e08907a7891085de8ba88427177076
+			96 button 切换到此身份
+	1 container
+		2 heading Avery · 原有身份, Value: 1, ID: subject-name
+			97 text Avery · 原有身份
+		98 text dogfood-s17
+		5 button 来源建角, ID: open-authoring
+		6 button 连接设置, ID: open-setup
+	29 container log
+		99 container
+			100 text ▸  我们多久没聊了？
+		101 text 在这条身份时间线上，还没有更早的已提交对话。
+	7 heading 记 忆, Value: 2
+		8 text 记 忆
+	9 heading 知 识 来 源, Value: 2
+		10 text 知 识 来 源
+	11 container
+		102 text 4 条封存来源
+		13 text  · 项目原创
+	14 heading 立 场, Value: 2
+		15 text 立 场
+	103 text 尚无立场互动
+	17 heading 目 标 与 承 诺, Value: 2
+		18 text 目 标 与 承 诺
+	104 text 尚无明确记录
+	20 heading 当 前 姿 态, Value: 2
+		21 text 当 前 姿 态
+	105 text 中性
+	23 heading 中 期 基 线, Value: 2
+		24 text 中 期 基 线
+	106 text 平稳 · 版本 0
+	26 container
+		27 text field (settable) text
+		28 button 寄出, ID: send
+
+The focused UI element is 5 button 来源建角, ID: open-authoring
