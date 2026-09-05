@@ -26,7 +26,9 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-Dogfood 连续体验基线已完成：页面显示 `dogfood-s17`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。
+Dogfood 连续体验基线已完成：页面显示 `dogfood-s18`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。
+
+目标/承诺操作确认在裁决后 express 读取最终 Outcome；Memory 成功不代表目标成功，无关目标失败不替换独立回复。历史主回复保持原文；旧错误台词只能配回当轮真实说明，不重写。自然目标语法与完整消息/命名旧目标限制见 ARCHITECTURE。
 
 来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
 

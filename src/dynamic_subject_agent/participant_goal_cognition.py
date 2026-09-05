@@ -13,6 +13,7 @@ from dynamic_subject_agent.domains import (
 )
 from dynamic_subject_agent.participant_goals import (
     ACTIVE_RECORD_LIMIT,
+    DIRECT_TRANSITION_COMMANDS,
     MAX_EVIDENCE_QUOTE_CHARS,
     MAX_TERMS_CHARS,
     POLICY_HASH,
@@ -24,6 +25,7 @@ from dynamic_subject_agent.participant_goals import (
     ParticipantGoalCommitmentRecord,
     ParticipantGoalCommitmentTarget,
     active_targets,
+    named_goal_revision_matches,
 )
 from dynamic_subject_agent.model_gateway import (
     ModelGateway,
@@ -236,6 +238,18 @@ class DeterministicParticipantGoalRoute:
     experience_summary: str
 
 
+def participant_record_query_kind(message: str) -> str | None:
+    bare = re.sub(r'\s+', '', message).rstrip('。！？!?')
+    for kind, noun in (('goal', '目标'), ('commitment', '承诺')):
+        if bare in {
+            f'我的{noun}是什么', f'我现在的{noun}是什么',
+            f'我目前的{noun}是什么', f'我有哪些{noun}',
+            f'我的{noun}有哪些', f'我现在有哪些{noun}', f'我目前有哪些{noun}',
+        }:
+            return kind
+    return None
+
+
 def route_participant_goal_deterministically(
     message: str,
     *,
@@ -249,16 +263,7 @@ def route_participant_goal_deterministically(
     commitments = tuple(
         target for target in targets if target.record.kind == "commitment"
     )
-    if any(
-        marker in bare
-        for marker in (
-            "我的目标是什么",
-            "我现在的目标是什么",
-            "我目前的目标是什么",
-            "我有哪些目标",
-            "我的目标有哪些",
-        )
-    ):
+    if participant_record_query_kind(message) == 'goal':
         selected = goals[:REPLY_RECORD_LIMIT]
         reply = (
             "你当前的目标是："
@@ -273,16 +278,7 @@ def route_participant_goal_deterministically(
             reply_text=reply,
             experience_summary="Python 直接查询参与者目标。",
         )
-    if any(
-        marker in bare
-        for marker in (
-            "我的承诺是什么",
-            "我现在的承诺是什么",
-            "我目前的承诺是什么",
-            "我有哪些承诺",
-            "我的承诺有哪些",
-        )
-    ):
+    if participant_record_query_kind(message) == 'commitment':
         selected = commitments[:REPLY_RECORD_LIMIT]
         reply = (
             "你当前的承诺是："
@@ -298,6 +294,8 @@ def route_participant_goal_deterministically(
             experience_summary="Python 直接查询参与者承诺。",
         )
     patterns = (
+        (r'^我给自己定(?:个|一个)目标[：:]([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal', (), 'active'),
+        (r'^(?:我改主意了[：:]\s*)?把[^。；;！？!?]+的目标改成([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal', goals, 'active'),
         (r"^我的目标改为([^。；;！？!?]+)(?:[。；;！？!?]|$)", "revise", "goal", goals, "active"),
         (r"^我的承诺改为([^。；;！？!?]+)(?:[。；;！？!?]|$)", "revise", "commitment", commitments, "active"),
         (r"^我的目标是([^。；;！？!?]+)(?:[。；;！？!?]|$)", "create", "goal", (), "active"),
@@ -310,7 +308,14 @@ def route_participant_goal_deterministically(
         terms = match.group(1).strip()
         if not terms:
             return None
-        target_ref = candidates[0].turn_ref if candidates else None
+        eligible = tuple(
+            target for target in candidates
+            if kind != 'goal' or named_goal_revision_matches(text, target.record.terms)
+        )
+        matches = eligible if len(candidates) <= 1 else tuple(
+            target for target in eligible if target.record.terms in text
+        )
+        target_ref = matches[0].turn_ref if len(matches) == 1 else None
         return DeterministicParticipantGoalRoute(
             candidate=ParticipantGoalCommitmentCandidate(
                 action=action,
@@ -324,13 +329,8 @@ def route_participant_goal_deterministically(
             reply_text="我会按你明确说出的内容记录这项目标或承诺变化。",
             experience_summary="Python 识别明确的参与者目标或承诺变化。",
         )
-    transitions = (
-        (("我的目标已达成", "目标已达成"), goals, "achieved"),
-        (("我放弃这个目标", "我放弃目标"), goals, "abandoned"),
-        (("我已履行承诺", "我的承诺已履行"), commitments, "fulfilled"),
-        (("我取消承诺", "我解除承诺"), commitments, "released"),
-    )
-    for phrases, candidates, next_status in transitions:
+    for kind, next_status, phrases in DIRECT_TRANSITION_COMMANDS:
+        candidates = goals if kind == 'goal' else commitments
         if bare not in phrases or not candidates:
             continue
         return DeterministicParticipantGoalRoute(

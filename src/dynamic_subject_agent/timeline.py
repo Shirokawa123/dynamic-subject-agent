@@ -890,6 +890,56 @@ class TimelineBasis:
 
 
 @dataclass(frozen=True)
+class ConversationOutcomeSummary:
+    """Display facts derived from a verified turn, never from today's state."""
+    living_memory_status: str
+    living_memory_recalled_count: int
+    memory_content: str | None
+    knowledge_status: str | None
+    knowledge_citation_ids: tuple[str, ...]
+    relationship_status: str | None
+    relationship_candidate_event: str | None
+    participant_goal_commitment_status: str | None
+    participant_goal_commitment_action: str | None
+    participant_goal_commitment_selected_count: int
+    situated_state_status: str | None
+    situated_state_action: str | None
+    situated_state_posture: str | None
+    situated_state_reason_code: str | None
+    medium_state_status: str | None
+    medium_state_baseline: str | None
+    medium_state_before_baseline: str | None
+    medium_state_reason_code: str | None
+    medium_state_signal: str | None
+
+    @classmethod
+    def from_outcome(cls, outcome: TimelineOutcome) -> ConversationOutcomeSummary:
+        experience = outcome.experience_outcome
+        state = outcome.subject_state_outcome
+        return cls(
+            living_memory_status=experience.living_memory_status.value,
+            living_memory_recalled_count=len(experience.living_memory_recalled_ids),
+            memory_content=experience.living_memory_content,
+            knowledge_status=experience.knowledge_status,
+            knowledge_citation_ids=experience.knowledge_citation_ids,
+            relationship_status=outcome.relationship_outcome.relationship_status,
+            relationship_candidate_event=outcome.relationship_outcome.relationship_candidate_event,
+            participant_goal_commitment_status=experience.participant_goal_commitment_status,
+            participant_goal_commitment_action=experience.participant_goal_commitment_action,
+            participant_goal_commitment_selected_count=experience.participant_goal_commitment_selected_count,
+            situated_state_status=state.situated_state_status,
+            situated_state_action=state.situated_state_action,
+            situated_state_posture=state.situated_state_posture,
+            situated_state_reason_code=state.situated_state_reason_code,
+            medium_state_status=state.medium_state_status,
+            medium_state_baseline=state.medium_state_baseline,
+            medium_state_before_baseline=state.medium_state_before_baseline,
+            medium_state_reason_code=state.medium_state_reason_code,
+            medium_state_signal=state.medium_state_signal,
+        )
+
+
+@dataclass(frozen=True)
 class ConversationTurnRecord:
     head_sequence: int
     user_text: str
@@ -897,6 +947,7 @@ class ConversationTurnRecord:
     assistant_text: str
     assistant_language: str
     published_at_us: int
+    outcome_summary: ConversationOutcomeSummary | None = None
 
 
 @dataclass(frozen=True)
@@ -931,6 +982,19 @@ class ExperienceDomainOutcome:
     outcome_id: str
     decision: CandidateDecisionRecord
     epistemic_outcome_id: str
+
+    def _text_fact(self, capability: str, field: str) -> str | None:
+        try:
+            value = json.loads(self.decision.reason).get(capability, {}).get(field)
+            return value if isinstance(value, str) else None
+        except (AttributeError, TypeError, json.JSONDecodeError):
+            return None
+
+    @property
+    def living_memory_content(self) -> str | None:
+        if self.living_memory_status is not LivingMemoryDecisionStatus.ACCEPTED:
+            return None
+        return self._text_fact('living_memory', 'content')
 
     @property
     def living_memory_status(self) -> LivingMemoryDecisionStatus:
@@ -1025,6 +1089,20 @@ class ExperienceDomainOutcome:
             return value if isinstance(value, int) and 0 <= value <= 5 else 0
         except (AttributeError, TypeError, json.JSONDecodeError):
             return 0
+
+    @property
+    def participant_goal_commitment_terms(self) -> str | None:
+        return self._text_fact('participant_goal_commitment', 'terms')
+
+    @property
+    def participant_goal_commitment_kind(self) -> str | None:
+        value = self._text_fact('participant_goal_commitment', 'kind')
+        return value if value in {'goal', 'commitment'} else None
+
+    @property
+    def participant_goal_commitment_next_status(self) -> str | None:
+        value = self._text_fact('participant_goal_commitment', 'next_status')
+        return value if isinstance(value, str) else None
 
 
 
@@ -6533,6 +6611,7 @@ class TimelineEngine:
                     assistant_text=outcome.expression.text,
                     assistant_language=outcome.expression.language,
                     published_at_us=published_at_us,
+                    outcome_summary=ConversationOutcomeSummary.from_outcome(outcome),
                 )
             )
             previous_outcome = outcome

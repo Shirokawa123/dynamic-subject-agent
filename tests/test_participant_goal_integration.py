@@ -185,6 +185,7 @@ def _composition(
     provider: _ScriptedParticipantGoalProvider,
     *,
     runtime_identity=None,
+    memory_provider=None,
 ):
     from dynamic_subject_agent.bootstrap import compose_application
     from dynamic_subject_agent.composite import ControlledCompositeCognition
@@ -193,7 +194,7 @@ def _composition(
     from test_deepseek_controlled_route import _publish_deepseek_qri
 
     cognition = ControlledCompositeCognition(
-        memory_provider=_NoopMemoryProvider(),
+        memory_provider=memory_provider or _NoopMemoryProvider(),
         knowledge_provider=_NoopKnowledgeProvider(),
         relationship_provider=_NoopRelationshipProvider(),
         participant_goal_gateway=_goal_gateway(provider),

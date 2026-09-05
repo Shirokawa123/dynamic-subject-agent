@@ -208,6 +208,24 @@ function el(tag, cls, text) {
   return node;
 }
 
+function turnNotes(turn) {
+  const notes = el('div', 'notes');
+  for (const citation of turn.citations || []) {
+    const span = el('span');
+    span.appendChild(el('span', 'tag', '引用'));
+    span.appendChild(el('span', 'cite', citation.title));
+    span.appendChild(document.createTextNode(' · ' + citation.source));
+    notes.appendChild(span);
+  }
+  for (const explanation of turn.explanations || []) {
+    const row = el('div', `explanation ${explanation.kind || ''}`);
+    row.appendChild(el('span', 'tag', explanation.capability));
+    row.appendChild(document.createTextNode(explanation.message));
+    notes.appendChild(row);
+  }
+  return notes;
+}
+
 function renderHistory(turns, status="available") {
   log.innerHTML = "";
   if (status !== "available") {
@@ -228,6 +246,8 @@ function renderHistory(turns, status="available") {
     aiTurn.dataset.headSequence = String(turn.head_sequence);
     aiTurn.dataset.committed = "true";
     aiTurn.appendChild(el("div", "say", turn.assistant_text));
+    const notes = turnNotes(turn);
+    if (notes.children.length) aiTurn.appendChild(notes);
     log.appendChild(aiTurn);
   }
 }
@@ -787,35 +807,12 @@ async function send() {
       userTurn.dataset.committed = "true";
       aiTurn.dataset.headSequence = String(turn.head_sequence);
       aiTurn.dataset.committed = "true";
-      const notes = el("div", "notes");
-      if (turn.citations.length) {
-        for (const c of turn.citations) {
-          const span = el("span");
-          span.appendChild(el("span", "tag", "引用"));
-          const link = el("span", "cite", c.title);
-          span.appendChild(link);
-          span.appendChild(document.createTextNode(
-            " · " + (c.source.startsWith("project-original:") ? "项目原创封存资料" : c.source)));
-          notes.appendChild(span);
-        }
-      }
-      for (const explanation of turn.explanations || []) {
-        const row = el("div", `explanation ${explanation.kind || ""}`);
-        row.appendChild(el("span", "tag", explanation.capability));
-        row.appendChild(document.createTextNode(explanation.message));
-        notes.appendChild(row);
-      }
+      const notes = turnNotes(turn);
       if (turn.relationship_event === "stable_positive_interaction") {
         stanceAccepted += 1;
       }
       if (turn.conversation_history_status === "available") {
         renderHistory(turn.conversation_history || [], "available");
-        const restoredAnswer = log.querySelector(
-          `.turn.ai[data-head-sequence="${turn.head_sequence}"]`,
-        );
-        if (restoredAnswer && notes.children.length) {
-          restoredAnswer.appendChild(notes);
-        }
       } else {
         if (notes.children.length) aiTurn.appendChild(notes);
         aiTurn.appendChild(el(

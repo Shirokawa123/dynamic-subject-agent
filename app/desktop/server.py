@@ -113,7 +113,8 @@ def _explanation(capability: str, kind: str, message: str) -> dict[str, str]:
 def _turn_explanations(projection: object, *, new_memory_content: str | None) -> list[dict[str, str]]:
     explanations: list[dict[str, str]] = []
     memory_status = getattr(projection, "living_memory_status", None)
-    recalled = tuple(getattr(projection, "living_memory_recalled_ids", ()))
+    recalled = getattr(projection, 'living_memory_recalled_count',
+                       len(getattr(projection, 'living_memory_recalled_ids', ())))
     if memory_status == "accepted":
         detail = (
             f"已形成新记录：「{new_memory_content}」"
@@ -123,7 +124,7 @@ def _turn_explanations(projection: object, *, new_memory_content: str | None) ->
         explanations.append(_explanation("记忆", "changed", detail))
     elif recalled:
         explanations.append(
-            _explanation("记忆", "used", f"本轮召回了 {len(recalled)} 条既有记忆。")
+            _explanation("记忆", "used", f"本轮召回了 {recalled} 条既有记忆。")
         )
     elif memory_status == "rejected":
         explanations.append(
@@ -558,9 +559,10 @@ class AppState:
             "medium_state_status": projection.medium_state_status,
             "medium_state_baseline": projection.medium_state_baseline,
             "citations": citations,
-            "explanations": _turn_explanations(
-                projection,
-                new_memory_content=new_content,
+            "explanations": next(
+                (turn['explanations'] for turn in history['turns']
+                 if turn['head_sequence'] == projection.timeline_head_sequence),
+                _turn_explanations(projection, new_memory_content=new_content),
             ),
         }
 
@@ -609,6 +611,7 @@ class AppState:
             )
         ):
             return {"status": response.status.value, "turns": []}
+        knowledge = {entry.entry_id: entry for entry in self._knowledge_entries()}
         return {
             "status": "available",
             "turns": [
@@ -619,6 +622,17 @@ class AppState:
                     "assistant_text": turn.assistant_text,
                     "assistant_language": turn.assistant_language,
                     "published_at_us": turn.published_at_us,
+                    "explanations": _turn_explanations(
+                        turn.outcome_summary,
+                        new_memory_content=(turn.outcome_summary.memory_content
+                                            if turn.outcome_summary else None),
+                    ),
+                    "citations": [
+                        {'title': knowledge[entry_id].title, 'source': '封存来源'}
+                        for entry_id in (turn.outcome_summary.knowledge_citation_ids
+                                         if turn.outcome_summary else ())
+                        if entry_id in knowledge
+                    ],
                 }
                 for turn in response.projection.turns
             ],

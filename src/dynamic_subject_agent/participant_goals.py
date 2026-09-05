@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 
 from dynamic_subject_agent.temporal_grounding import TemporalAnchor
@@ -15,6 +16,13 @@ MAX_TERMS_CHARS = 500
 MAX_EVIDENCE_QUOTE_CHARS = 1_000
 ACTIVE_RECORD_LIMIT = 20
 REPLY_RECORD_LIMIT = 5
+
+DIRECT_TRANSITION_COMMANDS = (
+    ('goal', 'achieved', ('我的目标已达成', '目标已达成')),
+    ('goal', 'abandoned', ('我放弃这个目标', '我放弃目标')),
+    ('commitment', 'fulfilled', ('我已履行承诺', '我的承诺已履行')),
+    ('commitment', 'released', ('我取消承诺', '我解除承诺')),
+)
 
 TRANSITION_INTENT_RULES = {
     "achieved": (
@@ -144,6 +152,52 @@ def active_targets(
     )
 
 
+def participant_operation_requested(message: str) -> bool:
+    """A local feedback gate, not evidence permitting a state mutation."""
+    return any(noun in message for noun in ('目标', '承诺')) and any(
+        verb in message for verb in (
+            '记住', '记录', '保存', '改为', '改成', '修改', '目标是',
+            '定个', '定一个', '我承诺', '达成', '放弃', '履行', '取消', '解除', '打算',
+        )
+    )
+
+
+def named_goal_revision_matches(message: str, terms: str) -> bool:
+    """Do not let an explicitly named old goal silently select a singleton.
+
+    Besides literal old terms, the bounded writing form 写X can name X写完.
+    Other paraphrases remain ambiguous; this is not fuzzy semantic matching.
+    """
+    match = re.search(r'把([^。；;！？!?]+)的目标改成', message)
+    if match is None:
+        return True
+    name = match.group(1).strip()
+    if name == '我':
+        return True
+    if any(owner in name for owner in ('朋友', '他的', '她的', '你的', '我们的')) or name in {'他', '她', '你', '我们'}:
+        return False
+    if name.startswith('我的'):
+        name = name[2:]
+    return bool(name) and (
+        name in terms
+        or name.startswith('写') and len(name) > 1 and name[1:] + '写完' in terms
+    )
+
+
+def _has_conflicting_operation_intent(message: str) -> bool:
+    # Inspect the whole admitted message, not a provider-selected first clause.
+    commands = re.findall(
+        r'我给自己定(?:个|一个)目标[：:]|我的(?:目标|承诺)(?:是|改为)|'
+        r'我承诺|把[^。；;！？!?]+的目标改成', message,
+    )
+    terminal_pattern = '|'.join(
+        re.escape(phrase) for _, _, phrases in DIRECT_TRANSITION_COMMANDS for phrase in phrases
+    )
+    commands.extend(re.findall(terminal_pattern, message))
+    withdrawal = re.search(r'(?:不要|不用|别)(?:再)?(?:保存|记录|记(?:住|下)?)', message)
+    return len(commands) > 1 or withdrawal is not None
+
+
 class ParticipantGoalCommitmentEngine:
     """Reduce one untrusted provider candidate to one deterministic plan."""
 
@@ -160,6 +214,12 @@ class ParticipantGoalCommitmentEngine:
                 source_user_message_id,
                 decision="no_update",
                 reason_code="no_candidate",
+            )
+        if _has_conflicting_operation_intent(message_text):
+            return _plan(
+                source_user_message_id,
+                decision="rejected",
+                reason_code="conflicting_operation_intent",
             )
         if (
             not isinstance(candidate.evidence_quote, str)
@@ -294,6 +354,13 @@ class ParticipantGoalCommitmentEngine:
                 reason_code="unknown_target_ref",
                 evidence_quote=candidate.evidence_quote,
             )
+        if target.record.kind == 'goal' and not named_goal_revision_matches(message_text, target.record.terms):
+            return _plan(
+                source_user_message_id,
+                decision='rejected',
+                reason_code='ambiguous_target_evidence',
+                evidence_quote=candidate.evidence_quote,
+            )
         if _requires_target_term_evidence(target, current_records, message_text):
             return _plan(
                 source_user_message_id,
@@ -367,7 +434,7 @@ class ParticipantGoalCommitmentEngine:
             reason = "out_of_scope_reminder"
         elif _is_ordinary_plan(candidate.evidence_quote):
             reason = "ordinary_plan_not_commitment"
-        elif not _has_explicit_user_intent(candidate.kind, candidate.evidence_quote):
+        elif not _has_explicit_user_intent(candidate.kind, candidate.evidence_quote, message_text):
             reason = "insufficient_explicit_user_intent"
         else:
             return ParticipantGoalCommitmentPlan(
@@ -423,14 +490,20 @@ def _allowed_terminal_statuses(kind: str) -> tuple[str, ...]:
     return ("achieved", "abandoned") if kind == "goal" else ("fulfilled", "released")
 
 
-def _has_explicit_user_intent(kind: str, evidence_quote: str) -> bool:
+def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str) -> bool:
     if kind == "goal":
-        return "目标是" in evidence_quote or "我的目标" in evidence_quote
+        natural = r'我给自己定(?:个|一个)目标[：:]'
+        if re.search(natural, evidence_quote):
+            # Quoting a conditional or another speaker's declaration is not consent.
+            return re.match(natural, message_text.strip()) is not None
+        return '目标是' in evidence_quote or '我的目标' in evidence_quote
     return "我承诺" in evidence_quote
 
 
 def _has_explicit_revision_intent(kind: str, evidence_quote: str) -> bool:
-    return ("目标改为" if kind == "goal" else "承诺改为") in evidence_quote
+    if kind == 'goal':
+        return '目标改为' in evidence_quote or '的目标改成' in evidence_quote
+    return '承诺改为' in evidence_quote
 
 
 def _is_reminder_request(evidence_quote: str) -> bool:

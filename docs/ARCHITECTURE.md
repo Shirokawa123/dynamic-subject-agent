@@ -50,9 +50,11 @@ Interaction Recency 不持久化：明确查询从当前 Admission 与最近完�
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 
-Dogfood conversation history 是 `TimelineEngine` 的只读投影：查询会重建完整 TimelineOutcome 链，验证每轮 plan/domain/Expression/outcome/receipt digest、previous digest 和最终 head，再只返回当前 identity 最近 20 个 `{head_sequence, user_text, user_language, assistant_text, assistant_language, published_at_us}`。`SubjectRuntime → RuntimeLease → ApplicationFacade` 只转发 typed projection；Desktop 不建第二份 transcript。pending、interrupted 与 FailedClosed 操作没有 TimelineOutcome，因此不显示为完成轮次。
+Dogfood conversation history 是 `TimelineEngine` 的只读投影：查询会重建完整 TimelineOutcome 链，验证每轮 plan/domain/Expression/outcome/receipt digest、previous digest 和最终 head，再只返回当前 identity 最近 20 个 `{head_sequence, user_text, user_language, assistant_text, assistant_language, published_at_us, outcome_summary}`。`ConversationOutcomeSummary` 从当轮 verified Outcome 派生 typed status/action/reason、已接受记忆内容、选中计数与 citation 引用；兼容旧纯文本 reason。`SubjectRuntime → RuntimeLease → ApplicationFacade` 只转发 typed projection；Desktop 不建第二份 transcript。pending、interrupted 与 FailedClosed 操作没有 TimelineOutcome，因此不显示为完成轮次。
 
-逐轮因果解释只读取已提交 Outcome 的 typed status、reason、selected count 与当前可见投影，由 Python 确定性翻译为 changed/used/kept/failed 用户语言。普通 NoOp 不显示为变化；Relationship 声称拒绝、目标直接查询、Situated carry/直接命令和 Medium 证据门槛均不得由模型事后编写理由。
+逐轮因果解释只读取当轮已提交 Outcome 的 typed summary，由 Python 确定性翻译为 changed/used/kept/failed 用户语言；citation 标题通过当前身份 sealed Knowledge 解析。当前与历史轮次复用同一说明投影，下一轮、刷新和重启恢复时一并显示；不能用今天的 Memory/目标卡反推过去。旧主回复保留原文，即使与当轮失败说明矛盾。普通 NoOp 不显示为变化；Relationship 声称拒绝、目标直接查询、Situated carry/直接命令和 Medium 证据门槛均不得由模型事后编写理由。
+
+目标/承诺操作主确认在既有 `CognitionEngine.express` 裁决后阶段由最终 Experience Outcome 确定：accepted 才确认成功，rejected/FailedClosed/no-candidate 不复用模型成功台词；无关目标故障只留说明，保留独立主表达。精确目标查询（包括空列表）直接读取 canonical 记录。自然创建仅支持当前用户直接“我给自己定个目标：…”；命名修订须匹配旧 terms，受限“写X→X写完”允许原报告写作句，其他意译不猜测，多目标仍需完整旧 terms。Domain 检查整条 admitted message 的混合闭集命令与撤回，不能被截短 evidence 绕过；Provider policy/字段不变。
 
 表达组合有独立于状态裁决的发言预算：Memory/Knowledge/目标形成非状态主干时，Situated 与 Medium 只提交 typed 结果而不追加重复回复；无非状态主干时 Situated 优先于 Medium，显式状态查询以其确定性 priority 覆盖普通 carry。未发言不等于 NoOp、Rejected 或失败，Domain Outcome 保持完整。
 

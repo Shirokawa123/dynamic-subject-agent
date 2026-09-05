@@ -1,3 +1,3 @@
 # 当前工作
 
-Slice-17 已完成，当前无活跃切片。下一项工作等待用户选择；在新任务书与授权前不扩展 Lifeworld、Agency、人格发展、Reflection、主动消息、视频/音频来源或新的 Provider 数据用途。
+当前没有执行中的切片。[Slice-18：目标操作结果与历史反馈一致](slice-18-outcome-consistent-feedback.md) 已完成；`dogfood-s18`，全量 332 passed。[验收报告](../reports/2026-09-05-slice-18/REPORT.md) 记录真实复验、失败及限制。下一切片等待用户选择，Provider 数据用途不变。

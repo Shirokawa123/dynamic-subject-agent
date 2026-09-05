@@ -83,3 +83,7 @@
 ## D-021：Interaction Recency 只由 committed Timeline 派生
 
 2026-09-02，Slice-17 只对四条明确查询以 Python 回答 day-precision“上次聊天”。当前时间取本轮 canonical Admission，上次时间取同一 identity 最近完整 TimelineOutcome 的 publication；查询轮本身正常提交并成为下一次的上次。该值不建 store、不进入 Provider、不跳过时间查询轮，也不解释为离线经历、等待或想念；时钟倒退与 history integrity 失败显式 FailedClosed。
+
+## D-022：先修复操作回执与实际结果的矛盾
+
+2026-09-05，独立体验 T15–T17 显示 Memory 成功台词会掩盖目标拒绝，历史结果提示也会消失。Slice-18 复用裁决后 express seam，为目标/承诺操作生成基于最终 Outcome 的确认；完整消息和命名旧目标均由 Python 校验。历史逐轮说明与引用从 verified Outcome 现场投影，保留旧台词，不增加 store 或迁移。Provider 数据用途不变；知识补造、无来源活动声称和聊天上下文缺口分别留待后续切片，不因体验问题转向统一表达架构或 Agency。

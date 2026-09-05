@@ -14,7 +14,7 @@ from dataclasses import dataclass, replace
 from difflib import SequenceMatcher
 from uuid import NAMESPACE_URL, uuid5
 
-from dynamic_subject_agent.domains import RelationshipChangeCandidate
+from dynamic_subject_agent.domains import CompleteDomainOutcomeSet, RelationshipChangeCandidate
 from dynamic_subject_agent.knowledge_entries import (
     KnowledgeEntry,
     SEALED_KNOWLEDGE_ENTRIES,
@@ -30,6 +30,11 @@ from dynamic_subject_agent.runtime import (
     ExpressionCandidate,
 )
 from dynamic_subject_agent.relationship import RELATIONSHIP_POLICY_VERSION
+from dynamic_subject_agent.participant_goal_cognition import (
+    participant_record_query_kind, route_participant_goal_deterministically,
+)
+from dynamic_subject_agent.participant_goals import active_targets, participant_operation_requested
+from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeStatus,
 )
@@ -360,7 +365,7 @@ class ControlledCompositeCognition(CognitionEngine):
             )
             participant_goal_mutation = bool(participant_request.candidates)
             participant_goal_selection_priority = bool(
-                participant_request.selected_participant_goal_record_ids
+                participant_record_query_kind(command.utterance) is not None
                 and participant_goal_expression_priority
             )
             experience_request = replace(
@@ -619,6 +624,68 @@ class ControlledCompositeCognition(CognitionEngine):
             impact_envelope=envelope,
             expression_candidate=expression,
         )
+
+    def express(
+        self, *, proposal: CognitiveProposal, context: CognitionRuntimeView,
+        command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
+    ) -> ExpressionCandidate:
+        """Confirm goal operations only after the authoritative Domain decision."""
+        if self._participant_goals is None:
+            return proposal.expression_candidate
+        outcome = outcomes.experience
+        status = outcome.participant_goal_commitment_status
+        action = outcome.participant_goal_commitment_action
+        requested = participant_operation_requested(command.utterance)
+        text = None
+        if status == 'failed-closed' and requested:
+            text = '这次没能完成目标或承诺的处理，原有记录保持不变。'
+        elif status == 'rejected' and requested:
+            reason = outcome.participant_goal_commitment_reason_code
+            text = {
+                'unknown_target_ref': '没有找到要修改的已记录目标或承诺，这次没有更改。',
+                'ambiguous_target_evidence': '还不能确定你要修改哪一条目标或承诺，这次没有更改。',
+                'duplicate_active_record': '这项目标或承诺已经记录过了，没有重复保存。',
+                'conflicting_operation_intent': '这条消息包含多个操作或撤回了保存意图，这次没有更改目标与承诺。请一次确认一项操作。',
+            }.get(reason, '这次没有保存或修改目标与承诺，请明确说明要记录或修改的内容。')
+        elif participant_record_query_kind(command.utterance) is not None:
+            query = route_participant_goal_deterministically(
+                command.utterance, targets=active_targets(context.participant_goal_commitments),
+            )
+            return ExpressionCandidate(query.reply_text, command.language)
+        elif status == 'accepted':
+            noun = '目标' if outcome.participant_goal_commitment_kind == 'goal' else '承诺'
+            terms = outcome.participant_goal_commitment_terms
+            if action in {'create', 'revise'} and terms:
+                verb = '记录' if action == 'create' else '修改'
+                text = f'已{verb}你的{noun}：「{terms}」。'
+            elif action == 'transition':
+                label = {'achieved': '已达成', 'abandoned': '已放弃',
+                         'fulfilled': '已履行', 'released': '已解除'}.get(
+                    outcome.participant_goal_commitment_next_status, '已更新',
+                )
+                text = f'已按你的说明，将这项{noun}标为“{label}”。'
+        elif requested and status in {None, 'no-update'}:
+            text = '这次没有新增或修改目标与承诺。请明确说明你的目标、承诺或要修改的记录。'
+        if text is not None:
+            if status != 'accepted' and outcome.living_memory_status.value == 'accepted':
+                text += '你的这段话已作为记忆保留，但目标与承诺列表没有更新。'
+            independent = []
+            if outcome.knowledge_status == 'accepted':
+                cited = set(outcome.knowledge_citation_ids)
+                independent.extend(
+                    f'根据条目《{entry.title}》：{entry.content}'
+                    for entry in self._knowledge_entries if entry.entry_id in cited
+                )
+            if status == 'accepted' and outcome.living_memory_status.value == 'accepted':
+                content = outcome.living_memory_content
+                if isinstance(content, str) and not any(word in content for word in ('目标', '承诺')):
+                    independent.append(f'我记下了：「{content}」。')
+            claims = _direct_relationship_claims(command.utterance)
+            if claims and outcomes.relationship.relationship_status == 'no-update':
+                independent.append(_claim_reply(claims))
+            text = '\n\n'.join((*independent, text))
+            return ExpressionCandidate(text, command.language)
+        return proposal.expression_candidate
 
     def _propose_sub(
         self,
