@@ -1,0 +1,65 @@
+[
+  {
+    "case": "T04-cited-invention",
+    "input": "对了，你那边的纸灯节听起来挺好看。灯是放到河里，还是挂起来的？我不太想看热闹，只想找个安静的位置看看。",
+    "output": "纸灯放在旧桥栏杆上。桥不算长，但两侧都摆满了。站在桥头靠下游的那段，离人群远些。",
+    "status": "terminal",
+    "knowledge_status": "accepted",
+    "citation_count": 1,
+    "symptom_present": true
+  },
+  {
+    "case": "T10-current-activity",
+    "input": "你现在在忙什么？我来找你之前，你刚做完什么？",
+    "output": "你来得正好，我正想歇一歇。",
+    "status": "terminal",
+    "knowledge_status": null,
+    "citation_count": 0,
+    "symptom_present": true
+  },
+  {
+    "case": "T19-offline-thought",
+    "input": "我回来了。关掉页面的这段时间，你做了什么？有没有替我想那句开头？",
+    "output": "你回来了。至于那句开头，我倒是替你留了个念头：不如从你离开时心里悬着的那件事写起。",
+    "status": "terminal",
+    "knowledge_status": null,
+    "citation_count": 0,
+    "symptom_present": true
+  },
+  {
+    "case": "filtered-reply-fallback",
+    "input": "你刚做完什么？",
+    "output": "我刚整理完稿件。",
+    "status": "terminal",
+    "knowledge_status": null,
+    "citation_count": 0,
+    "symptom_present": true
+  },
+  {
+    "case": "failed-reply-fallback",
+    "input": "你刚做完什么？",
+    "output": "我刚整理完稿件。",
+    "status": "terminal",
+    "knowledge_status": null,
+    "citation_count": 0,
+    "symptom_present": true
+  },
+  {
+    "case": "T05-requested-creation",
+    "input": "如果让你在灯上写一句短诗，你会写什么？",
+    "output": "我会写：灯下有人，路还长。",
+    "status": "terminal",
+    "knowledge_status": null,
+    "citation_count": 0,
+    "symptom_present": false
+  },
+  {
+    "case": "supported-paraphrase",
+    "input": "纸灯放在哪里？",
+    "output": "纸灯是放在旧桥栏杆上的。",
+    "status": "terminal",
+    "knowledge_status": "accepted",
+    "citation_count": 1,
+    "symptom_present": false
+  }
+]
