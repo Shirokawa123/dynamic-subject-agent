@@ -1,3 +1,3 @@
 # 当前工作
 
-当前没有执行中的切片。[Slice-19：角色表达的事实依据](slice-19-grounded-role-expression.md) 已完成，`dogfood-s19` / 364 passed。[验收报告](../reports/2026-09-05-slice-19/REPORT.md) 保留真实失败和有限句式/语境限制。下一切片等待用户选择；新增 Provider 数据用途仍须另行批准。
+当前没有执行中的切片。[Slice-20：关系子能力失败的有界维护](slice-20-relationship-failure-maintenance.md) 以诊断收口，原故障未复现、未修改产品代码。[报告](../reports/2026-09-07-slice-20/REPORT.md) 列明证据限制及下一项近期对话的待授权范围；确认前不得发送历史。
