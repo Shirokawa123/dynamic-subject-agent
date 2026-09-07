@@ -1,0 +1,330 @@
+{
+  "build_id": "dogfood-s22",
+  "ui_turns": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "desktop_http_turns": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "restart_before_turn": 12,
+  "restart": {
+    "same_identity": true,
+    "history_exact": true,
+    "memory_exact": true,
+    "build": "dogfood-s22"
+  },
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "接下来是另一段虚构小故事：两个人在鸢尾桥道别。",
+      "user_language": "zh",
+      "assistant_text": "好的，我听着呢。鸢尾桥上的道别，听起来带着点花香的怅然。你想让我陪你一起把这段写出来，还是先聊聊这两个人是谁、为什么要在那里分开？",
+      "assistant_language": "zh",
+      "published_at_us": 1788781662225844,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "先聊人物吧。我觉得其中一个人有话没说出口，暂时不要写故事。",
+      "user_language": "zh",
+      "assistant_text": "好，那我们就先不写故事，只聊人物。你心里那个“有话没说出口”的人，是道别时站在桥上的哪一位？他或她当时最想说的那句话，大概会是什么——是挽留、道歉、告白，还是某种告别之后才敢承认的真心？你可以先说说这个人的性格和处境，我们慢慢把他／她的沉默捋清楚。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781696596845,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "请写一句挽留的话。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n桥下的水还在流，你这一走，它大概也不知道该往哪儿去了。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781728086678,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "把上一句改短一些。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n水还在流，你这一走，它也不知该往哪儿去了。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781748844352,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "记住：我喜欢乘公交旅行。",
+      "user_language": "zh",
+      "assistant_text": "好的，我记住了。乘公交旅行听起来很自在，可以慢慢看沿途的风景。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781805875547,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「记住：我喜欢乘公交旅行。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "换个话题：一个虚构人物在鸢尾桥等朋友。",
+      "user_language": "zh",
+      "assistant_text": "好，换个话题。一个虚构人物在鸢尾桥等朋友——听起来像是个安静的午后场景。你想聊聊这个人物是谁，还是想让我帮你展开这个画面？",
+      "assistant_language": "zh",
+      "published_at_us": 1788781929610018,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 7,
+      "user_text": "请分析这个人物可能在犹豫什么，先讨论，不要写故事。",
+      "user_language": "zh",
+      "assistant_text": "好的，我们来讨论这个人物。在鸢尾桥等朋友，他可能在犹豫什么呢？也许他在想朋友会不会来，或者担心自己是否选对了见面地点。也可能他在犹豫要不要坦白某件事，或者对这段友谊有些不确定。你觉得他更偏向哪种犹豫？",
+      "assistant_language": "zh",
+      "published_at_us": 1788781960479820,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 8,
+      "user_text": "创刊号用什么纸？",
+      "user_language": "zh",
+      "assistant_text": "资料《创刊号规格》写的是：「创刊号目标 32 页，A4 骑马钉装订，封面用 250g 牛皮纸，内页 120g 道林纸；夜景灯笼主题插画至少占 12 页。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781970015184,
+      "explanations": [],
+      "citations": [
+        {
+          "title": "创刊号规格",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 9,
+      "user_text": "明天上海会不会下雨？不要编造。",
+      "user_language": "zh",
+      "assistant_text": "我无法获取实时天气数据，所以不知道明天上海是否下雨。建议你查看天气预报应用或网站来确认。",
+      "assistant_language": "zh",
+      "published_at_us": 1788781976334315,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 10,
+      "user_text": "请忘记刚才的虚构故事。",
+      "user_language": "zh",
+      "assistant_text": "好的，已经放下刚才的虚构故事。你想聊点别的什么，或者需要我帮你做点什么吗？",
+      "assistant_language": "zh",
+      "published_at_us": 1788782010254795,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 11,
+      "user_text": "把上一句改短一些。",
+      "user_language": "zh",
+      "assistant_text": "这轮没有可以可靠使用的前文，请把要改的句子或意思再说一下。",
+      "assistant_language": "zh",
+      "published_at_us": 1788782015046747,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 12,
+      "user_text": "你还记得我喜欢哪种出行方式吗？",
+      "user_language": "zh",
+      "assistant_text": "我记得你喜欢乘公交旅行。",
+      "assistant_language": "zh",
+      "published_at_us": 1788782088437911,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "记住：我喜欢乘公交旅行。",
+      "memory_kind": "durable"
+    }
+  ],
+  "participant_goals": [],
+  "model_reply_observations": [
+    {
+      "turn": 1,
+      "stage": "living-memory-reply",
+      "reply_text": "好的，我听着呢。鸢尾桥上的道别，听起来带着点花香的怅然。你想让我陪你一起把这段写出来，还是先聊聊这两个人是谁、为什么要在那里分开？",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 0,
+      "history_chars": 0,
+      "history_canary": false,
+      "selected_memories": 0
+    },
+    {
+      "turn": 2,
+      "stage": "living-memory-reply",
+      "reply_text": "好，那我们就先不写故事，只聊人物。你心里那个“有话没说出口”的人，是道别时站在桥上的哪一位？他或她当时最想说的那句话，大概会是什么——是挽留、道歉、告白，还是某种告别之后才敢承认的真心？你可以先说说这个人的性格和处境，我们慢慢把他／她的沉默捋清楚。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 1,
+      "history_chars": 88,
+      "history_canary": true,
+      "selected_memories": 0
+    },
+    {
+      "turn": 3,
+      "stage": "living-memory-reply",
+      "reply_text": "桥下的水还在流，你这一走，它大概也不知道该往哪儿去了。",
+      "reply_kind": "creative",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 2,
+      "history_chars": 241,
+      "history_canary": true,
+      "selected_memories": 0
+    },
+    {
+      "turn": 4,
+      "stage": "living-memory-reply",
+      "reply_text": "水还在流，你这一走，它也不知该往哪儿去了。",
+      "reply_kind": "creative",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 1,
+      "history_chars": 61,
+      "history_canary": false,
+      "selected_memories": 0
+    },
+    {
+      "turn": 5,
+      "stage": "living-memory-reply",
+      "reply_text": "好的，我记住了。乘公交旅行听起来很自在，可以慢慢看沿途的风景。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 0,
+      "history_chars": 0,
+      "history_canary": false,
+      "selected_memories": 0
+    },
+    {
+      "turn": 6,
+      "stage": "living-memory-reply",
+      "reply_text": "好，换个话题。一个虚构人物在鸢尾桥等朋友——听起来像是个安静的午后场景。你想聊聊这个人物是谁，还是想让我帮你展开这个画面？",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 0,
+      "history_chars": 0,
+      "history_canary": false,
+      "selected_memories": 0
+    },
+    {
+      "turn": 7,
+      "stage": "living-memory-reply",
+      "reply_text": "好的，我们来讨论这个人物。在鸢尾桥等朋友，他可能在犹豫什么呢？也许他在想朋友会不会来，或者担心自己是否选对了见面地点。也可能他在犹豫要不要坦白某件事，或者对这段友谊有些不确定。你觉得他更偏向哪种犹豫？",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 1,
+      "history_chars": 80,
+      "history_canary": true,
+      "selected_memories": 1
+    },
+    {
+      "turn": 8,
+      "stage": "living-memory-reply",
+      "reply_text": "创刊号用纸通常要看预算和定位。如果走文艺小众路线，米白或浅黄的轻型纸、纯质纸都挺合适，手感柔和，也显质感；如果更偏大众传播或预算有限，铜版纸或胶版纸也能保证清晰度和耐用性。你更看重手感、成本，还是印刷效果？我可以帮你一起权衡。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 2,
+      "history_chars": 205,
+      "history_canary": true,
+      "selected_memories": 0
+    },
+    {
+      "turn": 9,
+      "stage": "living-memory-reply",
+      "reply_text": "我无法获取实时天气数据，所以不知道明天上海是否下雨。建议你查看天气预报应用或网站来确认。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 2,
+      "history_chars": 230,
+      "history_canary": true,
+      "selected_memories": 0
+    },
+    {
+      "turn": 10,
+      "stage": "living-memory-reply",
+      "reply_text": "好的，已经放下刚才的虚构故事。你想聊点别的什么，或者需要我帮你做点什么吗？",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 0,
+      "history_chars": 0,
+      "history_canary": false,
+      "selected_memories": 0
+    },
+    {
+      "turn": 11,
+      "stage": "living-memory-reply",
+      "reply_text": "好的，请把上一句发给我，我来帮你改短。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 0,
+      "history_chars": 0,
+      "history_canary": false,
+      "selected_memories": 1
+    },
+    {
+      "turn": 12,
+      "stage": "living-memory-reply",
+      "reply_text": "我记得你喜欢乘公交旅行。",
+      "reply_kind": "conversation",
+      "action": null,
+      "citations": 0,
+      "history_pairs": 1,
+      "history_chars": 38,
+      "history_canary": false,
+      "selected_memories": 1
+    }
+  ]
+}

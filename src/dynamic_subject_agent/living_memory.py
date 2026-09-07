@@ -313,7 +313,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         is_creative = False
         recent_dialogue = ()
         refinement_used = False
-        clarification_used = False
+        expression_failure_used = False
         if self._split:
             if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
                 return self._failure(
@@ -373,8 +373,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 elif reply_result.reply_kind == 'creative' and reply_text in {None, '（无记忆相关内容）'}:
                     # Rejected unsolicited creation is an expression mismatch,
                     # not evidence that the current message lacks information.
-                    reply_text = '你希望我先聊聊这段内容的哪一部分？'
-                    clarification_used = True
+                    reply_text = '这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。'
+                    expression_failure_used = True
         if reply_text is None:
             reply_text = '这件事我还没有可靠的内容可以说。我们可以先从你现在想聊的部分说起。'
         if self._split and is_dialogue_continuation(command.utterance) and (not recent_dialogue or not refinement_used):
@@ -419,7 +419,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 language=result.language,
                 is_creative=is_creative,
                 dialogue_priority=self._split and (is_dialogue_continuation(command.utterance)
-                    or clarification_used or bool(recent_dialogue) and refinement_used),
+                    or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )
         experience_request = ExperienceAdjudicationRequest(

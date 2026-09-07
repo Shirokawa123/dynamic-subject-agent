@@ -42,6 +42,8 @@ Knowledge reply 返回 `reply_kind/source_quotes/reply_text/language`：source/u
 
 Living Memory reply 返回 `reply_kind/reply_text/language`：conversation、creative、activity 均不承载状态。正常与 base fallback 经过同一 context-aware 检查；明确活动询问使用本地真实能力边界，不把 elapsed Civil Time 说成离线经历。模型标签不能豁免本地检查。`ExpressionCandidate.is_creative` 仅为 cognition 本地核准的临时表达元数据，不进 Provider 或 canonical Expression；只有已标明的创作文本才可保留为创作，不因同轮出现某个创作分句就放开事实文本。
 
+Slice-22 在既有 Living Memory reply 提示内区分提供题材、已明确讨论、事实询问与创作，字段/用途/历史窗口/调用预算不变。模型返回的 creative 被本地拒绝且无有效基础回复时，只诚实报告本轮表达未完成；不能从模型生成失败推断用户意图不清，也不能把无 Memory 变化解释为当前消息无内容。有效基础回复、合法状态候选、sealed 来源与显式状态查询保持原有优先级；本地失败表达复用临时 dialogue_priority，不增加状态。该回退本身不算承接成功，须以真实后续对话验证。
+
 Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用户原话或已校验的 canonical recalled 内容，不夹带该能力自由生成的 Knowledge 事实。已有目标/姿态/中期表达优先级继续执行；含 Knowledge 的后续合并把来源与记忆引用作为完整证据保留，不做未知句剥除或近似去重。检查只覆盖有界契约和明确语法，不等于对任意自然语言真实性的证明。
 
 明确的目标/承诺查询与闭集变化由 Python 直接处理，不调用模型。含糊输入才进入 ModelGateway；JSON Adapter 可对 `noop` 的 `null → 空值` 做 action-aware 规范化，但未知 action、越界引用、非逐字证据和非法状态转换仍拒绝。六项 state-bearing proposal/classification 或既有 required reply 失败形成所属 Domain 的 FailedClosed 片段；失败项不写状态，也不阻断无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是 proposal 之后、不承载状态的可选 expression refinement；失败按上述能力本地规则回退，不能取消候选或声称 identity grounding 成功。
