@@ -4,4 +4,4 @@
 - Memory、Knowledge、Relationship、目标承诺、Situated、Medium、Windows UI 和持久身份已迁入。
 - 参与者目标/承诺、Situated State 与 Medium State 均完成真实 DeepSeek、Windows UI、持久化和重启验收，状态为 STABLE。
 - ModelGateway、ProviderAdapter 能力声明、provider/account credential slot 与 noop-null canonicalizer 已完成；明确目标查询/变化为 Python 路径。
-- 当前产品仍为 `dogfood-s19`，既有全量基线 364 passed；Slice-20 只读确认原关系失败位于 Provider/Gateway 调用链，四次真实采样未复现，定向 28 passed，未实施行为修复；精确原因未定，近期对话新数据用途待批准，见 [诊断报告](reports/2026-09-07-slice-20/REPORT.md)。
+- 已验收主线为 `dogfood-s19`，关系历史故障原因仍未定；Slice-21 开发分支实现有界近期对话，自动回归 390 passed，真实 UI/DeepSeek 被工具审核阻止、尚未验收，不可宣称切片完成，见 [checkpoint](reports/2026-09-07-slice-21/REPORT.md)。

@@ -69,6 +69,7 @@ from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_sta
 from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRecord
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeContinuity,
     SubjectTimeHistoryFailedClosed,
@@ -349,6 +350,7 @@ class CognitionRuntimeView:
     medium_signals: tuple[MediumSignalRecord, ...] = ()
     runtime_identity: RuntimeIdentityProjection | None = None
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
+    load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
 
 
 @dataclass(frozen=True)
@@ -366,6 +368,8 @@ class ExpressionCandidate:
     language: str
     # Ephemeral permission checked by capability cognition, never a state fact.
     is_creative: bool = False
+    # A locally selected contextual reply or its honest restatement fallback.
+    dialogue_priority: bool = False
 
 
 class CognitionEngine(ABC):
@@ -951,6 +955,8 @@ class SubjectRuntime:
         *,
         observed_at_us: int | None = None,
         query_text: object | None = None,
+        dialogue_operation: OperationRef | None = None,
+        dialogue_head: int | None = None,
     ) -> CognitionRuntimeView:
         observed_at_us = (
             time_ns() // 1_000
@@ -1042,6 +1048,10 @@ class SubjectRuntime:
             medium_state=medium_state,
             medium_signals=medium_signals,
             subject_time_result=subject_time_result,
+            load_recent_dialogue=(
+                (lambda: self._engine.recent_dialogue_before(dialogue_operation, expected_head=dialogue_head))
+                if dialogue_operation is not None and dialogue_head is not None else None
+            ),
         )
 
     def list_living_memories(
@@ -1243,6 +1253,8 @@ class SubjectRuntime:
                 context=self._cognition_view(
                     observed_at_us=experience_basis.observed_at_us,
                     query_text=command.utterance,
+                    dialogue_operation=operation_ref,
+                    dialogue_head=frozen_basis.head_sequence,
                 ),
                 command=command,
                 basis=experience_basis,

@@ -911,6 +911,7 @@ class ConversationOutcomeSummary:
     medium_state_before_baseline: str | None
     medium_state_reason_code: str | None
     medium_state_signal: str | None
+    memory_revision: bool | None = None
 
     @classmethod
     def from_outcome(cls, outcome: TimelineOutcome) -> ConversationOutcomeSummary:
@@ -936,6 +937,7 @@ class ConversationOutcomeSummary:
             medium_state_before_baseline=state.medium_state_before_baseline,
             medium_state_reason_code=state.medium_state_reason_code,
             medium_state_signal=state.medium_state_signal,
+            memory_revision=experience.memory_revision,
         )
 
 
@@ -982,6 +984,46 @@ class ExperienceDomainOutcome:
     outcome_id: str
     decision: CandidateDecisionRecord
     epistemic_outcome_id: str
+
+    @property
+    def memory_revision(self) -> bool | None:
+        try:
+            value = json.loads(self.decision.reason)
+            if not isinstance(value, dict):
+                return None
+            memory = value.get('living_memory')
+            if memory is None:
+                known_codes = {'experience.no-applicable-candidate', 'knowledge.accepted',
+                    'knowledge.identity-invalid', 'knowledge.no-projected-candidates',
+                    'knowledge.citation-not-projected', 'knowledge.citation-duplicated',
+                    'knowledge-provider-failed', 'knowledge-provider-invalid-output',
+                    'participant-goal.selected-for-reply'}
+                return False if (isinstance(value.get('code'), str) and value['code'] in known_codes
+                    and set(value) <= {'code', 'provenance', 'knowledge', 'participant_goal_commitment'}
+                    and self.decision.rule_version in {'m0-domain-noop-1.0', 'experience-1.0'}) else None
+            if not isinstance(memory, dict) or self.decision.rule_version != 'experience-1.0':
+                return None
+            if value.get('code') == 'living-memory.recalled' and memory.get('status') == 'no-op':
+                if set(memory) != {'status', 'recalled_memory_ids'} or not isinstance(memory['recalled_memory_ids'], list):
+                    return None
+                for memory_id in memory['recalled_memory_ids']:
+                    UUID(memory_id)
+                return False
+            required = {'status', 'memory_id', 'content', 'source_user_message_id', 'supersedes_memory_id', 'memory_kind'}
+            if (value.get('code') != 'living-memory.accepted' or memory.get('status') != 'accepted'
+                or not required <= set(memory) or not set(memory) <= required | {'temporal_anchor'}
+                or not isinstance(memory['content'], str) or not memory['content'].strip()
+                or memory['memory_kind'] not in {'durable', 'plan'}):
+                return None
+            UUID(memory['memory_id'])
+            UUID(memory['source_user_message_id'])
+            previous = memory['supersedes_memory_id']
+            if previous is None:
+                return False
+            UUID(previous)
+            return True
+        except (ValueError, TypeError, AttributeError):
+            return None
 
     def _text_fact(self, capability: str, field: str) -> str | None:
         try:
@@ -6632,6 +6674,47 @@ class TimelineEngine:
                 "empty canonical history does not match the Timeline head",
             )
         return tuple(records[-limit:])
+
+    def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
+        """Read only the same identity's verified frozen prefix for this reply."""
+        from dynamic_subject_agent.recent_dialogue import is_dialogue_control, select_recent_dialogue
+
+        snapshot = self.query(operation_ref)
+        frozen_row = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
+            verified_prefix_digest, revision_head_digest FROM attempt_cycle_basis WHERE operation_id=?''',
+            (UUID(operation_ref.operation_id).bytes,)).fetchone()
+        if frozen_row is None or bytes(frozen_row[0]) != UUID(snapshot.attempt_id).bytes:
+            raise PublicationFailedClosed('dialogue-attempt-unverified', 'dialogue requires the current frozen attempt')
+        frozen = TimelineBasis(int(frozen_row[1]), None if frozen_row[2] is None else bytes(frozen_row[2]).hex(),
+            bytes(frozen_row[3]).hex(), bytes(frozen_row[4]).hex())
+        if (isinstance(expected_head, bool) or not isinstance(expected_head, int)
+            or frozen.head_sequence != expected_head or frozen != snapshot.timeline_basis):
+            raise PublicationFailedClosed('dialogue-basis-mismatch', 'dialogue does not match the frozen turn basis')
+        records = self.list_conversation_turns(limit=2)
+        if (records[-1].head_sequence if records else 0) != expected_head:
+            raise PublicationFailedClosed('dialogue-head-mismatch', 'dialogue does not end at the frozen head')
+        cutoff = 0
+        unpublished = self._writer.execute('''
+            SELECT op.operation_id, op.contract_version, op.operation_kind,
+                   hex(op.payload_fingerprint), basis.head_sequence, failure.operation_id
+            FROM subject_operation op
+            LEFT JOIN attempt_cycle_basis basis ON basis.operation_id=op.operation_id
+            LEFT JOIN operation_failure failure ON failure.operation_id=op.operation_id
+            WHERE op.operation_id != ? AND NOT EXISTS (
+                SELECT 1 FROM timeline_outcome outcome WHERE outcome.operation_id=op.operation_id)
+        ''', (UUID(operation_ref.operation_id).bytes,)).fetchall()
+        for row in unpublished:
+            # Pending/interrupted or unfrozen admissions have unresolved intent.
+            if row[4] is None or row[5] is None:
+                return ()
+            previous_ref = OperationRef(str(row[1]), self._location.root_id,
+                self._location.timeline_store_id, self._authority.authority_scope_id,
+                str(UUID(bytes=bytes(row[0]))), OperationKind(str(row[2])), str(row[3]).casefold())
+            previous_command = self._query_command(previous_ref)
+            if is_dialogue_control(previous_command.utterance):
+                return ()
+            cutoff = max(cutoff, int(row[4]))
+        return select_recent_dialogue(records, after_sequence=cutoff)
 
     def query_outcome(self, operation_ref: OperationRef) -> TimelineOutcome:
         snapshot = self.query(operation_ref)

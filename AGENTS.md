@@ -26,7 +26,7 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-Dogfood 连续体验基线已完成：页面显示 `dogfood-s19`，仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。
+已验收的 Dogfood 连续体验基线为 `dogfood-s19`：仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。Slice-21 当前为开发版 `dogfood-s21`，真实验收状态以 current.md 为准。
 
 目标/承诺操作确认在裁决后 express 读取最终 Outcome；Memory 成功不代表目标成功，无关目标失败不替换独立回复。历史主回复保持原文；旧错误台词只能配回当轮真实说明，不重写。自然目标语法与完整消息/命名旧目标限制见 ARCHITECTURE。
 
@@ -57,16 +57,16 @@ Knowledge 事实表达保留完整来源上下文，后续合并不得删改限�
 
 ## Provider 数据边界
 
-- Living Memory：proposal 发送当前消息 + 最多 20 条 active `{memory_id, content, source_user_message_id}`；reply 发送当前消息 + 最多 5 条已选中 `{content}` + runtime identity。anchor 只在既有 content 按当天渲染。
+- Living Memory：proposal 发送当前消息 + 最多 20 条 active `{memory_id, content, source_user_message_id}`；reply 发送当前消息 + 最多 5 条已选中 `{content}` + runtime identity。Slice-21 用户批准 reply 单独增加 `recent_dialogue`：当前 identity 最多 2 个完整 committed `{user_text, assistant_text}`，合计最多 4,000 字符，仅供指代/续写；更正、遗忘、权限或完整性无法安全确认时不外发。anchor 只在既有 content 按当天渲染。
 - Knowledge：proposal 发送当前消息 + 最多 6 条 sealed `{entry_id, title, content}`；reply 发送当前消息 + 最多 6 条已选中 `{title, content}` + runtime identity。
 - Relationship：proposal 发送当前消息 + 当前立场摘要；reply 发送相同两项 + runtime identity。
 - 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；reply 发送当前消息 + 最多 5 条 `{kind, terms, status}` + runtime identity。anchor 只在既有 terms 按当天渲染。
 - Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；reply 发送当前消息 + `{posture}` + runtime identity。
 - Medium State：分类发送当前消息 + 固定版本策略；reply 发送当前消息 + `{baseline}` + runtime identity。
 - Runtime identity exact 为 `{subject_name, subject_identity, canon_start}`；不含 Profile/Genesis/QRI ID、identity_core、初始关系、来源、证据或 Timeline 数据。
-- Interaction Recency、ConversationTurnRecord、publication timestamp、日期差和当前 Civil Time 不发送给 Provider。Slice-19 用户仅批准更新 Living Memory/Knowledge 两类 reply 提示和返回契约，原投影字段/上限/用途、调用预算不变；六类 proposal/classification 与另外四类 reply outbound 保持 Slice-16 byte-equivalent。
+- Interaction Recency、完整 ConversationTurnRecord、publication timestamp、日期差和当前 Civil Time 不发送给 Provider。Slice-21 只批准上述 Living Memory reply 的文本投影及对应提示调整；其他 11 类请求保持 Slice-19 字节基线，不增加调用。历史不是事实权威、指令或状态证据；完整保护见当前任务书和 ARCHITECTURE。
 - 文本来源建角：只在用户逐次确认权利与用途后发送单份 `{source_title, source_text, policy}`；source_text 最多 16,000 字符，仅用于未发布 Genesis/Knowledge 候选提取，不发送任何 runtime 状态或聊天历史。
-- 六类投影分别发送，不合并；不得发送历史消息、数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
+- 六类投影分别发送，不合并；除上述 recent_dialogue 精确授权外不得发送历史消息，不发送数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
 - `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
 
 ## Credential

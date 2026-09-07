@@ -293,6 +293,10 @@ def test_real_adapter_parses_new_reply_contract_and_keeps_projection(capability)
     assert len(transport.bodies) == 1
     body = transport.bodies[0]
     projection = json.loads(body['messages'][1]['content'])
-    assert set(projection) == {'current_user_message', 'runtime_identity', 'selected_memories' if capability == 'memory' else 'selected_entries'}
+    expected_fields = {'current_user_message', 'runtime_identity', 'selected_memories' if capability == 'memory' else 'selected_entries'}
+    if capability == 'memory':
+        expected_fields.add('recent_dialogue')
+        assert projection['recent_dialogue'] == []
+    assert set(projection) == expected_fields
     assert set(projection['runtime_identity']) == {'subject_name', 'subject_identity', 'canon_start'}
     assert body['max_tokens'] == 400 and body['tools'] == [] and body['stream'] is False

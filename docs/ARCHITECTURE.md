@@ -52,7 +52,9 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 每轮 `ExperienceBasis.observed_at_us` 与 `ExperienceRecord.experienced_at_us` 来自同一 canonical Admission。新 Living Memory plan 或参与者目标/承诺只在消息含唯一受支持时间表达时附加 `TemporalAnchor`；旧记录不回填。离线时间只改变投影，不生成 Experience、状态转换、提醒或主动消息；Provider 仍只见原有 content/terms 字段，不见 timestamp、时区或 anchor 结构。
 
-Interaction Recency 不持久化：明确查询从当前 Admission 与最近完整 TimelineOutcome 的 publication time 现场派生；pending、interrupted、FailedClosed 和 UI 20 轮窗口不参与。查询本身提交后就是下一次查询的最近 turn。非闭集消息不读取 history；四条闭集命中时六类 Provider 零调用，timestamp、日期差和历史文本均不外发。
+Interaction Recency 不持久化：明确查询从当前 Admission 与最近完整 TimelineOutcome 的 publication time 现场派生；pending、interrupted、FailedClosed 和 UI 20 轮窗口不参与。查询本身提交后就是下一次查询的最近 turn。SubjectTimeContinuity 对非闭集消息不读取 history；四条闭集命中时六类 Provider 零调用。Slice-21 另授权 Living Memory reply 的有界近期文本用途，timestamp、日期差仍不外发。
+
+Slice-21 仅 Living Memory reply 可使用 `recent_dialogue`：从本轮冻结 basis 对应的当前 identity canonical Timeline 惰性派生最多两轮完整 user/assistant 文本、总计 4,000 字符，不建立新 store。历史读取/权限/完整性不明确或更正遗忘边界无法证明安全时退回无历史；历史只影响当前回复，不进入 proposal/classification 或 Domain 状态依据。详细窗口和控制截断规则由当前任务书约束。
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 

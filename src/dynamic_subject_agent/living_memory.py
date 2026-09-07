@@ -22,6 +22,7 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
+from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply
 
 
@@ -57,6 +58,7 @@ class LivingMemoryReplyRequest:
     current_user_message: str
     selected_memories: tuple[LivingMemoryReplyMemory, ...]
     runtime_identity: RuntimeIdentityProjection
+    recent_dialogue: tuple[RecentDialogueTurn, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -309,6 +311,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         )
         reply_text = contextual_reply(result.reply_text, message=command.utterance)
         is_creative = False
+        recent_dialogue = ()
+        refinement_used = False
         if self._split:
             if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
                 return self._failure(
@@ -323,6 +327,16 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 for memory in active
                 if memory.memory_id in recalled_ids
             )[:5]
+            recent_dialogue = ()
+            if (context.load_recent_dialogue is not None
+                and result.proposal.action is not LivingMemoryAction.REVISE
+                and not is_dialogue_control(command.utterance)):
+                try:
+                    recent_dialogue = context.load_recent_dialogue()
+                except Exception:
+                    # Optional context failure cannot license history disclosure
+                    # or cancel the independently obtained state proposal.
+                    recent_dialogue = ()
             try:
                 reply_result = self._gateway.execute(
                     ModelTask(
@@ -331,6 +345,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                             current_user_message=command.utterance,
                             selected_memories=selected,
                             runtime_identity=context.runtime_identity,
+                            recent_dialogue=recent_dialogue,
                         ),
                     )
                 ).value
@@ -343,12 +358,17 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 and reply_result.language == command.language
             ):
                 guarded_reply = contextual_reply(reply_result.reply_text,
-                    message=command.utterance, reply_kind=reply_result.reply_kind)
+                    message=command.utterance, reply_kind=reply_result.reply_kind,
+                    continuation_allowed=bool(recent_dialogue) and is_dialogue_continuation(command.utterance))
                 if guarded_reply is not None:
                     reply_text = guarded_reply
+                    refinement_used = True
                     is_creative = reply_result.reply_kind == 'creative' and activity_boundary_reply(command.utterance) is None
         if reply_text is None:
             reply_text = '这件事我还没有可靠的内容可以说。我们可以先从你现在想聊的部分说起。'
+        if self._split and is_dialogue_continuation(command.utterance) and (not recent_dialogue or not refinement_used):
+            reply_text = '这轮没有可以可靠使用的前文，请把要改的句子或意思再说一下。'
+            is_creative = False
         if historical_memory is not None:
             is_creative = False
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"
@@ -386,6 +406,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 text=reply_text,
                 language=result.language,
                 is_creative=is_creative,
+                dialogue_priority=self._split and (is_dialogue_continuation(command.utterance)
+                    or bool(recent_dialogue) and refinement_used),
             ),
         )
         experience_request = ExperienceAdjudicationRequest(

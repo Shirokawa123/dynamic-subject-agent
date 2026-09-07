@@ -63,7 +63,7 @@ def explicit_creation_request(message: str) -> bool:
         for clause in re.split(r'[。！？!?，,]', message))
 
 
-def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversation') -> str | None:
+def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversation', continuation_allowed: bool = False) -> str | None:
     """Both primary and fallback text cross this same local expression check."""
     if not isinstance(reply_kind, str):
         return None
@@ -75,7 +75,7 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
     if reply_kind not in {'conversation', 'creative'}:
         return None
     if reply_kind == 'creative':
-        if not explicit_creation_request(message) or not isinstance(text, str) or not text.strip():
+        if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
         return '这是现在的即兴创作，不是资料事实或已发生的经历：\n' + text.strip()
     if isinstance(text, str) and re.search(r'我(?:倒是)?(?:正想歇|替你留了|一直在等|一直在想)', text):

@@ -569,6 +569,7 @@ class ControlledCompositeCognition(CognitionEngine):
         non_state_relevant = bool(
             knowledge_cited
             or memory_relevant
+            or memory_proposal.expression_candidate.dialogue_priority
             or participant_goal_relevant
             or relationship_claim_protected
         )

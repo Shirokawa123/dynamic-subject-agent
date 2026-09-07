@@ -274,6 +274,7 @@ def test_deepseek_memory_reply_outbound_is_exact_identity_projection() -> None:
     assert projection == {
         "current_user_message": "我之前的计划是什么？",
         "selected_memories": [{"content": "我明天学习 LLM"}],
+        "recent_dialogue": [],
         "runtime_identity": {
             "subject_name": "Mira",
             "subject_identity": "Mira 是一名谨慎的地图修复师。",
