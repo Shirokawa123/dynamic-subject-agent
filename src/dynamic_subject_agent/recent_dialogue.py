@@ -51,6 +51,14 @@ def is_dialogue_continuation(message: str) -> bool:
         for pattern in patterns)
 
 
+def is_previous_expression_rewrite(message: str) -> bool:
+    """Only an entire, explicit nearest-reply request narrows the window."""
+    return re.fullmatch(
+        r'(?:请|帮我)?把(?:上一句|刚才那句)(?:改短|缩短)(?:一些|一点|点)?(?:吧)?[。！？!?]?',
+        message.strip(),
+    ) is not None
+
+
 def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0) -> tuple[RecentDialogueTurn, ...]:
     selected = []
     chars = 0

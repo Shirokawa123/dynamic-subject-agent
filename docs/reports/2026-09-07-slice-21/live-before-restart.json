@@ -1,0 +1,42 @@
+{
+  "build_id": "dogfood-s21",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "我现在有点紧张。我们一起坐错了公交，后来沿河走回去，一路都在笑。",
+      "user_language": "zh",
+      "assistant_text": "紧张的时候能笑出来，说明这段路其实挺值得的。",
+      "assistant_language": "zh",
+      "published_at_us": 1788778430235566,
+      "explanations": [
+        {
+          "capability": "关系",
+          "kind": "kept",
+          "message": "关系候选没有通过证据规则，关系保持不变。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "那按这个意思再写一句吧，我就用这个开头了。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n紧张的时候能笑出来，说明这段路其实挺值得的。",
+      "assistant_language": "zh",
+      "published_at_us": 1788778462023675,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "那按这个意思再写一句吧，我就用这个开头了。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n走错的路，往往藏着最对的心情。",
+      "assistant_language": "zh",
+      "published_at_us": 1788778999139432,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": []
+}

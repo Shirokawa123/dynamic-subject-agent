@@ -6,6 +6,7 @@ import re
 
 
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
+CREATIVE_REPLY_PREFIX = '这是现在的即兴创作，不是资料事实或已发生的经历：\n'
 _UNSUPPORTED_CURRENT_ACTIVITY_MARKERS = (
     "我也刚",
     "我正好",
@@ -77,10 +78,19 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
     if reply_kind == 'creative':
         if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
-        return '这是现在的即兴创作，不是资料事实或已发生的经历：\n' + text.strip()
+        return CREATIVE_REPLY_PREFIX + text.strip()
     if isinstance(text, str) and re.search(r'我(?:倒是)?(?:正想歇|替你留了|一直在等|一直在想)', text):
         return None
     return guard_runtime_identity_reply(text)
+
+
+def repeats_previous_expression(text: str, previous: str) -> bool:
+    def body(value: str) -> str:
+        value = value.strip()
+        while value.startswith(CREATIVE_REPLY_PREFIX):
+            value = value.removeprefix(CREATIVE_REPLY_PREFIX).strip()
+        return value
+    return body(text) == body(previous)
 
 
 __all__ = ["guard_runtime_identity_reply"]

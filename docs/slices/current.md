@@ -1,3 +1,3 @@
 # 当前工作
 
-当前唯一切片：[Slice-21：有界近期对话与指代续写](slice-21-recent-dialogue.md)，位于开发分支 `codex/slice-21-recent-dialogue`。自动回归 390 passed，但真实调用被工具审核拦截，等待完整用户授权文本；[报告](../reports/2026-09-07-slice-21/REPORT.md)。不得绕过拦截或将切片标为完整验收。
+当前没有执行中的切片。[Slice-21：有界近期对话与指代续写](slice-21-recent-dialogue.md) 已完成真实隔离验收，最终 395 passed，build `dogfood-s21`；[报告](../reports/2026-09-07-slice-21/LIVE-ACCEPTANCE.md) 保留两次失败、修复与范围限制。普通换题仍可能落回“没有记忆或知识”，仅作为下一候选证据；等待用户选择与新任务书，不自动扩展架构或开始新切片。

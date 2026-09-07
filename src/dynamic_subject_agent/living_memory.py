@@ -22,8 +22,8 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply
+from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -333,6 +333,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 and not is_dialogue_control(command.utterance)):
                 try:
                     recent_dialogue = context.load_recent_dialogue()
+                    if is_previous_expression_rewrite(command.utterance):
+                        recent_dialogue = recent_dialogue[-1:]
                 except Exception:
                     # Optional context failure cannot license history disclosure
                     # or cancel the independently obtained state proposal.
@@ -360,6 +362,9 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 guarded_reply = contextual_reply(reply_result.reply_text,
                     message=command.utterance, reply_kind=reply_result.reply_kind,
                     continuation_allowed=bool(recent_dialogue) and is_dialogue_continuation(command.utterance))
+                if (guarded_reply is not None and recent_dialogue and is_dialogue_continuation(command.utterance)
+                    and repeats_previous_expression(guarded_reply, recent_dialogue[-1].assistant_text)):
+                    guarded_reply = None
                 if guarded_reply is not None:
                     reply_text = guarded_reply
                     refinement_used = True
@@ -367,7 +372,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         if reply_text is None:
             reply_text = '这件事我还没有可靠的内容可以说。我们可以先从你现在想聊的部分说起。'
         if self._split and is_dialogue_continuation(command.utterance) and (not recent_dialogue or not refinement_used):
-            reply_text = '这轮没有可以可靠使用的前文，请把要改的句子或意思再说一下。'
+            reply_text = ('这轮没有可以可靠使用的前文，请把要改的句子或意思再说一下。' if not recent_dialogue
+                else '这次没有形成新的改写版本。请再说明希望怎样调整这句话。')
             is_creative = False
         if historical_memory is not None:
             is_creative = False

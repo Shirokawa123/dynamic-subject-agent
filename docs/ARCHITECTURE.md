@@ -54,7 +54,9 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 Interaction Recency 不持久化：明确查询从当前 Admission 与最近完整 TimelineOutcome 的 publication time 现场派生；pending、interrupted、FailedClosed 和 UI 20 轮窗口不参与。查询本身提交后就是下一次查询的最近 turn。SubjectTimeContinuity 对非闭集消息不读取 history；四条闭集命中时六类 Provider 零调用。Slice-21 另授权 Living Memory reply 的有界近期文本用途，timestamp、日期差仍不外发。
 
-Slice-21 仅 Living Memory reply 可使用 `recent_dialogue`：从本轮冻结 basis 对应的当前 identity canonical Timeline 惰性派生最多两轮完整 user/assistant 文本、总计 4,000 字符，不建立新 store。历史读取/权限/完整性不明确或更正遗忘边界无法证明安全时退回无历史；历史只影响当前回复，不进入 proposal/classification 或 Domain 状态依据。详细窗口和控制截断规则由当前任务书约束。
+Slice-21 仅 Living Memory reply 可使用 `recent_dialogue`：从本轮冻结 basis 对应的当前 identity canonical Timeline 惰性派生最多两轮完整 user/assistant 文本、总计 4,000 字符，不建立新 store。历史读取/权限/完整性不明确或更正遗忘边界无法证明安全时退回无历史；历史只影响当前回复，不进入 proposal/classification 或 Domain 状态依据。详细窗口和控制截断规则见 [Slice-21](slices/slice-21-recent-dialogue.md)。
+
+整条明确“把上一句/刚才那句改短/缩短”的有限句式只提供上述安全窗口中的最新完整轮，避免把更早话题提供为改写对象；混合消息及其他指代仍遵守原两轮上限。LM reply 提示要求最近回复只是拒绝/澄清时请用户贴出原句。明确续写的表达若与最近 assistant 正文完全重复（比较时仅剥离受控创作前缀与首尾空白），拒绝该 refinement 并诚实说明未形成新版本，保留独立合法状态候选；不做语义相似度判定，不重写 canonical 历史，也不保证任意自然语言指代正确。
 
 桌面 HTTP/UI Adapter 只暴露可解释的内容、闭集状态和计数；canonical memory/revision/source ID、Timeline ID、profile ID 与 credential 不进入可见记忆卡或逐轮状态注记。
 

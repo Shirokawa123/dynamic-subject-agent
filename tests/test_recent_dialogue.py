@@ -31,6 +31,10 @@ class DialogueProvider:
     def reply(self, request):
         self.replies.append(request)
         text = '坐错公交，就沿河笑着走回去。' if getattr(request, 'recent_dialogue', ()) else '你可以继续说。'
+        if getattr(request, 'recent_dialogue', ()) and request.current_user_message == '把上一句改短一些。':
+            text = '公交坐错，笑着走回。'
+        elif getattr(request, 'recent_dialogue', ()) and request.current_user_message == '再给我一个版本。':
+            text = '路走错了，笑声没停。'
         return LivingMemoryReplyResult(text, 'zh')
 
 
@@ -67,7 +71,7 @@ def test_only_reply_gets_last_two_committed_pairs_and_no_persistent_memory(tmp_p
         assert pairs(provider.replies[1]) == [('我们坐错了公交，沿河笑着走回去了。', first.projection.expression_text)]
         assert pairs(provider.replies[3]) == [('拿这个当开头，帮我写成一句。', second.projection.expression_text),
             ('把上一句改短一些。', third.projection.expression_text)]
-        assert fourth.projection.expression_text == '坐错公交，就沿河笑着走回去。'
+        assert fourth.projection.expression_text == '路走错了，笑声没停。'
         assert all(not hasattr(request, 'recent_dialogue') for request in provider.proposals)
         records = opened.app.application.query(ApplicationQuery(ApplicationQueryKind.LIVING_MEMORY,
             opened.qri.profile_id, opened.timeline))
@@ -216,6 +220,21 @@ def test_missing_context_prompts_restatement_instead_of_empty_acknowledgement(tm
         opened.app.close()
 
 
+@pytest.mark.parametrize('message', ['把上一句改短一些。', '请把刚才那句缩短一点'])
+def test_exact_previous_reply_rewrite_does_not_offer_older_topic(tmp_path, message):
+    provider = DialogueProvider()
+    opened = open_app(tmp_path, provider)
+    try:
+        submit(opened, '旧话题是公交。')
+        latest = submit(opened, '接下来是另一段虚构小故事：两个人在鸢尾桥道别。')
+        submit(opened, message)
+        assert pairs(provider.replies[-1]) == [
+            ('接下来是另一段虚构小故事：两个人在鸢尾桥道别。', latest.projection.expression_text)]
+        assert len(provider.replies) == len(provider.proposals) == 3
+    finally:
+        opened.app.close()
+
+
 def test_restart_uses_canonical_dialogue_without_a_chat_store(tmp_path):
     provider = DialogueProvider()
     first = open_app(tmp_path, provider)
@@ -341,5 +360,23 @@ def test_product_carry_does_not_replace_dialogue_continuation(tmp_path):
         assert continued.projection.situated_state_action == 'carry'
         queried = submit(opened, '把上一句改短一些。你现在的姿态是什么？')
         assert '姿态' in queried.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('first_message,kind,copy_whole', [('聊聊这段路。', 'conversation', False), ('给我写一句短诗。', 'creative', False), ('给我写一句短诗。', 'creative', True)])
+def test_continuation_cannot_repackage_identical_previous_reply(tmp_path, first_message, kind, copy_whole):
+    class Repeating(DialogueProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            text = request.recent_dialogue[-1].assistant_text if copy_whole and request.recent_dialogue else '这段路其实挺值得的。'
+            return LivingMemoryReplyResult(text, 'zh', kind if len(self.replies) == 1 else 'creative')
+    opened = open_app(tmp_path, Repeating())
+    try:
+        submit(opened, first_message)
+        result = submit(opened, '那按这个意思再写一句吧。')
+        assert '这段路其实挺值得的' not in result.projection.expression_text
+        assert '没有形成新的改写' in result.projection.expression_text
+        assert '没有可以可靠使用的前文' not in result.projection.expression_text
     finally:
         opened.app.close()

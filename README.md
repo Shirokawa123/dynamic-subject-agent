@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s19`，会显示在聊天页身份名称下方。可重点问一个有资料的事实，再追问资料外细节；事实回答保留来源上下文，未知不借 citation 补写。明确当前/离线活动询问说明真实能力边界，明确创作单独标明。此保护是有界契约与有限句式，不是任意自然语言真实性保证；混合活动/创作请求可能优先回答活动边界。目标操作与历史说明继续按 Slice-18 恢复；四条时间查询仍本地回答。来源身份仅在 sealed Genesis 含 voice 时承诺可辨识表达，原始 Avery 没有独立 voice。用户经历润色、省略上下文续写及整体自然度仍待后续切片，见 [Slice-19 报告](docs/reports/2026-09-05-slice-19/REPORT.md)。
+当前内部体验 build 为 `dogfood-s21`，会显示在聊天页身份名称下方。可先明确请它写一句，再说“把上一句改短一些”；Living Memory reply 最多使用近期两轮完整对话，整条明确最近一句改短只取最新完整轮。遗忘、更正或安全无法确认会关闭新增历史用途，缺少可用前文时请你重述；不等于删除聊天记录或理解任意长对话。事实引用、当前/离线活动边界、创作标签、操作回执与本地时间查询保持既有契约。来源身份仅在 sealed Genesis 含 voice 时承诺可辨识表达，原始 Avery 没有独立 voice。普通换题仍可能错误回“没有记忆或知识”，自然度仍有缺口；真实失败、修复及限制见 [Slice-21 报告](docs/reports/2026-09-07-slice-21/LIVE-ACCEPTANCE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

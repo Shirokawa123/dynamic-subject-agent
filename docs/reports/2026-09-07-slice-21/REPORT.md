@@ -1,4 +1,8 @@
-# Slice-21 待真实验收 checkpoint
+# Slice-21 报告
+
+最终状态（2026-09-07）：**有界近期对话切片已完成真实隔离验收，395 passed，build `dogfood-s21`。** 两次真实失败、修复、重启与遗忘外发检查及未解决的普通换题问题见 [真实验收报告](LIVE-ACCEPTANCE.md)。以下为先前 checkpoint 的历史原文，不代表当前仍等待授权。
+
+## 先前待真实验收 checkpoint（保留历史）
 
 状态：**实现与自动化检查完成，真实 UI / DeepSeek / 进程重启验收未执行，切片未收口。** 开发 build `dogfood-s21`；已验收主线仍为 `dogfood-s19`。基线 `7082a41`。
 

@@ -1,0 +1,160 @@
+{
+  "destination": "https://api.deepseek.com",
+  "projection": "Living Memory reply recent_dialogue only",
+  "restart_check": {
+    "same_identity": true,
+    "restored_first_eight": true
+  },
+  "samples": [
+    {
+      "turn": 1,
+      "session": 1,
+      "sample": 1,
+      "pairs": 0,
+      "chars": 0,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 2,
+      "session": 1,
+      "sample": 2,
+      "pairs": 1,
+      "chars": 54,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 3,
+      "session": 2,
+      "sample": 1,
+      "pairs": 2,
+      "chars": 122,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 4,
+      "session": 3,
+      "sample": 1,
+      "pairs": 2,
+      "chars": 129,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 5,
+      "session": 3,
+      "sample": 2,
+      "pairs": 2,
+      "chars": 109,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 6,
+      "session": 3,
+      "sample": 3,
+      "pairs": 2,
+      "chars": 94,
+      "keys_exact": true,
+      "contains_canary": true,
+      "http_status": 200
+    },
+    {
+      "turn": 7,
+      "session": 3,
+      "sample": 4,
+      "pairs": 0,
+      "chars": 0,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 8,
+      "session": 3,
+      "sample": 5,
+      "pairs": 0,
+      "chars": 0,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 9,
+      "session": 4,
+      "sample": 1,
+      "pairs": 1,
+      "chars": 38,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 10,
+      "session": 4,
+      "sample": 2,
+      "pairs": 2,
+      "chars": 103,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 11,
+      "session": 4,
+      "sample": 3,
+      "pairs": 1,
+      "chars": 46,
+      "keys_exact": true,
+      "contains_canary": true,
+      "http_status": 200
+    },
+    {
+      "turn": 12,
+      "session": 4,
+      "sample": 4,
+      "pairs": 2,
+      "chars": 117,
+      "keys_exact": true,
+      "contains_canary": true,
+      "http_status": 200
+    },
+    {
+      "turn": 13,
+      "session": 4,
+      "sample": 5,
+      "pairs": 1,
+      "chars": 75,
+      "keys_exact": true,
+      "contains_canary": true,
+      "http_status": 200
+    },
+    {
+      "turn": 14,
+      "session": 4,
+      "sample": 6,
+      "pairs": 0,
+      "chars": 0,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    },
+    {
+      "turn": 15,
+      "session": 4,
+      "sample": 7,
+      "pairs": 0,
+      "chars": 0,
+      "keys_exact": true,
+      "contains_canary": false,
+      "http_status": 200
+    }
+  ]
+}

@@ -909,7 +909,7 @@ def test_nonmatch_provider_outbound_matches_authorized_baselines() -> None:
         "situated": "04f167a465671bd452a8dbd4593dc98b7db0f6c3082e4a0455f5da5314e6803e",
         "medium": "5d3bcb4c0dcb73396bd2c49744ee7424da9b691c26c461d242511e1a71af25fa",
         # Slice-21 authorizes only LM reply history; the other 11 hashes remain.
-        "living-reply": "ab1e0cb57f0fc26df6648075377bbdcd36a492de4163b0729c4d6c4060623c99",
+        "living-reply": "9f961412524656003c566cf979dab3f63f222dfe27c1a15cf506df3561596861",
         "knowledge-reply": "85cd4778e1b18b432e02d7cd59f68e238fb7fc95c9c56ed31f1e8381f40950a1",
         "relationship-reply": "30e65c081d2bbc2c6c0096381577366a983d7cceb6597cd3f3d9537465be7c20",
         "goal-reply": "d544b15ca979461e93f91ee3d07409d72479e1f25174db1eec2edfb751123d62",
