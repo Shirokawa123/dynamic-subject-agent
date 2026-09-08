@@ -100,6 +100,14 @@ Living Memory 的 conversation 只承接主观讨论、澄清和不引入外部�
 
 即时回顾用户未来计划不是未来提醒动作，时间词需修饰提醒动作而非被回顾的内容；明确故事中的台词不当现实请求。上述为有限中文语法，不保证识别所有措辞。12类 Provider 的字段、提示字节基线及调用预算均不变。旧错误台词与本地记录不清洗；自由回忆对全体库存的错误断言仍是独立缺口，见 [Slice-27 报告](reports/2026-09-08-slice-27/REPORT.md)。
 
+## 记忆回答范围（Slice-28）
+
+非精确的有限活跃记忆状态询问只回答本轮已核实的选中范围：无选中不等于全库存空，有选中不等于必定命中所指；不可读/控制不明确时不判断空库存或停用。LM非创作中直接全库存/从未提供的否定不能靠空选择成立。原有完整清单仍由Python在完整可读前提下回答；生成失败与读取/选择失败不混同。
+
+`「完整原文」记录现在活跃吗？` 等有限exact语法在本地唯一、安全匹配时只答active/forgotten/superseded状态，不回显旧内容。Runtime把同次已读取的原始tuple作为 `canonical_memory_history` 供此匹配，日期渲染的living_memory_history仍用于既有显示/投影。没有额外IO、store或Provider用途；不可完整确认/有未决控制时不猜测。精确路由和组合保护共用同一匹配器，Goal只引用自己的canonical terms，独立来源/事实边界不覆盖Memory范围。
+
+有限语法不是通用实体匹配；相似题材可能选到其他记录并要求确认。完整真实证据及限制见 [Slice-28 报告](reports/2026-09-08-slice-28/REPORT.md)。
+
 ## Credential seam
 
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
