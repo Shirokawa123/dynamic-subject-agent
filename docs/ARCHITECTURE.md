@@ -52,7 +52,7 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 Slice-29 的 `memory_retrieval.select_memory_candidates` 从 Runtime 已恢复的最多 100 条 Living Memory 历史中只取 active。超过 20 条时，以当前消息和当天内容投影在一次性内存 SQLite FTS5 中按 BM25 排序后取最多 20 条；不足预算的槽位按原最近顺序补齐，20 条以内或无词面匹配时保持原窗口。中文使用通用连续双字片段、英文/数字使用词元；无题材词表、embedding、额外 Provider 或持久索引，原内容、ID、状态与 canonical 历史不改写。排序仅决定候选，模型仍选择引用，Python 仍裁决；它不证明相关性、唯一性或语义等价。
 
-候选窗口与完整控制库存分开，姓名缺失判断使用可披露控制库存；exact 状态仍查 canonical 原文。撤回/披露过滤在外发前继续执行，superseded/forgotten 不进入排序。FTS 不可用返回 typed `MemoryRetrievalUnavailable`，Runtime 只标记本轮 Memory 检索不可用，Living Memory 在本地控制查询之后、Provider 之前产生所属 `living-memory-retrieval-unavailable` FailedClosed；不把检索失败说成空库存，不影响独立能力。12 类 Provider 的提示/字段与调用预算不变，仅溢出时 Memory 候选成员/次序及其选中内容可能不同。100 条之外、无共同词元、纯指代和模型窗口内错选仍有限；详细对照见 [Slice-29 报告](reports/2026-09-09-slice-29/REPORT.md)。
+候选窗口与完整控制库存分开，exact 状态仍查 canonical 原文；姓名查询保持原有候选窗口不可确认时的本地安全回复，不因为全库存存在姓名就让未收到姓名的 Provider 自由回答。撤回/披露过滤在外发前继续执行，superseded/forgotten 不进入排序。FTS 不可用返回 typed `MemoryRetrievalUnavailable`，Runtime 只标记本轮 Memory 检索不可用；完整清单、撤回和 exact 状态仍可本地处理，其他 Memory 请求在 Provider 之前产生所属 `living-memory-retrieval-unavailable` FailedClosed，包括姓名查询，不把检索失败说成空库存，不影响独立能力。12 类 Provider 的提示/字段与调用预算不变，仅溢出时 Memory 候选成员/次序及其选中内容可能不同。100 条之外、无共同词元、纯指代和模型窗口内错选仍有限；详细对照见 [Slice-29 报告](reports/2026-09-09-slice-29/REPORT.md)。
 
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
 
