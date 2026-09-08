@@ -652,6 +652,8 @@ class ControlledCompositeCognition(CognitionEngine):
         if withdrawal is None:
             return expression
         other_relevant = (outcomes.experience.knowledge_status == 'accepted'
+            or bool(_direct_relationship_claims(command.utterance))
+            or outcomes.relationship.relationship_candidate_event == 'relationship_claim'
             or participant_operation_requested(command.utterance)
             or participant_record_query_kind(command.utterance) is not None
             or activity_boundary_reply(command.utterance) is not None

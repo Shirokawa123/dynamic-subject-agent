@@ -24,7 +24,7 @@ from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression
-from dynamic_subject_agent.memory_control import select_memory_withdrawal, memory_withdrawal_reply
+from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -248,7 +248,10 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
         active = tuple(context.active_memories[:ACTIVE_MEMORY_LIMIT])
-        withdrawal = select_memory_withdrawal(command.utterance, active)
+        control_active = tuple(m for m in context.living_memory_history if m.status == 'active') if context.living_memory_history else active
+        withdrawal = select_memory_withdrawal(command.utterance, control_active)
+        if withdrawal is not None and withdrawal.restricts_disclosure and not context.memory_control_complete:
+            withdrawal = MemoryWithdrawal(None, 'inventory_incomplete')
         if withdrawal is not None:
             base = self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary='本轮请求逻辑遗忘，结果以裁决为准。',
@@ -256,16 +259,33 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             return replace(base, impact_envelope=replace(base.impact_envelope,
                 experience=ExperienceAdjudicationRequest(basis=basis,
                     current_state=ExperienceReadView(basis.verified_prefix_digest,
-                        tuple(m.memory_id for m in active), active), candidates=(),
+                        tuple(m.memory_id for m in control_active), control_active,
+                        memory_control_complete=context.memory_control_complete), candidates=(),
                     current_user_message=command.utterance, source_user_message_id=basis.operation_id,
                     memory_withdrawal=withdrawal)))
         withheld = ()
+        disclosure_unavailable = False
         if context.load_withheld_memory_ids is not None:
             try:
                 withheld = context.load_withheld_memory_ids()
             except Exception:
-                withheld = tuple(m.memory_id for m in active)
+                disclosure_unavailable = True
+                withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
+        available = tuple(m for m in control_active if m.memory_id not in withheld)
+        name_answer = missing_name_answer(command.utterance, available, complete=context.memory_control_complete)
+        if is_memory_inventory_query(command.utterance) or name_answer is not None:
+            text = name_answer or ('当前可用于召回的活跃记录：\n' + '\n'.join(f'「{m.content}」' for m in available)
+                if available else '当前没有可用于召回的活跃记忆。')
+            if disclosure_unavailable:
+                text = '这次无法核实可用记忆清单，暂不返回记忆内容。'
+            elif not context.memory_control_complete:
+                text = '当前无法证明记忆清单完整，不能把局部结果当作全部记录。'
+            elif withheld:
+                text += '\n有未完成的遗忘请求，相关内容暂不用于回复；这不表示已成功停用。'
+            return self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='本轮本地读取可用活跃记忆清单。',
+                expression_candidate=ExpressionCandidate(text, command.language, dialogue_priority=True))
         request = LivingMemoryProviderRequest(
             current_user_message=command.utterance,
             active_memories=tuple(
@@ -350,6 +370,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             recent_dialogue = ()
             if (context.load_recent_dialogue is not None
                 and not withheld
+                and not disclosure_unavailable
                 and result.proposal.action is not LivingMemoryAction.REVISE
                 and not is_dialogue_control(command.utterance)):
                 try:

@@ -118,6 +118,8 @@ def _turn_explanations(projection: object, *, new_memory_content: str | None) ->
     withdrawal_status = getattr(projection, 'memory_withdrawal_status', None)
     if withdrawal_status == 'accepted':
         explanations.append(_explanation('记忆', 'changed', '已停止使用指定活跃记忆；本地历史原文保留。'))
+    elif withdrawal_status == 'no-op':
+        explanations.append(_explanation('记忆', 'kept', '没有停用记忆，原有记录保持不变。'))
     elif withdrawal_status is not None:
         explanations.append(_explanation('记忆', 'kept', '未能确定并停用唯一记录，记忆未改变。'))
     elif memory_status == "accepted":

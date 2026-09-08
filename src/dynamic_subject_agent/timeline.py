@@ -6731,7 +6731,7 @@ class TimelineEngine:
             message = self._query_command(ref).utterance
             prior = self.list_living_memories(limit=100, through_sequence=int(row[4])) if row[4] is not None else current
             selection = select_memory_withdrawal(message, tuple(m for m in prior if m.status == 'active'))
-            if selection is None:
+            if selection is None or not selection.restricts_disclosure:
                 continue
             if row[4] is None or len(prior) == 100 or len(current) == 100 or selection.target_memory_id is None:
                 return tuple(m.memory_id for m in current if m.status == 'active')

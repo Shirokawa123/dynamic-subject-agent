@@ -57,6 +57,7 @@ class ExperienceReadView:
     memory_trace_refs: tuple[str, ...]
     active_memories: tuple[LivingMemoryRecord, ...] = ()
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
+    memory_control_complete: bool = True
 
 
 @dataclass(frozen=True)
@@ -316,6 +317,10 @@ class ExperienceDomain:
             if memory_candidate is not None or living_memory_failure is not None:
                 raise DomainAdjudicationFailedClosed('experience', 'mixed-memory-control', 'withdrawal must be independent of memory proposals')
             selected = select_memory_withdrawal(request.current_user_message, tuple(active_memories))
+            if type(request.current_state.memory_control_complete) is not bool:
+                raise DomainAdjudicationFailedClosed('experience', 'invalid-memory-inventory', 'inventory completeness must be known')
+            if selected is not None and selected.restricts_disclosure and not request.current_state.memory_control_complete:
+                selected = MemoryWithdrawal(None, 'inventory_incomplete')
             if (not isinstance(request.memory_withdrawal, MemoryWithdrawal)
                 or selected != request.memory_withdrawal
                 or request.source_user_message_id != basis.operation_id):
@@ -327,7 +332,7 @@ class ExperienceDomain:
                 except (ValueError, TypeError, AttributeError):
                     raise DomainAdjudicationFailedClosed('experience', 'invalid-memory-target', 'withdrawal target must be canonical') from None
             memory_code = 'living-memory.forgotten' if accepted else 'living-memory.withdrawal-rejected'
-            memory_payload = {'status': 'accepted' if accepted else 'rejected', 'action': 'forget',
+            memory_payload = {'status': 'accepted' if accepted else ('no-op' if not selected.restricts_disclosure else 'rejected'), 'action': 'forget',
                 'target_memory_id': selected.target_memory_id, 'reason_code': selected.reason_code,
                 'source_user_message_id': request.source_user_message_id}
         elif memory_candidate is not None:
