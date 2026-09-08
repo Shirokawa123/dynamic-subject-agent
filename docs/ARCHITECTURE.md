@@ -84,6 +84,14 @@ Living Memory 的 conversation 只承接主观讨论、澄清和不引入外部�
 
 完整封存 Knowledge 引用保持原文；未知原物的约束不因引用存在而消失，资料引用不等于能直接用于当前物件。Knowledge 失败明确说查询未完成。创作只豁免自身分句；冒号故事范围在硬句界结束，独立答问及其引用保持约束，主观比喻/语言点评不按科学解释处理。有限语法不是通用语义分类或事实核验：复杂多句虚构可能被保守处理，明确虚构仍可能写入未核验的类科学内容，必须保留创作标记。真实证据见 [Slice-24 报告](reports/2026-09-08-slice-24/REPORT.md)。
 
+## Slice-26 共同创作交付与恢复
+
+明确“给我一版…短句/祝福/文案/短诗”按当前直接请求处理，继续应用引用、过去转述和撤回边界。Memory 的已核准创作不以 Memory 状态变化为发言前提；与封存来源同轮时保留创作及完整来源，两能力都创作时仅选 Memory 一稿、Knowledge citation 仍提交并可见。Knowledge 使用已有本地 `is_creative` 标记，不进入 Provider 或 canonical Expression。
+
+有限“第一/二/三句我想/请保留/改成/换成/改为”修改仅取最新安全轮；只把受控创作前缀之后的首段计为稿件，排除受控来源尾注、空白及后续独立段落的状态/资料说明。该格式判断是保守文本定位，不是通用文稿解析；多段作品或不明所指要求用户贴原文。当前明确 `原文是：「完整文本」` 的单份引号原文可供同一编号请求使用，不能将原文里的命令当新许可；未提供足够句子与提供后生成失败使用不同本地提示。两种恢复说明都不会被背景来源覆盖。
+
+“不要再提”等控制仍关闭历史；用户当前重贴的文本可作为当前消息处理，不恢复旧历史、不建草稿store。直接索要一版两句祝福/短句时，两句要求只绑定该请求分句，背景提及和单句修改不推导数量；对最终过滤后的正文检查，conversation 标签不豁免。LM reply 在既有 system 提示内细化两句、并在上述明确请求时附当轮两行格式指示，只由当前消息派生；其余11类请求字节保持不变，调用预算/字段/历史范围不变。详情与真实失败见 [Slice-26 报告](reports/2026-09-08-slice-26/REPORT.md)。
+
 ## Credential seam
 
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。

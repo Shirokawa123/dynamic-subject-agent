@@ -1,6 +1,6 @@
 # Slice-26：共同创作交付与失败恢复
 
-状态：executing；基线 `41f7bee`，上一产品代码 `56f931e`，480 passed。
+状态：completed；基线 `41f7bee`，最终代码 `602eadf`，501 passed、专项21 passed；12次后台真实追加与同代码重启、失败记录见 [报告](../reports/2026-09-08-slice-26/REPORT.md)。
 
 ## 用户结果与范围
 

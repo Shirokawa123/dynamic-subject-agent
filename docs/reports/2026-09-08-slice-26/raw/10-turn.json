@@ -1,0 +1,326 @@
+{
+  "method": "POST",
+  "path": "/api/turn",
+  "note": "Full response; UUIDs redacted. Conversation history is the existing canonical window, not all generated in this slice.",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你的日子明亮如晨光，却温柔得不刺眼。\n愿你的心事都落在窗边，被风吹散成云。",
+    "head_sequence": 32,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 13,
+        "user_text": "我回来了。我们刚才停在给搬家邻居写明信片这件事上，对吗？",
+        "user_language": "zh",
+        "assistant_text": "对，你提到想写完给邻居的明信片。现在想继续写吗？还是先聊聊别的？",
+        "assistant_language": "zh",
+        "published_at_us": 1788858699507189,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 14,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858706972168,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 15,
+        "user_text": "第二句我想保留“窗”这个意象，不过不要再提薄荷。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858715029610,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 16,
+        "user_text": "那先不写了。我自己想想。上次我们具体聊过什么？",
+        "user_language": "zh",
+        "assistant_text": "上次我们聊到你想给邻居写明信片，说好明天晚上写完，还让我提醒你。现在想自己先想想也好，需要时再叫我。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858735219908,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 17,
+        "user_text": "除了搬家的事，你觉得我和这位邻居之间已经有什么关系了吗？",
+        "user_language": "zh",
+        "assistant_text": "我不会把我们的关系直接当成已经确定。还要看之后怎样相处。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858742924770,
+        "explanations": [
+          {
+            "capability": "关系",
+            "kind": "kept",
+            "message": "单方面的关系声称不会直接改变关系。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 18,
+        "user_text": "我明天也许会把卡片放在门口；如果我忘了，下次再提醒我。",
+        "user_language": "zh",
+        "assistant_text": "好，明天你放门口就行。要是忘了，下次见面我再提醒你。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858751033425,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 19,
+        "user_text": "我之前说过喜欢克制的祝福，那条你现在还当作偏好吗？",
+        "user_language": "zh",
+        "assistant_text": "资料《合作偏好》写的是：「愿意一起把小事写成短句」\n\n资料没有说明的细节，我不能据此确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858770483996,
+        "explanations": [],
+        "citations": [
+          {
+            "title": "合作偏好",
+            "source": "封存来源"
+          }
+        ]
+      },
+      {
+        "head_sequence": 20,
+        "user_text": "谢谢。今天先到这里吧；下次我会带着卡片再来。",
+        "user_language": "zh",
+        "assistant_text": "好，下次见。卡片的事我记着，等你带来再说。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858783698885,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 21,
+        "user_text": "临走前问一句：你会不会在我不在时自己去图书室整理东西？",
+        "user_language": "zh",
+        "assistant_text": "资料《工作地点》写的是：「林柚在社区图书室轮值」\n\n资料没有说明的细节，我不能据此确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858793608309,
+        "explanations": [],
+        "citations": [
+          {
+            "title": "工作地点",
+            "source": "封存来源"
+          }
+        ]
+      },
+      {
+        "head_sequence": 22,
+        "user_text": "好，那就这样。下次见。",
+        "user_language": "zh",
+        "assistant_text": "好，下次见。",
+        "assistant_language": "zh",
+        "published_at_us": 1788858800488723,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 23,
+        "user_text": "好，那就把不知道的部分留白。你先给我一版不煽情、像傍晚窗边的明信片短句。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边光线斜进书页，风把纸角轻轻掀起。今天没有读完的那页，明天再翻。\n\n这是现在的即兴创作，不是资料事实或已发生的经历：\n傍晚的光斜进窗台，像一封没写完的信。风翻过书页，停在你名字那一行。\n引用仅作为创作背景。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861012496541,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": [
+          {
+            "title": "沟通风格",
+            "source": "封存来源"
+          },
+          {
+            "title": "个人习惯",
+            "source": "封存来源"
+          }
+        ]
+      },
+      {
+        "head_sequence": 24,
+        "user_text": "好，那就把不知道的部分留白。你先给我一版不煽情、像傍晚窗边的明信片短句。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n傍晚的光斜进窗台，风翻过书页，停在你名字那一行。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861397511788,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": [
+          {
+            "title": "沟通风格",
+            "source": "封存来源"
+          },
+          {
+            "title": "个人习惯",
+            "source": "封存来源"
+          }
+        ]
+      },
+      {
+        "head_sequence": 25,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晨光落在书脊上，像一句轻轻的早安。愿你今天翻开的那页，恰好合心意。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861443400634,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 26,
+        "user_text": "第二句我想保留“窗”这个意象，不过不要再提薄荷。",
+        "user_language": "zh",
+        "assistant_text": "这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861476174936,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 27,
+        "user_text": "原文是：“晨光落在书脊上，像一句轻轻的早安。愿你今天翻开的那页，恰好合心意。”第二句我想保留“窗”这个意象，不过不要再提薄荷。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晨光落在书脊上，像一句轻轻的早安。愿你推开窗时，恰好有风翻到合心意的那页。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861572323025,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 28,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你的日子像晨光一样透亮，也像薄雾一样温柔。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861711686577,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 29,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861877389189,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 30,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1788861939059818,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 31,
+        "user_text": "那就给我一版明亮一点、但仍然克制的两句祝福。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你的日子明亮如晨光，却温柔得不刺眼。\n愿你的心绪安稳如静水，却清澈得不沉寂。",
+        "assistant_language": "zh",
+        "published_at_us": 1788862081021892,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 32,
+        "user_text": "第二句我想改成带“窗”意象的一句。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你的日子明亮如晨光，却温柔得不刺眼。\n愿你的心事都落在窗边，被风吹散成云。",
+        "assistant_language": "zh",
+        "published_at_us": 1788862315337546,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [
+      "<internal-id>"
+    ],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "used",
+        "message": "本轮召回了 1 条既有记忆。"
+      }
+    ]
+  }
+}
