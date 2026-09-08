@@ -22,8 +22,8 @@ from dynamic_subject_agent.runtime import (
 )
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression
+from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite, sentence_revision_index
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression, has_creative_sentence, MISSING_REVISION_REPLY
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 
@@ -354,6 +354,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         recent_dialogue = ()
         refinement_used = False
         expression_failure_used = False
+        revision_index = sentence_revision_index(command.utterance)
+        revision_ready = False
         if self._split:
             if not isinstance(context.runtime_identity, RuntimeIdentityProjection):
                 return self._failure(
@@ -382,6 +384,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                     # Optional context failure cannot license history disclosure
                     # or cancel the independently obtained state proposal.
                     recent_dialogue = ()
+            revision_ready = bool(recent_dialogue and revision_index is not None
+                and has_creative_sentence(recent_dialogue[-1].assistant_text, revision_index))
             try:
                 reply_result = self._gateway.execute(
                     ModelTask(
@@ -404,7 +408,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             ):
                 guarded_reply = contextual_reply(reply_result.reply_text,
                     message=command.utterance, reply_kind=reply_result.reply_kind,
-                    continuation_allowed=bool(recent_dialogue) and is_dialogue_continuation(command.utterance))
+                    continuation_allowed=bool(recent_dialogue) and is_dialogue_continuation(command.utterance)
+                        and (revision_index is None or revision_ready))
                 if (guarded_reply is not None and recent_dialogue and is_dialogue_continuation(command.utterance)
                     and repeats_previous_expression(guarded_reply, recent_dialogue[-1].assistant_text)):
                     guarded_reply = None
@@ -423,6 +428,10 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             reply_text = ('这轮没有可以可靠使用的前文，请把要改的句子或意思再说一下。' if not recent_dialogue
                 else '这次没有形成新的改写版本。请再说明希望怎样调整这句话。')
             is_creative = False
+        if revision_index is not None and not revision_ready:
+            reply_text = MISSING_REVISION_REPLY
+            is_creative = False
+            expression_failure_used = True
         if historical_memory is not None:
             is_creative = False
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"

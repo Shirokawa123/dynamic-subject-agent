@@ -42,7 +42,7 @@ def is_dialogue_control(message: str) -> bool:
 def is_dialogue_continuation(message: str) -> bool:
     if is_dialogue_control(message) or is_rewrite_withdrawn(message):
         return False
-    if shortening_limit(message) is not None:
+    if shortening_limit(message) is not None or sentence_revision_index(message) is not None:
         return True
     message = expression_request_text(message)
     patterns = (
@@ -56,12 +56,24 @@ def is_dialogue_continuation(message: str) -> bool:
 
 def is_previous_expression_rewrite(message: str) -> bool:
     """Only an entire, explicit nearest-reply request narrows the window."""
-    if shortening_limit(message) is not None:
+    if shortening_limit(message) is not None or sentence_revision_index(message) is not None:
         return True
     return re.fullmatch(
         r'(?:请|帮我)?把(?:上一句|刚才那句)(?:改短|缩短)(?:一些|一点|点)?(?:吧)?[。！？!?]?',
         message.strip(),
     ) is not None
+
+
+def sentence_revision_index(message: str) -> int | None:
+    """Recognize a direct sentence edit, even when privacy forbids its history."""
+    if is_rewrite_withdrawn(message):
+        return None
+    text = expression_request_text(message)
+    if any(marker in text for marker in ('什么意思', '是否', '是不是')):
+        return None
+    indexes = [match[1] for clause in re.split(r'[。！？!?，,]', text)
+        if (match := re.match(r'^第([一二三123])句(?:我想|请)?(?:保留|改成|换成|改为)', clause.strip()))]
+    return {'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[indexes[0]] if len(indexes) == 1 else None
 
 
 def shortening_limit(message: str) -> int | None:

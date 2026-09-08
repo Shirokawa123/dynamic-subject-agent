@@ -8,6 +8,7 @@ from dynamic_subject_agent.recent_dialogue import shortening_limit, expression_r
 
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
 CREATIVE_REPLY_PREFIX = '这是现在的即兴创作，不是资料事实或已发生的经历：\n'
+MISSING_REVISION_REPLY = '这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。'
 _UNSUPPORTED_CURRENT_ACTIVITY_MARKERS = (
     "我也刚",
     "我正好",
@@ -65,6 +66,9 @@ def explicit_creation_request(message: str) -> bool:
         return False
     if message.strip().startswith('如果让你') and '你会写什么' in message:
         return True
+    if any(re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:短句|祝福|文案|短诗)(?:吧)?', clause.strip())
+        for clause in re.split(r'[。！？!?，,]', message)):
+        return True
     # An imperative clause, not a mention inside a past account or quotation.
     return any(re.match(r'^(?:(?:请|帮我|替我)(?:给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?:一句|一首|个|一个)|配(?:一句话|一句|个文案)|创作|想象一下|编(?:一个|个))', clause.strip())
         for clause in re.split(r'[。！？!?，,]', message))
@@ -108,6 +112,13 @@ def expression_body(value: str) -> str:
         while value.startswith(CREATIVE_REPLY_PREFIX):
             value = value.removeprefix(CREATIVE_REPLY_PREFIX).strip()
     return value
+
+
+def has_creative_sentence(text: str, index: int) -> bool:
+    if not text.startswith(CREATIVE_REPLY_PREFIX):
+        return False
+    body = expression_body(text).split('\n\n资料', 1)[0]
+    return len(_SENTENCE_PATTERN.findall(body)) >= index
 
 
 __all__ = ["guard_runtime_identity_reply"]
