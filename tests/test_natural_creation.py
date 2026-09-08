@@ -16,9 +16,11 @@ def test_caption_with_style_restriction_is_an_explicit_creation(tmp_path):
 
 @pytest.mark.parametrize('message', [
     '给照片配一句话。不要写。',
+    '帮我给照片配一句话。算了，不用写了。',
     '给照片配一句话是什么意思？',
     '朋友说：“帮我给照片配一句话。”你怎么看？',
     '我昨天给照片配一句话了。',
+    '我昨天对他说，帮我给照片配一句话。你觉得我这么提要求合适吗？',
     '如果我请你给照片配一句话，你会怎么做？',
 ])
 def test_caption_mention_or_actual_prohibition_does_not_license_creation(tmp_path, message):
@@ -84,5 +86,54 @@ def test_counted_rewrite_after_control_cannot_reuse_old_text(tmp_path):
         assert pairs(provider.replies[-1]) == []
         assert '青舟' not in result.projection.expression_text
         assert '前文' in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('wrap_prefix', [False, True])
+def test_outer_quotes_do_not_make_a_new_shortening_version(tmp_path, wrap_prefix):
+    from test_recent_dialogue import DialogueProvider, open_app, submit
+    from dynamic_subject_agent.runtime_identity_reply import CREATIVE_REPLY_PREFIX
+    class Repeater(DialogueProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            wrapped = '“' + (CREATIVE_REPLY_PREFIX if wrap_prefix else '') + '来坐下”'
+            return LivingMemoryReplyResult('来坐下' if len(self.replies) == 1 else wrapped, 'zh', 'creative')
+    opened = open_app(tmp_path, Repeater())
+    try:
+        submit(opened, '请写一句欢迎的话。')
+        result = submit(opened, '能缩到九十九个字以内吗？')
+        assert '没有形成新的改写版本' in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('withdrawal', ['算了，不用改了。', '不要创作。', '能缩到0个字以内吗？', '能缩到100个字以内吗？', '能缩到五个字以内吗？'])
+def test_withdrawn_shortening_does_not_authorize_a_creative_reply(tmp_path, withdrawal):
+    from test_recent_dialogue import DialogueProvider, open_app, submit
+    class Writer(DialogueProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return LivingMemoryReplyResult('来坐下' if len(self.replies) == 1 else '进来', 'zh', 'creative')
+    opened = open_app(tmp_path, Writer())
+    try:
+        submit(opened, '请写一句欢迎的话。')
+        result = submit(opened, '能缩到十个字以内吗？' + withdrawal)
+        assert '进来' not in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+def test_reported_shortening_is_not_current_permission(tmp_path):
+    from test_recent_dialogue import DialogueProvider, open_app, submit
+    class Writer(DialogueProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return LivingMemoryReplyResult('欢迎光临' if len(self.replies) == 1 else '进来', 'zh', 'creative')
+    opened = open_app(tmp_path, Writer())
+    try:
+        submit(opened, '请写一句欢迎的话。')
+        result = submit(opened, '我昨天对他说，能缩到十个字以内吗？你觉得我这么提要求合适吗？')
+        assert '进来' not in result.projection.expression_text
     finally:
         opened.app.close()

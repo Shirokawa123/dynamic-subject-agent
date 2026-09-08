@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dynamic_subject_agent.recent_dialogue import shortening_limit
+from dynamic_subject_agent.recent_dialogue import shortening_limit, expression_request_text, is_rewrite_withdrawn
 
 
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
@@ -56,7 +56,9 @@ def activity_boundary_reply(message: str) -> str | None:
 
 
 def explicit_creation_request(message: str) -> bool:
-    message = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    message = expression_request_text(message)
+    if is_rewrite_withdrawn(message):
+        return False
     # A constraint on style does not withdraw the requested act of writing.
     message = re.sub(r'(?:别|不要)写(?=成|得)', '', message)
     if any(word in message for word in ('别编', '不要编', '不许编', '不要写', '别写', '不要创作', '不要想象', '什么意思', '怎么做', '的是谁', '的人是谁', '解释一下', '解释这')):
@@ -81,9 +83,7 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
         return None
     limit = shortening_limit(message)
     if limit is not None and isinstance(text, str):
-        body = text.strip().removeprefix(CREATIVE_REPLY_PREFIX).strip()
-        if len(body) >= 2 and (body[0], body[-1]) in {('“', '”'), ('「', '」'), ('"', '"'), ('‘', '’')}:
-            body = body[1:-1]
+        body = expression_body(text)
         if len(re.sub(r'\s+', '', body)) > limit:
             return None
     if reply_kind == 'creative':
@@ -96,12 +96,18 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
 
 
 def repeats_previous_expression(text: str, previous: str) -> bool:
-    def body(value: str) -> str:
-        value = value.strip()
+    return expression_body(text) == expression_body(previous)
+
+
+def expression_body(value: str) -> str:
+    value = value.strip()
+    while value.startswith(CREATIVE_REPLY_PREFIX):
+        value = value.removeprefix(CREATIVE_REPLY_PREFIX).strip()
+    if len(value) >= 2 and (value[0], value[-1]) in {('“', '”'), ('「', '」'), ('"', '"'), ('‘', '’')}:
+        value = value[1:-1].strip()
         while value.startswith(CREATIVE_REPLY_PREFIX):
             value = value.removeprefix(CREATIVE_REPLY_PREFIX).strip()
-        return value
-    return body(text) == body(previous)
+    return value
 
 
 __all__ = ["guard_runtime_identity_reply"]

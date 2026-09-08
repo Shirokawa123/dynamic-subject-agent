@@ -40,10 +40,11 @@ def is_dialogue_control(message: str) -> bool:
 
 
 def is_dialogue_continuation(message: str) -> bool:
-    if is_dialogue_control(message):
+    if is_dialogue_control(message) or is_rewrite_withdrawn(message):
         return False
     if shortening_limit(message) is not None:
         return True
+    message = expression_request_text(message)
     patterns = (
         r'(?:那|就|请)?按(?:这个|那个|刚才的|上面的)意思(?:再)?写(?:一句|一版)(?:吧)?',
         r'(?:请|帮我)?把(?:上一句|刚才那句|这句|那句)(?:改短|缩短)(?:一些|一点|点)?(?:吧)?',
@@ -65,9 +66,9 @@ def is_previous_expression_rewrite(message: str) -> bool:
 
 def shortening_limit(message: str) -> int | None:
     """A direct bounded rewrite request; surrounding comments are not history."""
-    if is_dialogue_control(message):
+    if is_dialogue_control(message) or is_rewrite_withdrawn(message):
         return None
-    unquoted = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    unquoted = expression_request_text(message)
     matches = []
     for clause in re.split(r'[。！？!?，,]', unquoted):
         match = re.fullmatch(r'(?:能|可以|请|帮我)?(?:把(?:上一句|刚才那句|这句))?(?:缩到|缩短到|改短到)([0-9一二三四五六七八九十两]{1,3})个?字以内(?:吗|吧)?', clause.strip())
@@ -89,6 +90,18 @@ def shortening_limit(message: str) -> int | None:
                 return None
             matches.append(value)
     return matches[0] if len(matches) == 1 else None
+
+
+def is_rewrite_withdrawn(message: str) -> bool:
+    unquoted = expression_request_text(message)
+    unquoted = re.sub(r'(?:别|不要)写(?=成|得)', '', unquoted)
+    return re.search(r'(?:别|不要|不用|不必|不许|停止|取消)(?:再)?(?:改|缩|写|编|创作|想象)', unquoted) is not None
+
+
+def expression_request_text(message: str) -> str:
+    unquoted = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    return '。'.join(sentence for sentence in re.split(r'[。！？!?]', unquoted)
+        if not re.match(r'^(?:我|他|她|朋友)?(?:昨天|前天|之前|上次|曾经)[^，,：:]*(?:说|问|要求)[^，,：:]*[，,：:]', sentence.strip()))
 
 
 def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0) -> tuple[RecentDialogueTurn, ...]:
