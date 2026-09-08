@@ -92,6 +92,14 @@ Living Memory 的 conversation 只承接主观讨论、澄清和不引入外部�
 
 “不要再提”等控制仍关闭历史；用户当前重贴的文本可作为当前消息处理，不恢复旧历史、不建草稿store。直接索要一版两句祝福/短句时，两句要求只绑定该请求分句，背景提及和单句修改不推导数量；对最终过滤后的正文检查，conversation 标签不豁免。LM reply 在既有 system 提示内细化两句、并在上述明确请求时附当轮两行格式指示，只由当前消息派生；其余11类请求字节保持不变，调用预算/字段/历史范围不变。详情与真实失败见 [Slice-26 报告](reports/2026-09-08-slice-26/REPORT.md)。
 
+## 提醒表达边界（Slice-27）
+
+当前没有可承诺的定时或下次聊天自动提醒契约，参与者目标 Domain 已将提醒列为范围外。有限直接未来提醒、设置/取消请求及能力询问由本地明确说明边界；记忆确认读取最终 Outcome，accepted 才引用已记录原话，FailedClosed 明确未完成记录，NoOp/召回不当新建。该确认不产生提醒任务、主体承诺或触发器。
+
+六项候选的自由表达在各能力组合前检查未来提醒/设置成功等声称，合法状态候选不因此取消。豁免仅限所属能力已核准创作；Knowledge 本就渲染完整封存来源，引用不按主体承诺删改。当前明确引用解释、canonical 用户/记忆/目标引用作为独立片段保留，不让一个片段豁免后续自由回复。提醒请求中的目标附带表达只引用 canonical terms。最终提醒边界与独立事实/关系/状态/目标结果并存，不被另一条边界覆盖。
+
+即时回顾用户未来计划不是未来提醒动作，时间词需修饰提醒动作而非被回顾的内容；明确故事中的台词不当现实请求。上述为有限中文语法，不保证识别所有措辞。12类 Provider 的字段、提示字节基线及调用预算均不变。旧错误台词与本地记录不清洗；自由回忆对全体库存的错误断言仍是独立缺口，见 [Slice-27 报告](reports/2026-09-08-slice-27/REPORT.md)。
+
 ## Credential seam
 
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
