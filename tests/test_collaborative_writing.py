@@ -185,3 +185,10 @@ def test_mentioned_two_sentences_do_not_set_current_output_count(tmp_path, messa
     text = '愿窗边常有暖光。'
     result = turn(tmp_path, message, MemoryProvider('基础回复。', refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
     assert text in result.expression_text
+
+
+def test_count_is_checked_after_unsupported_activity_is_removed(tmp_path):
+    result = turn(tmp_path, RETURN, MemoryProvider('（无记忆相关内容）',
+        refined=LivingMemoryReplyResult('我今天给你准备了两句。愿你新家常有暖光。', 'zh', 'conversation')))
+    assert '愿你新家常有暖光' not in result.expression_text
+    assert '我今天给你准备' not in result.expression_text

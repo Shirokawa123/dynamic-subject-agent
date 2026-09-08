@@ -91,16 +91,18 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
         body = expression_body(text)
         if len(re.sub(r'\s+', '', body)) > limit:
             return None
-    if (isinstance(text, str) and requested_creative_sentence_count(message) == 2
-            and sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(expression_body(text))) != 2):
-        return None
     if reply_kind == 'creative':
         if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
-        return CREATIVE_REPLY_PREFIX + text.strip()
-    if isinstance(text, str) and re.search(r'我(?:倒是)?(?:正想歇|替你留了|一直在等|一直在想)', text):
+        rendered = CREATIVE_REPLY_PREFIX + text.strip()
+    else:
+        if isinstance(text, str) and re.search(r'我(?:倒是)?(?:正想歇|替你留了|一直在等|一直在想)', text):
+            return None
+        rendered = guard_runtime_identity_reply(text)
+    if (rendered is not None and requested_creative_sentence_count(message) == 2
+        and sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(expression_body(rendered))) != 2):
         return None
-    return guard_runtime_identity_reply(text)
+    return rendered
 
 
 def requested_creative_sentence_count(message: str) -> int | None:
