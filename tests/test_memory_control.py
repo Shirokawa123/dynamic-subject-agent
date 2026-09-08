@@ -341,3 +341,27 @@ def test_withdrawn_name_query_cannot_claim_user_never_provided_it(tmp_path):
         assert '陆禾' not in answer.projection.expression_text
     finally:
         opened.app.close()
+
+
+def test_name_query_outside_reply_window_cannot_claim_no_historical_report(tmp_path):
+    class Many(RecordingProvider):
+        def propose(self, request):
+            if request.current_user_message.startswith('我喜欢测试色'):
+                self.proposals.append(request)
+                return LivingMemoryProviderResult(LivingMemoryProposal(LivingMemoryAction.CREATE,
+                    request.current_user_message), '测试记录。', '收到。', 'zh')
+            return super().propose(request)
+        def reply(self, request):
+            return LivingMemoryReplyResult('你之前没有告诉过我你的名字。', 'zh')
+    provider = Many()
+    opened = open_app(tmp_path, provider)
+    try:
+        submit(opened, '我叫陆禾。')
+        for i in range(20):
+            submit(opened, f'我喜欢测试色{i}。')
+        before = len(provider.proposals)
+        result = submit(opened, '我之前报的名字是什么？')
+        assert '没有告诉过' not in result.projection.expression_text
+        assert len(provider.proposals) == before
+    finally:
+        opened.app.close()

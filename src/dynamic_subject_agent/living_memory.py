@@ -273,7 +273,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
         available = tuple(m for m in control_active if m.memory_id not in withheld)
-        name_answer = missing_name_answer(command.utterance, available, complete=context.memory_control_complete)
+        name_answer = missing_name_answer(command.utterance, active, complete=context.memory_control_complete)
         if is_memory_inventory_query(command.utterance) or name_answer is not None:
             text = name_answer or ('当前可用于召回的活跃记录：\n' + '\n'.join(f'「{m.content}」' for m in available)
                 if available else '当前没有可用于召回的活跃记忆。')
