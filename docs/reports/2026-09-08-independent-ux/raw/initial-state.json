@@ -1,0 +1,37 @@
+{
+  "name": "initial-state",
+  "method": "GET",
+  "endpoint": "/api/state",
+  "port": 62267,
+  "started_at": "2026-09-08T01:12:56.458022+00:00",
+  "completed_at": "2026-09-08T01:12:56.935764+00:00",
+  "elapsed_seconds": 0.4777,
+  "request": null,
+  "http_status": 200,
+  "response": {
+    "ok": true,
+    "build_id": "dogfood-s22",
+    "profile_id": "8da2560e-0ffa-4648-a890-234e070dfe46",
+    "display_name": "Avery",
+    "identities": [
+      {
+        "identity_id": "8da2560e-0ffa-4648-a890-234e070dfe46",
+        "display_name": "Avery",
+        "freeze_basis_digest": null,
+        "active": true
+      }
+    ],
+    "conversation_history_status": "available",
+    "conversation_history": [],
+    "memories": [],
+    "knowledge_count": 4,
+    "relationship_accepted_count": 0,
+    "relationship_latest_event": null,
+    "participant_goals": [],
+    "situated_state": null,
+    "medium_state": {
+      "baseline": "settled",
+      "version": 0
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "isolation_root": "C:\\Users\\30252\\AppData\\Local\\Temp\\dsa-ux-20260908-0912",
+  "pid": 14588,
+  "started_at": "2026-09-08T09:11:42.3828030+08:00",
+  "command": "E:\\dynamic-subject-agent\\.venv\\bin\\python.exe -u app\\desktop\\server.py",
+  "expected_commit": "37258f3",
+  "actual_commit": "37258f31d30a6a96174f9d67e89cdb305de8a33d",
+  "ui_automation": false,
+  "transport": "production loopback HTTP adapter",
+  "credential_path": "unchanged production WindowsCredentialStore; plaintext not inspected"
+}

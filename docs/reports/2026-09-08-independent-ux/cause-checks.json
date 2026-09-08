@@ -1,0 +1,37 @@
+{
+  "kind": "read-only pure predicates after live session; zero service/provider calls",
+  "history_limits": {
+    "turns": 2,
+    "characters": 4000
+  },
+  "checks": [
+    {
+      "turn": "T04",
+      "message": "这个“注脚”的说法我喜欢。帮我给这张票的照片配一句话吧，像发给朋友的消息，别写成感伤散文。",
+      "explicit_creation_request": false,
+      "is_dialogue_continuation": false,
+      "is_dialogue_control": false
+    },
+    {
+      "turn": "T12",
+      "message": "给这位老板写一句招呼客人的话吧，要有点笨拙的实在劲儿，像真的在做生意。",
+      "explicit_creation_request": true,
+      "is_dialogue_continuation": false,
+      "is_dialogue_control": false
+    },
+    {
+      "turn": "T13",
+      "message": "这位老板话还是有点多，我想让他省话一点。能缩到十个字以内吗？",
+      "explicit_creation_request": false,
+      "is_dialogue_continuation": false,
+      "is_dialogue_control": false
+    },
+    {
+      "turn": "T16",
+      "message": "这里叫我访客就好。把我之前报的名字忘掉，不用再保存了。",
+      "explicit_creation_request": false,
+      "is_dialogue_continuation": false,
+      "is_dialogue_control": true
+    }
+  ]
+}

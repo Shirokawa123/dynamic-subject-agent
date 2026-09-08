@@ -1,0 +1,39 @@
+{
+  "turn_count": 18,
+  "all_http_200": true,
+  "all_operations_ok": true,
+  "all_head_sequences_consecutive": true,
+  "first_turn_at": "2026-09-08T01:13:09.385136+00:00",
+  "last_turn_completed_at": "2026-09-08T01:24:34.522151+00:00",
+  "http_latency_seconds": {
+    "min": 6.1404,
+    "max": 13.9616,
+    "median": 8.182749999999999,
+    "total": 155.1924
+  },
+  "expression_not_completed_turns": [
+    "T04",
+    "T13"
+  ],
+  "knowledge_statuses": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ],
+  "any_citations": false
+}

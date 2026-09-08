@@ -1,0 +1,10 @@
+{
+  "old_pid": 14588,
+  "old_process_exit_confirmed": true,
+  "stop_requested_at": "2026-09-08T09:19:16.9021989+08:00",
+  "new_pid": 35280,
+  "new_process_started_at": "2026-09-08T09:19:16.9537789+08:00",
+  "same_isolation_root": "C:\\Users\\30252\\AppData\\Local\\Temp\\dsa-ux-20260908-0912",
+  "stop_method": "Process.Kill after committed T09; not graceful application shutdown",
+  "ui_automation": false
+}

@@ -1,0 +1,18 @@
+{
+  "name": "initial-setup",
+  "method": "GET",
+  "endpoint": "/api/setup",
+  "port": 62267,
+  "started_at": "2026-09-08T01:12:56.194467+00:00",
+  "completed_at": "2026-09-08T01:12:56.245856+00:00",
+  "elapsed_seconds": 0.0514,
+  "request": null,
+  "http_status": 200,
+  "response": {
+    "configured": true,
+    "provider_id": "deepseek",
+    "product_ready": true,
+    "verification": "not-run",
+    "problem": null
+  }
+}

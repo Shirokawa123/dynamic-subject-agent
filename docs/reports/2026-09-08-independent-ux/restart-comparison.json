@@ -1,0 +1,12 @@
+{
+  "build_id": true,
+  "profile_id": true,
+  "identities": true,
+  "conversation_history": true,
+  "memories": true,
+  "participant_goals": true,
+  "medium_state": true,
+  "history_turn_count": 9,
+  "history_contains_first_failure": true,
+  "history_sha256": "c7a98051e1ce01da2603935e2541c7c271ec6007d1ddec173c7e785cd18e0586"
+}

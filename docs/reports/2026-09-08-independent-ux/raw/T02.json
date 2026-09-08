@@ -1,0 +1,80 @@
+{
+  "name": "T02",
+  "method": "POST",
+  "endpoint": "/api/turn",
+  "port": 62267,
+  "started_at": "2026-09-08T01:13:49.289271+00:00",
+  "completed_at": "2026-09-08T01:13:59.468347+00:00",
+  "elapsed_seconds": 10.1791,
+  "request": {
+    "text": "其实我已经不记得电影讲什么了，当时也是一个人去的。舍不得的可能只是那天终于给自己放了半天假。留着它会不会反而让我一直停在过去？"
+  },
+  "http_status": 200,
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "我明白你的犹豫。有时候我们舍不得的不是那张票本身，而是它代表的那份“终于为自己停下来”的片刻。留着它，不一定代表停在过去，也可以是一种提醒——提醒你曾经懂得照顾自己，以后也值得这样对自己。如果你担心它让你沉溺，也可以换个方式收着，比如拍张照存进相册，再把实物处理掉。这样那段记忆还在，却不会占着你的抽屉和心。",
+    "head_sequence": 2,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "我叫陆禾。今天收拾桌子翻到一张已经褪色的电影票，片名快看不清了。一直想着扔掉，真拿到垃圾桶边又舍不得。你会留这种没什么用的小东西吗？",
+        "user_language": "zh",
+        "assistant_text": "我懂那种感觉。有些东西明明没什么用，可它带着一段时光，扔了就像把那段日子也丢了。电影票褪色了，但你看它时，那场电影、身边的人、当时的心情都会回来。留着吧，找个地方收好，偶尔翻到也是种温暖。",
+        "assistant_language": "zh",
+        "published_at_us": 1788830000246403,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我叫陆禾。」"
+          },
+          {
+            "capability": "中期基线",
+            "kind": "kept",
+            "message": "记录到一条“担忧”证据；独立证据尚不足，基线保持“平稳”。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "其实我已经不记得电影讲什么了，当时也是一个人去的。舍不得的可能只是那天终于给自己放了半天假。留着它会不会反而让我一直停在过去？",
+        "user_language": "zh",
+        "assistant_text": "我明白你的犹豫。有时候我们舍不得的不是那张票本身，而是它代表的那份“终于为自己停下来”的片刻。留着它，不一定代表停在过去，也可以是一种提醒——提醒你曾经懂得照顾自己，以后也值得这样对自己。如果你担心它让你沉溺，也可以换个方式收着，比如拍张照存进相册，再把实物处理掉。这样那段记忆还在，却不会占着你的抽屉和心。",
+        "assistant_language": "zh",
+        "published_at_us": 1788830039256662,
+        "explanations": [
+          {
+            "capability": "中期基线",
+            "kind": "changed",
+            "message": "独立证据达到门槛，基线从“平稳”变为“关切”。"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "accepted",
+    "medium_state_baseline": "concerned",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "中期基线",
+        "kind": "changed",
+        "message": "独立证据达到门槛，基线从“平稳”变为“关切”。"
+      }
+    ]
+  }
+}

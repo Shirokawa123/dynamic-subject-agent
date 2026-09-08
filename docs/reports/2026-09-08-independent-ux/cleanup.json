@@ -1,0 +1,22 @@
+{
+  "pid": 35280,
+  "stop_requested_at": "2026-09-08T09:25:19.6607404+08:00",
+  "exit_confirmed": true,
+  "data_retained_at": "C:\\Users\\30252\\AppData\\Local\\Temp\\dsa-ux-20260908-0912",
+  "no_database_deleted": true,
+  "ui_automation": false,
+  "loopback_checks": [
+    {
+      "port": 62267,
+      "connect_ex": 10035,
+      "connection_established": false
+    },
+    {
+      "port": 61565,
+      "connect_ex": 10035,
+      "connection_established": false
+    }
+  ],
+  "checked_at": "2026-09-08T01:28:50.124811+00:00",
+  "loopback_check_limit": "Unsuccessful TCP connection is supplementary only; process WaitForExit confirms shutdown."
+}
