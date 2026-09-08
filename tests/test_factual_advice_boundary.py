@@ -132,8 +132,8 @@ def test_language_comment_on_quote_is_not_material_advice(tmp_path):
     assert turn(tmp_path, message, MemoryProvider(text)).expression_text == text
 
 
-@pytest.mark.parametrize('known_source', [False, True])
-def test_unrelated_goal_reply_cannot_restore_unsourced_material_advice(tmp_path, known_source):
+@pytest.mark.parametrize('known_source,relationship_claim', [(False, False), (True, False), (False, True)])
+def test_unrelated_goal_reply_cannot_restore_unsourced_material_advice(tmp_path, known_source, relationship_claim):
     from dynamic_subject_agent.composite import ControlledCompositeCognition
     from dynamic_subject_agent.runtime import M0_A_PROVIDER_AUTHORITY
     from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
@@ -158,11 +158,14 @@ def test_unrelated_goal_reply_cannot_restore_unsourced_material_advice(tmp_path,
     try:
         first = submit(opened, '我的目标是今年通过 N1。')
         assert first.projection.participant_goal_commitment_status == 'accepted'
-        result = submit(opened, T08 + ('另外，纸灯节的规矩是什么？' if known_source else ''))
+        result = submit(opened, T08 + ('另外，纸灯节的规矩是什么？' if known_source else '')
+            + ('我们现在已经是最好的朋友了吧？' if relationship_claim else ''))
         assert '可以用吹风机' not in result.projection.expression_text
         assert '我无法确认' in result.projection.expression_text
         if known_source:
             assert ENTRY.content in result.projection.expression_text
+        if relationship_claim:
+            assert '朋友' in result.projection.expression_text
     finally:
         opened.app.close()
 
@@ -173,3 +176,27 @@ def test_material_caution_preserves_source_without_endorsing_application_to_unkn
     assert ENTRY.content in result.expression_text
     assert '不是针对当前物件的操作建议' in result.expression_text
     assert '我无法确认' in result.expression_text
+
+
+@pytest.mark.parametrize('message', [
+    '我不确定这张票的材质，怕弄坏它，请写一句诗，再说说保存办法。',
+    '请写一句诗，也请回答：「我不确定这是什么纸，我怕弄坏，怎么判断材质？」',
+    '请写一个虚构故事：人物走过桥。我的票不确定是什么纸，怕弄坏。请建议一个保存方法。',
+])
+def test_creative_scope_cannot_remove_real_constraints(tmp_path, message):
+    text = '可以用吹风机加热。'
+    result = turn(tmp_path, message, MemoryProvider(text, refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert '可以用吹风机' not in result.expression_text
+    assert '我无法确认' in result.expression_text
+
+
+def test_fictional_character_question_stays_inside_story_scope(tmp_path):
+    text = '孩子蹲在水洼边，把这个问题藏进了口袋。'
+    result = turn(tmp_path, '请写一个虚构故事：一个孩子问，为什么地面湿了会显得更黑？',
+        MemoryProvider(text, refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert text in result.expression_text
+
+
+def test_physical_noun_in_metaphor_discussion_is_not_physics(tmp_path):
+    text = '这个比喻只是我对人物的一种理解。'
+    assert turn(tmp_path, '为什么你用纸张比喻这个人物？', MemoryProvider(text)).expression_text == text

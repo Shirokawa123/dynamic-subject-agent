@@ -555,7 +555,8 @@ class ControlledCompositeCognition(CognitionEngine):
                         language=expression.language,
                     )
             else:
-                expression = participant_goal_proposal.expression_candidate
+                expression = (ExpressionCandidate(goal_text, participant_goal_proposal.expression_candidate.language)
+                    if grounded_goal else participant_goal_proposal.expression_candidate)
         situated_active = bool(
             situated_proposal is not None
             and situated_proposal.impact_envelope.subject_state.situated_expression_active

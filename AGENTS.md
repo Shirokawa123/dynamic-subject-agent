@@ -27,7 +27,7 @@
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 
-已验收的 Dogfood 连续体验基线为 `dogfood-s23`：仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。续写/最近一句改短的有限契约见 ARCHITECTURE；规划后续体验修复时先读 `docs/reports/2026-09-08-slice-23/LIVE-ACCEPTANCE.md` 的真实失败与剩余问题。
+已验收的 Dogfood 连续体验基线为 `dogfood-s24`：仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。续写/最近一句改短的有限契约见 ARCHITECTURE；规划后续体验修复时先读 `docs/reports/2026-09-08-slice-24/REPORT.md` 的真实失败与剩余问题。
 
 目标/承诺操作确认在裁决后 express 读取最终 Outcome；Memory 成功不代表目标成功，无关目标失败不替换独立回复。历史主回复保持原文；旧错误台词只能配回当轮真实说明，不重写。自然目标语法与完整消息/命名旧目标限制见 ARCHITECTURE。
 
@@ -38,6 +38,8 @@ Knowledge 事实表达保留完整来源上下文，后续合并不得删改限�
 未封存草稿可确定性预览 exact Profile/Genesis/Knowledge Freeze Mapping 与 Freeze Basis；只有携带 exact basis 的显式确认才能幂等创建新 Sealed Identity，且不替换既有身份。
 
 逻辑遗忘只向前追加，停用 Living Memory 不等于物理删除本地历史。控制目标完整性不借用 Provider 20 条窗口；达到本地 100 条历史上限时不猜唯一性。未决撤回限制外发而非伪造停用，纯保留/引用不得误触发；清单读取失败不伪报为空或已有 pending。完整有限语法、缺失姓名查询及重新提供语义见 ARCHITECTURE 与 Slice-23。
+
+修改事实/创作/表达合并时先读 ARCHITECTURE 的 Slice-24 边界及其报告：未知物件约束与完整来源并存，合法关系回执不能恢复其他能力的自由风险建议。LM reply 仅细化既有 conversation 用途，其他 11 类请求字节不变；有限语法不代表通用事实核验。
 
 ## 永久不变量
 

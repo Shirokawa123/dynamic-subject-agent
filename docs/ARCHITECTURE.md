@@ -76,6 +76,12 @@ Dogfood conversation history 是 `TimelineEngine` 的只读投影：查询会重
 
 确定性裁决解释与主表达分离：Domain status/reason 由 Desktop 从已提交 Outcome 翻译为 explanation；主 `ExpressionCandidate` 不朗读“状态证据/短时姿态/中期基线/候选/裁决”等实现术语。Situated 直接命令仍由 Python 拒绝，但自然询问具体情境。关系直接声称按分句后的精确闭集由 Python 生成 deterministic `relationship_claim` NoUpdate candidate，过滤仅与声称分句重叠的 Memory evidence，并与同轮合法 Knowledge/目标表达合并；Provider failure 仍保持所属 Relationship FailedClosed。
 
+## Slice-24 有限事实表达边界
+
+Living Memory 的 conversation 只承接主观讨论、澄清和不引入外部事实的建议；既有 reply 提示按此收紧，其他 11 类请求字节基线不变。Python 对明确物理因果/材质辨识与未知材质且担心损坏的输入给出有限边界，正常、fallback、FailedClosed 和最终组合均不能恢复已拒建议。合法 Memory 候选仍独立提交，确认引用最终 canonical 内容；事实场景的目标附带表达只引用选中 canonical terms，关系回执不能为整段自由建议背书。
+
+完整封存 Knowledge 引用保持原文；未知原物的约束不因引用存在而消失，资料引用不等于能直接用于当前物件。Knowledge 失败明确说查询未完成。创作只豁免自身分句；冒号故事范围在硬句界结束，独立答问及其引用保持约束，主观比喻/语言点评不按科学解释处理。有限语法不是通用语义分类或事实核验：复杂多句虚构可能被保守处理，明确虚构仍可能写入未核验的类科学内容，必须保留创作标记。真实证据见 [Slice-24 报告](reports/2026-09-08-slice-24/REPORT.md)。
+
 ## Credential seam
 
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
