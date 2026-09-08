@@ -1,0 +1,336 @@
+{
+  "message": "我给第11个独立资料夹取名为 archive-11。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "durable",
+    "new_memory_content": "我给第11个独立资料夹取名为 archive-11。",
+    "expression": "archive-11，编号继续。这个夹子准备收哪类内容？",
+    "head_sequence": 68,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 49,
+        "user_text": "「我明天整理松石卡片。」记录现在活跃吗？",
+        "user_language": "zh",
+        "assistant_text": "这条记录已停用，不再作为活跃记忆使用。旧聊天与审计原文仍保留。",
+        "assistant_language": "zh",
+        "published_at_us": 1788877729224155,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 50,
+        "user_text": "我喜欢哪种颜色的纸？",
+        "user_language": "zh",
+        "assistant_text": "你喜欢浅绿色的纸。",
+        "assistant_language": "zh",
+        "published_at_us": 1788877739605823,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 51,
+        "user_text": "你现在还记得哪些内容？",
+        "user_language": "zh",
+        "assistant_text": "当前可用于召回的活跃记录：\n「我喜欢浅绿色的纸。」\n「我明天也许会把卡片放在门口；如果我忘了，下次再提醒我。」\n「明天晚上我想写完给邻居的明信片，提醒我下次聊天时接着写。」\n「明天晚上我想写完给邻居的明信片，提醒我下次聊天时接着写。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788877770838016,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 52,
+        "user_text": "松石卡片那条计划现在还在你的活跃记忆里吗？",
+        "user_language": "zh",
+        "assistant_text": "本轮选中的可用记录如下；是否是你指的那条，需要你确认：\n「我明天也许会把卡片放在门口；如果我忘了，下次再提醒我。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788878038142667,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 53,
+        "user_text": "「我明天整理松石卡片。」记录现在活跃吗？",
+        "user_language": "zh",
+        "assistant_text": "这条记录已停用，不再作为活跃记忆使用。旧聊天与审计原文仍保留。",
+        "assistant_language": "zh",
+        "published_at_us": 1788878101155887,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 54,
+        "user_text": "「我喜欢浅绿色的纸。」记录现在活跃吗？",
+        "user_language": "zh",
+        "assistant_text": "这条记录目前处于活跃状态。",
+        "assistant_language": "zh",
+        "published_at_us": 1788878108550245,
+        "explanations": [
+          {
+            "capability": "知识",
+            "kind": "failed",
+            "message": "本轮知识处理未能完成；没有把不确定内容当作来源。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 55,
+        "user_text": "我喜欢哪种颜色的纸？",
+        "user_language": "zh",
+        "assistant_text": "你喜欢浅绿色的纸。",
+        "assistant_language": "zh",
+        "published_at_us": 1788878213827840,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 56,
+        "user_text": "我计划周六整理星砂手册。",
+        "user_language": "zh",
+        "assistant_text": "周六整理星砂手册，听起来是个不错的计划。需要我帮你想想怎么分类或编排吗？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885021226002,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我计划周六整理星砂手册。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 57,
+        "user_text": "我给第0个独立资料夹取名为 archive-00。",
+        "user_language": "zh",
+        "assistant_text": "archive-00，听起来是个清爽的起点。你打算在里面放些什么？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885029123109,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第0个独立资料夹取名为 archive-00。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 58,
+        "user_text": "我给第1个独立资料夹取名为 archive-01。",
+        "user_language": "zh",
+        "assistant_text": "archive-01，编号接上了。这个夹子你打算放哪一类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885037035518,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第1个独立资料夹取名为 archive-01。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 59,
+        "user_text": "我给第2个独立资料夹取名为 archive-02。",
+        "user_language": "zh",
+        "assistant_text": "archive-02，编号继续往下走。这个夹子准备收哪类东西？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885048011147,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第2个独立资料夹取名为 archive-02。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 60,
+        "user_text": "我给第3个独立资料夹取名为 archive-03。",
+        "user_language": "zh",
+        "assistant_text": "archive-03，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885059623224,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第3个独立资料夹取名为 archive-03。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 61,
+        "user_text": "我给第4个独立资料夹取名为 archive-04。",
+        "user_language": "zh",
+        "assistant_text": "archive-04，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885069886991,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第4个独立资料夹取名为 archive-04。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 62,
+        "user_text": "我给第5个独立资料夹取名为 archive-05。",
+        "user_language": "zh",
+        "assistant_text": "archive-05，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885079900758,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第5个独立资料夹取名为 archive-05。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 63,
+        "user_text": "我给第6个独立资料夹取名为 archive-06。",
+        "user_language": "zh",
+        "assistant_text": "archive-06，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885089009619,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第6个独立资料夹取名为 archive-06。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 64,
+        "user_text": "我给第7个独立资料夹取名为 archive-07。",
+        "user_language": "zh",
+        "assistant_text": "archive-07，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885100321570,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第7个独立资料夹取名为 archive-07。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 65,
+        "user_text": "我给第8个独立资料夹取名为 archive-08。",
+        "user_language": "zh",
+        "assistant_text": "archive-08，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885110290666,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第8个独立资料夹取名为 archive-08。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 66,
+        "user_text": "我给第9个独立资料夹取名为 archive-09。",
+        "user_language": "zh",
+        "assistant_text": "archive-09，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885121999382,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第9个独立资料夹取名为 archive-09。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 67,
+        "user_text": "我给第10个独立资料夹取名为 archive-10。",
+        "user_language": "zh",
+        "assistant_text": "archive-10，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885131664625,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第10个独立资料夹取名为 archive-10。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 68,
+        "user_text": "我给第11个独立资料夹取名为 archive-11。",
+        "user_language": "zh",
+        "assistant_text": "archive-11，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885143264151,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第11个独立资料夹取名为 archive-11。」"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「我给第11个独立资料夹取名为 archive-11。」"
+      }
+    ]
+  }
+}

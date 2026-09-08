@@ -1,0 +1,324 @@
+{
+  "message": "请写一句关于白云的短诗。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "这是现在的即兴创作，不是资料事实或已发生的经历：\n白云是天空写给大地的便签，风一读就散。",
+    "head_sequence": 84,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 65,
+        "user_text": "我给第8个独立资料夹取名为 archive-08。",
+        "user_language": "zh",
+        "assistant_text": "archive-08，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885110290666,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第8个独立资料夹取名为 archive-08。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 66,
+        "user_text": "我给第9个独立资料夹取名为 archive-09。",
+        "user_language": "zh",
+        "assistant_text": "archive-09，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885121999382,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第9个独立资料夹取名为 archive-09。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 67,
+        "user_text": "我给第10个独立资料夹取名为 archive-10。",
+        "user_language": "zh",
+        "assistant_text": "archive-10，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885131664625,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第10个独立资料夹取名为 archive-10。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 68,
+        "user_text": "我给第11个独立资料夹取名为 archive-11。",
+        "user_language": "zh",
+        "assistant_text": "archive-11，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885143264151,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第11个独立资料夹取名为 archive-11。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 69,
+        "user_text": "我给第12个独立资料夹取名为 archive-12。",
+        "user_language": "zh",
+        "assistant_text": "archive-12，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885153056103,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第12个独立资料夹取名为 archive-12。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 70,
+        "user_text": "我给第13个独立资料夹取名为 archive-13。",
+        "user_language": "zh",
+        "assistant_text": "archive-13，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885164893409,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第13个独立资料夹取名为 archive-13。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 71,
+        "user_text": "我给第14个独立资料夹取名为 archive-14。",
+        "user_language": "zh",
+        "assistant_text": "archive-14，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885173467580,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第14个独立资料夹取名为 archive-14。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 72,
+        "user_text": "我给第15个独立资料夹取名为 archive-15。",
+        "user_language": "zh",
+        "assistant_text": "archive-15，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885184438266,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第15个独立资料夹取名为 archive-15。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 73,
+        "user_text": "我给第16个独立资料夹取名为 archive-16。",
+        "user_language": "zh",
+        "assistant_text": "archive-16，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885195009027,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第16个独立资料夹取名为 archive-16。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 74,
+        "user_text": "我给第17个独立资料夹取名为 archive-17。",
+        "user_language": "zh",
+        "assistant_text": "archive-17，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885204555006,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第17个独立资料夹取名为 archive-17。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 75,
+        "user_text": "我给第18个独立资料夹取名为 archive-18。",
+        "user_language": "zh",
+        "assistant_text": "archive-18，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885213928685,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第18个独立资料夹取名为 archive-18。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 76,
+        "user_text": "我给第19个独立资料夹取名为 archive-19。",
+        "user_language": "zh",
+        "assistant_text": "archive-19，编号继续。这个夹子准备收哪类内容？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885222976712,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我给第19个独立资料夹取名为 archive-19。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 77,
+        "user_text": "回到星砂这件事，我之前准备做什么？",
+        "user_language": "zh",
+        "assistant_text": "抱歉，当前没有可用于回答这个问题的记忆或知识。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885233289240,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 78,
+        "user_text": "回到星砂这件事，我之前准备做什么？",
+        "user_language": "zh",
+        "assistant_text": "你之前提到计划周六整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885399740948,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 79,
+        "user_text": "星砂手册原来安排在哪天处理？",
+        "user_language": "zh",
+        "assistant_text": "你之前说的是周六整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885409680306,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 80,
+        "user_text": "请写一句关于落叶的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n落叶旋落时，风替它写完最后一笔。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885531765066,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 81,
+        "user_text": "请写一句关于雨声的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨声把夜色缝成细密的针脚。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885540964125,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 82,
+        "user_text": "星砂那本东西，我当时想哪天动手？",
+        "user_language": "zh",
+        "assistant_text": "你之前提到的是周六整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885550255397,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 83,
+        "user_text": "更正记忆：星砂手册改为周日整理，不是周六。",
+        "user_language": "zh",
+        "assistant_text": "好的，已更正为周日整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885558472736,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「更正记忆：星砂手册改为周日整理，不是周六。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 84,
+        "user_text": "请写一句关于白云的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n白云是天空写给大地的便签，风一读就散。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885567736376,
+        "explanations": [],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": []
+  }
+}
