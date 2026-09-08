@@ -25,6 +25,7 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite, sentence_revision_index
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression, has_creative_sentence, has_supplied_sentence, MISSING_REVISION_REPLY, FAILED_REVISION_REPLY, CREATIVE_REPLY_PREFIX
 from dynamic_subject_agent.reminder_expression import reminder_request_kind
+from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, unsupported_inventory_claim, selected_memory_answer, exact_memory_status_answer, MEMORY_SCOPE_UNAVAILABLE
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 
@@ -275,6 +276,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
         available = tuple(m for m in control_active if m.memory_id not in withheld)
+        status_answer = exact_memory_status_answer(command.utterance, context.living_memory_history,
+            complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
+        if status_answer is not None:
+            return self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='本轮本地核实明确原文的记录状态，不回显内容。',
+                expression_candidate=ExpressionCandidate(status_answer, command.language, dialogue_priority=True))
         name_answer = missing_name_answer(command.utterance, active, complete=context.memory_control_complete)
         if is_memory_inventory_query(command.utterance) or name_answer is not None:
             text = name_answer or ('当前可用于召回的活跃记录：\n' + '\n'.join(f'「{m.content}」' for m in available)
@@ -442,6 +449,11 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         if factual_boundary is not None:
             reply_text = factual_boundary
             is_creative = False
+        memory_scope_checked = is_memory_status_query(command.utterance) or (not is_creative and unsupported_inventory_claim(reply_text))
+        if memory_scope_checked:
+            reply_text = selected_memory_answer(tuple(m.content for m in active if m.memory_id in recalled_ids)[:5],
+                available=not disclosure_unavailable and not withheld)
+            is_creative = False
         candidates: tuple[ExperienceChangeCandidate, ...] = ()
         if result.proposal.action in {
             LivingMemoryAction.CREATE,
@@ -475,7 +487,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 text=reply_text,
                 language=result.language,
                 is_creative=is_creative,
-                dialogue_priority=reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
+                dialogue_priority=memory_scope_checked or reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
                     or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )
@@ -516,9 +528,9 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             basis=basis,
             experience_summary="Living Memory 本轮失败关闭。",
             expression_candidate=ExpressionCandidate(
-                text=factual_boundary or "（无记忆相关内容）",
+                text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) else factual_boundary or "（无记忆相关内容）"),
                 language=command.language,
-                dialogue_priority=factual_boundary is not None,
+                dialogue_priority=is_memory_status_query(command.utterance) or factual_boundary is not None,
             ),
         )
         return replace(

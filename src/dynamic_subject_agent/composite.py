@@ -37,6 +37,7 @@ from dynamic_subject_agent.participant_goals import active_targets, participant_
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply
 from dynamic_subject_agent.reminder_expression import REMINDER_BOUNDARY, reminder_request_kind, remove_reminder_promises, quoted_reminder_reference
+from dynamic_subject_agent.memory_answer_scope import is_memory_status_query
 from dynamic_subject_agent.memory_control import memory_withdrawal_reply
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply, material_uncertainty_reply
 from dynamic_subject_agent.subject_time_continuity import (
@@ -516,7 +517,8 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_relevant = memory_recalled or memory_changed
         from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY, FAILED_REVISION_REPLY
         preserve_memory_expression = (memory_proposal.expression_candidate.is_creative
-            or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY})
+            or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY}
+            or is_memory_status_query(command.utterance))
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
             memory_text = memory_proposal.expression_candidate.text
             knowledge_text = ('' if preserve_memory_expression and knowledge_proposal.expression_candidate.is_creative
