@@ -545,14 +545,15 @@ class ControlledCompositeCognition(CognitionEngine):
                 else memory_proposal.expression_candidate
             )
         if participant_goal_relevant and participant_goal_proposal is not None:
-            grounded_goal = unsourced_fact_reply(command.utterance) is not None or reminder_request_kind(command.utterance) is not None
+            grounded_goal = (unsourced_fact_reply(command.utterance) is not None or reminder_request_kind(command.utterance) is not None
+                or is_memory_status_query(command.utterance))
             if grounded_goal:
                 selected_goal_ids = set(participant_goal_proposal.impact_envelope.experience.selected_participant_goal_record_ids)
                 goal_text = '\n'.join(f'既有{"目标" if record.kind == "goal" else "承诺"}记录：「{record.terms}」。'
                     for record in context.participant_goal_commitments if record.record_id in selected_goal_ids)
             else:
                 goal_text = _supported_clauses(participant_goal_proposal.expression_candidate.text)
-            if knowledge_cited or memory_relevant:
+            if knowledge_cited or memory_relevant or is_memory_status_query(command.utterance):
                 if not participant_goal_mutation:
                     expression = ExpressionCandidate(
                         text=(

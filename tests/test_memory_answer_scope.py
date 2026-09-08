@@ -126,3 +126,57 @@ def test_scope_answer_is_not_replaced_by_background_knowledge(tmp_path):
         also_memory=MemoryProvider(BAD, refined=LivingMemoryReplyResult(BAD, 'zh')))
     assert '本轮没有选到' in result.expression_text
     assert entry.content in result.expression_text
+
+
+@pytest.mark.parametrize('query', [QUERY, f'「{PLAN}」记录现在活跃吗？'])
+def test_goal_reply_cannot_restore_global_inventory_denial(tmp_path, query):
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.runtime import M0_A_PROVIDER_AUTHORITY
+    from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
+    from dynamic_subject_agent.participant_goal_cognition import ParticipantGoalProviderAdapter, ParticipantGoalClassificationResult, ParticipantGoalReplyResult
+    from test_situated_integration import _NoopKnowledgeProvider, _NoopRelationshipProvider
+    class Goal:
+        def classify(self, request):
+            return ParticipantGoalClassificationResult(None, tuple(r.turn_ref for r in request.active_records), '选中目标。', 'zh')
+        def reply(self, request):
+            return ParticipantGoalReplyResult(BAD, 'zh')
+    knowledge, relationship = _NoopKnowledgeProvider(), _NoopRelationshipProvider()
+    for provider in (knowledge, relationship):
+        provider.provider_authority = M0_A_PROVIDER_AUTHORITY
+    memory = ScopeProvider()
+    gateway = ModelGateway(ParticipantGoalProviderAdapter(provider=Goal(), capabilities=ProviderCapabilities(
+        M0_A_PROVIDER_AUTHORITY, 'test-goal', True, (StructuredOutputMode.JSON_OBJECT,))))
+    opened = open_app(tmp_path, memory, cognition=ControlledCompositeCognition(memory_provider=memory,
+        knowledge_provider=knowledge, relationship_provider=relationship, participant_goal_gateway=gateway))
+    try:
+        submit(opened, '我的目标是今年通过 N1。')
+        submit(opened, PLAN)
+        submit(opened, PREFERENCE)
+        submit(opened, f'请忘记「{PLAN}」')
+        result = submit(opened, query)
+        assert BAD not in result.projection.expression_text
+        assert ('本轮没有选到' if query == QUERY else '已停用') in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+def test_exact_plan_status_uses_canonical_original_across_days(tmp_path, monkeypatch):
+    from dataclasses import replace
+    import dynamic_subject_agent.timeline as timeline_module
+    from test_subject_time_continuity import _us
+    now = [_us(2026, 9, 8)]
+    monkeypatch.setattr(timeline_module, '_utc_microseconds', lambda: now[0])
+    class PlanProvider(ScopeProvider):
+        def propose(self, request):
+            result = super().propose(request)
+            return replace(result, proposal=replace(result.proposal, memory_kind='plan'))
+    opened = open_app(tmp_path, PlanProvider())
+    try:
+        submit(opened, PLAN)
+        assert submit(opened, f'请忘记「{PLAN}」').projection.memory_withdrawal_status == 'accepted'
+        now[0] = _us(2026, 9, 9)
+        result = submit(opened, f'「{PLAN}」这条记录现在还活跃吗？')
+        assert '已停用' in result.projection.expression_text
+        assert PLAN not in result.projection.expression_text
+    finally:
+        opened.app.close()

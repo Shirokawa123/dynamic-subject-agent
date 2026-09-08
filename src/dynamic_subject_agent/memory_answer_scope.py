@@ -14,6 +14,8 @@ MEMORY_SCOPE_UNAVAILABLE = '这次无法核实相关记忆的可用范围，不�
 
 
 def is_memory_status_query(message: str) -> bool:
+    if exact_memory_status_target(message) is not None:
+        return True
     return any(not explicit_creation_request(clause)
         and re.search(r'活跃记忆|活跃记录|这条记录|那条记录', clause)
         and re.search(r'吗|是否|有没有|还在|还活跃|停用|状态', clause)
@@ -34,13 +36,18 @@ def selected_memory_answer(contents: tuple[str, ...], *, available: bool) -> str
     return '本轮选中的可用记录如下；是否是你指的那条，需要你确认：\n' + '\n'.join(f'「{content}」' for content in contents)
 
 
-def exact_memory_status_answer(message: str, history: tuple[LivingMemoryRecord, ...], *, complete: bool, readable: bool) -> str | None:
+def exact_memory_status_target(message: str) -> str | None:
     match = re.fullmatch(r'[「“](.+)[」”](?:这条)?(?:记忆|记录)(?:现在)?(?:还)?(?:活跃|在用|停用)(?:吗)?[。！？!?]?', message.strip())
-    if match is None:
+    return match[1].strip() if match is not None else None
+
+
+def exact_memory_status_answer(message: str, history: tuple[LivingMemoryRecord, ...], *, complete: bool, readable: bool) -> str | None:
+    target = exact_memory_status_target(message)
+    if target is None:
         return None
     if not complete or not readable:
         return MEMORY_SCOPE_UNAVAILABLE
-    records = [record for record in history if record.content.strip() == match[1].strip()]
+    records = [record for record in history if record.content.strip() == target]
     if len(records) != 1:
         return '本轮无法按该原文唯一确认记录状态；这不表示你从未提供过相关内容。'
     return {

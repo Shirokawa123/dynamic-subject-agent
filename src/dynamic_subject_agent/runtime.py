@@ -353,6 +353,7 @@ class CognitionRuntimeView:
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_withheld_memory_ids: Callable[[], tuple[str, ...]] | None = None
     memory_control_complete: bool = True
+    canonical_memory_history: tuple[LivingMemoryRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1043,6 +1044,7 @@ class SubjectRuntime:
                 if memory.status == "active"
             )[:20],
             living_memory_history=projected_memory_history,
+            canonical_memory_history=memory_history,
             memory_control_complete=len(memory_history) < 100,
             relationship_stance_summary=stance_summary,
             participant_goal_commitments=projected_participant_goals,

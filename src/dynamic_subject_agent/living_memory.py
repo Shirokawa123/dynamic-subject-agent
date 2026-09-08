@@ -276,7 +276,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
         available = tuple(m for m in control_active if m.memory_id not in withheld)
-        status_answer = exact_memory_status_answer(command.utterance, context.living_memory_history,
+        status_answer = exact_memory_status_answer(command.utterance, context.canonical_memory_history,
             complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
         if status_answer is not None:
             return self._bounded_noop_proposal(context=context, basis=basis,
