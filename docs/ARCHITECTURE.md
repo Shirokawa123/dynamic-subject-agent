@@ -50,6 +50,10 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 ## 数据
 
+Slice-29 的 `memory_retrieval.select_memory_candidates` 从 Runtime 已恢复的最多 100 条 Living Memory 历史中只取 active。超过 20 条时，以当前消息和当天内容投影在一次性内存 SQLite FTS5 中按 BM25 排序后取最多 20 条；不足预算的槽位按原最近顺序补齐，20 条以内或无词面匹配时保持原窗口。中文使用通用连续双字片段、英文/数字使用词元；无题材词表、embedding、额外 Provider 或持久索引，原内容、ID、状态与 canonical 历史不改写。排序仅决定候选，模型仍选择引用，Python 仍裁决；它不证明相关性、唯一性或语义等价。
+
+候选窗口与完整控制库存分开，姓名缺失判断使用可披露控制库存；exact 状态仍查 canonical 原文。撤回/披露过滤在外发前继续执行，superseded/forgotten 不进入排序。FTS 不可用返回 typed `MemoryRetrievalUnavailable`，Runtime 只标记本轮 Memory 检索不可用，Living Memory 在本地控制查询之后、Provider 之前产生所属 `living-memory-retrieval-unavailable` FailedClosed；不把检索失败说成空库存，不影响独立能力。12 类 Provider 的提示/字段与调用预算不变，仅溢出时 Memory 候选成员/次序及其选中内容可能不同。100 条之外、无共同词元、纯指代和模型窗口内错选仍有限；详细对照见 [Slice-29 报告](reports/2026-09-09-slice-29/REPORT.md)。
+
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
 
 Slice-23 Logical Forgetting 由 MemoryControl 本地选择唯一姓名/昵称完整记录或 exact「原文」，ExperienceDomain 对完整 admitted command 与本地库存再次校验，向原 canonical Outcome 追加 forget 结果；Timeline 只派生 `forgotten` 状态，不删除旧记录或改写旧 Timeline。控制库存完整性与 Provider 的 20 条 active 投影分离；100 条历史窗口无法证明完整时拒绝猜测。`memory_withdrawal_status` 只用于裁决后确认与当轮/历史说明，accepted 不再被 UI 说成新建记忆。

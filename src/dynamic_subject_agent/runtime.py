@@ -70,6 +70,7 @@ from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRe
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
+from dynamic_subject_agent.memory_retrieval import MemoryRetrievalUnavailable, select_memory_candidates
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeContinuity,
     SubjectTimeHistoryFailedClosed,
@@ -354,6 +355,7 @@ class CognitionRuntimeView:
     load_withheld_memory_ids: Callable[[], tuple[str, ...]] | None = None
     memory_control_complete: bool = True
     canonical_memory_history: tuple[LivingMemoryRecord, ...] = ()
+    memory_retrieval_unavailable: bool = False
 
 
 @dataclass(frozen=True)
@@ -1028,6 +1030,12 @@ class SubjectRuntime:
             )
             for record in participant_goals
         )
+        memory_retrieval_unavailable = False
+        try:
+            active_memories = select_memory_candidates(projected_memory_history, query_text)
+        except MemoryRetrievalUnavailable:
+            active_memories = ()
+            memory_retrieval_unavailable = True
         if interactions:
             accepted = [i for i in interactions if i.status == "accepted"]
             stance_summary = (
@@ -1038,11 +1046,8 @@ class SubjectRuntime:
             stance_summary = ""
         return replace(
             self._context.cognition_view(),
-            active_memories=tuple(
-                memory
-                for memory in projected_memory_history
-                if memory.status == "active"
-            )[:20],
+            active_memories=active_memories,
+            memory_retrieval_unavailable=memory_retrieval_unavailable,
             living_memory_history=projected_memory_history,
             canonical_memory_history=memory_history,
             memory_control_complete=len(memory_history) < 100,

@@ -231,6 +231,7 @@ class ExperienceDomain:
             living_memory_failure
             not in {
                 "living-memory-provider-failed",
+                "living-memory-retrieval-unavailable",
                 "living-memory-provider-invalid-output",
             }
             or memory_candidate is not None

@@ -282,7 +282,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             return self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary='本轮本地核实明确原文的记录状态，不回显内容。',
                 expression_candidate=ExpressionCandidate(status_answer, command.language, dialogue_priority=True))
-        name_answer = missing_name_answer(command.utterance, active, complete=context.memory_control_complete)
+        name_answer = missing_name_answer(command.utterance, available, complete=context.memory_control_complete)
         if is_memory_inventory_query(command.utterance) or name_answer is not None:
             text = name_answer or ('当前可用于召回的活跃记录：\n' + '\n'.join(f'「{m.content}」' for m in available)
                 if available else '当前没有可用于召回的活跃记忆。')
@@ -295,6 +295,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             return self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary='本轮本地读取可用活跃记忆清单。',
                 expression_candidate=ExpressionCandidate(text, command.language, dialogue_priority=True))
+        if context.memory_retrieval_unavailable:
+            return self._failure(context, command, basis, active, 'living-memory-retrieval-unavailable')
         request = LivingMemoryProviderRequest(
             current_user_message=command.utterance,
             active_memories=tuple(
@@ -528,7 +530,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             basis=basis,
             experience_summary="Living Memory 本轮失败关闭。",
             expression_candidate=ExpressionCandidate(
-                text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) else factual_boundary or "（无记忆相关内容）"),
+                text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) else factual_boundary
+                    or ('这次没能完成记忆检索，请稍后再试。' if code == 'living-memory-retrieval-unavailable' else "（无记忆相关内容）")),
                 language=command.language,
                 dialogue_priority=is_memory_status_query(command.utterance) or factual_boundary is not None,
             ),
