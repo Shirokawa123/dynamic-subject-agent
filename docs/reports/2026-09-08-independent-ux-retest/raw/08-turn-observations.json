@@ -1,0 +1,11 @@
+{
+  "transport": "All rows used POST /api/turn with only {text}; each returned HTTP 200 and ok:true.",
+  "turns": [
+    {"n": 1, "result": "source-cited; no short sentence"}, {"n": 2, "result": "source-cited; requested creation not supplied"}, {"n": 3, "result": "creative: 光斜进窗，纸页微暖。"}, {"n": 4, "result": "natural acknowledgement"},
+    {"n": 5, "result": "memory accepted; focused posture changed"}, {"n": 6, "result": "correction response; posture used"}, {"n": 7, "result": "duplicate correction committed"}, {"n": 8, "result": "forget rejected; exact-original guidance"},
+    {"n": 9, "result": "unknown visitor; source cited"}, {"n": 10, "result": "unknown current activity; source cited"}, {"n": 11, "result": "forget accepted; logical not physical deletion"}, {"n": 12, "result": "plan memory accepted"},
+    {"n": 13, "result": "after restart: 1 memory recalled"}, {"n": 14, "result": "creation not completed; safe non-substitution"}, {"n": 15, "result": "creation modification not completed; safe non-substitution"}, {"n": 16, "result": "1 memory recalled"},
+    {"n": 17, "result": "relationship kept; unilateral claim not accepted"}, {"n": 18, "result": "1 memory recalled"}, {"n": 19, "result": "forgotten preference not restated; sealed source cited"}, {"n": 20, "result": "1 memory recalled"}
+  ],
+  "redaction": "Full text, assistant replies, explanations and citation titles are retained in TRANSCRIPT-SUPPLEMENT.md; this HTTP evidence removes all internal IDs, timestamps, credential and authorization data."
+}

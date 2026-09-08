@@ -1,0 +1,6 @@
+{
+  "transport": {"method": "POST", "path": "/api/turn", "request_body": {"text": "今天整理桌面时找到一张空白明信片。我想把它写成送给朋友的小句子，你愿意陪我想想吗？"}},
+  "http_status": 200,
+  "response": {"ok": true, "head_sequence": 1, "expression": "资料《合作偏好》写的是：「愿意一起把小事写成短句」\n\n资料没有说明的细节，我不能据此确定。", "living_memory_status": "no-op", "knowledge_status": "accepted", "relationship_status": "no-update", "citations": [{"title": "合作偏好", "source": "封存来源"}], "explanations": []},
+  "redaction": "Removed credential, authorization headers, idempotency data, internal entry/profile/timeline IDs, and timestamps."
+}

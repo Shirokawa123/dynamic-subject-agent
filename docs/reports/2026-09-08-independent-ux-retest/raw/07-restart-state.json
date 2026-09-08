@@ -1,0 +1,6 @@
+{
+  "transport": {"method": "GET", "path": "/api/state"},
+  "http_status": 200,
+  "response": {"ok": true, "conversation_history_status": "available", "history_count": 12, "last_sequence": 12, "last_user": "明天晚上我想写完给邻居的明信片，提醒我下次聊天时接着写。", "last_assistant": "好的，下次聊天时我会提醒你接着写明信片。"},
+  "redaction": "Removed build/internal identity/profile/timeline IDs, timestamps, credential and authorization data."
+}
