@@ -1,3 +1,3 @@
 # 当前工作
 
-Slice-23 已完成逻辑遗忘、活跃查询及确认一致性，build `dogfood-s23`，最终427 passed；[报告](../reports/2026-09-08-slice-23/LIVE-ACCEPTANCE.md)。按用户已授权顺序，下一项为事实建议边界，须先建立其任务书再执行；自然创作在其后。全程后台，不操作输入法或界面焦点。
+当前唯一执行切片：[Slice-24：外部事实与未知物件建议边界](slice-24-factual-advice.md)，基线 `d86cfd9`。Slice-23 已收口，dogfood-s23、427 passed；自然创作/改写在本切片收口后开始。全程后台，不操作输入法或界面焦点。

@@ -25,6 +25,7 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
+from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -426,6 +427,10 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             is_creative = False
             summary = "本轮通过 canonical Living Memory 修订链召回更正前记录。"
             reply_text = f"你更正前说的是：「{historical_memory.content}」"
+        factual_boundary = unsourced_fact_reply(command.utterance)
+        if factual_boundary is not None:
+            reply_text = factual_boundary
+            is_creative = False
         candidates: tuple[ExperienceChangeCandidate, ...] = ()
         if result.proposal.action in {
             LivingMemoryAction.CREATE,
@@ -459,7 +464,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 text=reply_text,
                 language=result.language,
                 is_creative=is_creative,
-                dialogue_priority=self._split and (is_dialogue_continuation(command.utterance)
+                dialogue_priority=factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
                     or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )
@@ -494,13 +499,15 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         active: tuple[LivingMemoryRecord, ...],
         code: str,
     ) -> CognitiveProposal:
+        factual_boundary = unsourced_fact_reply(command.utterance)
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
             experience_summary="Living Memory 本轮失败关闭。",
             expression_candidate=ExpressionCandidate(
-                text="（无记忆相关内容）",
+                text=factual_boundary or "（无记忆相关内容）",
                 language=command.language,
+                dialogue_priority=factual_boundary is not None,
             ),
         )
         return replace(
