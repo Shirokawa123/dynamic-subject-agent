@@ -24,6 +24,7 @@ from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite, sentence_revision_index
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression, has_creative_sentence, has_supplied_sentence, MISSING_REVISION_REPLY, FAILED_REVISION_REPLY, CREATIVE_REPLY_PREFIX
+from dynamic_subject_agent.reminder_expression import reminder_request_kind
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 
@@ -474,7 +475,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 text=reply_text,
                 language=result.language,
                 is_creative=is_creative,
-                dialogue_priority=factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
+                dialogue_priority=reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
                     or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )

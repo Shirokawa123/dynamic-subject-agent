@@ -35,8 +35,8 @@ from dynamic_subject_agent.participant_goal_cognition import (
 )
 from dynamic_subject_agent.participant_goals import active_targets, participant_operation_requested
 from dynamic_subject_agent.timeline import SubjectCommand
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, explicit_creation_request, CREATIVE_REPLY_PREFIX
-from dynamic_subject_agent.reminder_expression import REMINDER_BOUNDARY, reminder_request_kind, remove_reminder_promises
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply
+from dynamic_subject_agent.reminder_expression import REMINDER_BOUNDARY, reminder_request_kind, remove_reminder_promises, quoted_reminder_reference
 from dynamic_subject_agent.memory_control import memory_withdrawal_reply
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply, material_uncertainty_reply
 from dynamic_subject_agent.subject_time_continuity import (
@@ -543,7 +543,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 else memory_proposal.expression_candidate
             )
         if participant_goal_relevant and participant_goal_proposal is not None:
-            grounded_goal = unsourced_fact_reply(command.utterance) is not None
+            grounded_goal = unsourced_fact_reply(command.utterance) is not None or reminder_request_kind(command.utterance) is not None
             if grounded_goal:
                 selected_goal_ids = set(participant_goal_proposal.impact_envelope.experience.selected_participant_goal_record_ids)
                 goal_text = '\n'.join(f'既有{"目标" if record.kind == "goal" else "承诺"}记录：「{record.terms}」。'
@@ -661,28 +661,17 @@ class ControlledCompositeCognition(CognitionEngine):
         expression = self._express_other_capabilities(proposal=proposal, context=context,
             command=command, outcomes=outcomes)
         reminder_kind = reminder_request_kind(command.utterance)
-        protected = tuple(
-            text for entry in self._knowledge_entries if entry.entry_id in outcomes.experience.knowledge_citation_ids
-            for text in (f'资料《{entry.title}》写的是：「{entry.content}」', f'根据条目《{entry.title}》：{entry.content}')
-        )
-        protected += tuple(f'「{content}」' for content in (
-            outcomes.experience.living_memory_content,
-            outcomes.experience.participant_goal_commitment_terms,
-            *(item.content for item in context.active_memories),
-        ) if content)
-        if not (reminder_kind is None and explicit_creation_request(command.utterance) and expression.text.startswith(CREATIVE_REPLY_PREFIX)):
-            clean, removed = remove_reminder_promises(expression.text, protected=protected)
-            if reminder_kind is not None or removed:
-                pieces = [clean, REMINDER_BOUNDARY]
-                memory = outcomes.experience
-                if reminder_kind is not None and memory.memory_withdrawal_status is None:
-                    if memory.living_memory_status.value == 'accepted' and memory.living_memory_content:
-                        pieces.insert(0, f'已记录你的原话：「{memory.living_memory_content}」。这不代表已安排提醒。')
-                    elif memory.living_memory_status.value == 'failed-closed':
-                        pieces.insert(0, '这次未能完成记忆记录。')
-                expression = ExpressionCandidate('\n\n'.join(dict.fromkeys(part for part in pieces if part)), command.language)
+        if reminder_kind is not None:
+            pieces = [expression.text, REMINDER_BOUNDARY]
+            memory = outcomes.experience
+            if memory.memory_withdrawal_status is None:
+                if memory.living_memory_status.value == 'accepted' and memory.living_memory_content:
+                    pieces.insert(0, f'已记录你的原话：「{memory.living_memory_content}」。这不代表已安排提醒。')
+                elif memory.living_memory_status.value == 'failed-closed':
+                    pieces.insert(0, '这次未能完成记忆记录。')
+            expression = ExpressionCandidate('\n\n'.join(dict.fromkeys(part for part in pieces if part)), command.language)
         withdrawal = memory_withdrawal_reply(outcomes.experience.memory_withdrawal_status)
-        other_relevant = (outcomes.experience.knowledge_status == 'accepted'
+        other_relevant = (reminder_kind is not None or outcomes.experience.knowledge_status == 'accepted'
             or bool(_direct_relationship_claims(command.utterance))
             or outcomes.relationship.relationship_candidate_event == 'relationship_claim'
             or participant_operation_requested(command.utterance)
@@ -699,7 +688,7 @@ class ControlledCompositeCognition(CognitionEngine):
             elif outcomes.experience.knowledge_status == 'failed-closed':
                 boundary = '这次资料查询未能完成，暂时不能据此给出确定判断。' + ('\n' + preservation if preservation else '')
             memory_receipt = None
-            if (outcomes.experience.memory_withdrawal_status is None
+            if (reminder_kind is None and outcomes.experience.memory_withdrawal_status is None
                 and outcomes.experience.living_memory_status.value == 'accepted'
                 and outcomes.experience.living_memory_content):
                 memory_receipt = f'已记录你的这段话：「{outcomes.experience.living_memory_content}」。'
@@ -787,7 +776,22 @@ class ControlledCompositeCognition(CognitionEngine):
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
         try:
-            return sub.propose(plan=plan, context=context, command=command, basis=basis)
+            result = sub.propose(plan=plan, context=context, command=command, basis=basis)
+            # Only this capability's checked creation is exempt, never a later
+            # composite containing unrelated free replies. Knowledge already
+            # renders full sealed sources or a separately checked creation.
+            if sub is not self._knowledge and not result.expression_candidate.is_creative:
+                protected = quoted_reminder_reference(command.utterance) + tuple(f'「{value}」' for value in (
+                    command.utterance,
+                    *(item.content for item in context.active_memories),
+                    *(item.content for item in context.living_memory_history),
+                    *(item.terms for item in context.participant_goal_commitments),
+                ) if value)
+                clean, removed = remove_reminder_promises(result.expression_candidate.text, protected=protected)
+                if removed:
+                    result = replace(result, expression_candidate=replace(result.expression_candidate,
+                        text='\n\n'.join(part for part in (clean, REMINDER_BOUNDARY) if part)))
+            return result
         except CognitionFailedClosed:
             raise
         except Exception as error:
