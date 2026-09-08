@@ -908,8 +908,8 @@ def test_nonmatch_provider_outbound_matches_authorized_baselines() -> None:
         "goal": "4c037a29bb43a5f5c0fc3e70813b5f27704ad4dac6333730dfc6c394c8b6b44c",
         "situated": "04f167a465671bd452a8dbd4593dc98b7db0f6c3082e4a0455f5da5314e6803e",
         "medium": "5d3bcb4c0dcb73396bd2c49744ee7424da9b691c26c461d242511e1a71af25fa",
-        # Slice-25 clarifies bounded rewriting in LM reply; other 11 hashes remain.
-        "living-reply": "2660599f985caebac4d20ba4425480298a0b517c84eeca35dac8530e5318657b",
+        # Slice-26 clarifies two-sentence delivery in LM reply; other 11 hashes remain.
+        "living-reply": "d1c42f1f9e0ee533179a2598db7d9a24fe587079b7ff317f3a3ef8372f661c5f",
         "knowledge-reply": "85cd4778e1b18b432e02d7cd59f68e238fb7fc95c9c56ed31f1e8381f40950a1",
         "relationship-reply": "30e65c081d2bbc2c6c0096381577366a983d7cceb6597cd3f3d9537465be7c20",
         "goal-reply": "d544b15ca979461e93f91ee3d07409d72479e1f25174db1eec2edfb751123d62",

@@ -513,11 +513,13 @@ class ControlledCompositeCognition(CognitionEngine):
             for candidate in experience_request.candidates
         ) and not participant_goal_selection_priority
         memory_relevant = memory_recalled or memory_changed
-        from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY
+        from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY, FAILED_REVISION_REPLY
         preserve_memory_expression = (memory_proposal.expression_candidate.is_creative
-            or memory_proposal.expression_candidate.text == MISSING_REVISION_REPLY)
+            or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY})
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
             memory_text = memory_proposal.expression_candidate.text
+            knowledge_text = ('' if preserve_memory_expression and knowledge_proposal.expression_candidate.is_creative
+                else knowledge_proposal.expression_candidate.text)
             if not preserve_memory_expression:
                 recalled_ids = {memory_id for candidate in experience_request.candidates for memory_id in candidate.recalled_memory_ids}
                 facts = [f'你之前说的是：「{item.content}」' for item in context.active_memories if item.memory_id in recalled_ids]
@@ -528,7 +530,7 @@ class ControlledCompositeCognition(CognitionEngine):
             expression = ExpressionCandidate(
                 text=_merge_expression_text(
                     memory_text,
-                    knowledge_proposal.expression_candidate.text,
+                    knowledge_text,
                     preserve_evidence=True,
                 ),
                 language=memory_proposal.expression_candidate.language,

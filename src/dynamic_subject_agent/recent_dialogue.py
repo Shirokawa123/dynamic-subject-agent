@@ -111,7 +111,8 @@ def is_rewrite_withdrawn(message: str) -> bool:
 
 
 def expression_request_text(message: str) -> str:
-    unquoted = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    unquoted = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"',
+        lambda match: '。' if match[0][-2:-1] in '。！？!?' else '', message)
     return '。'.join(sentence for sentence in re.split(r'[。！？!?]', unquoted)
         if not re.match(r'^(?:我|他|她|朋友)?(?:昨天|前天|之前|上次|曾经)[^，,：:]*(?:说|问|要求)[^，,：:]*[，,：:]', sentence.strip()))
 

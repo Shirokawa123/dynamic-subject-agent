@@ -304,11 +304,13 @@ class ControlledKnowledgeCognition(CognitionEngine):
         reply_text = render_source_reply(selected_entries,
             reply_result if isinstance(reply_result, KnowledgeReplyResult) and reply_result.language == command.language else None)
         activity = activity_boundary_reply(command.utterance)
+        is_creative = False
         if activity is not None:
             reply_text = activity
         elif isinstance(reply_result, KnowledgeReplyResult) and reply_result.language == command.language and reply_result.reply_kind == 'creative':
             creative = contextual_reply(reply_result.reply_text, message=command.utterance, reply_kind='creative')
             if creative is not None:
+                is_creative = True
                 reply_text = creative + ('\n引用仅作为创作背景。' if selected_entries else '')
         base = self._bounded_noop_proposal(
             context=context,
@@ -317,6 +319,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
             expression_candidate=ExpressionCandidate(
                 text=reply_text,
                 language=result.language,
+                is_creative=is_creative,
             ),
         )
         experience_request = ExperienceAdjudicationRequest(

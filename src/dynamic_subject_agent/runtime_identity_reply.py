@@ -9,6 +9,7 @@ from dynamic_subject_agent.recent_dialogue import shortening_limit, expression_r
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
 CREATIVE_REPLY_PREFIX = '这是现在的即兴创作，不是资料事实或已发生的经历：\n'
 MISSING_REVISION_REPLY = '这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。'
+FAILED_REVISION_REPLY = '这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。'
 _UNSUPPORTED_CURRENT_ACTIVITY_MARKERS = (
     "我也刚",
     "我正好",
@@ -90,6 +91,9 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
         body = expression_body(text)
         if len(re.sub(r'\s+', '', body)) > limit:
             return None
+    if (isinstance(text, str) and requested_creative_sentence_count(message) == 2
+            and sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(expression_body(text))) != 2):
+        return None
     if reply_kind == 'creative':
         if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
@@ -97,6 +101,13 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
     if isinstance(text, str) and re.search(r'我(?:倒是)?(?:正想歇|替你留了|一直在等|一直在想)', text):
         return None
     return guard_runtime_identity_reply(text)
+
+
+def requested_creative_sentence_count(message: str) -> int | None:
+    if not explicit_creation_request(message):
+        return None
+    return 2 if any(re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:两|2)句(?:祝福|短句)(?:吧)?', clause.strip())
+        for clause in re.split(r'[。！？!?，,]', expression_request_text(message))) else None
 
 
 def repeats_previous_expression(text: str, previous: str) -> bool:
@@ -117,8 +128,16 @@ def expression_body(value: str) -> str:
 def has_creative_sentence(text: str, index: int) -> bool:
     if not text.startswith(CREATIVE_REPLY_PREFIX):
         return False
-    body = expression_body(text).split('\n\n资料', 1)[0]
-    return len(_SENTENCE_PATTERN.findall(body)) >= index
+    body = expression_body(text).split('\n\n', 1)[0].split('\n引用仅作为创作背景。', 1)[0]
+    return sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(body)) >= index
+
+
+def has_supplied_sentence(message: str, index: int) -> bool:
+    originals = re.findall(r'原文(?:是|为)?[：:]?\s*(?:“([^”]+)”|「([^」]+)」|"([^"]+)")', message)
+    if len(originals) != 1:
+        return False
+    body = next(part for part in originals[0] if part)
+    return sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(body)) >= index
 
 
 __all__ = ["guard_runtime_identity_reply"]

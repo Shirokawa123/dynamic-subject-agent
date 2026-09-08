@@ -55,6 +55,7 @@ from dynamic_subject_agent.relationship import (
 )
 from dynamic_subject_agent.relationship_events import ALL_RELATIONSHIP_EVENTS
 from dynamic_subject_agent.recent_dialogue import MAX_DIALOGUE_CHARS, MAX_DIALOGUE_TURNS, RecentDialogueTurn
+from dynamic_subject_agent.runtime_identity_reply import requested_creative_sentence_count
 from dynamic_subject_agent.living_memory import (
     ACTIVE_MEMORY_LIMIT,
     LivingMemoryAction,
@@ -350,6 +351,7 @@ _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE = (
     "当前明确要求按前文续写、改短、换个版本时，交付所需文本并标为creative；前文为空或指代不明确时，请用户重述，不凭空补齐。"
     "再写一句、改短或另给版本必须形成有实质变化的文本；不要原样复制上一条assistant_text，也不要仅加创作标签作为新版本。"
     "明确要求缩到若干字以内时，仅返回改写正文，不附说明；按非空白字符计数，标点也占字数，外层引号不计。先确保正文不超限再交付；不能靠删改创作标签冒充改写。"
+    "用户明确要求两句祝福或两句短句时，交付两句各有句末标点的完整句子，不把它们合成一句；仅修改其中一句时按修改范围交付，不添第二份草稿。"
     "『上一句/刚才那句』指最近一轮assistant_text，不跳回更早话题；最近回复若只是拒绝、缺少内容或澄清提示，请用户明确贴出要改的原句，不擅自选择另一段。"
 )
 _CONFIRMED_COMMAND = (
@@ -1008,7 +1010,9 @@ class DeepSeekLivingMemoryProvider:
                 "messages": [
                     {
                         "role": "system",
-                        "content": _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE,
+                        "content": _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE + (
+                            '\n本轮明确要求两句：reply_text必须恰好两行，每行一句并以句号结束。两行分别表达祝福，不用一个逗号长句代替两句。不加说明、编号或第二份稿件。'
+                            if requested_creative_sentence_count(request.current_user_message) == 2 else ''),
                     },
                     {
                         "role": "user",

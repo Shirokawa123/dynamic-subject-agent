@@ -63,6 +63,18 @@ def test_reposted_original_can_resume_creation_without_history(tmp_path):
     result = turn(tmp_path, '原文是：“愿你安稳。愿薄荷常绿。”请给我写一个新版本，保留窗这个意象。',
         MemoryProvider('基础回复。', refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
     assert text in result.expression_text
+
+
+def test_two_creative_capabilities_deliver_one_unambiguous_draft(tmp_path):
+    from test_grounded_role_expression import KnowledgeProvider, ENTRY
+    from dynamic_subject_agent.knowledge import KnowledgeReplyResult
+    from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
+    entry = KnowledgeEntry(ENTRY.entry_id, '合作偏好', '愿意一起把小事写成祝福。', ENTRY.source_ref)
+    result = turn(tmp_path, RETURN, KnowledgeProvider('基础回复。', entry=entry,
+        refined=KnowledgeReplyResult('另外一份冲突稿。还有另一个句子。', 'zh', 'creative')), knowledge=True, entry=entry,
+        also_memory=MemoryProvider('（无记忆相关内容）', refined=LivingMemoryReplyResult('愿你安稳。愿新窗有光。', 'zh', 'creative')))
+    assert '愿你安稳。愿新窗有光。' in result.expression_text
+    assert '另外一份冲突稿' not in result.expression_text
     assert result.knowledge_status == 'accepted'
 
 
@@ -93,3 +105,83 @@ def test_missing_sentence_recovery_survives_background_source(tmp_path):
     assert result.knowledge_status == 'accepted'
     assert '完整原文' in result.expression_text
     assert entry.content in result.expression_text
+
+
+def test_pasted_original_supports_same_numbered_edit_request(tmp_path):
+    text = '愿窗边常有暖光。'
+    result = turn(tmp_path, '原文是：“愿你安稳。愿薄荷常绿。”第二句我想保留“窗”这个意象，不过不要再提薄荷。',
+        MemoryProvider('基础回复。', refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert text in result.expression_text
+
+
+@pytest.mark.parametrize('control', ['', '不过不要再提薄荷。'])
+def test_supplied_original_failure_does_not_claim_original_is_missing(tmp_path, control):
+    result = turn(tmp_path, '原文是：“愿你安稳。愿薄荷常绿。”第二句我想保留“窗”这个意象。' + control,
+        MemoryProvider('（无记忆相关内容）', fail=True))
+    assert '没有形成新的改写版本' in result.expression_text
+    assert '请贴出' not in result.expression_text
+    assert '没有可以可靠使用的前文' not in result.expression_text
+
+
+def test_source_background_note_is_not_a_second_creative_sentence(tmp_path):
+    from test_recent_dialogue import DialogueProvider, open_app, submit
+    class Writer(DialogueProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            text = '愿你安稳。\n引用仅作为创作背景。' if len(self.replies) == 1 else '凭空补出第二句。'
+            return LivingMemoryReplyResult(text, 'zh', 'creative')
+    opened = open_app(tmp_path, Writer())
+    try:
+        submit(opened, RETURN)
+        result = submit(opened, '第二句我想保留“窗”这个意象。')
+        assert '完整原文' in result.projection.expression_text
+        assert '凭空补出' not in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+def test_state_receipt_is_not_a_second_creative_sentence(tmp_path):
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.runtime import M0_A_PROVIDER_AUTHORITY
+    from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
+    from dynamic_subject_agent.situated_cognition import SituatedProviderAdapter
+    from test_situated_integration import _SituatedProvider, _NoopKnowledgeProvider, _NoopRelationshipProvider
+    from test_recent_dialogue import open_app, submit
+    class Writer(MemoryProvider):
+        def propose(self, request):
+            self.evidence = '我喜欢深蓝色' if request.current_user_message.startswith('我喜欢') else ''
+            return super().propose(request)
+    memory = Writer('基础回复。', refined=LivingMemoryReplyResult('愿你安稳。', 'zh', 'creative'))
+    knowledge, relationship, state = _NoopKnowledgeProvider(), _NoopRelationshipProvider(), _SituatedProvider()
+    for provider in (knowledge, relationship, state):
+        provider.provider_authority = M0_A_PROVIDER_AUTHORITY
+    gateway = ModelGateway(SituatedProviderAdapter(provider=state, capabilities=ProviderCapabilities(
+        M0_A_PROVIDER_AUTHORITY, 'test-state', True, (StructuredOutputMode.JSON_OBJECT,))))
+    opened = open_app(tmp_path, memory, cognition=ControlledCompositeCognition(memory_provider=memory,
+        knowledge_provider=knowledge, relationship_provider=relationship, situated_gateway=gateway))
+    try:
+        first = submit(opened, '我喜欢深蓝色。请写一句祝福。你现在的姿态是什么？')
+        assert '愿你安稳。' in first.projection.expression_text
+        assert '姿态' in first.projection.expression_text
+        result = submit(opened, '第二句请改成“愿窗边常有暖光。”')
+        assert '完整原文' in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('kind', ['creative', 'conversation'])
+def test_requested_two_sentences_cannot_be_delivered_as_one(tmp_path, kind):
+    text = '愿你的日子像晨光一样透亮，也像薄雾一样温柔。'
+    result = turn(tmp_path, RETURN, MemoryProvider('（无记忆相关内容）',
+        refined=LivingMemoryReplyResult(text, 'zh', kind)))
+    assert text not in result.expression_text
+
+
+@pytest.mark.parametrize('message', [
+    '他刚给了我两句祝福。请给我写一句回复。',
+    '这两句祝福里，第二句请改成更明亮一点的祝福。请写一个新版本。原文是：“愿你安稳。愿你快乐。”',
+])
+def test_mentioned_two_sentences_do_not_set_current_output_count(tmp_path, message):
+    text = '愿窗边常有暖光。'
+    result = turn(tmp_path, message, MemoryProvider('基础回复。', refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert text in result.expression_text
