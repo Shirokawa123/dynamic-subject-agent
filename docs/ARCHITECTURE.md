@@ -52,6 +52,10 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 权威历史、当前状态和可重建投影分离。普通更正与遗忘只向前追加；Host 删除是独立治理行为。源码仓库不保存运行数据、凭据、私人来源或模型。
 
+Slice-23 Logical Forgetting 由 MemoryControl 本地选择唯一姓名/昵称完整记录或 exact「原文」，ExperienceDomain 对完整 admitted command 与本地库存再次校验，向原 canonical Outcome 追加 forget 结果；Timeline 只派生 `forgotten` 状态，不删除旧记录或改写旧 Timeline。控制库存完整性与 Provider 的 20 条 active 投影分离；100 条历史窗口无法证明完整时拒绝猜测。`memory_withdrawal_status` 只用于裁决后确认与当轮/历史说明，accepted 不再被 UI 说成新建记忆。
+
+未提交的撤回意图按该操作冻结前缀定位，仅限制后续 Memory/近期历史披露，不伪装为 canonical 停用；未知/混合 pending 会保守限制，不能自动解封或说已完成。纯保留/引用与真实控制区分，引用对象不消除外部控制动词。读取失败与真实 pending 分开说明。已停用记录不进入 active 投影，修订链不得复活其内容；用户重新直接报告可建立独立新记录。明确清单与缺失姓名查询可本地回答，只说明当前可用范围，不声称用户从未提供过信息。完整有限语法见 Slice-23 任务书，物理删除和跨 Domain 数据治理不在此实现内。
+
 每轮 `ExperienceBasis.observed_at_us` 与 `ExperienceRecord.experienced_at_us` 来自同一 canonical Admission。新 Living Memory plan 或参与者目标/承诺只在消息含唯一受支持时间表达时附加 `TemporalAnchor`；旧记录不回填。离线时间只改变投影，不生成 Experience、状态转换、提醒或主动消息；Provider 仍只见原有 content/terms 字段，不见 timestamp、时区或 anchor 结构。
 
 Interaction Recency 不持久化：明确查询从当前 Admission 与最近完整 TimelineOutcome 的 publication time 现场派生；pending、interrupted、FailedClosed 和 UI 20 轮窗口不参与。查询本身提交后就是下一次查询的最近 turn。SubjectTimeContinuity 对非闭集消息不读取 history；四条闭集命中时六类 Provider 零调用。Slice-21 另授权 Living Memory reply 的有界近期文本用途，timestamp、日期差仍不外发。

@@ -1,0 +1,862 @@
+{
+  "surface": "ModelGateway typed projection metadata; not packet capture",
+  "segments": [
+    {
+      "segment": "s23_initial_egress",
+      "observations": [
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": true,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 1,
+          "history_chars": 18,
+          "name_in_memory": false,
+          "name_in_history": true,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": false
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "segment": "s23_mid_egress",
+      "observations": [
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "segment": "s23_reprovided_egress",
+      "observations": [
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 2,
+          "history_chars": 52,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": true,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 2,
+          "history_chars": 44,
+          "name_in_memory": false,
+          "name_in_history": true,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 2,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": true,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 1,
+          "history_pairs": 2,
+          "history_chars": 71,
+          "name_in_memory": false,
+          "name_in_history": true,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        }
+      ]
+    },
+    {
+      "segment": "s23_namefix_egress",
+      "observations": [
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-analysis",
+          "memory_items": 1,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "living-memory-reply",
+          "memory_items": 1,
+          "history_pairs": 2,
+          "history_chars": 77,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-analysis",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "relationship-reply",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "situated-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        },
+        {
+          "task": "medium-state-classification",
+          "memory_items": 0,
+          "history_pairs": 0,
+          "history_chars": 0,
+          "name_in_memory": false,
+          "name_in_history": false,
+          "completed": true
+        }
+      ]
+    }
+  ]
+}

@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s22`，显示在身份名称下方。可先提供一个话题，明确选择讨论，再请它写一句和改短；当前内容不必先成为长期记忆。被拒的擅自创作不会再被解释为全局缺资料，生成不合格时如实说明失败。近期文本仍最多两轮，明确最近一句改短只取最新完整轮；遗忘/更正/不安全历史关闭新增用途。事实来源、活动边界与本地时间查询保持既有契约。原始 Avery 没有独立 voice，整体自然度和通用指代未获保证；“道别…说/留”还可能触发保守误截断。真实失败、修复与验收范围见 [Slice-22 报告](docs/reports/2026-09-07-slice-22/REPORT.md)。
+当前内部体验 build 为 `dogfood-s23`。可明确要求“忘记我的名字”，或用「完整记忆原文」指定单条记录；成功后退出活跃使用，旧聊天和本地审计原文保留，这不是物理删除。可查询当前活跃清单，缺失姓名不会被解释成从未提供；重新直接报告可建立新记录。库存不完整、目标不唯一及未决请求保持保守限制，不承诺任意自然语言识别。近期上下文仍最多两轮，原有事实/活动/创作契约保持；一般事实建议和自然配文/缩写仍待后续修复。详见 [Slice-23 报告](docs/reports/2026-09-08-slice-23/LIVE-ACCEPTANCE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。
