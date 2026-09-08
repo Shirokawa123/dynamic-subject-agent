@@ -1,0 +1,5 @@
+{
+  "redaction": "No credential, authorization header, internal identity/profile/timeline ID, source digest, or freeze-basis digest included.",
+  "mapping": {"status": "available", "display_name": "林柚", "draft_revision": 1, "mapping_policy_version": "source-freeze-mapping-1.0", "knowledge_member_count": 5, "problem_code": null},
+  "freeze": {"status": "created", "display_name": "林柚", "knowledge_member_count": 5, "active": false, "problem_code": null}
+}

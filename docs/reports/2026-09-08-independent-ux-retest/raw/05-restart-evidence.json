@@ -1,0 +1,6 @@
+{
+  "redaction": "No credential, authorization header, internal identity/profile/timeline ID, or freeze-basis digest included.",
+  "sequence": ["source draft saved in first process", "first process closed", "second process opened against same temporary root", "source identity selected"],
+  "select": {"status": "selected", "display_name": "林柚", "active": true, "problem_code": null},
+  "scope_note": "This proves source identity selection survived this restart. No dialogue had committed before the restart."
+}

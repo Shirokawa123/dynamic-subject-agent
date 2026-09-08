@@ -1,0 +1,18 @@
+{
+  "redaction": "No credential, authorization header, internal profile/timeline ID, idempotency key, or fingerprint included.",
+  "user_text": "今天整理桌面时找到一张空白明信片。我想把它写成送给朋友的小句子，你愿意陪我想想吗？",
+  "submit": {
+    "status": "unavailable",
+    "operation_ref": null,
+    "projection": null,
+    "problem": {"code": "intent-unavailable"},
+    "replayed": false
+  },
+  "final": {
+    "status": "unavailable",
+    "operation_ref": null,
+    "projection": null,
+    "problem": {"code": "intent-unavailable"},
+    "replayed": false
+  }
+}

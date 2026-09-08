@@ -1,0 +1,8 @@
+{
+  "redaction": "No credential, authorization header, profile/timeline ID, or source digest included.",
+  "status": "available",
+  "accepted_count": 10,
+  "rejected_count": 0,
+  "accepted_categories": ["genesis.identity", "genesis.trait", "genesis.trait", "genesis.voice", "genesis.trait", "knowledge", "knowledge", "knowledge", "knowledge", "knowledge"],
+  "problem_code": null
+}
