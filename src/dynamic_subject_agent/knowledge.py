@@ -38,7 +38,7 @@ from dynamic_subject_agent.model_gateway import (
 )
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, CREATIVE_REPLY_PREFIX
 
 
 _NO_KNOWLEDGE_EXPRESSION = "（无知识相关内容）"
@@ -309,7 +309,7 @@ class ControlledKnowledgeCognition(CognitionEngine):
             reply_text = activity
         elif isinstance(reply_result, KnowledgeReplyResult) and reply_result.language == command.language and reply_result.reply_kind == 'creative':
             creative = contextual_reply(reply_result.reply_text, message=command.utterance, reply_kind='creative')
-            if creative is not None:
+            if creative is not None and creative.startswith(CREATIVE_REPLY_PREFIX):
                 is_creative = True
                 reply_text = creative + ('\n引用仅作为创作背景。' if selected_entries else '')
         base = self._bounded_noop_proposal(

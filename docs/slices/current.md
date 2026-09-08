@@ -1,3 +1,3 @@
 # 当前工作
 
-当前无执行切片。[Slice-26：共同创作交付与失败恢复](slice-26-collaborative-writing.md) 已收口：`dogfood-s26`，501 passed、12次真实后台追加与同代码重启；完整失败和格式限制见 [报告](../reports/2026-09-08-slice-26/REPORT.md)。下一项需新的用户选择与任务书，不自动扩展提醒、Agency/effect或其他能力。
+当前唯一执行切片：[Slice-27：提醒承诺与实际能力一致](slice-27-reminder-boundary.md)，基线 `0467541`。用户已同意核查并修复不实提醒承诺，不实现提醒系统、不新增 Provider 用途；后台隔离验收，不操作输入法或正式身份。

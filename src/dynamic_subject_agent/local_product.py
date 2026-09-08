@@ -47,7 +47,7 @@ from dynamic_subject_agent.source_character_authoring import (
 )
 from dynamic_subject_agent.studio import QualifiedRuntimeInput
 
-DOGFOOD_BUILD_ID = "dogfood-s26"
+DOGFOOD_BUILD_ID = "dogfood-s27"
 
 
 class OpenedLocalProduct:

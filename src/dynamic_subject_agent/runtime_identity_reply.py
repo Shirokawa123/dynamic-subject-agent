@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dynamic_subject_agent.recent_dialogue import shortening_limit, expression_request_text, is_rewrite_withdrawn
+from dynamic_subject_agent.reminder_expression import REMINDER_BOUNDARY, reminder_request_kind, has_reminder_promise
 
 
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
@@ -79,6 +80,10 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
     """Both primary and fallback text cross this same local expression check."""
     if not isinstance(reply_kind, str):
         return None
+    if reminder_request_kind(message) is not None:
+        return REMINDER_BOUNDARY
+    if reply_kind == 'conversation' and isinstance(text, str) and has_reminder_promise(text):
+        return REMINDER_BOUNDARY
     activity = activity_boundary_reply(message)
     if activity is not None:
         return activity
