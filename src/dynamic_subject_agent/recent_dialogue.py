@@ -42,6 +42,8 @@ def is_dialogue_control(message: str) -> bool:
 def is_dialogue_continuation(message: str) -> bool:
     if is_dialogue_control(message):
         return False
+    if shortening_limit(message) is not None:
+        return True
     patterns = (
         r'(?:那|就|请)?按(?:这个|那个|刚才的|上面的)意思(?:再)?写(?:一句|一版)(?:吧)?',
         r'(?:请|帮我)?把(?:上一句|刚才那句|这句|那句)(?:改短|缩短)(?:一些|一点|点)?(?:吧)?',
@@ -53,10 +55,40 @@ def is_dialogue_continuation(message: str) -> bool:
 
 def is_previous_expression_rewrite(message: str) -> bool:
     """Only an entire, explicit nearest-reply request narrows the window."""
+    if shortening_limit(message) is not None:
+        return True
     return re.fullmatch(
         r'(?:请|帮我)?把(?:上一句|刚才那句)(?:改短|缩短)(?:一些|一点|点)?(?:吧)?[。！？!?]?',
         message.strip(),
     ) is not None
+
+
+def shortening_limit(message: str) -> int | None:
+    """A direct bounded rewrite request; surrounding comments are not history."""
+    if is_dialogue_control(message):
+        return None
+    unquoted = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    matches = []
+    for clause in re.split(r'[。！？!?，,]', unquoted):
+        match = re.fullmatch(r'(?:能|可以|请|帮我)?(?:把(?:上一句|刚才那句|这句))?(?:缩到|缩短到|改短到)([0-9一二三四五六七八九十两]{1,3})个?字以内(?:吗|吧)?', clause.strip())
+        if match is not None:
+            token = match[1]
+            if token.isascii() and token.isdigit():
+                value = int(token)
+            elif re.fullmatch(r'[一二三四五六七八九两]?十[一二三四五六七八九]?|[一二三四五六七八九两]', token):
+                digits = {char: index for index, char in enumerate('零一二三四五六七八九')}
+                digits['两'] = 2
+                if '十' in token:
+                    tens, units = token.split('十')
+                    value = digits.get(tens, 1) * 10 + digits.get(units, 0)
+                else:
+                    value = digits[token]
+            else:
+                return None
+            if not 1 <= value <= 99:
+                return None
+            matches.append(value)
+    return matches[0] if len(matches) == 1 else None
 
 
 def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0) -> tuple[RecentDialogueTurn, ...]:

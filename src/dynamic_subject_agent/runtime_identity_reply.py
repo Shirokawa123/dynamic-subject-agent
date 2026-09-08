@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dynamic_subject_agent.recent_dialogue import shortening_limit
 
 
 _SENTENCE_PATTERN = re.compile(r"[^。！？!?]+[。！？!?]?")
@@ -55,12 +56,15 @@ def activity_boundary_reply(message: str) -> str | None:
 
 
 def explicit_creation_request(message: str) -> bool:
+    message = re.sub(r'“[^”]*”|「[^」]*」|‘[^’]*’|"[^"]*"', '', message)
+    # A constraint on style does not withdraw the requested act of writing.
+    message = re.sub(r'(?:别|不要)写(?=成|得)', '', message)
     if any(word in message for word in ('别编', '不要编', '不许编', '不要写', '别写', '不要创作', '不要想象', '什么意思', '怎么做', '的是谁', '的人是谁', '解释一下', '解释这')):
         return False
     if message.strip().startswith('如果让你') and '你会写什么' in message:
         return True
     # An imperative clause, not a mention inside a past account or quotation.
-    return any(re.match(r'^(?:请|帮我|替我|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?:一句|一首|个|一个)|创作|想象一下|编(?:一个|个))', clause.strip())
+    return any(re.match(r'^(?:(?:请|帮我|替我)(?:给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?:一句|一首|个|一个)|配(?:一句话|一句|个文案)|创作|想象一下|编(?:一个|个))', clause.strip())
         for clause in re.split(r'[。！？!?，,]', message))
 
 
@@ -75,6 +79,13 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
         return '我没有可据实讲述的额外活动。我们可以从现在的这段对话继续。'
     if reply_kind not in {'conversation', 'creative'}:
         return None
+    limit = shortening_limit(message)
+    if limit is not None and isinstance(text, str):
+        body = text.strip().removeprefix(CREATIVE_REPLY_PREFIX).strip()
+        if len(body) >= 2 and (body[0], body[-1]) in {('“', '”'), ('「', '」'), ('"', '"'), ('‘', '’')}:
+            body = body[1:-1]
+        if len(re.sub(r'\s+', '', body)) > limit:
+            return None
     if reply_kind == 'creative':
         if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
