@@ -180,3 +180,11 @@ def test_exact_plan_status_uses_canonical_original_across_days(tmp_path, monkeyp
         assert PLAN not in result.projection.expression_text
     finally:
         opened.app.close()
+
+
+def test_memory_scope_and_independent_fact_boundary_both_remain(tmp_path):
+    from test_grounded_role_expression import MemoryProvider, KnowledgeProvider, turn
+    result = turn(tmp_path, QUERY + '为什么地面湿了会变黑？', KnowledgeProvider('无来源解释。'), knowledge=True,
+        also_memory=MemoryProvider(BAD, refined=LivingMemoryReplyResult(BAD, 'zh')))
+    assert '本轮没有选到' in result.expression_text
+    assert '可靠资料' in result.expression_text

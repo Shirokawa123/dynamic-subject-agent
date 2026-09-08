@@ -674,7 +674,7 @@ class ControlledCompositeCognition(CognitionEngine):
                     pieces.insert(0, '这次未能完成记忆记录。')
             expression = ExpressionCandidate('\n\n'.join(dict.fromkeys(part for part in pieces if part)), command.language)
         withdrawal = memory_withdrawal_reply(outcomes.experience.memory_withdrawal_status)
-        other_relevant = (reminder_kind is not None or outcomes.experience.knowledge_status == 'accepted'
+        other_relevant = (reminder_kind is not None or is_memory_status_query(command.utterance) or outcomes.experience.knowledge_status == 'accepted'
             or bool(_direct_relationship_claims(command.utterance))
             or outcomes.relationship.relationship_candidate_event == 'relationship_claim'
             or participant_operation_requested(command.utterance)
