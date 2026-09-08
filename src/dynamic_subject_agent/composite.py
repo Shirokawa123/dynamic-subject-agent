@@ -36,6 +36,7 @@ from dynamic_subject_agent.participant_goal_cognition import (
 from dynamic_subject_agent.participant_goals import active_targets, participant_operation_requested
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply
+from dynamic_subject_agent.memory_control import memory_withdrawal_reply
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeStatus,
 )
@@ -645,6 +646,23 @@ class ControlledCompositeCognition(CognitionEngine):
         self, *, proposal: CognitiveProposal, context: CognitionRuntimeView,
         command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
     ) -> ExpressionCandidate:
+        expression = self._express_other_capabilities(proposal=proposal, context=context,
+            command=command, outcomes=outcomes)
+        withdrawal = memory_withdrawal_reply(outcomes.experience.memory_withdrawal_status)
+        if withdrawal is None:
+            return expression
+        other_relevant = (outcomes.experience.knowledge_status == 'accepted'
+            or participant_operation_requested(command.utterance)
+            or participant_record_query_kind(command.utterance) is not None
+            or activity_boundary_reply(command.utterance) is not None
+            or proposal.impact_envelope.subject_state.situated_expression_priority
+            or proposal.impact_envelope.subject_state.medium_expression_priority)
+        return ExpressionCandidate('\n\n'.join((withdrawal, expression.text)) if other_relevant else withdrawal, command.language)
+
+    def _express_other_capabilities(
+        self, *, proposal: CognitiveProposal, context: CognitionRuntimeView,
+        command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
+    ) -> ExpressionCandidate:
         """Confirm goal operations only after the authoritative Domain decision."""
         if self._participant_goals is None:
             return self._grounded_primary(proposal, command)
@@ -683,7 +701,7 @@ class ControlledCompositeCognition(CognitionEngine):
         elif requested and status in {None, 'no-update'}:
             text = '这次没有新增或修改目标与承诺。请明确说明你的目标、承诺或要修改的记录。'
         if text is not None:
-            if status != 'accepted' and outcome.living_memory_status.value == 'accepted':
+            if status != 'accepted' and outcome.living_memory_status.value == 'accepted' and outcome.memory_withdrawal_status is None:
                 text += '你的这段话已作为记忆保留，但目标与承诺列表没有更新。'
             independent = []
             if outcome.knowledge_status == 'accepted':

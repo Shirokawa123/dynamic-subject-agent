@@ -157,6 +157,7 @@ class AuthorizedOperationProjection:
     failure_code: str | None
     living_memory_status: str | None = None
     living_memory_recalled_ids: tuple[str, ...] = ()
+    memory_withdrawal_status: str | None = None
     knowledge_status: str | None = None
     knowledge_citation_ids: tuple[str, ...] = ()
     relationship_status: str | None = None
@@ -952,6 +953,7 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             living_memory_recalled_ids=(
                 result.outcome.experience_outcome.living_memory_recalled_ids
             ),
+            memory_withdrawal_status=result.outcome.experience_outcome.memory_withdrawal_status,
             knowledge_status=result.outcome.experience_outcome.knowledge_status,
             knowledge_citation_ids=(
                 result.outcome.experience_outcome.knowledge_citation_ids

@@ -24,6 +24,7 @@ from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite
 from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression
+from dynamic_subject_agent.memory_control import select_memory_withdrawal, memory_withdrawal_reply
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -247,6 +248,24 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
         active = tuple(context.active_memories[:ACTIVE_MEMORY_LIMIT])
+        withdrawal = select_memory_withdrawal(command.utterance, active)
+        if withdrawal is not None:
+            base = self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='本轮请求逻辑遗忘，结果以裁决为准。',
+                expression_candidate=ExpressionCandidate('本轮记忆操作尚未确认。', command.language, dialogue_priority=True))
+            return replace(base, impact_envelope=replace(base.impact_envelope,
+                experience=ExperienceAdjudicationRequest(basis=basis,
+                    current_state=ExperienceReadView(basis.verified_prefix_digest,
+                        tuple(m.memory_id for m in active), active), candidates=(),
+                    current_user_message=command.utterance, source_user_message_id=basis.operation_id,
+                    memory_withdrawal=withdrawal)))
+        withheld = ()
+        if context.load_withheld_memory_ids is not None:
+            try:
+                withheld = context.load_withheld_memory_ids()
+            except Exception:
+                withheld = tuple(m.memory_id for m in active)
+            active = tuple(m for m in active if m.memory_id not in withheld)
         request = LivingMemoryProviderRequest(
             current_user_message=command.utterance,
             active_memories=tuple(
@@ -330,6 +349,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             )[:5]
             recent_dialogue = ()
             if (context.load_recent_dialogue is not None
+                and not withheld
                 and result.proposal.action is not LivingMemoryAction.REVISE
                 and not is_dialogue_control(command.utterance)):
                 try:
@@ -440,6 +460,10 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 experience=experience_request,
             ),
         )
+
+    def express(self, *, proposal, context, command, outcomes):
+        text = memory_withdrawal_reply(outcomes.experience.memory_withdrawal_status)
+        return ExpressionCandidate(text, command.language) if text is not None else proposal.expression_candidate
 
     def _failure(
         self,

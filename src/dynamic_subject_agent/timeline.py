@@ -912,6 +912,7 @@ class ConversationOutcomeSummary:
     medium_state_reason_code: str | None
     medium_state_signal: str | None
     memory_revision: bool | None = None
+    memory_withdrawal_status: str | None = None
 
     @classmethod
     def from_outcome(cls, outcome: TimelineOutcome) -> ConversationOutcomeSummary:
@@ -938,6 +939,7 @@ class ConversationOutcomeSummary:
             medium_state_reason_code=state.medium_state_reason_code,
             medium_state_signal=state.medium_state_signal,
             memory_revision=experience.memory_revision,
+            memory_withdrawal_status=experience.memory_withdrawal_status,
         )
 
 
@@ -986,6 +988,12 @@ class ExperienceDomainOutcome:
     epistemic_outcome_id: str
 
     @property
+    def memory_withdrawal_status(self) -> str | None:
+        if self._text_fact('living_memory', 'action') != 'forget':
+            return None
+        return self.living_memory_status.value
+
+    @property
     def memory_revision(self) -> bool | None:
         try:
             value = json.loads(self.decision.reason)
@@ -1003,6 +1011,12 @@ class ExperienceDomainOutcome:
                     and self.decision.rule_version in {'m0-domain-noop-1.0', 'experience-1.0'}) else None
             if not isinstance(memory, dict) or self.decision.rule_version != 'experience-1.0':
                 return None
+            if value.get('code') == 'living-memory.forgotten' and memory.get('status') == 'accepted':
+                if set(memory) != {'status', 'action', 'target_memory_id', 'reason_code', 'source_user_message_id'} or memory['action'] != 'forget' or memory['reason_code'] != 'selected':
+                    return None
+                UUID(memory['target_memory_id'])
+                UUID(memory['source_user_message_id'])
+                return True
             if value.get('code') == 'living-memory.recalled' and memory.get('status') == 'no-op':
                 if set(memory) != {'status', 'recalled_memory_ids'} or not isinstance(memory['recalled_memory_ids'], list):
                     return None
@@ -6041,9 +6055,12 @@ class TimelineEngine:
         *,
         active_only: bool = False,
         limit: int = 20,
+        through_sequence: int | None = None,
     ) -> tuple[LivingMemoryRecord, ...]:
         if not isinstance(active_only, bool):
             raise TypeError("active_only must be bool")
+        if through_sequence is not None and (type(through_sequence) is not int or through_sequence < 0):
+            raise ValueError('through_sequence must be a nonnegative head')
         if (
             isinstance(limit, bool)
             or not isinstance(limit, int)
@@ -6056,8 +6073,9 @@ class TimelineEngine:
             FROM candidate_decision_record AS decision
             JOIN timeline_outcome AS outcome ON outcome.plan_id = decision.plan_id
             WHERE decision.scope = 'experience'
+              AND (? IS NULL OR outcome.head_sequence <= ?)
             ORDER BY outcome.head_sequence ASC
-            """
+            """, (through_sequence, through_sequence)
         ).fetchall()
         records: list[LivingMemoryRecord] = []
         positions: dict[str, int] = {}
@@ -6069,6 +6087,21 @@ class TimelineEngine:
             except (KeyError, TypeError, json.JSONDecodeError):
                 continue
             if memory.get("status") != LivingMemoryDecisionStatus.ACCEPTED.value:
+                continue
+            if memory.get('action') == 'forget':
+                try:
+                    if (set(memory) != {'status', 'action', 'target_memory_id', 'reason_code', 'source_user_message_id'}
+                        or memory['reason_code'] != 'selected' or reason.get('code') != 'living-memory.forgotten'
+                        or decision.rule_version != 'experience-1.0'):
+                        raise ValueError('invalid withdrawal')
+                    target = str(UUID(memory['target_memory_id']))
+                    UUID(memory['source_user_message_id'])
+                    position = positions[target]
+                    if records[position].status != 'active':
+                        raise ValueError('target is not active')
+                except (KeyError, ValueError, TypeError, AttributeError):
+                    raise PublicationFailedClosed('canonical-memory-withdrawal-invalid', 'withdrawal requires one active target') from None
+                records[position] = replace(records[position], status='forgotten')
                 continue
             try:
                 raw_temporal_anchor = memory.get("temporal_anchor")
@@ -6674,6 +6707,41 @@ class TimelineEngine:
                 "empty canonical history does not match the Timeline head",
             )
         return tuple(records[-limit:])
+
+    def withheld_memory_ids_before(self, operation_ref: OperationRef, *, expected_head: int) -> tuple[str, ...]:
+        """Unpublished withdrawal intent restricts disclosure, never fakes state.
+
+        Resolve at that operation's frozen prefix, not against a later renamed
+        record. A subsequent local withdrawal can still use authoritative state.
+        """
+        from dynamic_subject_agent.memory_control import select_memory_withdrawal
+        self.recent_dialogue_before(operation_ref, expected_head=expected_head)
+        current = self.list_living_memories(limit=100)
+        blocked: set[str] = set()
+        rows = self._writer.execute('''SELECT op.operation_id, op.contract_version, op.operation_kind,
+            hex(op.payload_fingerprint), basis.head_sequence FROM subject_operation op
+            LEFT JOIN attempt_cycle_basis basis ON basis.operation_id=op.operation_id
+            WHERE op.operation_id != ? AND NOT EXISTS (
+                SELECT 1 FROM timeline_outcome outcome WHERE outcome.operation_id=op.operation_id)
+        ''', (UUID(operation_ref.operation_id).bytes,)).fetchall()
+        for row in rows:
+            ref = OperationRef(str(row[1]), self._location.root_id, self._location.timeline_store_id,
+                self._authority.authority_scope_id, str(UUID(bytes=bytes(row[0]))),
+                OperationKind(str(row[2])), str(row[3]).casefold())
+            message = self._query_command(ref).utterance
+            prior = self.list_living_memories(limit=100, through_sequence=int(row[4])) if row[4] is not None else current
+            selection = select_memory_withdrawal(message, tuple(m for m in prior if m.status == 'active'))
+            if selection is None:
+                continue
+            if row[4] is None or len(prior) == 100 or len(current) == 100 or selection.target_memory_id is None:
+                return tuple(m.memory_id for m in current if m.status == 'active')
+            blocked.add(selection.target_memory_id)
+        for _ in current:
+            descendants = {m.memory_id for m in current if m.supersedes_memory_id in blocked}
+            if descendants <= blocked:
+                break
+            blocked.update(descendants)
+        return tuple(sorted(m.memory_id for m in current if m.status == 'active' and m.memory_id in blocked))
 
     def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
         """Read only the same identity's verified frozen prefix for this reply."""

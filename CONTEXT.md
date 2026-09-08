@@ -4,6 +4,10 @@
 
 ## Language
 
+**Logical Forgetting**:
+用户撤回某条既有记忆的活跃使用，使其不再参与通常召回与后续外发；原有本地聊天及审计历史仍保留。
+_Avoid_: Physical deletion, rewritten fact, temporary dialogue cutoff
+
 **Source Candidate**:
 模型从一份获授权来源中提议、并带有逐字证据的 Genesis 或 Knowledge 片段；候选本身不是身份事实。
 _Avoid_: Character fact, imported memory

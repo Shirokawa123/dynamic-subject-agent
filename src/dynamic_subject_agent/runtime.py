@@ -351,6 +351,7 @@ class CognitionRuntimeView:
     runtime_identity: RuntimeIdentityProjection | None = None
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
+    load_withheld_memory_ids: Callable[[], tuple[str, ...]] | None = None
 
 
 @dataclass(frozen=True)
@@ -1050,6 +1051,10 @@ class SubjectRuntime:
             subject_time_result=subject_time_result,
             load_recent_dialogue=(
                 (lambda: self._engine.recent_dialogue_before(dialogue_operation, expected_head=dialogue_head))
+                if dialogue_operation is not None and dialogue_head is not None else None
+            ),
+            load_withheld_memory_ids=(
+                (lambda: self._engine.withheld_memory_ids_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
         )

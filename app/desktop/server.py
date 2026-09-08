@@ -115,7 +115,12 @@ def _turn_explanations(projection: object, *, new_memory_content: str | None) ->
     memory_status = getattr(projection, "living_memory_status", None)
     recalled = getattr(projection, 'living_memory_recalled_count',
                        len(getattr(projection, 'living_memory_recalled_ids', ())))
-    if memory_status == "accepted":
+    withdrawal_status = getattr(projection, 'memory_withdrawal_status', None)
+    if withdrawal_status == 'accepted':
+        explanations.append(_explanation('记忆', 'changed', '已停止使用指定活跃记忆；本地历史原文保留。'))
+    elif withdrawal_status is not None:
+        explanations.append(_explanation('记忆', 'kept', '未能确定并停用唯一记录，记忆未改变。'))
+    elif memory_status == "accepted":
         detail = (
             f"已形成新记录：「{new_memory_content}」"
             if new_memory_content
@@ -528,7 +533,7 @@ class AppState:
             )
         new_kind = None
         new_content = None
-        if projection.living_memory_status == "accepted":
+        if projection.living_memory_status == "accepted" and projection.memory_withdrawal_status is None:
             memories = self._memories()
             if memories:
                 new_kind = memories[0]["memory_kind"]
@@ -543,6 +548,7 @@ class AppState:
             "conversation_history_status": history["status"],
             "conversation_history": history["turns"],
             "living_memory_status": projection.living_memory_status,
+            "memory_withdrawal_status": projection.memory_withdrawal_status,
             "recalled_ids": list(projection.living_memory_recalled_ids),
             "knowledge_status": projection.knowledge_status,
             "relationship_status": projection.relationship_status,

@@ -726,7 +726,7 @@ function renderRail(state) {
   rail.innerHTML = "";
   for (const m of state.memories) {
     const card = el("div", "card");
-    const kindTag = el("span", "k", m.status === "superseded"
+    const kindTag = el("span", "k", m.status === "forgotten" ? "【已停用·历史保留】" : m.status === "superseded"
       ? "【已更正】"
       : (m.memory_kind === "plan" ? "【打算】" : "【长期】"));
     card.appendChild(kindTag);

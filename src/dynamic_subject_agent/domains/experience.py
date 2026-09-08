@@ -34,6 +34,7 @@ from dynamic_subject_agent.participant_goals import (
     active_targets,
 )
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
+from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class ExperienceAdjudicationRequest:
     knowledge_failure_code: str | None = None
     participant_goal_failure_code: str | None = None
     participant_goal_expression_priority: bool = False
+    memory_withdrawal: MemoryWithdrawal | None = None
 
 
 class ExperienceDomain:
@@ -276,6 +278,7 @@ class ExperienceDomain:
             )
         if (
             memory_candidate is None
+            and request.memory_withdrawal is None
             and knowledge_candidate is None
             and participant_goal_candidate is None
             and living_memory_failure is None
@@ -309,7 +312,25 @@ class ExperienceDomain:
             )
         memory_code: str | None = None
         memory_payload: dict[str, object] | None = None
-        if memory_candidate is not None:
+        if request.memory_withdrawal is not None:
+            if memory_candidate is not None or living_memory_failure is not None:
+                raise DomainAdjudicationFailedClosed('experience', 'mixed-memory-control', 'withdrawal must be independent of memory proposals')
+            selected = select_memory_withdrawal(request.current_user_message, tuple(active_memories))
+            if (not isinstance(request.memory_withdrawal, MemoryWithdrawal)
+                or selected != request.memory_withdrawal
+                or request.source_user_message_id != basis.operation_id):
+                raise DomainAdjudicationFailedClosed('experience', 'invalid-memory-control', 'withdrawal does not match the admitted command')
+            accepted = selected.target_memory_id is not None
+            if accepted:
+                try:
+                    UUID(selected.target_memory_id)
+                except (ValueError, TypeError, AttributeError):
+                    raise DomainAdjudicationFailedClosed('experience', 'invalid-memory-target', 'withdrawal target must be canonical') from None
+            memory_code = 'living-memory.forgotten' if accepted else 'living-memory.withdrawal-rejected'
+            memory_payload = {'status': 'accepted' if accepted else 'rejected', 'action': 'forget',
+                'target_memory_id': selected.target_memory_id, 'reason_code': selected.reason_code,
+                'source_user_message_id': request.source_user_message_id}
+        elif memory_candidate is not None:
             memory_code, memory_payload = self._living_memory_fragment(
                 basis,
                 request,
