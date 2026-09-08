@@ -93,3 +93,83 @@ def test_proposal_failure_stays_failed_but_cannot_restore_risky_advice(tmp_path)
     assert result.living_memory_status == 'failed-closed'
     assert '我无法确认' in result.expression_text
     assert '加热试试看' not in result.expression_text
+
+
+def test_same_sentence_poem_request_cannot_exempt_real_preservation_advice(tmp_path):
+    message = '我不确定这张票的材质，怕弄坏它，请写一句诗，也给我一个保存办法。'
+    text = '先用吹风机加热票面试试。旧票藏着昨日的光。'
+    result = turn(tmp_path, message, MemoryProvider(text,
+        refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert '先用吹风机' not in result.expression_text
+    assert '我无法确认' in result.expression_text
+
+
+@pytest.mark.parametrize('message', ['为什么你这样理解这个人物？', '你为什么这么说？', '为什么我拿不定主意？'])
+def test_non_scientific_why_questions_keep_discussion(tmp_path, message):
+    text = '这是我根据你刚才描述作出的理解，也可以换个角度看。'
+    assert turn(tmp_path, message, MemoryProvider(text)).expression_text == text
+
+
+def test_explicit_fiction_with_material_question_is_not_real_diagnosis(tmp_path):
+    message = '请写一个虚构故事：人物不确定这是不是热敏纸，怕弄坏它。'
+    text = '他把纸放回信封，让问题留到明天。'
+    result = turn(tmp_path, message, MemoryProvider(text,
+        refined=LivingMemoryReplyResult(text, 'zh', 'creative')))
+    assert text in result.expression_text
+    assert '即兴创作' in result.expression_text
+
+
+def test_explicit_answer_request_keeps_quoted_material_constraints(tmp_path):
+    message = '请回答这个问题：「我不确定这是什么纸，我怕弄坏，怎么判断材质？」'
+    result = turn(tmp_path, message, MemoryProvider('可以用吹风机加热。'))
+    assert '可以用吹风机' not in result.expression_text
+    assert '我无法确认' in result.expression_text
+
+
+def test_language_comment_on_quote_is_not_material_advice(tmp_path):
+    message = '请评价这句话的语气：「我不确定这是什么纸，我怕弄坏，怎么判断材质？」'
+    text = '这句话语气谨慎，也清楚表达了你的顾虑。'
+    assert turn(tmp_path, message, MemoryProvider(text)).expression_text == text
+
+
+@pytest.mark.parametrize('known_source', [False, True])
+def test_unrelated_goal_reply_cannot_restore_unsourced_material_advice(tmp_path, known_source):
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.runtime import M0_A_PROVIDER_AUTHORITY
+    from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
+    from dynamic_subject_agent.participant_goal_cognition import ParticipantGoalProviderAdapter, ParticipantGoalClassificationResult, ParticipantGoalReplyResult
+    from test_situated_integration import _NoopKnowledgeProvider, _NoopRelationshipProvider
+    from test_recent_dialogue import open_app, submit
+    from test_grounded_role_expression import KnowledgeProvider, ENTRY
+    class Goal:
+        def classify(self, request):
+            return ParticipantGoalClassificationResult(None, tuple(r.turn_ref for r in request.active_records), '选中既有目标。', 'zh')
+        def reply(self, request):
+            return ParticipantGoalReplyResult('可以用吹风机加热票面测试。', 'zh')
+    memory = MemoryProvider('收到。')
+    knowledge, relationship = (KnowledgeProvider('未验证的额外建议。') if known_source else _NoopKnowledgeProvider()), _NoopRelationshipProvider()
+    for provider in (knowledge, relationship):
+        provider.provider_authority = M0_A_PROVIDER_AUTHORITY
+    gateway = ModelGateway(ParticipantGoalProviderAdapter(provider=Goal(), capabilities=ProviderCapabilities(
+        M0_A_PROVIDER_AUTHORITY, 'test-goal', True, (StructuredOutputMode.JSON_OBJECT,))))
+    opened = open_app(tmp_path, memory, cognition=ControlledCompositeCognition(memory_provider=memory,
+        knowledge_provider=knowledge, relationship_provider=relationship, participant_goal_gateway=gateway,
+        **({'knowledge_entries': (ENTRY,)} if known_source else {})))
+    try:
+        first = submit(opened, '我的目标是今年通过 N1。')
+        assert first.projection.participant_goal_commitment_status == 'accepted'
+        result = submit(opened, T08 + ('另外，纸灯节的规矩是什么？' if known_source else ''))
+        assert '可以用吹风机' not in result.projection.expression_text
+        assert '我无法确认' in result.projection.expression_text
+        if known_source:
+            assert ENTRY.content in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+def test_material_caution_preserves_source_without_endorsing_application_to_unknown_object(tmp_path):
+    from test_grounded_role_expression import KnowledgeProvider, ENTRY
+    result = turn(tmp_path, T08 + '另外，纸灯节的规矩是什么？', KnowledgeProvider('错误补充。'), knowledge=True, also_memory=MemoryProvider('用热源试试。'))
+    assert ENTRY.content in result.expression_text
+    assert '不是针对当前物件的操作建议' in result.expression_text
+    assert '我无法确认' in result.expression_text

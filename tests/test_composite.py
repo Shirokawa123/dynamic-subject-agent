@@ -494,7 +494,9 @@ def test_knowledge_failure_is_typed_while_memory_still_commits(tmp_path: Path) -
     assert terminal.projection.living_memory_status == "accepted"
     assert terminal.projection.knowledge_status == "failed-closed"
     assert terminal.projection.knowledge_citation_ids == ()
-    assert terminal.projection.expression_text == "我记住了：你的生日是四月五号。"
+    assert '我的生日是四月五号' in terminal.projection.expression_text
+    assert '已记录' in terminal.projection.expression_text
+    assert '资料查询未能完成' in terminal.projection.expression_text
 
 
 def test_python_rejects_relationship_claim_when_providers_misclassify_it(
@@ -928,7 +930,9 @@ def test_desktop_turn_exposes_isolated_failure_statuses(tmp_path: Path) -> None:
             "message": "本轮关系处理未能完成；没有写入关系变化。",
         },
     ]
-    assert turn["expression"] == "我记住了：你的生日是四月五号。"
+    assert '我的生日是四月五号' in turn['expression']
+    assert '已记录' in turn['expression']
+    assert '资料查询未能完成' in turn['expression']
     assert "memory_id" not in json.dumps(snapshot, ensure_ascii=False)
 
 
