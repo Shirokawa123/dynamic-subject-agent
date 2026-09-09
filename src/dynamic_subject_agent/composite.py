@@ -35,10 +35,12 @@ from dynamic_subject_agent.participant_goal_cognition import (
 )
 from dynamic_subject_agent.participant_goals import active_targets, participant_operation_requested
 from dynamic_subject_agent.timeline import SubjectCommand
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, explicit_creation_request
+from dynamic_subject_agent.recent_dialogue import is_dialogue_continuation
 from dynamic_subject_agent.reminder_expression import REMINDER_BOUNDARY, reminder_request_kind, remove_reminder_promises, quoted_reminder_reference
 from dynamic_subject_agent.memory_answer_scope import is_memory_status_query
 from dynamic_subject_agent.memory_control import memory_withdrawal_reply
+from dynamic_subject_agent.memory_write_receipt import explicit_memory_write_request, memory_write_receipt, combine_memory_write_receipt
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply, material_uncertainty_reply
 from dynamic_subject_agent.subject_time_continuity import (
     SubjectTimeStatus,
@@ -448,14 +450,17 @@ class ControlledCompositeCognition(CognitionEngine):
                     )
                 ),
             )
+            continuation = memory_proposal.memory_continuation
+            preserve_creation = continuation is not None and continuation.is_creative
             memory_proposal = replace(
                 memory_proposal,
+                memory_continuation=continuation if preserve_creation else None,
                 experience_summary=(
                     memory_proposal.experience_summary if memory_proposal.expression_candidate.is_memory_answer
                     else "用户单方面声称关系；Python 保持关系与记忆均不变。"
                 ),
                 expression_candidate=(memory_proposal.expression_candidate
-                    if memory_proposal.expression_candidate.is_memory_answer else ExpressionCandidate(
+                    if memory_proposal.expression_candidate.is_memory_answer or preserve_creation else ExpressionCandidate(
                     text=_claim_reply(relationship_claims),
                     language=memory_proposal.expression_candidate.language,
                 )),
@@ -519,12 +524,20 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_relevant = memory_recalled or memory_changed
         from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY, FAILED_REVISION_REPLY
         memory_answer = memory_proposal.expression_candidate.is_memory_answer
-        preserve_memory_expression = (memory_answer or memory_proposal.expression_candidate.is_creative
+        preserve_memory_expression = (memory_proposal.memory_write_requested or memory_answer or memory_proposal.expression_candidate.is_creative
             or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY}
             or is_memory_status_query(command.utterance))
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
             memory_text = memory_proposal.expression_candidate.text
-            knowledge_text = ('' if preserve_memory_expression and knowledge_proposal.expression_candidate.is_creative
+            if memory_proposal.memory_write_requested and not memory_proposal.expression_candidate.is_creative:
+                # Knowledge owns sourced factual answers; the Memory receipt is
+                # added after adjudication, not reconstructed from free prose.
+                memory_text = ''
+                memory_proposal = replace(memory_proposal, memory_continuation=None)
+            independent_knowledge_creation = (memory_proposal.memory_write_requested
+                and not memory_proposal.expression_candidate.is_creative
+                and explicit_creation_request(command.utterance) and not is_dialogue_continuation(command.utterance))
+            knowledge_text = ('' if preserve_memory_expression and not independent_knowledge_creation and knowledge_proposal.expression_candidate.is_creative
                 else knowledge_proposal.expression_candidate.text)
             if not preserve_memory_expression:
                 recalled_ids = {memory_id for candidate in experience_request.candidates for memory_id in candidate.recalled_memory_ids}
@@ -549,7 +562,7 @@ class ControlledCompositeCognition(CognitionEngine):
             )
         if participant_goal_relevant and participant_goal_proposal is not None:
             grounded_goal = (unsourced_fact_reply(command.utterance) is not None or reminder_request_kind(command.utterance) is not None
-                or memory_answer or is_memory_status_query(command.utterance))
+                or memory_proposal.memory_write_requested or memory_answer or is_memory_status_query(command.utterance))
             if grounded_goal:
                 selected_goal_ids = set(participant_goal_proposal.impact_envelope.experience.selected_participant_goal_record_ids)
                 goal_text = '\n'.join(f'既有{"目标" if record.kind == "goal" else "承诺"}记录：「{record.terms}」。'
@@ -659,9 +672,25 @@ class ControlledCompositeCognition(CognitionEngine):
             epistemic_outcome=memory_proposal.epistemic_outcome,
             impact_envelope=envelope,
             expression_candidate=expression,
+            memory_write_requested=(memory_proposal.memory_write_requested and not participant_goal_selection_priority
+                and (not relationship_claim_protected or explicit_memory_write_request(command.utterance) or any(
+                    candidate.memory_action in {'create', 'revise'} for candidate in experience_request.candidates))),
+            memory_continuation=memory_proposal.memory_continuation if not participant_goal_selection_priority else None,
         )
 
     def express(
+        self, *, proposal: CognitiveProposal, context: CognitionRuntimeView,
+        command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
+    ) -> ExpressionCandidate:
+        expression = self._express_capabilities(proposal=proposal, context=context, command=command, outcomes=outcomes)
+        receipt = memory_write_receipt(outcomes.experience, requested=proposal.memory_write_requested)
+        if receipt is None:
+            return expression
+        if reminder_request_kind(command.utterance) is not None and outcomes.experience.living_memory_status.value == 'accepted':
+            receipt += '这不代表已安排提醒。'
+        return ExpressionCandidate(combine_memory_write_receipt(receipt, expression.text), command.language)
+
+    def _express_capabilities(
         self, *, proposal: CognitiveProposal, context: CognitionRuntimeView,
         command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
     ) -> ExpressionCandidate:
@@ -671,7 +700,7 @@ class ControlledCompositeCognition(CognitionEngine):
         if reminder_kind is not None:
             pieces = [expression.text, REMINDER_BOUNDARY]
             memory = outcomes.experience
-            if memory.memory_withdrawal_status is None:
+            if memory.memory_withdrawal_status is None and not proposal.memory_write_requested:
                 if memory.living_memory_status.value == 'accepted' and memory.living_memory_content:
                     pieces.insert(0, f'已记录你的原话：「{memory.living_memory_content}」。这不代表已安排提醒。')
                 elif memory.living_memory_status.value == 'failed-closed':
@@ -695,7 +724,7 @@ class ControlledCompositeCognition(CognitionEngine):
             elif outcomes.experience.knowledge_status == 'failed-closed':
                 boundary = '这次资料查询未能完成，暂时不能据此给出确定判断。' + ('\n' + preservation if preservation else '')
             memory_receipt = None
-            if (reminder_kind is None and outcomes.experience.memory_withdrawal_status is None
+            if (not proposal.memory_write_requested and reminder_kind is None and outcomes.experience.memory_withdrawal_status is None
                 and outcomes.experience.living_memory_status.value == 'accepted'
                 and outcomes.experience.living_memory_content):
                 memory_receipt = f'已记录你的这段话：「{outcomes.experience.living_memory_content}」。'
@@ -747,7 +776,7 @@ class ControlledCompositeCognition(CognitionEngine):
         elif requested and status in {None, 'no-update'}:
             text = '这次没有新增或修改目标与承诺。请明确说明你的目标、承诺或要修改的记录。'
         if text is not None:
-            if status != 'accepted' and outcome.living_memory_status.value == 'accepted' and outcome.memory_withdrawal_status is None:
+            if not proposal.memory_write_requested and status != 'accepted' and outcome.living_memory_status.value == 'accepted' and outcome.memory_withdrawal_status is None:
                 text += '你的这段话已作为记忆保留，但目标与承诺列表没有更新。'
             independent = []
             if outcome.knowledge_status == 'accepted':
@@ -756,14 +785,17 @@ class ControlledCompositeCognition(CognitionEngine):
                     f'根据条目《{entry.title}》：{entry.content}'
                     for entry in self._knowledge_entries if entry.entry_id in cited
                 )
-            if status == 'accepted' and outcome.living_memory_status.value == 'accepted':
+            if not proposal.memory_write_requested and status == 'accepted' and outcome.living_memory_status.value == 'accepted':
                 content = outcome.living_memory_content
                 if isinstance(content, str) and not any(word in content for word in ('目标', '承诺')):
                     independent.append(f'我记下了：「{content}」。')
             claims = _direct_relationship_claims(command.utterance)
             if claims and outcomes.relationship.relationship_status == 'no-update':
                 independent.append(_claim_reply(claims))
-            text = '\n\n'.join((*independent, text))
+            continuation = proposal.memory_continuation.text if proposal.memory_continuation is not None else ''
+            parts = ((continuation, *independent, text) if proposal.memory_continuation is not None and proposal.memory_continuation.is_creative
+                     else (*independent, text, continuation))
+            text = '\n\n'.join(part for part in parts if part)
             return ExpressionCandidate(text, command.language)
         return self._grounded_primary(proposal, command)
 
@@ -798,6 +830,8 @@ class ControlledCompositeCognition(CognitionEngine):
                 if removed:
                     result = replace(result, expression_candidate=replace(result.expression_candidate,
                         text='\n\n'.join(part for part in (clean, REMINDER_BOUNDARY) if part)))
+            if sub is self._memory and result.memory_continuation is not None:
+                result = replace(result, memory_continuation=result.expression_candidate if result.expression_candidate.text.strip() else None)
             return result
         except CognitionFailedClosed:
             raise

@@ -29,6 +29,9 @@ from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, un
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 from dynamic_subject_agent.memory_subject import requested_memory_subject, select_subject_memories
+from dynamic_subject_agent.memory_write_receipt import (
+    explicit_memory_write_request, independent_memory_question, contains_memory_write_claim, memory_write_receipt, combine_memory_write_receipt,
+)
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -369,6 +372,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         is_memory_answer = False
         recent_dialogue = ()
         refinement_used = False
+        refined_kind = None
         expression_failure_used = False
         revision_index = sentence_revision_index(command.utterance)
         revision_supplied = revision_index is not None and has_supplied_sentence(command.utterance, revision_index)
@@ -448,6 +452,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 if guarded_reply is not None:
                     reply_text = guarded_reply
                     refinement_used = True
+                    refined_kind = reply_result.reply_kind
                     is_creative = reply_result.reply_kind == 'creative' and guarded_reply.startswith(CREATIVE_REPLY_PREFIX)
                 elif reply_result.reply_kind == 'creative' and reply_text in {None, '（无记忆相关内容）'}:
                     # Rejected unsolicited creation is an expression mismatch,
@@ -509,6 +514,21 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 memory_kind=result.proposal.memory_kind,
             ),
             )
+        write_requested = (result.proposal.action in {LivingMemoryAction.CREATE, LivingMemoryAction.REVISE}
+                           or explicit_memory_write_request(command.utterance)
+                           or not is_creative and not recalled_ids and contains_memory_write_claim(reply_text))
+        continuation = None
+        if write_requested:
+            if is_creative or factual_boundary is not None or reminder_request_kind(command.utterance) is not None or activity_boundary_reply(command.utterance) is not None:
+                continuation = ExpressionCandidate(reply_text, command.language, is_creative=is_creative, dialogue_priority=True)
+            elif explicit_creation_request(command.utterance) or is_dialogue_continuation(command.utterance):
+                continuation = ExpressionCandidate('这次没有完成你请求的创作或改写。', command.language, dialogue_priority=True)
+            elif independent_memory_question(command.utterance, result.proposal.evidence_quote):
+                independent = ('这次还没能可靠地回答你另外的问题。' if contains_memory_write_claim(reply_text)
+                               or self._split and (not refinement_used or refined_kind != 'conversation')
+                               else '关于你的问题：\n' + reply_text)
+                continuation = ExpressionCandidate(independent, command.language, dialogue_priority=True)
+            reply_text = continuation.text if continuation is not None else ''
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
@@ -518,7 +538,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 language=result.language,
                 is_creative=is_creative,
                 is_memory_answer=is_memory_answer,
-                dialogue_priority=is_memory_answer or memory_scope_checked or reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
+                dialogue_priority=write_requested or is_memory_answer or memory_scope_checked or reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
                     or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )
@@ -535,6 +555,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         )
         return replace(
             base,
+            memory_write_requested=write_requested,
+            memory_continuation=continuation,
             impact_envelope=replace(
                 base.impact_envelope,
                 experience=experience_request,
@@ -543,7 +565,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
 
     def express(self, *, proposal, context, command, outcomes):
         text = memory_withdrawal_reply(outcomes.experience.memory_withdrawal_status)
-        return ExpressionCandidate(text, command.language) if text is not None else proposal.expression_candidate
+        if text is not None:
+            return ExpressionCandidate(text, command.language)
+        receipt = memory_write_receipt(outcomes.experience, requested=proposal.memory_write_requested)
+        if receipt is not None:
+            return ExpressionCandidate(combine_memory_write_receipt(receipt, proposal.expression_candidate.text), command.language)
+        return proposal.expression_candidate
 
     def _failure(
         self,
@@ -554,19 +581,21 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         code: str,
     ) -> CognitiveProposal:
         factual_boundary = unsourced_fact_reply(command.utterance)
+        write_requested = explicit_memory_write_request(command.utterance)
         base = self._bounded_noop_proposal(
             context=context,
             basis=basis,
             experience_summary="Living Memory 本轮失败关闭。",
             expression_candidate=ExpressionCandidate(
                 text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) or requested_memory_subject(command.utterance) is not None else factual_boundary
-                    or ('这次没能完成记忆检索，请稍后再试。' if code == 'living-memory-retrieval-unavailable' else "（无记忆相关内容）")),
+                    or ('' if write_requested else '这次没能完成记忆检索，请稍后再试。' if code == 'living-memory-retrieval-unavailable' else "（无记忆相关内容）")),
                 language=command.language,
-                dialogue_priority=is_memory_status_query(command.utterance) or requested_memory_subject(command.utterance) is not None or factual_boundary is not None,
+                dialogue_priority=write_requested or is_memory_status_query(command.utterance) or requested_memory_subject(command.utterance) is not None or factual_boundary is not None,
             ),
         )
         return replace(
             base,
+            memory_write_requested=explicit_memory_write_request(command.utterance),
             impact_envelope=replace(
                 base.impact_envelope,
                 experience=ExperienceAdjudicationRequest(

@@ -908,8 +908,8 @@ def test_nonmatch_provider_outbound_matches_authorized_baselines() -> None:
         "goal": "4c037a29bb43a5f5c0fc3e70813b5f27704ad4dac6333730dfc6c394c8b6b44c",
         "situated": "04f167a465671bd452a8dbd4593dc98b7db0f6c3082e4a0455f5da5314e6803e",
         "medium": "5d3bcb4c0dcb73396bd2c49744ee7424da9b691c26c461d242511e1a71af25fa",
-        # Slice-30 adds the memory answer kind in LM reply; other 11 hashes remain.
-        "living-reply": "d7e6bcb723517b17258febc673c5a315873dad27f2cb84f02174c68bb63876c2",
+        # Slice-32 separates write receipts from LM continuation; other 11 hashes remain.
+        "living-reply": "995182a1b91e6ef6557af0f51b8c9559aff04651d46fd6710f77c161980af73f",
         "knowledge-reply": "85cd4778e1b18b432e02d7cd59f68e238fb7fc95c9c56ed31f1e8381f40950a1",
         "relationship-reply": "30e65c081d2bbc2c6c0096381577366a983d7cceb6597cd3f3d9537465be7c20",
         "goal-reply": "d544b15ca979461e93f91ee3d07409d72479e1f25174db1eec2edfb751123d62",

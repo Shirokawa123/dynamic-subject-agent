@@ -365,6 +365,9 @@ class CognitiveProposal:
     epistemic_outcome: EpistemicOutcome
     impact_envelope: ExperienceImpactEnvelope
     expression_candidate: ExpressionCandidate
+    # Ephemeral composition information; never Provider input or canonical state.
+    memory_write_requested: bool = False
+    memory_continuation: ExpressionCandidate | None = None
 
 
 @dataclass(frozen=True)

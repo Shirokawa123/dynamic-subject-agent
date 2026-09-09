@@ -169,7 +169,7 @@ def test_invalid_optional_reply_cannot_cancel_accepted_memory(tmp_path, refined)
     result = turn(tmp_path, '我的生日是四月五号。', MemoryProvider('我记下了生日。',
         refined=refined, evidence='我的生日是四月五号'))
     assert result.living_memory_status == 'accepted'
-    assert result.expression_text == '我记下了生日。'
+    assert result.expression_text == '已记录你的原话：「我的生日是四月五号」'
 
 
 def test_safe_chat_remains_natural(tmp_path):

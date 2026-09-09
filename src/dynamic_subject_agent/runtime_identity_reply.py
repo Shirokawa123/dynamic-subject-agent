@@ -116,7 +116,10 @@ def requested_creative_sentence_count(message: str) -> int | None:
 
 
 def repeats_previous_expression(text: str, previous: str) -> bool:
-    return expression_body(text) == expression_body(previous)
+    previous_body = expression_body(previous)
+    if previous.startswith(CREATIVE_REPLY_PREFIX):
+        previous_body = previous_body.split('\n\n', 1)[0]
+    return expression_body(text) == previous_body
 
 
 def expression_body(value: str) -> str:

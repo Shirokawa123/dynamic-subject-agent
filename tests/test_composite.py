@@ -365,7 +365,7 @@ def test_one_turn_composes_memory_knowledge_and_stance(tmp_path: Path) -> None:
     assert thanks.projection.knowledge_citation_ids == (DEADLINE_ENTRY_ID,)
     assert "印刷厂每周五" in thanks.projection.expression_text
 
-    assert birthday.projection.expression_text == "我记住了：你的生日是四月五号。"
+    assert birthday.projection.expression_text == "已记录你的原话：「我的生日是四月五号」"
     assert birthday.projection.living_memory_status == "accepted"
     assert birthday.projection.relationship_event is None
     assert {r.current_user_message for r in knowledge.requests} == {
