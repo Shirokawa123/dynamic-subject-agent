@@ -1,3 +1,3 @@
 # 当前工作
 
-当前无执行切片。[Slice-30：记忆回答与可用记录一致](slice-30-memory-grounded-answer.md) 已收口：`dogfood-s30`，555 passed、20 次真实后台追加与重启及实际选择跟踪见 [报告](../reports/2026-09-09-slice-30/REPORT.md)。memory 类型按选中记录完整引用或说明无法确定，后续关系/状态组合保留限定句；head110 自由确认与 head114 相似题材错选仍待处理。下一项需新的用户目标与任务书，不自动扩大上下文或引入统一表达层。
+当前执行 [Slice-31：明确记忆对象的选择](slice-31-memory-subject-selection.md)。用户明确要求继续处理相似题材错选；基线 e318138 / dogfood-s30。先复现候选排序与模型选择的差异，再约束明确对象查询；不通过项目名特例或扩大 Provider 用途处理。

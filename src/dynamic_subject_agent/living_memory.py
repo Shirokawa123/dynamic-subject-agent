@@ -28,6 +28,7 @@ from dynamic_subject_agent.reminder_expression import reminder_request_kind, REM
 from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, unsupported_inventory_claim, selected_memory_answer, exact_memory_status_answer, MEMORY_SCOPE_UNAVAILABLE, grounded_memory_answer
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
+from dynamic_subject_agent.memory_subject import requested_memory_subject, supports_memory_subject
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -251,6 +252,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
         active = tuple(context.active_memories[:ACTIVE_MEMORY_LIMIT])
+        memory_subject = requested_memory_subject(command.utterance)
         control_active = tuple(m for m in context.living_memory_history if m.status == 'active') if context.living_memory_history else active
         withdrawal = select_memory_withdrawal(command.utterance, control_active)
         if withdrawal is not None and withdrawal.restricts_disclosure and not context.memory_control_complete:
@@ -297,6 +299,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             return self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary='本轮本地读取可用活跃记忆清单。',
                 expression_candidate=ExpressionCandidate(text, command.language, dialogue_priority=True))
+        if memory_subject is not None:
+            active = tuple(m for m in active if supports_memory_subject(m.content, memory_subject))
         request = LivingMemoryProviderRequest(
             current_user_message=command.utterance,
             active_memories=tuple(
@@ -327,6 +331,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             or result.language != command.language
             or not result.reply_text.strip()
             or result.proposal.memory_kind not in MEMORY_KINDS
+            or memory_subject is not None and result.proposal.action is not LivingMemoryAction.NONE
         ):
             return self._failure(
                 context,
@@ -449,6 +454,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                     # not evidence that the current message lacks information.
                     reply_text = '这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。'
                     expression_failure_used = True
+        if memory_subject is not None:
+            # The complete local question owns the answer mode, independently
+            # of optional refinement or the legacy analyze-only adapter.
+            reply_text = grounded_memory_answer(tuple(m.content for m in active if m.memory_id in recalled_ids)[:5],
+                available=not disclosure_unavailable and not withheld)
+            is_memory_answer, is_creative = True, False
         if reply_text is None:
             reply_text = '这件事我还没有可靠的内容可以说。我们可以先从你现在想聊的部分说起。'
         if self._split and is_dialogue_continuation(command.utterance) and (not (recent_dialogue or revision_supplied) or not refinement_used):
@@ -548,10 +559,10 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             basis=basis,
             experience_summary="Living Memory 本轮失败关闭。",
             expression_candidate=ExpressionCandidate(
-                text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) else factual_boundary
+                text=(MEMORY_SCOPE_UNAVAILABLE if is_memory_status_query(command.utterance) or requested_memory_subject(command.utterance) is not None else factual_boundary
                     or ('这次没能完成记忆检索，请稍后再试。' if code == 'living-memory-retrieval-unavailable' else "（无记忆相关内容）")),
                 language=command.language,
-                dialogue_priority=is_memory_status_query(command.utterance) or factual_boundary is not None,
+                dialogue_priority=is_memory_status_query(command.utterance) or requested_memory_subject(command.utterance) is not None or factual_boundary is not None,
             ),
         )
         return replace(

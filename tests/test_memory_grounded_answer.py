@@ -88,7 +88,7 @@ def test_memory_answer_does_not_treat_disclosure_failure_as_absence(tmp_path, mo
         opened.app.close()
 
 
-def test_wrong_selection_is_observable_and_cannot_quote_an_unselected_plan(tmp_path):
+def test_explicit_subject_query_excludes_unrelated_record(tmp_path):
     class Wrong(AnswerProvider):
         records = ('我喜欢浅绿色的纸。',)
     provider = Wrong()
@@ -96,8 +96,9 @@ def test_wrong_selection_is_observable_and_cannot_quote_an_unselected_plan(tmp_p
     try:
         submit(opened, provider.records[0])
         answer = submit(opened, QUERY)
-        assert tuple(m.content for m in provider.replies[-1].selected_memories) == provider.records
-        assert provider.records[0] in answer.projection.expression_text
+        assert provider.replies[-1].selected_memories == ()
+        assert provider.records[0] not in answer.projection.expression_text
+        assert '暂时无法确定' in answer.projection.expression_text
         assert '周日' not in answer.projection.expression_text
         assert '星砂' not in answer.projection.expression_text
     finally:
