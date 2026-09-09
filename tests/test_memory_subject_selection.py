@@ -173,3 +173,51 @@ def test_legacy_analyze_reply_cannot_substitute_another_subject(tmp_path):
         assert second not in answer.projection.expression_text
     finally:
         opened.app.close()
+
+
+@pytest.mark.parametrize('target,other', [
+    ('月港手册', '新月港手册'), ('青岭笔记', '青岭笔记报告'),
+    ('银湾报告', '银湾报告附录'),
+])
+def test_overlapping_names_are_not_the_same_object(tmp_path, target, other):
+    record = f'我周三整理{other}。'
+    provider = SimilarProvider((record,))
+    opened = open_app(tmp_path, provider)
+    try:
+        submit(opened, record)
+        answer = submit(opened, f'{target}的安排是什么？')
+        assert provider.proposals[-1].active_memories == ()
+        assert record not in answer.projection.expression_text
+        assert '暂时无法确定' in answer.projection.expression_text
+        answer = submit(opened, f'{other}的安排是什么？')
+        assert record in answer.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+def test_name_mentioned_outside_the_action_object_is_not_selected(tmp_path):
+    record = '我周三整理雾桥手册，不是月港手册。'
+    provider = SimilarProvider((record,))
+    opened = open_app(tmp_path, provider)
+    try:
+        submit(opened, record)
+        answer = submit(opened, '月港手册的安排是什么？')
+        assert record not in answer.projection.expression_text
+        assert provider.proposals[-1].active_memories == ()
+    finally:
+        opened.app.close()
+
+
+def test_short_name_with_multiple_complete_objects_does_not_guess(tmp_path):
+    first, second = '我周三整理月港手册。', '我周四整理月港报告。'
+    provider = SimilarProvider((first, second))
+    opened = open_app(tmp_path, provider)
+    try:
+        submit(opened, first)
+        submit(opened, second)
+        answer = submit(opened, '再说说月港的安排，当时定的是哪天？')
+        assert provider.proposals[-1].active_memories == ()
+        assert '暂时无法确定' in answer.projection.expression_text
+        assert second in submit(opened, '月港报告的安排是什么？').projection.expression_text
+    finally:
+        opened.app.close()

@@ -7,7 +7,7 @@ import re
 import sqlite3
 from typing import TYPE_CHECKING
 import unicodedata
-from dynamic_subject_agent.memory_subject import requested_memory_subject, supports_memory_subject
+from dynamic_subject_agent.memory_subject import requested_memory_subject, select_subject_memories
 
 if TYPE_CHECKING:
     from dynamic_subject_agent.timeline import LivingMemoryRecord
@@ -45,7 +45,7 @@ def select_memory_candidates(
     active = tuple(memory for memory in history if memory.status == 'active')
     subject = requested_memory_subject(query)
     if subject is not None:
-        active = tuple(memory for memory in active if supports_memory_subject(memory.content, subject))
+        active = select_subject_memories(active, subject)
     if len(active) <= limit or not isinstance(query, str):
         return active[:limit]
     documents = tuple(_terms(memory.content) for memory in active)

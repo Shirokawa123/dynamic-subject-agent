@@ -28,7 +28,7 @@ from dynamic_subject_agent.reminder_expression import reminder_request_kind, REM
 from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, unsupported_inventory_claim, selected_memory_answer, exact_memory_status_answer, MEMORY_SCOPE_UNAVAILABLE, grounded_memory_answer
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
-from dynamic_subject_agent.memory_subject import requested_memory_subject, supports_memory_subject
+from dynamic_subject_agent.memory_subject import requested_memory_subject, select_subject_memories
 
 
 ACTIVE_MEMORY_LIMIT = 20
@@ -300,7 +300,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 experience_summary='本轮本地读取可用活跃记忆清单。',
                 expression_candidate=ExpressionCandidate(text, command.language, dialogue_priority=True))
         if memory_subject is not None:
-            active = tuple(m for m in active if supports_memory_subject(m.content, memory_subject))
+            active = select_subject_memories(active, memory_subject)
         request = LivingMemoryProviderRequest(
             current_user_message=command.utterance,
             active_memories=tuple(

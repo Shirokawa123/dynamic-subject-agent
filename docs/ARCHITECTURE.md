@@ -54,7 +54,7 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 ## 数据
 
-Slice-31 的 `memory_subject` 为完整单个指名安排查询提取当前字面对象（有限句式见任务报告/设计），拒绝猜测控制、引用/转述、建议、代词开头和多问题消息。Runtime 先从已读active记录按原文字面包含条件筛选，再用既有20条排序预算；Cognition在外发前再次应用同一条件并保留披露过滤。模型返回ID必须属于该实际候选集，对这些明确查询提出create/revise或返回越界ID形成Memory FailedClosed。有效proposal后由Python复用原文/未知渲染，错误类型或可选reply失败不允许另挑对象，legacy analyze入口同样适用。12类提示、字段、调用上限均不变，不使用forgotten文本参与召回，不增加索引或实体状态；字面包含不证明语义身份，重叠名称、多对象提及及未覆盖表达仍有限。见 [Slice-31设计](reports/2026-09-09-slice-31/DESIGN.md)。
+Slice-31 的 `memory_subject` 为完整单个指名安排查询提取当前字面对象（有限句式见任务报告/设计），不猜控制、引用/转述、建议、代词/时间指代开头和多问题消息。Runtime 从已读active记录的有限动作/变更槽位提取单一完整对象，按完整名称比较后使用既有20条排序预算；允许一个有界文稿类别后缀的无歧义简称，不将带类别的名字再次缩为另一对象简称。多个完整名或不可解析结构不猜测；Cognition外发前复查并保留披露过滤。模型返回ID必须属于实际候选，明确查询提出create/revise或越界ID形成Memory FailedClosed。有效proposal后Python复用原文/未知渲染，错误类型/可选reply失败或legacy自由文本不允许另挑对象。12类提示、字段、调用上限均不变，不使用forgotten文本作候选，不增加索引或实体状态；有限名称槽位不等于通用语义识别，任意别名/复合陈述仍有限。见 [Slice-31设计](reports/2026-09-09-slice-31/DESIGN.md)。
 
 Slice-29 的 `memory_retrieval.select_memory_candidates` 从 Runtime 已恢复的最多 100 条 Living Memory 历史中只取 active。超过 20 条时，以当前消息和当天内容投影在一次性内存 SQLite FTS5 中按 BM25 排序后取最多 20 条；不足预算的槽位按原最近顺序补齐，20 条以内或无词面匹配时保持原窗口。中文使用通用连续双字片段、英文/数字使用词元；无题材词表、embedding、额外 Provider 或持久索引，原内容、ID、状态与 canonical 历史不改写。排序仅决定候选，模型仍选择引用，Python 仍裁决；它不证明相关性、唯一性或语义等价。
 
