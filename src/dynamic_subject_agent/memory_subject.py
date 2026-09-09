@@ -13,7 +13,10 @@ _QUESTIONS = tuple(re.compile(pattern) for pattern in (
     r'(?:请问，?)?' + _SUBJECT + r'的(?:安排|计划)(?:是)?(?:什么|怎样)',
     r'(?:再说说|说说)' + _SUBJECT + r'的安排[，,](?:当时|之前)定的是哪天',
 ))
-_NON_LITERAL_PREFIX = re.compile(r'^(?:我|你|我们|这|那|哪|它|他|她|如果|假如|据说|听说)')
+_NON_LITERAL_PREFIX = re.compile(
+    r'^(?:我|你|我们|这|那|哪|它|他|她|如果|假如|据说|听说'
+    r'|现在|目前|刚才|刚刚|当时|之前|原来|最近|过去|上次|今天|昨天|明天|后天)'
+)
 
 
 def requested_memory_subject(message: object) -> str | None:

@@ -140,7 +140,8 @@ def test_revised_subject_and_withdrawal_survive_restart(tmp_path):
 
 
 @pytest.mark.parametrize('question', ['你建议月港手册安排在什么时候整理？',
-    '他说：“月港手册现在定在什么时间整理？”', '月港手册的安排是什么？雾桥手册的安排是什么？'])
+    '他说：“月港手册现在定在什么时间整理？”', '月港手册的安排是什么？雾桥手册的安排是什么？',
+    '现在提醒我一下刚才的计划是什么。', '请问，刚才的计划是什么？', '目前的安排是什么？'])
 def test_other_intents_are_not_reinterpreted_as_single_bound_queries(tmp_path, question):
     first, second = '我周六整理月港手册。', '我周日整理雾桥手册。'
     provider = SimilarProvider((first, second))
