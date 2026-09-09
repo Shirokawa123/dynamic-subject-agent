@@ -1,6 +1,6 @@
 # Slice-30：记忆回答与可用记录一致
 
-状态：in progress。基线 `fb28c36` / `dogfood-s29`，用户明确要求继续已提出的 Slice-30。
+状态：completed。基线 `fb28c36` / `dogfood-s29`，最终代码 `3ad1468` / `dogfood-s30`；555 passed，20 次真实后台追加与重启、实际选择/输入跟踪见 [报告](../reports/2026-09-09-slice-30/REPORT.md)。用户明确要求继续已提出的 Slice-30。memory 类型原文/未知路径及后续组合保护完成；head110 自由确认与 head114 相似题材错选仍保留，不宣称通用表达稳定。
 
 ## 用户结果
 

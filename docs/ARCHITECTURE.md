@@ -44,7 +44,7 @@ Living Memory reply 返回 `reply_kind/reply_text/language`：conversation、cre
 
 Slice-30 在既有 LM reply 的三字段响应中增加 `reply_kind=memory`，只细化原用户记忆/安排回答用途，不增加请求数据、历史、调用或新 Provider。类型有效且 Memory action=none 时，Python 根据实际已传入 reply 的最多 5 条可披露选中记录形成完整原文引用；不自由推断日期或要求重新确认。空选择只说明暂时无法确定，披露失败/未决限制使用已有无法核实范围说明，不推断事件未发生、未安排或已经停用。该类型 reply_text 可为空，即使非空也忽略其自由正文；它不是来源证据或状态提议。
 
-memory 误用于本轮 create/revise 时只确认收到说明，不假称保存成功或把旧记录当新状态；活动、提醒、无来源事实、创作/续写/编号修改及 exact 状态边界仍优先。`ExpressionCandidate.is_memory_answer` 是本地临时组合标记，不持久化、不外发：保留与完整 Knowledge 引用并列的记录/未知说明，相关目标附带回复只呈现 selected canonical terms。选择错误仍可能引用无关记录，不证明相关性。若模型误标为 conversation 或没有返回有效类型，仍走既有自由表达/fallback 契约；不宣称解决所有误分类或生成失败。其他 11 类请求保持原字节基线，详细失败与验收见 [Slice-30 报告](reports/2026-09-09-slice-30/REPORT.md)。
+memory 误用于本轮 create/revise 时只确认收到说明，不假称保存成功或把旧记录当新状态；活动、提醒、无来源事实、创作/续写/编号修改及 exact 状态边界仍优先。`ExpressionCandidate.is_memory_answer` 是本地临时组合标记，不持久化、不外发：保留与完整 Knowledge 引用并列的记录/未知说明，相关目标附带回复只呈现 selected canonical terms；关系声称的早期表达替换及后续关系/Situated/Medium 合并均保留已标记的完整依据，不把引用内的否定条件当自由未知句删掉。关系/状态候选仍由原 Domain 裁决，标记不赋予状态写权。选择错误仍可能引用无关记录，不证明相关性。若模型误标为 conversation 或没有返回有效类型，仍走既有自由表达/fallback 契约；不宣称解决所有误分类或生成失败。其他 11 类请求保持原字节基线，详细失败与验收见 [Slice-30 报告](reports/2026-09-09-slice-30/REPORT.md)。
 
 Slice-22 在既有 Living Memory reply 提示内区分提供题材、已明确讨论、事实询问与创作，字段/用途/历史窗口/调用预算不变。模型返回的 creative 被本地拒绝且无有效基础回复时，只诚实报告本轮表达未完成；不能从模型生成失败推断用户意图不清，也不能把无 Memory 变化解释为当前消息无内容。有效基础回复、合法状态候选、sealed 来源与显式状态查询保持原有优先级；本地失败表达复用临时 dialogue_priority，不增加状态。该回退本身不算承接成功，须以真实后续对话验证。
 

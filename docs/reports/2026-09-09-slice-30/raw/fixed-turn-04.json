@@ -1,0 +1,290 @@
+{
+  "message": "再说说月港的安排，当时定的是哪天？",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "你之前说过：「我计划周六整理月港手册。」",
+    "head_sequence": 99,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 80,
+        "user_text": "请写一句关于落叶的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n落叶旋落时，风替它写完最后一笔。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885531765066,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 81,
+        "user_text": "请写一句关于雨声的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨声把夜色缝成细密的针脚。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885540964125,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 82,
+        "user_text": "星砂那本东西，我当时想哪天动手？",
+        "user_language": "zh",
+        "assistant_text": "你之前提到的是周六整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885550255397,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 83,
+        "user_text": "更正记忆：星砂手册改为周日整理，不是周六。",
+        "user_language": "zh",
+        "assistant_text": "好的，已更正为周日整理星砂手册。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885558472736,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「更正记忆：星砂手册改为周日整理，不是周六。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 84,
+        "user_text": "请写一句关于白云的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n白云是天空写给大地的便签，风一读就散。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885567736376,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 85,
+        "user_text": "请写一句关于晚风的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晚风把路灯的光吹成一小片一小片，落进行人的衣领里。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885578507375,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 86,
+        "user_text": "星砂手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "星砂手册定在周日整理。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885588080443,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 87,
+        "user_text": "请写一句关于流水的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n流水把石头的沉默，一句一句读给远方听。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885727217930,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 88,
+        "user_text": "请写一句关于清晨的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晨光把夜的墨迹，轻轻擦成鸟鸣。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885737426530,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 89,
+        "user_text": "再说说星砂的安排，当时定的是哪天？",
+        "user_language": "zh",
+        "assistant_text": "这个我不清楚，当时定的具体日期没有记录。你记得是周日吗？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885747796893,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 90,
+        "user_text": "请忘记「更正记忆：星砂手册改为周日整理，不是周六。」",
+        "user_language": "zh",
+        "assistant_text": "已停止把这条记录作为活跃记忆使用。旧聊天和本地审计原文仍保留；这不是物理删除。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885798560930,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已停止使用指定活跃记忆；本地历史原文保留。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 91,
+        "user_text": "星砂手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "这个我还不清楚，你希望定在什么时间？",
+        "assistant_language": "zh",
+        "published_at_us": 1788885807805908,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 92,
+        "user_text": "第19个资料夹叫什么？",
+        "user_language": "zh",
+        "assistant_text": "archive-19。",
+        "assistant_language": "zh",
+        "published_at_us": 1788885816451812,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 93,
+        "user_text": "你还记得我喜欢哪种颜色的纸吗？",
+        "user_language": "zh",
+        "assistant_text": "记得，你喜欢浅绿色的纸。",
+        "assistant_language": "zh",
+        "published_at_us": 1788886035003496,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 94,
+        "user_text": "星砂手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "还没定具体时间。你希望安排在什么时候？",
+        "assistant_language": "zh",
+        "published_at_us": 1788886045692961,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 95,
+        "user_text": "星砂手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788924455546129,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 96,
+        "user_text": "我计划周六整理月港手册。",
+        "user_language": "zh",
+        "assistant_text": "周六整理月港手册，听起来是个不错的安排。需要我帮你一起规划整理顺序吗？",
+        "assistant_language": "zh",
+        "published_at_us": 1788924467874906,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我计划周六整理月港手册。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 97,
+        "user_text": "请写一句关于落叶的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n落叶旋落时，风替秋天签下最后一枚印章。",
+        "assistant_language": "zh",
+        "published_at_us": 1788924478883234,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 98,
+        "user_text": "请写一句关于雨声的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨声把夜色缝成细密的针脚。",
+        "assistant_language": "zh",
+        "published_at_us": 1788924489863193,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 99,
+        "user_text": "再说说月港的安排，当时定的是哪天？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我计划周六整理月港手册。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788924502117463,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [
+      "<internal-id>"
+    ],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "used",
+        "message": "本轮召回了 1 条既有记忆。"
+      }
+    ]
+  }
+}
