@@ -151,3 +151,31 @@ def test_empty_memory_answer_survives_independent_knowledge_and_goal_reply(tmp_p
         assert BAD_MISSING not in answer.projection.expression_text
     finally:
         opened.app.close()
+
+
+@pytest.mark.parametrize('extra', ['我们已经是最好的朋友了吧。', '你现在的姿态是什么？', '你现在的中期状态是什么？'])
+def test_later_relationship_and_state_merge_preserves_qualified_record(tmp_path, extra):
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
+    from dynamic_subject_agent.runtime import M0_A_PROVIDER_AUTHORITY
+    from dynamic_subject_agent.situated_cognition import SituatedProviderAdapter
+    from dynamic_subject_agent.medium_cognition import MediumProviderAdapter
+    from test_situated_integration import _NoopKnowledgeProvider, _NoopRelationshipProvider, _SituatedProvider
+    from test_medium_integration import _MediumProvider
+    class Qualified(AnswerProvider):
+        records = ('我周日整理星砂手册，但目前没有校样，没收到就顺延。',)
+    provider = Qualified()
+    knowledge, relationship = _NoopKnowledgeProvider(), _NoopRelationshipProvider()
+    for sub in (knowledge, relationship):
+        sub.provider_authority = M0_A_PROVIDER_AUTHORITY
+    caps = ProviderCapabilities(M0_A_PROVIDER_AUTHORITY, 'test-state', True, (StructuredOutputMode.JSON_OBJECT,))
+    opened = open_app(tmp_path, provider, cognition=ControlledCompositeCognition(memory_provider=provider,
+        knowledge_provider=knowledge, relationship_provider=relationship,
+        situated_gateway=ModelGateway(SituatedProviderAdapter(provider=_SituatedProvider(), capabilities=caps)),
+        medium_gateway=ModelGateway(MediumProviderAdapter(provider=_MediumProvider(), capabilities=caps))))
+    try:
+        submit(opened, provider.records[0])
+        answer = submit(opened, QUERY + extra)
+        assert provider.records[0] in answer.projection.expression_text
+    finally:
+        opened.app.close()

@@ -451,12 +451,14 @@ class ControlledCompositeCognition(CognitionEngine):
             memory_proposal = replace(
                 memory_proposal,
                 experience_summary=(
-                    "用户单方面声称关系；Python 保持关系与记忆均不变。"
+                    memory_proposal.experience_summary if memory_proposal.expression_candidate.is_memory_answer
+                    else "用户单方面声称关系；Python 保持关系与记忆均不变。"
                 ),
-                expression_candidate=ExpressionCandidate(
+                expression_candidate=(memory_proposal.expression_candidate
+                    if memory_proposal.expression_candidate.is_memory_answer else ExpressionCandidate(
                     text=_claim_reply(relationship_claims),
                     language=memory_proposal.expression_candidate.language,
-                ),
+                )),
             )
         if knowledge_proposal is not None and not participant_goal_selection_priority:
             knowledge_request = knowledge_proposal.impact_envelope.experience
@@ -601,9 +603,9 @@ class ControlledCompositeCognition(CognitionEngine):
             situated_text = _supported_clauses(
                 situated_proposal.expression_candidate.text
             )
-            if knowledge_cited or memory_relevant or participant_goal_relevant:
+            if knowledge_cited or memory_relevant or memory_answer or participant_goal_relevant:
                 expression = ExpressionCandidate(
-                    text=_merge_expression_text(expression.text, situated_text, preserve_evidence=knowledge_cited),
+                    text=_merge_expression_text(expression.text, situated_text, preserve_evidence=knowledge_cited or memory_answer),
                     language=expression.language,
                 )
             else:
@@ -613,11 +615,12 @@ class ControlledCompositeCognition(CognitionEngine):
             if (
                 knowledge_cited
                 or memory_relevant
+                or memory_answer
                 or participant_goal_relevant
                 or situated_should_speak
             ):
                 expression = ExpressionCandidate(
-                    text=_merge_expression_text(expression.text, medium_text, preserve_evidence=knowledge_cited),
+                    text=_merge_expression_text(expression.text, medium_text, preserve_evidence=knowledge_cited or memory_answer),
                     language=expression.language,
                 )
             else:
@@ -627,7 +630,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 text=_merge_expression_text(
                     _claim_reply(relationship_claims),
                     expression.text,
-                    preserve_evidence=knowledge_cited,
+                    preserve_evidence=knowledge_cited or memory_answer,
                 ),
                 language=expression.language,
             )
