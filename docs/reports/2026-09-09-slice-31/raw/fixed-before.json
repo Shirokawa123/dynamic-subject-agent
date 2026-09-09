@@ -1,0 +1,26 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s31",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [],
+  "memories": [],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

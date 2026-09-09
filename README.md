@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s30`。明确返回为记忆回答时，正文直接引用本轮选中记录的完整原文；空选择只说明暂时无法确定，不推断未安排。与关系/状态说明组合时保留原文条件。活跃记忆超过 20 条仍先用本地 SQLite FTS5/BM25 选择候选，再按原预算交给模型；相似题材错选、类型误判和自由确认语句仍可能失败。逻辑遗忘停用活跃使用，原历史保留；当前不提供定时或下次自动提醒。精确原文可只查状态，事实遵守封存来源边界，共同创作/限字/编号修改仍为有限契约。详见 [Slice-30 报告](docs/reports/2026-09-09-slice-30/REPORT.md) 与 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s31`。有限指名安排查询先比较记录中可解析的完整对象名，再使用原候选预算；「月港手册」不能因子串相同而由「新月港手册」替代，歧义简称不猜测。记忆回答保留完整原文条件，空选择只说明暂时无法确定；其他查询仍使用既有本地检索。未知结构、任意别名、复杂问法与自由确认语句仍有限。逻辑遗忘停用活跃使用，原历史保留；当前不提供定时或下次自动提醒。精确原文可只查状态，事实遵守封存来源边界，共同创作/限字/编号修改仍为有限契约。详见 [Slice-31 报告](docs/reports/2026-09-09-slice-31/REPORT.md) 与 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

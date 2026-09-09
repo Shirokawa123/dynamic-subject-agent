@@ -1,0 +1,16 @@
+{"stage": "proposal", "message": "月港手册现在定在什么时间整理？", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "reply", "message": "月港手册现在定在什么时间整理？", "selected_contents": [], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "proposal", "message": "我周六整理苍穹报告。", "active_contents": [], "selected_contents": [], "action": "create", "base_reply": "好的，我记住了，你周六要整理苍穹报告。"}
+{"stage": "reply", "message": "我周六整理苍穹报告。", "selected_contents": [], "recent_dialogue": [{"user_text": "月港手册现在定在什么时间整理？", "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。"}], "reply_kind": "conversation", "reply_text": "好的，周六整理苍穹报告，听起来是个不错的安排。需要我帮你一起梳理结构或内容吗？"}
+{"stage": "proposal", "message": "我周日整理银湾报告。", "active_contents": ["我周六整理苍穹报告。"], "selected_contents": [], "action": "create", "base_reply": "好的，我记住了，你周日要整理银湾报告。"}
+{"stage": "reply", "message": "我周日整理银湾报告。", "selected_contents": [], "recent_dialogue": [{"user_text": "月港手册现在定在什么时间整理？", "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。"}, {"user_text": "我周六整理苍穹报告。", "assistant_text": "好的，周六整理苍穹报告，听起来是个不错的安排。需要我帮你一起梳理结构或内容吗？"}], "reply_kind": "conversation", "reply_text": "好的，周日整理银湾报告。需要我帮你一起梳理结构或内容吗？"}
+{"stage": "proposal", "message": "苍穹报告现在定在什么时间整理？", "active_contents": ["我周六整理苍穹报告。"], "selected_contents": ["我周六整理苍穹报告。"], "action": "none", "base_reply": "我记得你之前说周六整理苍穹报告。"}
+{"stage": "reply", "message": "苍穹报告现在定在什么时间整理？", "selected_contents": ["我周六整理苍穹报告。"], "recent_dialogue": [{"user_text": "我周六整理苍穹报告。", "assistant_text": "好的，周六整理苍穹报告，听起来是个不错的安排。需要我帮你一起梳理结构或内容吗？"}, {"user_text": "我周日整理银湾报告。", "assistant_text": "好的，周日整理银湾报告。需要我帮你一起梳理结构或内容吗？"}], "reply_kind": "memory", "reply_text": ""}
+{"stage": "proposal", "message": "请问，银湾报告的安排是什么？", "active_contents": ["我周日整理银湾报告。"], "selected_contents": ["我周日整理银湾报告。"], "action": "none", "base_reply": "你周日整理银湾报告。"}
+{"stage": "reply", "message": "请问，银湾报告的安排是什么？", "selected_contents": ["我周日整理银湾报告。"], "recent_dialogue": [{"user_text": "我周日整理银湾报告。", "assistant_text": "好的，周日整理银湾报告。需要我帮你一起梳理结构或内容吗？"}, {"user_text": "苍穹报告现在定在什么时间整理？", "assistant_text": "你之前说过：「我周六整理苍穹报告。」"}], "reply_kind": "memory", "reply_text": ""}
+{"stage": "proposal", "message": "更正记忆：苍穹报告改为周一整理，不是周六。", "active_contents": ["我周日整理银湾报告。", "我周六整理苍穹报告。"], "selected_contents": ["我周六整理苍穹报告。"], "action": "revise", "base_reply": "好的，已把苍穹报告改为周一整理。"}
+{"stage": "reply", "message": "更正记忆：苍穹报告改为周一整理，不是周六。", "selected_contents": ["我周六整理苍穹报告。"], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "好的，已记下：苍穹报告改为周一整理。"}
+{"stage": "proposal", "message": "苍穹报告原来安排在哪天处理？", "active_contents": ["苍穹报告改为周一整理，不是周六。"], "selected_contents": ["苍穹报告改为周一整理，不是周六。"], "action": "none", "base_reply": "苍穹报告安排在周一处理。"}
+{"stage": "reply", "message": "苍穹报告原来安排在哪天处理？", "selected_contents": ["苍穹报告改为周一整理，不是周六。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": "根据已有记录，苍穹报告已改为周一整理，不是周六。"}
+{"stage": "proposal", "message": "雪岭报告的安排是什么？", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "reply", "message": "雪岭报告的安排是什么？", "selected_contents": [], "recent_dialogue": [{"user_text": "苍穹报告原来安排在哪天处理？", "assistant_text": "你之前说过：「苍穹报告改为周一整理，不是周六。」"}], "reply_kind": "memory", "reply_text": ""}

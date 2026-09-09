@@ -1,6 +1,6 @@
 # Slice-31：明确记忆对象的选择
 
-状态：in progress。用户要求继续 Slice-31；基线 e318138 / dogfood-s30。
+状态：completed。基线 e318138 / dogfood-s30，最终代码 b8ddb2d / dogfood-s31，585 passed。新隔离Avery的25次后台追加及同根重开见 [报告](../reports/2026-09-09-slice-31/REPORT.md)；初版重叠名失败保留并已在最终版本复验修复。不是旧林柚链恢复，不宣称通用实体识别。
 
 ## 用户结果
 
