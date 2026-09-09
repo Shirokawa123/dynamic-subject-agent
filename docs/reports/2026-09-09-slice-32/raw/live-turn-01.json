@@ -1,0 +1,306 @@
+{
+  "message": "更正记忆：砚河手册改到周一整理，但没收到校样仍然顺延。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "durable",
+    "new_memory_content": "砚河手册改到周一整理，但没收到校样仍然顺延。",
+    "expression": "已更正这条记忆，新内容是：「砚河手册改到周一整理，但没收到校样仍然顺延。」",
+    "head_sequence": 27,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 8,
+        "user_text": "雪岭报告的安排是什么？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788927746361389,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 9,
+        "user_text": "请写一句关于流水的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n流水不回头，却把光阴轻轻带走。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928443854728,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 10,
+        "user_text": "请写一句关于清晨的短诗。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晨光未醒，露珠已在草尖写下第一行诗。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928448291957,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 11,
+        "user_text": "再说说苍穹报告的安排，当时定的是哪天？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「苍穹报告改为周一整理，不是周六。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788928453699946,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 12,
+        "user_text": "请忘记「苍穹报告改为周一整理，不是周六。」",
+        "user_language": "zh",
+        "assistant_text": "已停止把这条记录作为活跃记忆使用。旧聊天和本地审计原文仍保留；这不是物理删除。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928456710978,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已停止使用指定活跃记忆；本地历史原文保留。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 13,
+        "user_text": "苍穹报告的安排是什么？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928462107975,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 14,
+        "user_text": "银湾报告原来安排在哪天处理？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我周日整理银湾报告。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788928467302158,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 15,
+        "user_text": "月港手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928473784026,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 16,
+        "user_text": "我周五整理雾桥手册。",
+        "user_language": "zh",
+        "assistant_text": "好，周五整理雾桥手册。需要我一起过目录或排版的话，到时候叫我。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928770014947,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我周五整理雾桥手册。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 17,
+        "user_text": "月港手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928775092465,
+        "explanations": [
+          {
+            "capability": "关系",
+            "kind": "failed",
+            "message": "本轮关系处理未能完成；没有写入关系变化。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 18,
+        "user_text": "请问，银湾报告的安排是什么？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我周日整理银湾报告。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788928780032285,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 19,
+        "user_text": "苍穹报告的安排是什么？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788928785231109,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 20,
+        "user_text": "我周三整理新月港手册。",
+        "user_language": "zh",
+        "assistant_text": "好，周三整理新月港手册。需要我帮你列个整理清单，还是先聊聊手册目前的框架？",
+        "assistant_language": "zh",
+        "published_at_us": 1788928790921423,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我周三整理新月港手册。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 21,
+        "user_text": "月港手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我周三整理新月港手册。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788928797752177,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 22,
+        "user_text": "月港手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788930173297233,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 23,
+        "user_text": "新月港手册现在定在什么时间整理？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我周三整理新月港手册。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788930180855251,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 24,
+        "user_text": "再说说银湾的安排，当时定的是哪天？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我周日整理银湾报告。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788930186205589,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 25,
+        "user_text": "苍穹报告的安排是什么？",
+        "user_language": "zh",
+        "assistant_text": "这次没有可用于确认这件事的记录，暂时无法确定。",
+        "assistant_language": "zh",
+        "published_at_us": 1788930192064240,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 26,
+        "user_text": "我周日整理砚河手册，但目前没有校样，没收到就顺延。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「我周日整理砚河手册，但目前没有校样，没收到就顺延。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788951784785781,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我周日整理砚河手册，但目前没有校样，没收到就顺延。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 27,
+        "user_text": "更正记忆：砚河手册改到周一整理，但没收到校样仍然顺延。",
+        "user_language": "zh",
+        "assistant_text": "已更正这条记忆，新内容是：「砚河手册改到周一整理，但没收到校样仍然顺延。」",
+        "assistant_language": "zh",
+        "published_at_us": 1788951792787088,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「砚河手册改到周一整理，但没收到校样仍然顺延。」"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「砚河手册改到周一整理，但没收到校样仍然顺延。」"
+      }
+    ]
+  }
+}

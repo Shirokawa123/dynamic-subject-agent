@@ -1,6 +1,6 @@
 # Slice-32：记忆写入确认与最终结果一致
 
-状态：in progress。用户在具体说明方案后要求继续；基线 f0b2bf1 / dogfood-s31。
+状态：completed（有限范围，真实剩余失败保留）。用户在具体说明方案后要求继续；基线 f0b2bf1 / dogfood-s31。实现dogfood-s32，全量609 passed，独立两轴复核及10次真实后台追加完成；详见 [报告](../reports/2026-09-09-slice-32/REPORT.md)。
 
 ## 用户结果
 
