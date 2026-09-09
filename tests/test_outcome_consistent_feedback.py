@@ -44,7 +44,7 @@ def test_goal_failure_cannot_be_hidden_by_successful_memory(tmp_path, failed):
         assert turn.projection.participant_goal_commitment_status == ('failed-closed' if failed else 'rejected')
         assert '目标记下了' not in turn.projection.expression_text
         assert '修改成功' not in turn.projection.expression_text
-        assert '未' in turn.projection.expression_text or '没有' in turn.projection.expression_text
+        assert ('没能完成目标' if failed else '没有保存或修改目标') in turn.projection.expression_text
         assert _query(app, qri, timeline) == ()
     finally:
         app.close()

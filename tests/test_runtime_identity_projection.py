@@ -239,7 +239,7 @@ def test_memory_proposal_is_identity_free_and_reply_receives_exact_projection(
         composition.close()
 
     assert terminal.projection is not None
-    assert terminal.projection.expression_text == "我是Mira，我记下了。"
+    assert terminal.projection.expression_text == "已记录你的原话：「我每周三晚上学习」"
     assert len(provider.proposal_requests) == 1
     assert not hasattr(provider.proposal_requests[0], "runtime_identity")
     assert len(provider.reply_requests) == 1
@@ -745,7 +745,7 @@ def test_memory_and_knowledge_identity_reply_failure_preserves_canonical_state(
 
     assert memory_terminal.projection is not None
     assert memory_terminal.projection.living_memory_status == "accepted"
-    assert memory_terminal.projection.expression_text == "基础记忆回复。"
+    assert memory_terminal.projection.expression_text == "已记录你的原话：「我每周三晚上学习」"
     assert memories[0].content == "我每周三晚上学习"
     assert knowledge_terminal.projection is not None
     assert knowledge_terminal.projection.knowledge_status == "accepted"
