@@ -527,16 +527,23 @@ class ControlledCompositeCognition(CognitionEngine):
         preserve_memory_expression = (memory_proposal.memory_write_requested or memory_answer or memory_proposal.expression_candidate.is_creative
             or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY}
             or is_memory_status_query(command.utterance))
+        knowledge_continuation = None
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
             memory_text = memory_proposal.expression_candidate.text
+            independent_knowledge_creation = (memory_proposal.memory_write_requested
+                and not memory_proposal.expression_candidate.is_creative
+                and knowledge_proposal.expression_candidate.is_creative
+                and explicit_creation_request(command.utterance) and not is_dialogue_continuation(command.utterance))
             if memory_proposal.memory_write_requested and not memory_proposal.expression_candidate.is_creative:
                 # Knowledge owns sourced factual answers; the Memory receipt is
                 # added after adjudication, not reconstructed from free prose.
-                memory_text = ''
-                memory_proposal = replace(memory_proposal, memory_continuation=None)
-            independent_knowledge_creation = (memory_proposal.memory_write_requested
-                and not memory_proposal.expression_candidate.is_creative
-                and explicit_creation_request(command.utterance) and not is_dialogue_continuation(command.utterance))
+                if independent_knowledge_creation or not (
+                    explicit_creation_request(command.utterance) or is_dialogue_continuation(command.utterance)
+                ):
+                    memory_text = ''
+                    memory_proposal = replace(memory_proposal, memory_continuation=None)
+            if independent_knowledge_creation:
+                knowledge_continuation = knowledge_proposal.expression_candidate
             knowledge_text = ('' if preserve_memory_expression and not independent_knowledge_creation and knowledge_proposal.expression_candidate.is_creative
                 else knowledge_proposal.expression_candidate.text)
             if not preserve_memory_expression:
@@ -676,6 +683,7 @@ class ControlledCompositeCognition(CognitionEngine):
                 and (not relationship_claim_protected or explicit_memory_write_request(command.utterance) or any(
                     candidate.memory_action in {'create', 'revise'} for candidate in experience_request.candidates))),
             memory_continuation=memory_proposal.memory_continuation if not participant_goal_selection_priority else None,
+            knowledge_continuation=knowledge_continuation,
         )
 
     def express(
@@ -779,7 +787,9 @@ class ControlledCompositeCognition(CognitionEngine):
             if not proposal.memory_write_requested and status != 'accepted' and outcome.living_memory_status.value == 'accepted' and outcome.memory_withdrawal_status is None:
                 text += '你的这段话已作为记忆保留，但目标与承诺列表没有更新。'
             independent = []
-            if outcome.knowledge_status == 'accepted':
+            knowledge_creation = (proposal.knowledge_continuation
+                                  if outcome.knowledge_status == 'accepted' else None)
+            if outcome.knowledge_status == 'accepted' and knowledge_creation is None:
                 cited = set(outcome.knowledge_citation_ids)
                 independent.extend(
                     f'根据条目《{entry.title}》：{entry.content}'
@@ -792,8 +802,9 @@ class ControlledCompositeCognition(CognitionEngine):
             claims = _direct_relationship_claims(command.utterance)
             if claims and outcomes.relationship.relationship_status == 'no-update':
                 independent.append(_claim_reply(claims))
-            continuation = proposal.memory_continuation.text if proposal.memory_continuation is not None else ''
-            parts = ((continuation, *independent, text) if proposal.memory_continuation is not None and proposal.memory_continuation.is_creative
+            selected_continuation = knowledge_creation or proposal.memory_continuation
+            continuation = selected_continuation.text if selected_continuation is not None else ''
+            parts = ((continuation, *independent, text) if selected_continuation is not None and selected_continuation.is_creative
                      else (*independent, text, continuation))
             text = '\n\n'.join(part for part in parts if part)
             return ExpressionCandidate(text, command.language)

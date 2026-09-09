@@ -56,7 +56,7 @@ def test_rejected_creation_does_not_offer_writing_after_user_asked_not_to_create
 def test_rejected_creation_preserves_valid_base_and_independent_memory(tmp_path, message, base, evidence):
     result = turn(tmp_path, message, MemoryProvider(base, evidence=evidence,
         refined=LivingMemoryReplyResult('桥上的人挥手道别。', 'zh', 'creative')))
-    assert result.expression_text == base
+    assert result.expression_text == (f'已记录你的原话：「{evidence}」' if evidence else base)
     assert result.living_memory_status == ('accepted' if evidence else 'no-op')
 
 

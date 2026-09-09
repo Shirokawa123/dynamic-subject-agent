@@ -249,7 +249,7 @@ def test_facade_forms_memory_from_provider_evidence_in_submitted_user_message(
 
     assert terminal.status is ApplicationOperationStatus.TERMINAL
     assert terminal.projection is not None
-    assert terminal.projection.expression_text == "我会记住你每周三晚上有课。"
+    assert terminal.projection.expression_text == "已记录你的原话：「每周三晚上上课」"
     assert terminal.projection.living_memory_status == "accepted"
     assert memories.status is ApplicationQueryStatus.AVAILABLE
     assert isinstance(memories.projection, LivingMemoryApplicationProjection)
@@ -649,7 +649,7 @@ def test_minimal_cli_routes_through_facade_and_shows_memory_source(
         composition.close()
 
     assert exit_code == 0
-    assert "AI: 我会记住你每周三晚上有课。" in output
+    assert "AI: 已记录你的原话：「每周三晚上上课」" in output
     memory_line = next(line for line in output if line.startswith("记忆[active]"))
     assert "每周三晚上上课" in memory_line
     assert "source_user_message_id=" in memory_line

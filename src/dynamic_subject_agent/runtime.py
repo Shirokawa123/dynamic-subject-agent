@@ -368,6 +368,7 @@ class CognitiveProposal:
     # Ephemeral composition information; never Provider input or canonical state.
     memory_write_requested: bool = False
     memory_continuation: ExpressionCandidate | None = None
+    knowledge_continuation: ExpressionCandidate | None = None
 
 
 @dataclass(frozen=True)

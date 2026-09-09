@@ -305,3 +305,33 @@ def test_discussion_about_memory_is_not_an_operation_confirmation(tmp_path):
         assert response in answer.projection.expression_text
     finally:
         opened.app.close()
+
+
+@pytest.mark.parametrize('goal_failed', [False, True])
+def test_goal_outcome_does_not_discard_independent_knowledge_creation(tmp_path, goal_failed):
+    from dataclasses import replace
+    from dynamic_subject_agent.participant_goal_cognition import ParticipantGoalClassificationResult, ParticipantGoalReplyResult
+    from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentCandidate
+    from dynamic_subject_agent.knowledge import KnowledgeReplyResult
+    from test_grounded_role_expression import KnowledgeProvider
+    poem = '纸灯点亮桥边，月光落入人间。'
+    class Recorded(WriteProvider):
+        def propose(self, request):
+            return replace(super().propose(request), proposal=LivingMemoryProposal(LivingMemoryAction.CREATE, PLAN))
+    class Goal:
+        def classify(self, request):
+            if goal_failed:
+                raise OSError('synthetic goal failure')
+            return ParticipantGoalClassificationResult(ParticipantGoalCommitmentCandidate(
+                'create', 'goal', '今年通过 N1', None, 'active', '我的目标是今年通过 N1'), (), '处理目标。', 'zh')
+        def reply(self, request):
+            return ParticipantGoalReplyResult('目标以本轮结果为准。', 'zh')
+    known = KnowledgeProvider('备用。', refined=KnowledgeReplyResult(poem, 'zh', 'creative'))
+    opened = open_composite(tmp_path, Recorded(), goal=Goal(), knowledge=known)
+    try:
+        answer = submit(opened, PLAN + '我的目标是今年通过 N1。请给纸灯节写一句短诗。')
+        assert answer.projection.expression_text.count(poem) == 1
+        assert PLAN in answer.projection.expression_text
+        assert ('没能完成目标' if goal_failed else '已记录你的目标') in answer.projection.expression_text
+    finally:
+        opened.app.close()
