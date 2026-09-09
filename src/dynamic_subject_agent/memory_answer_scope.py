@@ -13,6 +13,15 @@ NO_SELECTED_MEMORY = '本轮没有选到可用于回答这条问题的相关活�
 MEMORY_SCOPE_UNAVAILABLE = '这次无法核实相关记忆的可用范围，不能据此断言没有记录或已停用。'
 
 
+def grounded_memory_answer(contents: tuple[str, ...], *, available: bool) -> str:
+    """Render the actual selected basis, never a model's conclusion about it."""
+    if not available:
+        return MEMORY_SCOPE_UNAVAILABLE
+    if not contents:
+        return '这次没有可用于确认这件事的记录，暂时无法确定。'
+    return '你之前说过：' + '\n'.join(f'「{content}」' for content in contents)
+
+
 def is_memory_status_query(message: str) -> bool:
     if exact_memory_status_target(message) is not None:
         return True

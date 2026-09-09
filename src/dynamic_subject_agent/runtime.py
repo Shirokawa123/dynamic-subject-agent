@@ -375,6 +375,8 @@ class ExpressionCandidate:
     is_creative: bool = False
     # A locally selected contextual reply or its honest restatement fallback.
     dialogue_priority: bool = False
+    # Ephemeral capability-local rendering, not a persisted state or permission.
+    is_memory_answer: bool = False
 
 
 class CognitionEngine(ABC):

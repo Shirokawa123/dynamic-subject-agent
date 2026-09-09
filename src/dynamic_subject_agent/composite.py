@@ -516,7 +516,8 @@ class ControlledCompositeCognition(CognitionEngine):
         ) and not participant_goal_selection_priority
         memory_relevant = memory_recalled or memory_changed
         from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY, FAILED_REVISION_REPLY
-        preserve_memory_expression = (memory_proposal.expression_candidate.is_creative
+        memory_answer = memory_proposal.expression_candidate.is_memory_answer
+        preserve_memory_expression = (memory_answer or memory_proposal.expression_candidate.is_creative
             or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY}
             or is_memory_status_query(command.utterance))
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
@@ -546,14 +547,14 @@ class ControlledCompositeCognition(CognitionEngine):
             )
         if participant_goal_relevant and participant_goal_proposal is not None:
             grounded_goal = (unsourced_fact_reply(command.utterance) is not None or reminder_request_kind(command.utterance) is not None
-                or is_memory_status_query(command.utterance))
+                or memory_answer or is_memory_status_query(command.utterance))
             if grounded_goal:
                 selected_goal_ids = set(participant_goal_proposal.impact_envelope.experience.selected_participant_goal_record_ids)
                 goal_text = '\n'.join(f'既有{"目标" if record.kind == "goal" else "承诺"}记录：「{record.terms}」。'
                     for record in context.participant_goal_commitments if record.record_id in selected_goal_ids)
             else:
                 goal_text = _supported_clauses(participant_goal_proposal.expression_candidate.text)
-            if knowledge_cited or memory_relevant or is_memory_status_query(command.utterance):
+            if knowledge_cited or memory_relevant or memory_answer or is_memory_status_query(command.utterance):
                 if not participant_goal_mutation:
                     expression = ExpressionCandidate(
                         text=(

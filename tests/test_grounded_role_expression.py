@@ -258,7 +258,7 @@ def test_mixed_knowledge_memory_keeps_explicit_situated_query(tmp_path):
         app.close()
 
 
-@pytest.mark.parametrize('capability', ['memory', 'knowledge'])
+@pytest.mark.parametrize('capability', ['memory', 'knowledge', 'memory-answer'])
 def test_real_adapter_parses_new_reply_contract_and_keeps_projection(capability):
     import json
     from dynamic_subject_agent.cognition import CredentialRef
@@ -274,6 +274,8 @@ def test_real_adapter_parses_new_reply_contract_and_keeps_projection(capability)
         def post_json(self, *, body, **kwargs):
             self.bodies.append(json.loads(body))
             content = {'reply_text': '可以聊聊。', 'language': 'zh', 'reply_kind': 'conversation'}
+            if capability == 'memory-answer':
+                content = {'reply_text': '', 'language': 'zh', 'reply_kind': 'memory'}
             if capability == 'knowledge':
                 content = {'reply_text': '', 'language': 'zh', 'reply_kind': 'source',
                     'source_quotes': [{'title': ENTRY.title, 'quote': ENTRY.content}]}
@@ -283,9 +285,9 @@ def test_real_adapter_parses_new_reply_contract_and_keeps_projection(capability)
 
     transport = Transport()
     credential = CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)
-    if capability == 'memory':
+    if capability in {'memory', 'memory-answer'}:
         result = DeepSeekLivingMemoryProvider(transport=transport, credential_ref=credential).reply(LivingMemoryReplyRequest('你好。', (), IDENTITY))
-        assert result.reply_kind == 'conversation'
+        assert result.reply_kind == ('memory' if capability == 'memory-answer' else 'conversation')
     else:
         result = DeepSeekKnowledgeProvider(transport=transport, credential_ref=credential).reply(KnowledgeReplyRequest('纸灯节在哪里？',
             (KnowledgeReplyEntry(ENTRY.title, ENTRY.content),), IDENTITY))
@@ -293,8 +295,8 @@ def test_real_adapter_parses_new_reply_contract_and_keeps_projection(capability)
     assert len(transport.bodies) == 1
     body = transport.bodies[0]
     projection = json.loads(body['messages'][1]['content'])
-    expected_fields = {'current_user_message', 'runtime_identity', 'selected_memories' if capability == 'memory' else 'selected_entries'}
-    if capability == 'memory':
+    expected_fields = {'current_user_message', 'runtime_identity', 'selected_memories' if capability in {'memory', 'memory-answer'} else 'selected_entries'}
+    if capability in {'memory', 'memory-answer'}:
         expected_fields.add('recent_dialogue')
         assert projection['recent_dialogue'] == []
     assert set(projection) == expected_fields

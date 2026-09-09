@@ -23,9 +23,9 @@ from dynamic_subject_agent.runtime import (
 from dynamic_subject_agent.timeline import LivingMemoryRecord, SubjectCommand
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn, is_dialogue_control, is_dialogue_continuation, is_previous_expression_rewrite, sentence_revision_index
-from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression, has_creative_sentence, has_supplied_sentence, MISSING_REVISION_REPLY, FAILED_REVISION_REPLY, CREATIVE_REPLY_PREFIX
-from dynamic_subject_agent.reminder_expression import reminder_request_kind
-from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, unsupported_inventory_claim, selected_memory_answer, exact_memory_status_answer, MEMORY_SCOPE_UNAVAILABLE
+from dynamic_subject_agent.runtime_identity_reply import activity_boundary_reply, contextual_reply, repeats_previous_expression, has_creative_sentence, has_supplied_sentence, MISSING_REVISION_REPLY, FAILED_REVISION_REPLY, CREATIVE_REPLY_PREFIX, explicit_creation_request
+from dynamic_subject_agent.reminder_expression import reminder_request_kind, REMINDER_BOUNDARY
+from dynamic_subject_agent.memory_answer_scope import is_memory_status_query, unsupported_inventory_claim, selected_memory_answer, exact_memory_status_answer, MEMORY_SCOPE_UNAVAILABLE, grounded_memory_answer
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal, memory_withdrawal_reply, is_memory_inventory_query, missing_name_answer
 from dynamic_subject_agent.factual_boundary import unsourced_fact_reply
 
@@ -76,8 +76,8 @@ class LivingMemoryReplyResult:
         if not isinstance(value, dict) or set(value) != {'reply_text', 'language', 'reply_kind'}:
             raise ValueError('memory-reply-fields-invalid')
         text, kind = value['reply_text'], value['reply_kind']
-        if (value['language'] != 'zh' or kind not in {'conversation', 'creative', 'activity'}
-            or not isinstance(text, str) or not text.strip() or len(text) > 8_000):
+        if (value['language'] != 'zh' or kind not in {'conversation', 'creative', 'activity', 'memory'}
+            or not isinstance(text, str) or (not text.strip() and kind != 'memory') or len(text) > 8_000):
             raise ValueError('memory-reply-shape-invalid')
         return cls(text, 'zh', kind)
 
@@ -361,6 +361,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         )
         reply_text = contextual_reply(result.reply_text, message=command.utterance)
         is_creative = False
+        is_memory_answer = False
         recent_dialogue = ()
         refinement_used = False
         expression_failure_used = False
@@ -414,13 +415,28 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             if (
                 isinstance(reply_result, LivingMemoryReplyResult)
                 and isinstance(reply_result.reply_text, str)
-                and reply_result.reply_text.strip()
+                and (reply_result.reply_text.strip() or reply_result.reply_kind == 'memory')
                 and reply_result.language == command.language
             ):
-                guarded_reply = contextual_reply(reply_result.reply_text,
-                    message=command.utterance, reply_kind=reply_result.reply_kind,
-                    continuation_allowed=revision_supplied or (bool(recent_dialogue) and is_dialogue_continuation(command.utterance)
-                        and (revision_index is None or revision_ready)))
+                if reply_result.reply_kind == 'memory':
+                    is_memory_answer = result.proposal.action is LivingMemoryAction.NONE
+                    guarded_reply = (grounded_memory_answer(tuple(m.content for m in selected),
+                        available=not disclosure_unavailable and not withheld)
+                        if is_memory_answer else '我收到了你这次的说明。')
+                    activity = activity_boundary_reply(command.utterance)
+                    if reminder_request_kind(command.utterance) is not None:
+                        guarded_reply, is_memory_answer = REMINDER_BOUNDARY, False
+                    elif activity is not None:
+                        guarded_reply, is_memory_answer = activity, False
+                    elif explicit_creation_request(command.utterance) or is_dialogue_continuation(command.utterance):
+                        guarded_reply, is_memory_answer = None, False
+                        reply_text = '这次没能给出符合你请求的回复，我不会用记忆记录代替当前创作。'
+                        expression_failure_used = True
+                else:
+                    guarded_reply = contextual_reply(reply_result.reply_text,
+                        message=command.utterance, reply_kind=reply_result.reply_kind,
+                        continuation_allowed=revision_supplied or (bool(recent_dialogue) and is_dialogue_continuation(command.utterance)
+                            and (revision_index is None or revision_ready)))
                 if (guarded_reply is not None and recent_dialogue and is_dialogue_continuation(command.utterance)
                     and repeats_previous_expression(guarded_reply, recent_dialogue[-1].assistant_text)):
                     guarded_reply = None
@@ -451,6 +467,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         if factual_boundary is not None:
             reply_text = factual_boundary
             is_creative = False
+            is_memory_answer = False
         memory_scope_checked = is_memory_status_query(command.utterance) or (not is_creative and unsupported_inventory_claim(reply_text))
         if memory_scope_checked:
             reply_text = selected_memory_answer(tuple(m.content for m in active if m.memory_id in recalled_ids)[:5],
@@ -489,7 +506,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 text=reply_text,
                 language=result.language,
                 is_creative=is_creative,
-                dialogue_priority=memory_scope_checked or reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
+                is_memory_answer=is_memory_answer,
+                dialogue_priority=is_memory_answer or memory_scope_checked or reminder_request_kind(command.utterance) is not None or factual_boundary is not None or self._split and (is_dialogue_continuation(command.utterance)
                     or expression_failure_used or bool(recent_dialogue) and refinement_used),
             ),
         )
