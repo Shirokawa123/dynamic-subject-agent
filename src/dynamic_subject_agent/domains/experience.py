@@ -25,6 +25,7 @@ from dynamic_subject_agent.domains._shared import (
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
 from dynamic_subject_agent.participant_goals import (
     MAX_TERMS_CHARS,
+    PARTICIPANT_GOAL_FAILURE_CODES,
     POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
     POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
     POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
@@ -264,13 +265,7 @@ class ExperienceDomain:
         if participant_goal_failure is not None and (
             not isinstance(participant_goal_failure, str)
             or participant_goal_failure
-            not in {
-                "participant-goal-classification-failed",
-                "participant-goal-classification-invalid",
-                "participant-goal-selection-invalid",
-                "participant-goal-reply-failed",
-                "participant-goal-reply-invalid",
-            }
+            not in PARTICIPANT_GOAL_FAILURE_CODES
             or participant_goal_candidate is not None
             or selected_ids
         ):

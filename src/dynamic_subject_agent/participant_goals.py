@@ -16,6 +16,10 @@ MAX_TERMS_CHARS = 500
 MAX_EVIDENCE_QUOTE_CHARS = 1_000
 ACTIVE_RECORD_LIMIT = 20
 REPLY_RECORD_LIMIT = 5
+PARTICIPANT_GOAL_FAILURE_CODES = frozenset({
+    'participant-goal-classification-failed', 'participant-goal-classification-invalid',
+    'participant-goal-selection-invalid', 'participant-goal-reply-failed', 'participant-goal-reply-invalid',
+})
 
 DIRECT_OPERATION_PATTERNS = (
     (r'^我给自己定(?:个|一个)目标[：:]([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),

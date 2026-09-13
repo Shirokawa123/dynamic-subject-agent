@@ -23,6 +23,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from dynamic_subject_agent.participant_goals import (
+    PARTICIPANT_GOAL_FAILURE_CODES,
     POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
     POLICY_ID as PARTICIPANT_GOAL_POLICY_ID,
     POLICY_VERSION as PARTICIPANT_GOAL_POLICY_VERSION,
@@ -1001,6 +1002,14 @@ class ExperienceDomainOutcome:
                 return None
             memory = value.get('living_memory')
             if memory is None:
+                code = value.get('code')
+                if isinstance(code, str) and code in PARTICIPANT_GOAL_FAILURE_CODES:
+                    goal = value.get('participant_goal_commitment')
+                    return False if (
+                        self.decision.rule_version == 'experience-1.0'
+                        and set(value) <= {'code', 'provenance', 'participant_goal_commitment'}
+                        and goal == {'status': 'failed-closed', 'action': 'noop', 'reason_code': code}
+                    ) else None
                 known_codes = {'experience.no-applicable-candidate', 'knowledge.accepted',
                     'knowledge.identity-invalid', 'knowledge.no-projected-candidates',
                     'knowledge.citation-not-projected', 'knowledge.citation-duplicated',
