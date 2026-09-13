@@ -1,0 +1,48 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我们顺手给周六的餐桌写两句小卡片吧，要明亮一点，不要像广告。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我们顺手给周六的餐桌写两句小卡片吧，要明亮一点，不要像广告。", "selected_contents": [], "recent_dialogue": [{"user_text": "那我写笔记时现在喜欢什么颜色？早餐的杯垫别算进来。", "assistant_text": "你之前说过：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」"}, {"user_text": "谢谢，今天先到这里。周六的早餐我会自己慢慢准备。", "assistant_text": "好，周六慢慢准备就好。"}], "reply_kind": "creative", "reply_text": "愿晨光落在杯沿，也落在你手边。\n愿这一餐简单明亮，像刚洗过的果子。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "那张餐桌卡片我先自己写了两句：「雨停以后，桌上有光。愿周六的早晨慢一点。」第二句想换得更像邀请，但别太郑重。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "那张餐桌卡片我先自己写了两句：「雨停以后，桌上有光。愿周六的早晨慢一点。」第二句想换得更像邀请，但别太郑重。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "雨停以后，桌上有光。\n周六早上，来坐一会儿吧。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句也别再提雨，换成窗边有光的感觉。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句也别再提雨，换成窗边有光的感觉。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "窗边有光，落在纸上，像一句还没说完的话。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「雨停以后，桌上有光。愿周六的早晨慢一点。」第一句也别再提雨，换成窗边有光的感觉。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「雨停以后，桌上有光。愿周六的早晨慢一点。」第一句也别再提雨，换成窗边有光的感觉。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "窗边有光，桌上有光。愿周六的早晨慢一点。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "咱们一起给读书角写两句短笺，轻松一点。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "咱们一起给读书角写两句短笺，轻松一点。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "愿翻开的每一页，都像雨后窗边一样安静。\n愿合上书的你，心里还留着一点暖。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句也想换成欢迎邻居的感觉。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句也想换成欢迎邻居的感觉。", "selected_contents": [], "recent_dialogue": [{"user_text": "咱们一起给读书角写两句短笺，轻松一点。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿合上书的你，心里还留着一点暖。"}], "reply_kind": "creative", "reply_text": "愿翻开的每一页，都像雨后窗边一样安静。\n愿来坐坐的你，像回到邻居家一样自在。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

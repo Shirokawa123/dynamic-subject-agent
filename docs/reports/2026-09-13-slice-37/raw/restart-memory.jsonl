@@ -1,0 +1,24 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句希望改得更像轻声欢迎。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句希望改得更像轻声欢迎。", "selected_contents": [], "recent_dialogue": [{"user_text": "第二句也想换成欢迎邻居的感觉。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿来坐坐的你，像回到邻居家一样自在。"}], "reply_kind": "creative", "reply_text": "愿推门进来的你，像被轻声唤了一声，慢慢坐下就好。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我刚写了两句：「窗边留着光。愿早晨慢一点。」第二句想改得像邀请。", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我刚写了两句：「窗边留着光。愿早晨慢一点。」第二句想改得像邀请。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "窗边留着光。愿早晨慢一点，也等你来坐。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "如果我们一起给客厅写两句卡片，你会怎么做？", "active_contents": ["写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "如果我们一起给客厅写两句卡片，你会怎么做？", "selected_contents": [], "recent_dialogue": [{"user_text": "第一句希望改得更像轻声欢迎。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿推门进来的你，像被轻声唤了一声，慢慢坐下就好。\n愿来坐坐的你，像回到邻居家一样自在。"}, {"user_text": "我刚写了两句：「窗边留着光。愿早晨慢一点。」第二句想改得像邀请。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边留着光。愿早晨慢一点，也等你来坐。"}], "reply_kind": "conversation", "reply_text": "我会先想这两句是给谁看的：进门的人、来坐的人，还是我们自己。然后一句放轻，像招呼；一句留白，像把位置让出来。比如可以写成“推门进来，先不用说话”和“这里有空位，也有热茶”。你想让卡片更偏欢迎，还是更偏安静？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

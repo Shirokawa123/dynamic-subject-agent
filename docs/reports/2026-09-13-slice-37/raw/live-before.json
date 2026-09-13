@@ -1,0 +1,321 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s37",
+  "profile_id": "<internal-id>",
+  "display_name": "许澄",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": false
+    },
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "许澄",
+      "freeze_basis_digest": "e74d9d23e312ea4795599639839453565116ca059e2cf12bd586f618cb51028d",
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "今天下雨，我下班后想在家做一顿简单的晚饭，再把厨房收拾干净。你会怎么陪我把这件小事想得轻一点？",
+      "user_language": "zh",
+      "assistant_text": "资料《社区厨房轮值》写的是：「许澄在社区厨房做轮值。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294235845287,
+      "explanations": [],
+      "citations": [
+        {
+          "title": "社区厨房轮值",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294241578298,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」"
+        },
+        {
+          "capability": "中期基线",
+          "kind": "kept",
+          "message": "记录到一条“鼓舞”证据；独立证据尚不足，基线保持“平稳”。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "不过写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294245964910,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "最近做早餐时，浅灰色的杯垫也让我觉得舒服。",
+      "user_language": "zh",
+      "assistant_text": "浅灰色听起来比青柠色安静一些，和早晨的节奏挺搭。是最近才开始留意到它，还是本来就一直在用？",
+      "assistant_language": "zh",
+      "published_at_us": 1789294252204140,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "是后来开始用的，青柠色我也还喜欢，早上会轮换着用。",
+      "user_language": "zh",
+      "assistant_text": "青柠色和浅灰色轮着来，早晨换着看，心情也跟着有点不一样。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294273596337,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。」\n\n这次没有保存或修改目标与承诺，请明确说明要记录或修改的内容。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294280307581,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。」"
+        },
+        {
+          "capability": "目标与承诺",
+          "kind": "kept",
+          "message": "表述没有通过明确证据规则，现有记录保持不变。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 7,
+      "user_text": "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。",
+      "user_language": "zh",
+      "assistant_text": "已更正这条记忆，新内容是：「菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。」\n\n这次没能完成目标或承诺的处理，原有记录保持不变。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294287199914,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。」"
+        },
+        {
+          "capability": "目标与承诺",
+          "kind": "failed",
+          "message": "本轮目标与承诺处理未能完成；其他能力的结果仍然有效。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 8,
+      "user_text": "我们顺手给周六的餐桌写两句小卡片吧，要明亮一点，不要像广告。",
+      "user_language": "zh",
+      "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294293532107,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 9,
+      "user_text": "（诊断对照）我做早餐时偏爱浅灰色杯垫。",
+      "user_language": "zh",
+      "assistant_text": "青柠色和浅灰色，听起来是两种不同的早晨心情。你更喜欢哪一种？",
+      "assistant_language": "zh",
+      "published_at_us": 1789294318173874,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 10,
+      "user_text": "是补充。",
+      "user_language": "zh",
+      "assistant_text": "本轮没有新增或更正记忆。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294330165709,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 11,
+      "user_text": "我回来了。刚才早餐杯垫和周六请朋友吃饭的事，你还记得哪些？",
+      "user_language": "zh",
+      "assistant_text": "你之前说过：「菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。」\n「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294393617215,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 2 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 12,
+      "user_text": "我做早餐时现在喜欢什么颜色？写笔记的颜色不要混进来。",
+      "user_language": "zh",
+      "assistant_text": "你之前说过：「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294399222633,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 13,
+      "user_text": "那张餐桌卡片我先自己写了两句：「雨停以后，桌上有光。愿周六的早晨慢一点。」第二句想换得更像邀请，但别太郑重。",
+      "user_language": "zh",
+      "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294405113757,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 14,
+      "user_text": "第一句也别再提雨，换成窗边有光的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294411018168,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 15,
+      "user_text": "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。",
+      "user_language": "zh",
+      "assistant_text": "已更正这条记忆，新内容是：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294430248123,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 16,
+      "user_text": "那我写笔记时现在喜欢什么颜色？早餐的杯垫别算进来。",
+      "user_language": "zh",
+      "assistant_text": "你之前说过：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789294436195731,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 1 条既有记忆。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 17,
+      "user_text": "谢谢，今天先到这里。周六的早餐我会自己慢慢准备。",
+      "user_language": "zh",
+      "assistant_text": "好，周六慢慢准备就好。",
+      "assistant_language": "zh",
+      "published_at_us": 1789294441492065,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "used",
+          "message": "本轮召回了 2 条既有记忆。"
+        }
+      ],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。",
+      "status": "superseded",
+      "memory_kind": "plan"
+    },
+    {
+      "content": "写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。",
+      "status": "superseded",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。",
+      "status": "active",
+      "memory_kind": "durable"
+    }
+  ],
+  "knowledge_count": 1,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}
