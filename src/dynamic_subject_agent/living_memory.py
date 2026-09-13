@@ -446,6 +446,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                         message=command.utterance, reply_kind=reply_result.reply_kind,
                         continuation_allowed=revision_supplied or (bool(recent_dialogue) and is_dialogue_continuation(command.utterance)
                             and (revision_index is None or revision_ready)))
+                if guarded_reply is not None and guarded_reply.startswith(CREATIVE_REPLY_PREFIX) and revision_index is not None and revision_ready:
+                    from dynamic_subject_agent.runtime_identity_reply import complete_sentence_revision, supplied_draft_text
+                    original = supplied_draft_text(command.utterance) if revision_supplied else recent_dialogue[-1].assistant_text
+                    revised = complete_sentence_revision(guarded_reply, original, revision_index)
+                    guarded_reply = (contextual_reply(revised, message=command.utterance, reply_kind='creative', continuation_allowed=True)
+                                     if revised is not None else None)
                 if (guarded_reply is not None and recent_dialogue and is_dialogue_continuation(command.utterance)
                     and repeats_previous_expression(guarded_reply, recent_dialogue[-1].assistant_text)):
                     guarded_reply = None

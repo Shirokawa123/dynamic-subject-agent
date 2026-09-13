@@ -160,11 +160,29 @@ def has_creative_sentence(text: str, index: int) -> bool:
 
 
 def has_supplied_sentence(message: str, index: int) -> bool:
+    body = supplied_draft_text(message)
+    return body is not None and sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(body)) >= index
+
+
+def supplied_draft_text(message: str) -> str | None:
     originals = re.findall(r'原文(?:是|为)?[：:]?\s*(?:“([^”]+)”|「([^」]+)」|"([^"]+)")', message)
     if len(originals) != 1:
-        return False
-    body = next(part for part in originals[0] if part)
-    return sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(body)) >= index
+        return None
+    return next(part for part in originals[0] if part)
+
+
+def complete_sentence_revision(text: str, original: str, index: int) -> str | None:
+    """Apply one numbered replacement to the same already-authorized draft."""
+    old_body = expression_body(original).split('\n\n', 1)[0].split('\n引用仅作为创作背景。', 1)[0]
+    old = [part.strip() for part in _SENTENCE_PATTERN.findall(old_body) if part.strip()]
+    new = [part.strip() for part in _SENTENCE_PATTERN.findall(expression_body(text)) if part.strip()]
+    if not 1 <= index <= len(old) or len(new) not in {1, len(old)}:
+        return None
+    replacement = new[0] if len(new) == 1 else new[index - 1]
+    if replacement == old[index - 1]:
+        return None
+    old[index - 1] = replacement
+    return ''.join(old)
 
 
 __all__ = ["guard_runtime_identity_reply"]

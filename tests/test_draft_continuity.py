@@ -104,3 +104,41 @@ def test_goal_failure_does_not_override_explicit_history_control(tmp_path):
         assert provider.replies[-1].recent_dialogue == ()
     finally:
         opened.app.close()
+
+
+def test_one_replacement_sentence_does_not_discard_the_rest_of_the_draft(tmp_path):
+    class Partial(DraftProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return LivingMemoryReplyResult('窗边停着一缕风。' if request.current_user_message.startswith('第二句') else POEM, 'zh', 'creative')
+    opened = open_composite(tmp_path, Partial(), goal=NoopGoal())
+    try:
+        submit(opened, '请写两句关于灯光的短诗。')
+        edited = submit(opened, '第二句我想改成带窗的意象。')
+        assert '灯光落在纸上。' in edited.projection.expression_text
+        assert '窗边停着一缕风。' in edited.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('reply,accepted', [
+    ('擅自改动了第一句。窗边停着一缕风。', True),
+    ('窗边停着一缕风。额外的一句。还有另一句。', False),
+    ('晚风经过窗边。', False),
+])
+def test_numbered_edit_changes_only_its_target_or_reports_failure(tmp_path, reply, accepted):
+    class Partial(DraftProvider):
+        def reply(self, request):
+            self.replies.append(request)
+            return LivingMemoryReplyResult(reply if request.current_user_message.startswith('第二句') else POEM, 'zh', 'creative')
+    opened = open_composite(tmp_path, Partial(), goal=NoopGoal())
+    try:
+        submit(opened, '请写两句关于灯光的短诗。')
+        result = submit(opened, '第二句我想改成带窗的意象。')
+        if accepted:
+            assert REVISED in result.projection.expression_text
+            assert '擅自改动' not in result.projection.expression_text
+        else:
+            assert '没有形成新的改写版本' in result.projection.expression_text
+    finally:
+        opened.app.close()
