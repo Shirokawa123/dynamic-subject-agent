@@ -113,6 +113,9 @@ def test_memory_non_success_does_not_hide_goal_or_creation_result(tmp_path, mode
     '如果我的目标是今年读完两本书，你怎么看？',
     '我之前说过：我的目标是今年读完两本书。',
     '我的目标是今年读完两本书？',
+    '朋友说：“最近很忙。我的目标是今年读完两本书。以后再聊。”',
+    '朋友说：「最近很忙。我的目标是今年读完两本书。以后再聊。」',
+    '朋友说：“最近很忙。我的目标是今年读完两本书。',
 ])
 def test_reported_hypothetical_or_question_goal_is_not_promoted(tmp_path, goal_clause):
     # Even a provider trying to promote a quoted substring must not gain write authority.
@@ -197,6 +200,17 @@ def test_quoted_or_withdrawn_creation_is_not_a_missing_requirement(tmp_path, tai
     try:
         result = submit(opened, PLAN + '我的目标是今年读完两本书。' + tail)
         assert result.projection.participant_goal_commitment_status == 'accepted'
+        assert POEM not in result.projection.expression_text
+        assert '没有完成你请求的创作' not in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('tail', ['如果明天下雨，请写两句关于清晨的短诗。', '假如样张没到，请写两句关于清晨的短诗。'])
+def test_conditional_creation_tail_is_not_lifted_to_a_current_request(tmp_path, tail):
+    opened = open_composite(tmp_path, CompoundMemory())
+    try:
+        result = submit(opened, PLAN + tail)
         assert POEM not in result.projection.expression_text
         assert '没有完成你请求的创作' not in result.projection.expression_text
     finally:

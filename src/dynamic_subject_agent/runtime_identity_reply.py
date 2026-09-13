@@ -59,7 +59,8 @@ def activity_boundary_reply(message: str) -> str | None:
 
 
 def _creation_requests(message: str) -> tuple[int | None, ...]:
-    message = expression_request_text(message)
+    from dynamic_subject_agent.current_message import mask_quoted_text
+    message = expression_request_text(mask_quoted_text(message))
     if is_rewrite_withdrawn(message):
         return ()
     # A constraint on style does not withdraw the requested act of writing.
@@ -69,6 +70,9 @@ def _creation_requests(message: str) -> tuple[int | None, ...]:
     if message.strip().startswith('如果让你') and '你会写什么' in message:
         return (None,)
     requests = []
+    # Keep conditional scope until after deciding whether a sentence is current.
+    message = '。'.join(sentence for sentence in re.split(r'[。！？!?；;\n]', message)
+        if not re.match(r'^\s*(?:如果|假如|假设|要是)', sentence))
     # An imperative clause, not a mention inside a past account or quotation.
     for clause in re.split(r'[。！？!?，,；;\n]', message):
         clause = clause.strip()
