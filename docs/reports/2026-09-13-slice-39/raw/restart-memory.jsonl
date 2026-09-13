@@ -1,0 +1,49 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我的目标是什么？", "active_contents": ["周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": ["菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "周六我准备请两个朋友来吃早餐；"], "action": "none", "base_reply": "你的目标是先定下三道菜，周六请两个朋友来吃早餐的安排不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我的目标是什么？", "selected_contents": ["周六我准备请两个朋友来吃早餐；", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "菜单这个目标我想改成准备好食材，安排不变。", "active_contents": ["周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "revise", "base_reply": "好，那菜单这个目标就改成准备好食材，朋友来吃早餐的安排保持不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "菜单这个目标我想改成准备好食材，安排不变。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把目标改成准备好食材，安排不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "朋友什么时候来吃早餐？", "active_contents": ["周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": ["周六我准备请两个朋友来吃早餐；"], "action": "none", "base_reply": "你之前说周六准备请两个朋友来吃早餐。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "朋友什么时候来吃早餐？", "selected_contents": ["周六我准备请两个朋友来吃早餐；"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "菜单这个目标我想改成两道菜，假设下雨早餐安排不变。", "active_contents": ["周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "revise", "base_reply": "好，菜单目标改成先定下两道菜；下雨的话早餐安排也不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "菜单这个目标我想改成两道菜，假设下雨早餐安排不变。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "好，菜单目标改成两道菜，下雨天早餐的安排保持不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "周日我准备和同事去出游；我也给自己定个目标：周六前整理出游清单。", "active_contents": ["周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": [], "action": "create", "base_reply": "好，我记下了：周日你和同事去出游，周六前整理出游清单。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "周日我准备和同事去出游；我也给自己定个目标：周六前整理出游清单。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "周日和同事出游，周六前把清单理出来，这个安排挺清楚的。需要的话，我可以陪你一起想想清单里该放哪些类别。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "出游清单这个目标我想改成先列好必需品，同事一起出游的安排不变。", "active_contents": ["周日我准备和同事去出游；", "周六我准备请两个朋友来吃早餐；", "我做信纸时偏爱浅黄色。", "我做信纸时偏爱浅灰色。", "我做书套时偏爱米白色。", "我做邀请卡时偏爱浅杏色。", "我做邀请卡时偏爱雾蓝色。", "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。"], "selected_contents": ["周日我准备和同事去出游；"], "action": "create", "base_reply": "好，我记住了：出游清单先列好必需品，周日和同事一起出游的安排不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "出游清单这个目标我想改成先列好必需品，同事一起出游的安排不变。", "selected_contents": ["周日我准备和同事去出游；"], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，出游清单先列必需品，和同事出游的安排不变。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

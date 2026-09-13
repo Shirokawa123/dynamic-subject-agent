@@ -1,0 +1,4 @@
+Code/tests: 2c9d8fa
+Command: .venv/bin/python.exe -m pytest -q --tb=short --basetemp=C:/Users/30252/AppData/Local/Temp/dsa-s39-full-closed-tail
+759 passed in 601.01s (0:10:01)
+Exit code: 0

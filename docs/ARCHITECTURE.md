@@ -54,6 +54,8 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 ## 数据
 
+Slice-39扩展当前明确目标操作：“我也给自己定个/一个目标：…”与“〔名称〕这个/这项目标我想/希望改成/改为/换成〔内容〕”。名称须在完整active目标库存的条款，或当前修订记录的逐字修改证据中唯一匹配；未知/重名不猜测，不建立永久别名或通用历史指代。后附“不变”仅支持裸安排/计划、原有/原来/其他/其它/别的限定，以及我/我们/朋友/同事/家人来或一起吃早午晚餐、聚餐、见面、出游的安排/计划；不认识、条件或其他变化须分开说明，不能截掉后执行。Memory扣除完整明确目标操作及受支持不变说明，独立连续安排原文仍可保存；拒绝的混合修改不能借Memory改写。目标本地读取最多100条active，达到上限或完整性未知时拒绝变化，Provider仍仅用原20条窗口和原字段/提示/调用预算。最终成功回执读取实际Outcome，原完整消息/引用/撤回约束保持；见 [Slice-39报告](reports/2026-09-13-slice-39/REPORT.md)。
+
 Slice-38用户明确批准限定偏好澄清例外：原声明提供内容、下一短答在30分钟内提供选择，二者以canonical问题引用绑定，Python重新核对身份、冻结前缀、完整库存和权限后一次Publication。待确认片段只存原Timeline，不新建store或向Provider发送历史状态依据；普通Memory仍要求当前逐字证据，原隐私控制保持。取消/换话题/过期/未知/重复不能复活旧问题。具体字段与验收见 [设计](reports/2026-09-13-slice-38/DESIGN.md)。
 
 Slice-37将当前自然共同写作框架接入既有许可/原稿/编号修改：协作前缀规范化后复用原创作和句数检查；“我…写了/写的N句：引号原稿”与原文声明统一计数，只在唯一可用时编辑。当前原稿多份/不足/格式不可用不得回退旧历史；编号动作与当前句目标绑定，引用/假设不作指令。用户明确保留“别再提”等原历史控制，因此独立验收第14原样仍受限，需要当前重贴后修改，不加入措辞例外。Provider字段、用途、历史预算与状态权限不变；自然目标及短答澄清未扩展。见 [Slice-37报告](reports/2026-09-13-slice-37/REPORT.md)。
@@ -98,7 +100,7 @@ Dogfood conversation history 是 `TimelineEngine` 的只读投影：查询会重
 
 逐轮因果解释只读取当轮已提交 Outcome 的 typed summary，由 Python 确定性翻译为 changed/used/kept/failed 用户语言；citation 标题通过当前身份 sealed Knowledge 解析。当前与历史轮次复用同一说明投影，下一轮、刷新和重启恢复时一并显示；不能用今天的 Memory/目标卡反推过去。旧主回复保留原文，即使与当轮失败说明矛盾。普通 NoOp 不显示为变化；Relationship 声称拒绝、目标直接查询、Situated carry/直接命令和 Medium 证据门槛均不得由模型事后编写理由。
 
-目标/承诺操作主确认在既有 `CognitionEngine.express` 裁决后阶段由最终 Experience Outcome 确定：accepted 才确认成功，rejected/FailedClosed/no-candidate 不复用模型成功台词；无关目标故障只留说明，保留独立主表达。精确目标查询（包括空列表）直接读取 canonical 记录。自然创建仅支持当前用户直接“我给自己定个目标：…”；命名修订须匹配旧 terms，受限“写X→X写完”允许原报告写作句，其他意译不猜测，多目标仍需完整旧 terms。Domain 检查整条 admitted message 的混合闭集命令与撤回，不能被截短 evidence 绕过；Provider policy/字段不变。
+目标/承诺操作主确认在既有 `CognitionEngine.express` 裁决后阶段由最终 Experience Outcome 确定：accepted 才确认成功，rejected/FailedClosed/no-candidate 不复用模型成功台词；无关目标故障只留说明，保留独立主表达。精确目标查询（包括空列表）直接读取 canonical 记录。自然创建与命名修订见上述Slice-39限定扩展；原命名修订路径仍匹配旧 terms，受限“写X→X写完”允许原报告写作句，其他意译不猜测，多目标需要可唯一核实的明确对象。Domain 检查整条 admitted message 的混合闭集命令与撤回，不能被截短 evidence 绕过；Provider policy/字段不变。
 
 表达组合有独立于状态裁决的发言预算：Memory/Knowledge/目标形成非状态主干时，Situated 与 Medium 只提交 typed 结果而不追加重复回复；无非状态主干时 Situated 优先于 Medium，显式状态查询以其确定性 priority 覆盖普通 carry。未发言不等于 NoOp、Rejected 或失败，Domain Outcome 保持完整。
 

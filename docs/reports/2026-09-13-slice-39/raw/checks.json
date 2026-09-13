@@ -1,0 +1,23 @@
+{
+  "turns": 14,
+  "head_start": 47,
+  "head_end": 60,
+  "final_active_goals": [
+    "先列好必需品",
+    "准备好食材",
+    "先整理十张照片"
+  ],
+  "original_memories_preserved": true,
+  "revision_memories_unchanged": true,
+  "conditional_goal_and_memory_unchanged": true,
+  "reopened_fields": {
+    "display_name": true,
+    "build_id": true,
+    "memories": true,
+    "participant_goals": true,
+    "conversation_history_status": true,
+    "conversation_history": true
+  },
+  "live_code": "6b198b7",
+  "restart_and_final_code": "2c9d8fa"
+}

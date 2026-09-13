@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s38`。本地明确询问新颜色“补充还是替换”后，下一条30分钟内的“是补充”“换成新的”“算了”可完成或取消一次偏好更新；问题与两轮证据绑定在原Timeline，重启可恢复，重复/换话题/过期不会回找旧问题。借鉴Rasa收集流程与LangGraph恢复机制，复用现有持久化与裁决，未引入新框架或向状态模型外发历史。19项专项及20轮真实后台见 [Slice-38报告](docs/reports/2026-09-13-slice-38/REPORT.md)。仅明确问题和有限短答受支持，复杂替换仍需完整原文；自然写作及原隐私边界保持，自然目标为下一项，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s39`。同一句“安排＋我也给自己定个目标”可分别保存；“菜单这个目标我想改成…”在明确唯一匹配时只修改目标，早餐安排保持原文，重启后可继续修改。借鉴Rasa的动作与参数绑定，复用既有ModelGateway与Python裁决，未引入新框架或外发额外历史。17项专项及14轮真实后台见 [Slice-39报告](docs/reports/2026-09-13-slice-39/REPORT.md)。名称和“不变说明”仍为有限语法，不明条件或多目标要求分开说明；既有偏好确认、自然写作和隐私边界保持。其他边界见 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

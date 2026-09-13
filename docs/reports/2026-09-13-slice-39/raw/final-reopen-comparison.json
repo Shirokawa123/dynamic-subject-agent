@@ -1,0 +1,8 @@
+{
+  "display_name": true,
+  "build_id": true,
+  "memories": true,
+  "participant_goals": true,
+  "conversation_history_status": true,
+  "conversation_history": true
+}
