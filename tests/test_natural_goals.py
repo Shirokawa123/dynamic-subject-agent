@@ -137,7 +137,8 @@ def test_natural_selection_uses_full_local_inventory_not_provider_window(tmp_pat
         opened.app.close()
 
 
-@pytest.mark.parametrize('tail', ['如果下雨早餐安排不变', '早餐取消但午餐安排不变'])
+@pytest.mark.parametrize('tail', ['如果下雨早餐安排不变', '早餐取消但午餐安排不变',
+    '假设下雨早餐安排不变', '只有晴天早餐安排不变'])
 def test_mixed_change_is_not_disguised_as_an_unchanged_arrangement(tmp_path, tail):
     class Whole(Memory):
         def propose(self, request):

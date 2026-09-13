@@ -23,9 +23,12 @@ def named_goal_changes(message: str) -> tuple[NamedGoalChange, ...]:
         supported = bool(name) and not any(word in name for word in ('朋友的', '他的', '她的', '你的', '我们的', '如果', '假如'))
         if len(parts) > 1:
             tail = parts[1].strip()
-            supported = (supported and re.fullmatch(r'[^，,。！？!?；;]{0,100}(?:安排|计划)(?:保持)?不变', tail) is not None
-                and not any(marker in tail for marker in ('如果', '假如', '要是', '除非', '否则', '但', '不过',
-                    '取消', '改', '换', '推迟', '提前', '不再', '停止', '新增', '增加', '调整', '减少')))
+            # A closed nominal structure cannot silently swallow another action
+            # or condition. Unrecognized context must be stated separately.
+            supported = supported and re.fullmatch(
+                r'(?:(?:原有|原来|其他|其它|别的)(?:的)?|'
+                r'(?:我|我们|朋友|同事|家人)(?:来|一起)?(?:吃(?:早餐|午餐|晚餐)|聚餐|见面|出游)的)?'
+                r'(?:安排|计划)(?:保持)?不变', tail) is not None
         changes.append(NamedGoalChange(name, match[2].strip(), parts[0], statement.start, statement.end, supported))
     return tuple(changes)
 
