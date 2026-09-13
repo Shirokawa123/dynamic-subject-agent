@@ -137,6 +137,26 @@ def test_natural_selection_uses_full_local_inventory_not_provider_window(tmp_pat
         opened.app.close()
 
 
+@pytest.mark.parametrize('tail', ['如果下雨早餐安排不变', '早餐取消但午餐安排不变'])
+def test_mixed_change_is_not_disguised_as_an_unchanged_arrangement(tmp_path, tail):
+    class Whole(Memory):
+        def propose(self, request):
+            if request.current_user_message == CREATE:
+                return super().propose(request)
+            return LivingMemoryProviderResult(LivingMemoryProposal(LivingMemoryAction.REVISE, request.current_user_message,
+                request.active_memories[0].memory_id, memory_kind='plan'), '提出修改。', '收到。', 'zh')
+    opened = open_composite(tmp_path, Whole(), goal=Goal())
+    try:
+        submit(opened, CREATE)
+        old_goals, old_memories = goals(opened), records(opened)
+        result = submit(opened, '菜单这个目标我想改成只做两道菜，' + tail + '。')
+        assert result.projection.participant_goal_commitment_status == 'rejected'
+        assert result.projection.living_memory_status == 'rejected'
+        assert goals(opened) == old_goals and records(opened) == old_memories
+    finally:
+        opened.app.close()
+
+
 def test_unknown_named_goal_does_not_select_an_unrelated_singleton(tmp_path):
     opened = open_composite(tmp_path, DialogueProvider(), goal=Goal())
     try:

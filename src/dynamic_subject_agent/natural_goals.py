@@ -22,7 +22,10 @@ def named_goal_changes(message: str) -> tuple[NamedGoalChange, ...]:
         name = match[1].removeprefix('我的').strip()
         supported = bool(name) and not any(word in name for word in ('朋友的', '他的', '她的', '你的', '我们的', '如果', '假如'))
         if len(parts) > 1:
-            supported = supported and re.fullmatch(r'[^，,。！？!?；;]{0,100}(?:安排|计划)(?:保持)?不变', parts[1].strip()) is not None
+            tail = parts[1].strip()
+            supported = (supported and re.fullmatch(r'[^，,。！？!?；;]{0,100}(?:安排|计划)(?:保持)?不变', tail) is not None
+                and not any(marker in tail for marker in ('如果', '假如', '要是', '除非', '否则', '但', '不过',
+                    '取消', '改', '换', '推迟', '提前', '不再', '停止', '新增', '增加', '调整', '减少')))
         changes.append(NamedGoalChange(name, match[2].strip(), parts[0], statement.start, statement.end, supported))
     return tuple(changes)
 
@@ -32,5 +35,5 @@ def matching_goal_refs(change: NamedGoalChange, targets) -> tuple[str, ...]:
     return tuple(target.turn_ref for target in targets if target.record.kind == 'goal'
         and target.record.status == 'active' and (
             change.name in target.record.terms
-            or any(prior.supported and prior.name == change.name
+            or target.record.revision_of_record_id is not None and any(prior.supported and prior.name == change.name
                 for prior in named_goal_changes(target.record.evidence_quote))))
