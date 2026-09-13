@@ -71,9 +71,8 @@ def sentence_revision_index(message: str) -> int | None:
     text = expression_request_text(message)
     if any(marker in text for marker in ('什么意思', '是否', '是不是')):
         return None
-    indexes = [match[1] for clause in re.split(r'[。！？!?，,]', text)
-        if (match := re.match(r'^第([一二三123])句(?:我想|请)?(?:保留|改成|换成|改为)', clause.strip()))]
-    return {'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[indexes[0]] if len(indexes) == 1 else None
+    from dynamic_subject_agent.natural_writing import natural_sentence_index
+    return natural_sentence_index(message)
 
 
 def shortening_limit(message: str) -> int | None:

@@ -75,7 +75,8 @@ def _creation_requests(message: str) -> tuple[int | None, ...]:
         if not re.match(r'^\s*(?:如果|假如|假设|要是)', sentence))
     # An imperative clause, not a mention inside a past account or quotation.
     for clause in re.split(r'[。！？!?，,；;\n]', message):
-        clause = clause.strip()
+        from dynamic_subject_agent.natural_writing import collaborative_clause
+        clause = collaborative_clause(clause.strip())
         version = re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:短句|祝福|文案|短诗)(?:吧)?', clause)
         imperative = re.match(r'^(?:(?:请|帮我|替我)(?:给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?P<count>一句|两句|2句|一首|个|一个)|配(?:一句话|一句|个文案)|创作|想象一下|编(?:一个|个))', clause)
         if version or imperative:
@@ -166,7 +167,11 @@ def has_supplied_sentence(message: str, index: int) -> bool:
 
 def supplied_draft_text(message: str) -> str | None:
     originals = re.findall(r'原文(?:是|为)?[：:]?\s*(?:“([^”]+)”|「([^」]+)」|"([^"]+)")', message)
-    if len(originals) != 1:
+    from dynamic_subject_agent.natural_writing import authored_draft
+    authored = authored_draft(message)
+    if not originals:
+        return authored
+    if len(originals) != 1 or authored is not None:
         return None
     return next(part for part in originals[0] if part)
 
