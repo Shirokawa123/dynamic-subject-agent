@@ -108,7 +108,7 @@ def test_explicit_subject_query_excludes_unrelated_record(tmp_path):
 @pytest.mark.parametrize('message, expected', [
     ('你现在在忙什么？', '聊天之外'),
     ('下次聊天提醒我整理手册。', '不能保证'),
-    ('请写一句关于落叶的短诗。', '没能'),
+    ('请写一句关于落叶的短诗。', '没有完成你请求的创作'),
     ('为什么地面湿了会变黑？', '可靠'),
 ])
 def test_memory_type_cannot_override_other_expression_boundaries(tmp_path, message, expected):
