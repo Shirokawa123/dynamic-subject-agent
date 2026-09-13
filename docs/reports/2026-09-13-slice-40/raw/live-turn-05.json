@@ -1,0 +1,137 @@
+{
+  "message": "我周日要带什么去修补工坊？",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "你之前说过：「周日我会带三把椅子去修补工坊，」",
+    "head_sequence": 6,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "换个话题：周日我会带三把椅子去修补工坊，也给自己定个目标：把展台卡片的底稿交出来。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「周日我会带三把椅子去修补工坊，」\n\n已记录你的目标：「把展台卡片的底稿交出来」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789312292312096,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「周日我会带三把椅子去修补工坊，」"
+          },
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已记录一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "把“把展台卡片的底稿交出来”改成“先定下卡片的两句正文”，椅子照带。",
+        "user_language": "zh",
+        "assistant_text": "本轮没有新增或更正记忆。\n\n已修改你的目标：「先定下卡片的两句正文」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789312298881488,
+        "explanations": [
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已按明确表述修订一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 3,
+        "user_text": "（诊断对照）我给自己定个目标：把工具箱标签按尺寸重新排一遍。",
+        "user_language": "zh",
+        "assistant_text": "本轮没有新增或更正记忆。\n\n已记录你的目标：「把工具箱标签按尺寸重新排一遍」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789312305192644,
+        "explanations": [
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已记录一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 4,
+        "user_text": "把目标“把工具箱标签按尺寸重新排一遍”改成“先把常用三种工具分开贴标签”。",
+        "user_language": "zh",
+        "assistant_text": "本轮没有新增或更正记忆。\n\n已修改你的目标：「先把常用三种工具分开贴标签」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789312311450662,
+        "explanations": [
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已按明确表述修订一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 5,
+        "user_text": "我的目标是什么？",
+        "user_language": "zh",
+        "assistant_text": "你当前的目标是：先把常用三种工具分开贴标签；先定下卡片的两句正文。",
+        "assistant_language": "zh",
+        "published_at_us": 1789312317978647,
+        "explanations": [
+          {
+            "capability": "目标与承诺",
+            "kind": "used",
+            "message": "回答参考了 2 条已记录的目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 6,
+        "user_text": "我周日要带什么去修补工坊？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「周日我会带三把椅子去修补工坊，」",
+        "assistant_language": "zh",
+        "published_at_us": 1789312326013125,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [
+      "<internal-id>"
+    ],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "used",
+        "message": "本轮召回了 1 条既有记忆。"
+      }
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+Code/tests: 9ef2f8d
+Command: .venv/bin/python.exe -m pytest -q --tb=short --basetemp=C:/Users/30252/AppData/Local/Temp/dsa-s40-full-final
+778 passed in 620.95s (0:10:20)
+Exit code: 0

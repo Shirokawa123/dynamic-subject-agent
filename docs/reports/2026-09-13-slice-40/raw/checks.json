@@ -1,0 +1,24 @@
+{
+  "code": "9ef2f8d",
+  "turns": 13,
+  "head_start": 1,
+  "head_end": 13,
+  "original_four_turns_goal_accepted": true,
+  "final_active_goals": [
+    "做好杯把再晾干",
+    "先把常用三种工具分开贴标签",
+    "先定下卡片的两句正文"
+  ],
+  "final_memory_count": 2,
+  "revision_memory_unchanged": true,
+  "condition_and_unknown_goal_unchanged": true,
+  "final_reopen": {
+    "display_name": true,
+    "build_id": true,
+    "memories": true,
+    "participant_goals": true,
+    "conversation_history_status": true,
+    "conversation_history": true
+  },
+  "capability_failures": []
+}

@@ -1,0 +1,33 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我的目标是什么？", "active_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "selected_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "action": "none", "base_reply": "我记得你近期有两件打算：下周二带材料去陶艺课，周日带三把椅子去修补工坊。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我的目标是什么？", "selected_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把目标「先练好杯把」改为「做好杯把再晾干」，安排不变。", "active_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "selected_contents": [], "action": "revise", "base_reply": "好，下周二陶艺课的目标我记成「做好杯把再晾干」，其他安排照旧。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把目标「先练好杯把」改为「做好杯把再晾干」，安排不变。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我周日要带什么去修补工坊？", "active_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "selected_contents": ["周日我会带三把椅子去修补工坊，"], "action": "none", "base_reply": "你之前说周日会带三把椅子去修补工坊。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我周日要带什么去修补工坊？", "selected_contents": ["周日我会带三把椅子去修补工坊，"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把目标「不存在的采购清单」改成「列好两种纸材」。", "active_contents": ["下周二我打算带材料去陶艺课，", "周日我会带三把椅子去修补工坊，"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把目标「不存在的采购清单」改成「列好两种纸材」。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把目标改成「列好两种纸材」。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
