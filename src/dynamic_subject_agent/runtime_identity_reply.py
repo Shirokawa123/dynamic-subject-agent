@@ -165,15 +165,18 @@ def has_supplied_sentence(message: str, index: int) -> bool:
     return body is not None and sum(bool(sentence.strip()) for sentence in _SENTENCE_PATTERN.findall(body)) >= index
 
 
-def supplied_draft_text(message: str) -> str | None:
+def supplied_draft_candidates(message: str) -> tuple[str | None, ...]:
     originals = re.findall(r'原文(?:是|为)?[：:]?\s*(?:“([^”]+)”|「([^」]+)」|"([^"]+)")', message)
-    from dynamic_subject_agent.natural_writing import authored_draft
-    authored = authored_draft(message)
-    if not originals:
-        return authored
-    if len(originals) != 1 or authored is not None:
-        return None
-    return next(part for part in originals[0] if part)
+    from dynamic_subject_agent.natural_writing import authored_drafts
+    candidates = [next(part for part in original if part) for original in originals]
+    candidates = [None if any(char in body for char in '「」“”"') else body for body in candidates]
+    candidates.extend(authored_drafts(message))
+    return tuple(candidates)
+
+
+def supplied_draft_text(message: str) -> str | None:
+    candidates = supplied_draft_candidates(message)
+    return candidates[0] if len(candidates) == 1 else None
 
 
 def complete_sentence_revision(text: str, original: str, index: int, *, source_is_history: bool) -> str | None:

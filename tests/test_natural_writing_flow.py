@@ -83,3 +83,27 @@ def test_fresh_natural_edit_without_privacy_control_continues(tmp_path):
         assert '月光落在书页上。' in second.projection.expression_text and '一起坐在窗边读书吧。' in second.projection.expression_text
     finally:
         opened.app.close()
+
+
+def test_mixed_multiple_drafts_are_not_silently_selected(tmp_path):
+    opened = open_composite(tmp_path, Writer())
+    try:
+        submit(opened, FIRST)
+        result = submit(opened, '原文是：“甲。乙。”我写了两句：“丙。丁。”我写了两句：“戊。己。”第二句想换得轻一点。')
+        assert '可安全用于修改' in result.projection.expression_text
+        assert POEM not in result.projection.expression_text
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('source', ['我刚写了一句：「只有一句。」', '我刚写了两句：「光落下来。「风吹过。」其他句子。」'])
+def test_unusable_current_draft_does_not_fall_back_to_old_work(tmp_path, source):
+    provider = Writer()
+    opened = open_composite(tmp_path, provider)
+    try:
+        submit(opened, FIRST)
+        result = submit(opened, source + '第二句想换得更轻一点。')
+        assert '可安全用于修改' in result.projection.expression_text
+        assert provider.replies[-1].recent_dialogue == ()
+    finally:
+        opened.app.close()

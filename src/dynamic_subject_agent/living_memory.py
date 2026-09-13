@@ -395,6 +395,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         refined_kind = None
         expression_failure_used = False
         revision_index = sentence_revision_index(command.utterance)
+        from dynamic_subject_agent.runtime_identity_reply import supplied_draft_candidates
+        current_draft_present = bool(supplied_draft_candidates(command.utterance))
         revision_supplied = revision_index is not None and has_supplied_sentence(command.utterance, revision_index)
         revision_ready = False
         if self._split:
@@ -413,6 +415,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             )[:5]
             recent_dialogue = ()
             if (context.load_recent_dialogue is not None
+                and not current_draft_present
                 and not withheld
                 and not disclosure_unavailable
                 and result.proposal.action is not LivingMemoryAction.REVISE

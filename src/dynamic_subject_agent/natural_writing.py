@@ -8,8 +8,9 @@ def collaborative_clause(clause: str) -> str:
 
 def natural_sentence_index(message: str) -> int | None:
     from dynamic_subject_agent.recent_dialogue import expression_request_text
+    from dynamic_subject_agent.current_message import mask_quoted_text
     indexes = []
-    for sentence in re.split(r'[。！？!?；;\n]', expression_request_text(message)):
+    for sentence in re.split(r'[。！？!?；;\n]', expression_request_text(mask_quoted_text(message))):
         if re.match(r'^\s*(?:如果|假如|要是|假设)', sentence):
             continue
         clauses = re.split(r'[，,]', sentence)
@@ -27,12 +28,15 @@ def natural_sentence_index(message: str) -> int | None:
     return indexes[0] if len(indexes) == 1 else None
 
 
-def authored_draft(message: str) -> str | None:
+def authored_drafts(message: str) -> tuple[str | None, ...]:
     drafts = []
+    previous_end = 0
     for match in re.finditer(r'“([^”]+)”|「([^」]+)」|"([^"]+)"', message):
-        prefix = re.split(r'[。！？!?；;\n]', message[:match.start()])[-1].strip()
+        prefix = re.split(r'[。！？!?；;\n]', message[previous_end:match.start()])[-1].strip()
+        previous_end = match.end()
         if re.search(r'如果|假如|假设|要是|朋友|他说|她说|转述', prefix):
             continue
         if re.fullmatch(r'[^「」“”"]{0,40}我(?:先|自己|刚刚|刚|已经)*写(?:了|的)[一两三123]句[：:]?\s*', prefix):
-            drafts.append(next(part for part in match.groups() if part))
-    return drafts[0] if len(drafts) == 1 else None
+            body = next(part for part in match.groups() if part)
+            drafts.append(None if any(char in body for char in '「」“”"') else body)
+    return tuple(drafts)
