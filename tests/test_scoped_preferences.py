@@ -210,3 +210,47 @@ def test_compound_message_can_still_save_an_independent_preference(tmp_path):
         assert [m.content for m in records(opened)] == [COVER]
     finally:
         opened.app.close()
+
+
+def test_goal_evidence_reduction_cannot_bypass_preference_conflict(tmp_path):
+    from test_compound_requests import NoopGoal
+    opened = open_composite(tmp_path, BroadMemory(), goal=NoopGoal())
+    try:
+        submit(opened, COVER)
+        before = records(opened)
+        result = submit(opened, '我做封面时偏爱浅杏色。我的目标是今年读完两本书。')
+        assert result.projection.participant_goal_commitment_status == 'accepted'
+        assert result.projection.living_memory_status == 'rejected'
+        assert records(opened) == before
+    finally:
+        opened.app.close()
+
+
+@pytest.mark.parametrize('incomplete', [False, True])
+def test_provider_window_is_not_a_complete_preference_inventory(tmp_path, incomplete):
+    from dataclasses import replace
+    from dynamic_subject_agent.living_memory import ControlledLivingMemoryCognition
+    from test_recent_dialogue import open_app
+    class Windowed(ControlledLivingMemoryCognition):
+        narrow = False
+        def propose(self, **kwargs):
+            if self.narrow:
+                kwargs['context'] = replace(kwargs['context'], active_memories=(), memory_control_complete=not incomplete)
+            return super().propose(**kwargs)
+    class Proposed(BroadMemory):
+        def propose(self, request):
+            self.proposals.append(request)
+            return LivingMemoryProviderResult(LivingMemoryProposal(LivingMemoryAction.CREATE, '我做封面时偏爱浅杏色。'), '记录偏好。', '收到。', 'zh')
+    provider = Proposed()
+    cognition = Windowed(provider=provider)
+    opened = open_app(tmp_path, provider, cognition=cognition)
+    try:
+        submit(opened, COVER)
+        before = records(opened)
+        cognition.narrow = True
+        result = submit(opened, '我做封面时偏爱浅杏色。请写一句关于灯光的短诗。')
+        assert result.projection.living_memory_status == 'rejected'
+        assert records(opened) == before
+        assert provider.proposals[-1].active_memories == ()
+    finally:
+        opened.app.close()

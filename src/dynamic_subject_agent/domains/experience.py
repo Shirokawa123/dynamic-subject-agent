@@ -60,6 +60,7 @@ class ExperienceReadView:
     active_memories: tuple[LivingMemoryRecord, ...] = ()
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
     memory_control_complete: bool = True
+    preference_memories: tuple[LivingMemoryRecord, ...] | None = None
 
 
 @dataclass(frozen=True)
@@ -308,6 +309,11 @@ class ExperienceDomain:
                 "invalid-living-memory-read-view",
                 "Living Memory read view must contain active typed records",
             )
+        preference_memories = request.current_state.preference_memories
+        if preference_memories is not None and (not isinstance(preference_memories, tuple)
+            or len(preference_memories) > 100 or type(request.current_state.memory_control_complete) is not bool
+            or any(not isinstance(memory, LivingMemoryRecord) or memory.status != 'active' for memory in preference_memories)):
+            raise DomainAdjudicationFailedClosed('experience', 'invalid-preference-read-view', 'preference inventory must be a bounded active snapshot')
         memory_code: str | None = None
         memory_payload: dict[str, object] | None = None
         if request.memory_withdrawal is not None:
@@ -492,10 +498,6 @@ class ExperienceDomain:
                     "memory_id": candidate.candidate_id,
                 },
             )
-        from dynamic_subject_agent.scoped_preferences import preference_change_allowed
-        if not preference_change_allowed(request.current_user_message, evidence, candidate.memory_action,
-            candidate.supersedes_memory_id, candidate.memory_kind, active_memories, complete=request.current_state.memory_control_complete):
-            return 'living-memory.preference-conflict', {'status': LivingMemoryDecisionStatus.REJECTED.value, 'memory_id': candidate.candidate_id}
         scoped = scope_memory_evidence(request.current_user_message, evidence)
         if scoped.status is not MemoryEvidenceStatus.ELIGIBLE:
             return (
@@ -505,6 +507,12 @@ class ExperienceDomain:
                  'recalled_memory_ids': list(candidate.recalled_memory_ids)},
             )
         evidence = scoped.evidence
+        from dynamic_subject_agent.scoped_preferences import preference_change_allowed
+        inventory = request.current_state.preference_memories
+        if not preference_change_allowed(request.current_user_message, evidence, candidate.memory_action,
+            candidate.supersedes_memory_id, candidate.memory_kind, inventory if inventory is not None else active_memories,
+            complete=inventory is not None and request.current_state.memory_control_complete):
+            return 'living-memory.preference-conflict', {'status': LivingMemoryDecisionStatus.REJECTED.value, 'memory_id': candidate.candidate_id}
         payload: dict[str, object] = {
             "status": LivingMemoryDecisionStatus.ACCEPTED.value,
             "memory_id": candidate.candidate_id,

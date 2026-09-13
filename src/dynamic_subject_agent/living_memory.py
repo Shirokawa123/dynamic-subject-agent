@@ -281,6 +281,7 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
         available = tuple(m for m in control_active if m.memory_id not in withheld)
+        preference_inventory = tuple(m for m in context.canonical_memory_history if m.status == 'active' and m.memory_id not in withheld)
         from dynamic_subject_agent.scoped_preferences import route_preference
         preference = route_preference(command.utterance, context.canonical_memory_history,
             complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
@@ -297,7 +298,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
             return replace(base, memory_write_requested=bool(candidates), impact_envelope=replace(base.impact_envelope,
                 experience=ExperienceAdjudicationRequest(basis=basis,
                     current_state=ExperienceReadView(basis.verified_prefix_digest, tuple(m.memory_id for m in control_active), control_active,
-                        memory_control_complete=context.memory_control_complete),
+                        memory_control_complete=context.memory_control_complete and not disclosure_unavailable and not withheld,
+                        preference_memories=preference_inventory),
                     candidates=candidates, current_user_message=command.utterance, source_user_message_id=basis.operation_id)))
         status_answer = exact_memory_status_answer(command.utterance, context.canonical_memory_history,
             complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
@@ -583,6 +585,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 verified_prefix_digest=basis.verified_prefix_digest,
                 memory_trace_refs=tuple(memory.memory_id for memory in active),
                 active_memories=active,
+                memory_control_complete=context.memory_control_complete and not disclosure_unavailable and not withheld,
+                preference_memories=preference_inventory,
             ),
             candidates=candidates,
             current_user_message=command.utterance,

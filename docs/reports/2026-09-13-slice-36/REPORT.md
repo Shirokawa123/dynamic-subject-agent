@@ -18,4 +18,6 @@ Slice-34询问封面颜色时，回复同时引用了封面雾紫/浅杏、无�
 
 首次实现修正测试接缝字段后2 passed in 2.45s。首批14项passed in 13.42s，覆盖场景选择、补充/歧义、旧冲突、完整更正、恶意引用/假设修订、遗忘和库存边界。旧记录冲突通过Facade重放旧接受规则播种，仅在fixture中绕过新增规则，随后恢复本轮裁决。
 
-最终相关、全量、独立复核及真实验收待回填。
+91项相关通过（52.89s）。独立复核发现两项P1：去掉目标句之后的最终证据未再接受偏好检查；普通Provider路径把20条候选当成完整库存。新增3个Interface反例先3 failed in 2.51s。
+
+修复为Domain校验实际要保存的最终连续证据，并新增能力本地read view字段preference_memories，来自当前冻结context的完整可披露canonical active库存及真实完整性标记。Provider/recall的原active_memories窗口不变；完整快照缺失则偏好裁决无法证明完整，不用于猜唯一性。新字段不进入任何ModelTask，不新建store。后续复核和全量待回填。
