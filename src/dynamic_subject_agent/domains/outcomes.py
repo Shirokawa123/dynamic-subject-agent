@@ -66,6 +66,11 @@ def _validate_reasoned_noop(
         allowed_keys.add("knowledge")
     if expected_scope == "experience" and "participant_goal_commitment" in reason:
         allowed_keys.add("participant_goal_commitment")
+    if expected_scope == 'experience' and 'preference_question' in reason:
+        from dynamic_subject_agent.preference_clarification import PreferenceQuestion
+        if PreferenceQuestion.parse(reason['preference_question']) is None or reason.get('code') != 'preference.question' or 'living_memory' in reason:
+            raise DomainOutcomeSetRejected('invalid-preference-question', 'preference question must be an independent typed pending fragment')
+        allowed_keys.add('preference_question')
     if expected_scope == "relationship" and "relationship" in reason:
         allowed_keys.add("relationship")
     if expected_scope == "subject-core" and "situated_state" in reason:

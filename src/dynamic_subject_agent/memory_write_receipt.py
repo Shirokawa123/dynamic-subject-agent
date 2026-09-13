@@ -52,6 +52,13 @@ def memory_write_receipt(outcome: ExperienceDomainOutcome, *, requested: bool) -
         return None
     status = outcome.living_memory_status.value
     if status == 'accepted' and outcome.living_memory_content:
+        import json
+        confirmation = json.loads(outcome.decision.reason).get('living_memory', {}).get('preference_confirmation')
+        if confirmation is not None:
+            from dynamic_subject_agent.preference_clarification import valid_confirmation
+            if valid_confirmation(confirmation):
+                verb = '补充记录' if confirmation['choice'] == 'supplement' else '更正记录'
+                return f'已按你的确认{verb}此前提供的偏好：「{outcome.living_memory_content}」'
         prefix = '已更正这条记忆，新内容是：' if outcome.memory_revision is True else '已记录你的原话：'
         return prefix + f'「{outcome.living_memory_content}」'
     if status == 'failed-closed':

@@ -1,7 +1,7 @@
 """Bounded color preference routing over existing canonical Memory records."""
 from __future__ import annotations
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING
 from dynamic_subject_agent.current_message import direct_statement_clauses, direct_statement_spans
 
@@ -28,6 +28,7 @@ class PreferenceRoute:
     evidence: str = ''
     target: str | None = None
     reply: str = ''
+    needs_choice: bool = False
 
 def _preference(text: str) -> ColorPreference | None:
     if len(direct_statement_clauses(text)) != 1:
@@ -61,7 +62,7 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
     if not complete or not readable:
         return PreferenceRoute('none', reply=UNAVAILABLE)
     scope = query['scope'] if query else pref.scope
-    matched = tuple((record, parsed) for record in records if record.status == 'active'
+    matched = tuple((record, replace(parsed, additive=parsed.additive or record.preference_additive)) for record in records if record.status == 'active'
         and (parsed := _preference(record.content)) is not None and parsed.scope == scope)
     selected = tuple(record for record, _ in matched)
     if query:
@@ -74,7 +75,7 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
         quotes = _quotes(selected)
         if len(bases) > 1:
             return PreferenceRoute('none', reply=f'“{scope}”场景下有多条仍活跃的偏好：\n{quotes}\n这些是同时喜欢，还是后来替换了之前的偏好？请写明要补充的颜色，或用完整原文指定要更正的一条。')
-        lead = '其中明确的“也喜欢/也偏爱”作为补充保留。' if len(colors) > 1 else ''
+        lead = '其中明确表述或经确认的新增偏好作为补充保留。' if len(colors) > 1 else ''
         return PreferenceRoute('none', reply=f'关于“{scope}”的颜色偏好，你明确记录过：\n{quotes}' + ('\n' + lead if lead else ''))
     if literal:
         old = tuple(record for record in selected if record.content == literal[1])
@@ -94,7 +95,7 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
     if any(parsed.color == pref.color and parsed.tail == pref.tail for _, parsed in matched):
         return PreferenceRoute('none', reply='该场景已有相同颜色和限定内容的记录，本轮没有重复保存。')
     if matched and not pref.additive:
-        return PreferenceRoute('none', reply=f'“{scope}”已有偏好：\n{_quotes(selected[:5])}\n“{pref.color}”是补充还是替换？这次暂未保存。补充请明确说“我做{scope}时也喜欢{pref.color}”，更正请指定完整旧原文。')
+        return PreferenceRoute('none', evidence=body, needs_choice=True, reply=f'“{scope}”已有偏好：\n{_quotes(selected[:5])}\n“{pref.color}”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。')
     return PreferenceRoute('create', body)
 
 

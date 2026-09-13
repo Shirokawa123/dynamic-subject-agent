@@ -64,7 +64,7 @@ def test_unconfirmed_write_does_not_use_a_success_acknowledgement(tmp_path, mode
         opened.app.close()
 
 
-def open_composite(root, provider, *, goal=None, knowledge=None):
+def open_composite(root, provider, *, goal=None, knowledge=None, saved=None, **kwargs):
     from dynamic_subject_agent.composite import ControlledCompositeCognition
     from dynamic_subject_agent.model_gateway import ModelGateway, ProviderCapabilities, StructuredOutputMode
     from dynamic_subject_agent.participant_goal_cognition import ParticipantGoalProviderAdapter
@@ -77,7 +77,7 @@ def open_composite(root, provider, *, goal=None, knowledge=None):
     known.provider_authority = M0_A_PROVIDER_AUTHORITY
     gateway = None if goal is None else ModelGateway(ParticipantGoalProviderAdapter(provider=goal,
         capabilities=ProviderCapabilities(M0_A_PROVIDER_AUTHORITY, 'receipt-test', True, (StructuredOutputMode.JSON_OBJECT,))))
-    return open_app(root, provider, cognition=ControlledCompositeCognition(memory_provider=provider,
+    return open_app(root, provider, saved=saved, **kwargs, cognition=ControlledCompositeCognition(memory_provider=provider,
         knowledge_provider=known, knowledge_entries=(ENTRY,) if knowledge else (),
         relationship_provider=related, participant_goal_gateway=gateway))
 

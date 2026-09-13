@@ -283,9 +283,27 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         available = tuple(m for m in control_active if m.memory_id not in withheld)
         preference_inventory = tuple(m for m in context.canonical_memory_history if m.status == 'active' and m.memory_id not in withheld)
         from dynamic_subject_agent.scoped_preferences import route_preference
-        preference = route_preference(command.utterance, context.canonical_memory_history,
-            complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
+        from dynamic_subject_agent.preference_clarification import choice, resolve, make_question
+        pending = None
+        confirmation = choice(command.utterance) is not None
+        if confirmation:
+            try:
+                pending = context.load_preference_question() if context.load_preference_question is not None else None
+            except Exception:
+                disclosure_unavailable = True
+            preference = resolve(command.utterance, pending, preference_inventory,
+                complete=context.memory_control_complete and not disclosure_unavailable and not withheld,
+                profile_id=context.profile_id, timeline_id=context.timeline_id, now=basis.observed_at_us)
+        else:
+            preference = route_preference(command.utterance, context.canonical_memory_history,
+                complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
         if preference is not None:
+            question = (make_question(command.utterance, preference_inventory,
+                complete=context.memory_control_complete and not disclosure_unavailable and not withheld,
+                source_id=basis.operation_id, profile_id=context.profile_id, timeline_id=context.timeline_id, now=basis.observed_at_us)
+                if preference.needs_choice else None)
+            if preference.needs_choice and question is None:
+                preference = replace(preference, reply='这次无法保留待确认问题，请直接写明完整场景、颜色及补充或更正意图。')
             base = self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary='按当前明确场景处理偏好，写入以最终裁决为准。',
                 expression_candidate=ExpressionCandidate(preference.reply, command.language, is_memory_answer=True, dialogue_priority=True))
@@ -299,8 +317,9 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 experience=ExperienceAdjudicationRequest(basis=basis,
                     current_state=ExperienceReadView(basis.verified_prefix_digest, tuple(m.memory_id for m in control_active), control_active,
                         memory_control_complete=context.memory_control_complete and not disclosure_unavailable and not withheld,
-                        preference_memories=preference_inventory),
-                    candidates=candidates, current_user_message=command.utterance, source_user_message_id=basis.operation_id)))
+                        preference_memories=preference_inventory, pending_preference=pending),
+                    candidates=candidates, current_user_message=command.utterance, source_user_message_id=basis.operation_id,
+                    preference_question=question)))
         status_answer = exact_memory_status_answer(command.utterance, context.canonical_memory_history,
             complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
         if status_answer is not None:

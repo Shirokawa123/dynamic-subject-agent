@@ -1,6 +1,6 @@
 # Slice-38：偏好澄清闭环
 
-状态：设计完成，待限定跨轮证据契约确认后实施。用户批准按reuse-first-next-steps顺序推进，基线f2f5d32 / dogfood-s37。具体设计见 [DESIGN](../reports/2026-09-13-slice-38/DESIGN.md)，尚未修改产品代码或状态格式。
+状态：in progress。用户已明确批准DESIGN中的限定两轮证据契约：原Timeline持久化问题，下一短答30分钟内确认，本地绑定且历史不外发。具体设计见 [DESIGN](../reports/2026-09-13-slice-38/DESIGN.md)。
 
 先借鉴Rasa收集字段与LangGraph暂停/恢复机制，完成一个“新场景颜色→补充还是替换→短答→实际写入”流程。必须明确候选、身份、原始声明及确认、目标未变、取消、换话题、过期、重复回答、重启行为。
 

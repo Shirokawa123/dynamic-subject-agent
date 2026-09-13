@@ -913,6 +913,7 @@ class ConversationOutcomeSummary:
     medium_state_reason_code: str | None
     medium_state_signal: str | None
     memory_revision: bool | None = None
+    preference_question: object | None = None
     memory_withdrawal_status: str | None = None
 
     @classmethod
@@ -940,6 +941,7 @@ class ConversationOutcomeSummary:
             medium_state_reason_code=state.medium_state_reason_code,
             medium_state_signal=state.medium_state_signal,
             memory_revision=experience.memory_revision,
+            preference_question=experience.preference_question,
             memory_withdrawal_status=experience.memory_withdrawal_status,
         )
 
@@ -1002,6 +1004,8 @@ class ExperienceDomainOutcome:
                 return None
             memory = value.get('living_memory')
             if memory is None:
+                if value.get('code') == 'preference.question':
+                    return False if self.preference_question is not None and set(value) <= {'code', 'provenance', 'preference_question', 'knowledge', 'participant_goal_commitment'} else None
                 code = value.get('code')
                 if isinstance(code, str) and code in PARTICIPANT_GOAL_FAILURE_CODES:
                     goal = value.get('participant_goal_commitment')
@@ -1034,10 +1038,14 @@ class ExperienceDomainOutcome:
                 return False
             required = {'status', 'memory_id', 'content', 'source_user_message_id', 'supersedes_memory_id', 'memory_kind'}
             if (value.get('code') != 'living-memory.accepted' or memory.get('status') != 'accepted'
-                or not required <= set(memory) or not set(memory) <= required | {'temporal_anchor'}
+                or not required <= set(memory) or not set(memory) <= required | {'temporal_anchor', 'preference_confirmation'}
                 or not isinstance(memory['content'], str) or not memory['content'].strip()
                 or memory['memory_kind'] not in {'durable', 'plan'}):
                 return None
+            if 'preference_confirmation' in memory:
+                from dynamic_subject_agent.preference_clarification import valid_confirmation
+                if not valid_confirmation(memory['preference_confirmation']) or memory['source_user_message_id'] != memory['preference_confirmation']['source_id']:
+                    return None
             UUID(memory['memory_id'])
             UUID(memory['source_user_message_id'])
             previous = memory['supersedes_memory_id']
@@ -1060,6 +1068,15 @@ class ExperienceDomainOutcome:
         if self.living_memory_status is not LivingMemoryDecisionStatus.ACCEPTED:
             return None
         return self._text_fact('living_memory', 'content')
+
+    @property
+    def preference_question(self):
+        from dynamic_subject_agent.preference_clarification import PreferenceQuestion
+        try:
+            value = json.loads(self.decision.reason)
+            return PreferenceQuestion.parse(value.get('preference_question')) if self.decision.rule_version == 'experience-1.0' and value.get('code') == 'preference.question' else None
+        except (ValueError, TypeError, AttributeError):
+            return None
 
     @property
     def living_memory_status(self) -> LivingMemoryDecisionStatus:
@@ -1189,6 +1206,7 @@ class LivingMemoryRecord:
     supersedes_memory_id: str | None = None
     memory_kind: str = "durable"
     temporal_anchor: TemporalAnchor | None = None
+    preference_additive: bool = False
 
 
 @dataclass(frozen=True)
@@ -6119,6 +6137,10 @@ class TimelineEngine:
                     if raw_temporal_anchor is None
                     else TemporalAnchor.from_dict(raw_temporal_anchor)
                 )
+                from dynamic_subject_agent.preference_clarification import valid_confirmation
+                confirmation = memory.get('preference_confirmation')
+                if confirmation is not None and (not valid_confirmation(confirmation) or confirmation['source_id'] != memory['source_user_message_id']):
+                    raise ValueError('invalid preference confirmation')
                 record = LivingMemoryRecord(
                     memory_id=str(UUID(str(memory["memory_id"]))),
                     content=str(memory["content"]),
@@ -6133,6 +6155,7 @@ class TimelineEngine:
                     ),
                     memory_kind=str(memory.get("memory_kind", "durable")),
                     temporal_anchor=temporal_anchor,
+                    preference_additive=confirmation is not None and confirmation['choice'] == 'supplement',
                 )
             except (KeyError, TypeError, ValueError):
                 raise PublicationFailedClosed(
@@ -6754,7 +6777,15 @@ class TimelineEngine:
 
     def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
         """Read only the same identity's verified frozen prefix for this reply."""
-        from dynamic_subject_agent.recent_dialogue import is_dialogue_control, select_recent_dialogue
+        from dynamic_subject_agent.recent_dialogue import select_recent_dialogue
+        verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
+        if verified is None:
+            return ()
+        records, cutoff = verified
+        return select_recent_dialogue(records, after_sequence=cutoff)
+
+    def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
+        from dynamic_subject_agent.recent_dialogue import is_dialogue_control
 
         snapshot = self.query(operation_ref)
         frozen_row = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
@@ -6783,15 +6814,34 @@ class TimelineEngine:
         for row in unpublished:
             # Pending/interrupted or unfrozen admissions have unresolved intent.
             if row[4] is None or row[5] is None:
-                return ()
+                return None
             previous_ref = OperationRef(str(row[1]), self._location.root_id,
                 self._location.timeline_store_id, self._authority.authority_scope_id,
                 str(UUID(bytes=bytes(row[0]))), OperationKind(str(row[2])), str(row[3]).casefold())
             previous_command = self._query_command(previous_ref)
             if is_dialogue_control(previous_command.utterance):
-                return ()
+                return None
             cutoff = max(cutoff, int(row[4]))
-        return select_recent_dialogue(records, after_sequence=cutoff)
+        return records, cutoff
+
+    def preference_question_before(self, operation_ref: OperationRef, *, expected_head: int):
+        from dynamic_subject_agent.preference_clarification import PendingPreference
+        from dynamic_subject_agent.recent_dialogue import is_dialogue_control
+        # Reuse frozen-prefix, integrity, pending-admission and control checks.
+        verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
+        if verified is None:
+            return None
+        turns, cutoff = verified
+        if not turns or turns[-1].outcome_summary is None:
+            return None
+        turn = turns[-1]
+        if turn.head_sequence <= cutoff or is_dialogue_control(turn.user_text) or turn.outcome_summary.memory_revision is not False or turn.outcome_summary.living_memory_status != 'no-op':
+            return None
+        question = turn.outcome_summary.preference_question
+        if question is None or question.source_text != turn.user_text or question.prompt not in turn.assistant_text:
+            return None
+        snapshot = self.query(operation_ref)
+        return PendingPreference(question, snapshot.timeline_basis.verified_prefix_digest)
 
     def query_outcome(self, operation_ref: OperationRef) -> TimelineOutcome:
         snapshot = self.query(operation_ref)

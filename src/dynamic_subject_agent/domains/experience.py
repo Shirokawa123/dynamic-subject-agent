@@ -37,6 +37,7 @@ from dynamic_subject_agent.participant_goals import (
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal
 from dynamic_subject_agent.memory_evidence_scope import MemoryEvidenceStatus, scope_memory_evidence
+from dynamic_subject_agent.preference_clarification import PendingPreference, PreferenceQuestion, make_question, resolve, choice
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,7 @@ class ExperienceReadView:
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
     memory_control_complete: bool = True
     preference_memories: tuple[LivingMemoryRecord, ...] | None = None
+    pending_preference: PendingPreference | None = None
 
 
 @dataclass(frozen=True)
@@ -77,6 +79,7 @@ class ExperienceAdjudicationRequest:
     participant_goal_failure_code: str | None = None
     participant_goal_expression_priority: bool = False
     memory_withdrawal: MemoryWithdrawal | None = None
+    preference_question: PreferenceQuestion | None = None
 
 
 class ExperienceDomain:
@@ -284,6 +287,7 @@ class ExperienceDomain:
             and knowledge_failure is None
             and participant_goal_failure is None
             and not selected_ids
+            and request.preference_question is None
         ):
             return ExperienceDomainOutcome(
                 outcome_id=stable_id(basis, "experience-outcome"),
@@ -314,6 +318,12 @@ class ExperienceDomain:
             or len(preference_memories) > 100 or type(request.current_state.memory_control_complete) is not bool
             or any(not isinstance(memory, LivingMemoryRecord) or memory.status != 'active' for memory in preference_memories)):
             raise DomainAdjudicationFailedClosed('experience', 'invalid-preference-read-view', 'preference inventory must be a bounded active snapshot')
+        if request.preference_question is not None:
+            expected_question = make_question(request.current_user_message, preference_memories or (),
+                complete=preference_memories is not None and request.current_state.memory_control_complete,
+                source_id=basis.operation_id, profile_id=basis.profile_id, timeline_id=basis.timeline_id, now=basis.observed_at_us)
+            if memory_candidate is not None or living_memory_failure is not None or request.preference_question != expected_question:
+                raise DomainAdjudicationFailedClosed('experience', 'invalid-preference-question', 'question must match the current admitted statement')
         memory_code: str | None = None
         memory_payload: dict[str, object] | None = None
         if request.memory_withdrawal is not None:
@@ -397,7 +407,8 @@ class ExperienceDomain:
             }
         reason: dict[str, object] = {
             "code": (
-                memory_code
+                ('preference.question' if request.preference_question is not None else None)
+                or memory_code
                 or knowledge_code
                 or participant_goal_code
                 or "experience.accepted"
@@ -410,6 +421,8 @@ class ExperienceDomain:
             reason["knowledge"] = knowledge_payload
         if participant_goal_payload is not None:
             reason["participant_goal_commitment"] = participant_goal_payload
+        if request.preference_question is not None:
+            reason['preference_question'] = request.preference_question.to_dict()
         decision = CandidateDecisionRecord(
             decision_id=stable_id(basis, "experience-decision"),
             scope="experience",
@@ -467,11 +480,24 @@ class ExperienceDomain:
                 },
             )
         evidence = candidate.evidence_quote
+        pending = request.current_state.pending_preference
+        confirmed = False
+        if pending is not None:
+            if (isinstance(pending, PendingPreference) and pending.prefix_digest == basis.verified_prefix_digest
+                and PreferenceQuestion.parse(pending.question.to_dict()) == pending.question and pending.question.source_id != basis.operation_id):
+                expected = resolve(request.current_user_message, pending, request.current_state.preference_memories or (),
+                    complete=request.current_state.preference_memories is not None and request.current_state.memory_control_complete,
+                    profile_id=basis.profile_id, timeline_id=basis.timeline_id, now=basis.observed_at_us)
+                confirmed = (expected is not None and expected.action == candidate.memory_action and expected.evidence == evidence
+                    and expected.target == candidate.supersedes_memory_id and candidate.memory_kind == 'durable'
+                    and expected.action in {'create', 'revise'})
+            if not confirmed:
+                rejection_code = 'living-memory.confirmation-invalid'
         if (
             not isinstance(evidence, str)
             or not evidence.strip()
             or len(evidence) > 500
-            or evidence not in request.current_user_message
+            or not confirmed and evidence not in request.current_user_message
         ):
             rejection_code = "living-memory.evidence-not-verbatim"
         if candidate.memory_action == "create":
@@ -509,7 +535,7 @@ class ExperienceDomain:
         evidence = scoped.evidence
         from dynamic_subject_agent.scoped_preferences import preference_change_allowed
         inventory = request.current_state.preference_memories
-        if not preference_change_allowed(request.current_user_message, evidence, candidate.memory_action,
+        if not confirmed and not preference_change_allowed(request.current_user_message, evidence, candidate.memory_action,
             candidate.supersedes_memory_id, candidate.memory_kind, inventory if inventory is not None else active_memories,
             complete=inventory is not None and request.current_state.memory_control_complete):
             return 'living-memory.preference-conflict', {'status': LivingMemoryDecisionStatus.REJECTED.value, 'memory_id': candidate.candidate_id}
@@ -521,6 +547,10 @@ class ExperienceDomain:
             "supersedes_memory_id": candidate.supersedes_memory_id,
             "memory_kind": candidate.memory_kind,
         }
+        if confirmed:
+            payload['source_user_message_id'] = pending.question.source_id
+            payload['preference_confirmation'] = {'version': 1, 'source_id': pending.question.source_id,
+                'confirmation_id': basis.operation_id, 'choice': choice(request.current_user_message)}
         if candidate.memory_kind == "plan":
             temporal_anchor = TemporalGrounding().anchor(
                 request.current_user_message,
