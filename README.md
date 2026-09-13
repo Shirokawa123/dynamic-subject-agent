@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s32`。记忆新增、更正确认引用最终实际保存的完整内容，保留条件、否定与时间；失败、拒绝和未写入分别说明，不使用模型提前生成的成功台词。有限直接问题和已检查创作可与回执并存，目标仍按自身结果确认。真实复合请求仍有缺口：“写两句诗”可能未被识别，目标句也可能只被存成记忆而未创建目标，详见 [Slice-32 报告](docs/reports/2026-09-09-slice-32/REPORT.md)。有限指名查询比较完整对象名，歧义不猜测；未知结构、任意别名、复杂问法仍有限。逻辑遗忘停用活跃使用，原历史保留；当前不提供定时或下次自动提醒。事实遵守封存来源边界，共同创作/限字/编号修改仍遵守 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s33`。明确的记忆、目标与两句创作可同轮分别处理；目标分句可位于消息前中后，确认引用最终实际结果，创作未完成会明确说明。完整引用、条件、撤回和多操作仍受检查，多份创作需一次指定一份。真实“安排＋两句诗→修改第二句”和“记忆＋目标＋两句诗”已走通，见 [Slice-33 报告](docs/reports/2026-09-13-slice-33/REPORT.md)。DeepSeek旧请求名现由官方路由至V4.1-Flash，兼容仅接受两个精确返回名称。含目标/显式记住的历史仍不外发，后续改稿可能需贴完整原文；任意中文组合及语义分库存不保证。有限指名查询歧义不猜测，逻辑遗忘保留原历史；当前不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

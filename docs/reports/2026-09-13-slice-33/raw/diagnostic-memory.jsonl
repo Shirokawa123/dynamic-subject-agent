@@ -1,0 +1,10 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "envelope", "model_matches": false, "response_model": "deepseek-flash", "choices_count": 1, "role_is_assistant": true, "has_reasoning": false, "has_tool_calls": false, "content_is_object": true, "completion_tokens": 60, "prompt_tokens": 1234}
+{"stage": "transport", "http_status": 200}
+{"stage": "envelope", "model_matches": false, "response_model": "deepseek-flash", "choices_count": 1, "role_is_assistant": true, "has_reasoning": false, "has_tool_calls": false, "content_is_object": true, "completion_tokens": 43, "prompt_tokens": 353}
+{"stage": "transport", "http_status": 200}
+{"stage": "envelope", "model_matches": false, "response_model": "deepseek-flash", "choices_count": 1, "role_is_assistant": true, "has_reasoning": false, "has_tool_calls": false, "content_is_object": true, "completion_tokens": 48, "prompt_tokens": 358}
+{"stage": "transport", "http_status": 200}
+{"stage": "envelope", "model_matches": false, "response_model": "deepseek-flash", "choices_count": 1, "role_is_assistant": true, "has_reasoning": false, "has_tool_calls": false, "content_is_object": true, "completion_tokens": 25, "prompt_tokens": 292}
+{"stage": "transport", "http_status": 200}
+{"stage": "envelope", "model_matches": false, "response_model": "deepseek-flash", "choices_count": 1, "role_is_assistant": true, "has_reasoning": false, "has_tool_calls": false, "content_is_object": true, "completion_tokens": 24, "prompt_tokens": 269}

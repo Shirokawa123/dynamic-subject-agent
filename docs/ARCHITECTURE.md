@@ -54,6 +54,10 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 ## 数据
 
+Slice-33 以完整消息的引用跨度为先，再提取逐字直接陈述供既有目标闭集路由和Domain证据检查使用；句号/分号/换行支持目标分句位于前中后，不从逗号后提升条件或转述。嵌套/未闭合引用保守遮蔽，完整消息仍裁决撤回、多操作和目标选择。创作许可、两句数量和多份歧义共用当前请求解析，新增写两句/2句与一版两句短诗；多份要求不猜一份，未生成作品明确说明。创作及其失败不以Memory写入为前提，Goal最终确认保留已核准作品；Knowledge仍仅在最终accepted时保留自己的作品。既有事实、活动、提醒和控制边界不解除，含目标/显式记住的历史仍不进入recent_dialogue；当前重贴完整原文可用原编号修改契约。详见 [设计](reports/2026-09-13-slice-33/DESIGN.md)。
+
+Slice-33用户另行明确批准DeepSeek返回标识兼容。官方2026-09-10已将旧deepseek-v4-flash请求临时路由至V4.1-Flash；请求模型字段仍保持原值，响应只接受deepseek-v4-flash与deepseek-flash两个精确值，其他响应校验不放宽。不是模型权重保持不变的声明，也不接受任意后缀/未来型号；无新Provider、凭据用途、请求字段或预算。详见 [官方依据及复现](reports/2026-09-13-slice-33/PROVIDER-COMPATIBILITY.md)。
+
 Slice-32 的 `memory_write_receipt` 在原有express阶段读取最终Experience Outcome形成新增/更正/拒绝/失败/NoOp回执，与完整Outcome一起原子Publication后可见。确认只引用actual living_memory_content，memory_revision区分更正，不采用模型提前成功台词，不改变候选裁决或旧历史。CognitiveProposal的memory_write_requested/memory_continuation/knowledge_continuation仅为本地临时组合信息，不持久化、不外发；纯写入压下自由改述，已检查的当前创作或明确独立问题另行保留。独立问题无效refinement不恢复base；Knowledge事实仍由完整来源路径负责，Goal覆盖确认时保留已检查独立Memory表达或最终Knowledge accepted的独立作品，其他能力失败不取消Memory成功。作品在首段、回执单独后置，历史重复比较只取原有首段稿件，当前输出计数不截段。仅LM reply提示细化“不提前确认写入”，字段/历史用途/调用预算及其他11请求字节不变。真实“写两句”组合请求仍未被既有创作识别器接受，作品丢失及后续无稿件失败保留，不能宣称所有独立意图稳定保留。详见 [Slice-32设计](reports/2026-09-09-slice-32/DESIGN.md) 与 [真实报告](reports/2026-09-09-slice-32/REPORT.md)。
 
 Slice-31 的 `memory_subject` 为完整单个指名安排查询提取当前字面对象（有限句式见任务报告/设计），不猜控制、引用/转述、建议、代词/时间指代开头和多问题消息。Runtime 从已读active记录的有限动作/变更槽位提取单一完整对象，按完整名称比较后使用既有20条排序预算；允许一个有界文稿类别后缀的无歧义简称，不将带类别的名字再次缩为另一对象简称。多个完整名或不可解析结构不猜测；Cognition外发前复查并保留披露过滤。模型返回ID必须属于实际候选，明确查询提出create/revise或越界ID形成Memory FailedClosed。有效proposal后Python复用原文/未知渲染，错误类型/可选reply失败或legacy自由文本不允许另挑对象。12类提示、字段、调用上限均不变，不使用forgotten文本作候选，不增加索引或实体状态；有限名称槽位不等于通用语义识别，任意别名/复合陈述仍有限。见 [Slice-31设计](reports/2026-09-09-slice-31/DESIGN.md)。
