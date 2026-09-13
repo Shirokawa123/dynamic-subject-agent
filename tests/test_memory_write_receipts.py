@@ -141,7 +141,8 @@ def test_memory_receipt_preserves_creation_and_independent_goal_result(tmp_path,
             return ParticipantGoalReplyResult('目标内容以本轮结果为准。', 'zh')
     opened = open_composite(tmp_path, Creative(), goal=Goal())
     try:
-        answer = submit(opened, PLAN + '我的目标是今年通过 N1。请写一句关于月光的短诗。')
+        goal_message = '请记录我的目标：今年通过 N1。' if goal_failed else '我的目标是今年通过 N1。'
+        answer = submit(opened, PLAN + goal_message + '请写一句关于月光的短诗。')
         assert PLAN in answer.projection.expression_text
         assert answer.projection.expression_text.count(poem) == 1
         assert answer.projection.expression_text.count('已记录你的原话') == 1
@@ -329,7 +330,8 @@ def test_goal_outcome_does_not_discard_independent_knowledge_creation(tmp_path, 
     known = KnowledgeProvider('备用。', refined=KnowledgeReplyResult(poem, 'zh', 'creative'))
     opened = open_composite(tmp_path, Recorded(), goal=Goal(), knowledge=known)
     try:
-        answer = submit(opened, PLAN + '我的目标是今年通过 N1。请给纸灯节写一句短诗。')
+        goal_message = '请记录我的目标：今年通过 N1。' if goal_failed else '我的目标是今年通过 N1。'
+        answer = submit(opened, PLAN + goal_message + '请给纸灯节写一句短诗。')
         assert answer.projection.expression_text.count(poem) == 1
         assert PLAN in answer.projection.expression_text
         assert ('没能完成目标' if goal_failed else '已记录你的目标') in answer.projection.expression_text

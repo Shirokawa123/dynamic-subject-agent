@@ -491,11 +491,15 @@ def _allowed_terminal_statuses(kind: str) -> tuple[str, ...]:
 
 
 def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str) -> bool:
+    from dynamic_subject_agent.current_message import direct_statement_clauses
+    direct = tuple(clause for clause in direct_statement_clauses(message_text) if evidence_quote.rstrip('。') in clause)
+    if not direct:
+        return False
     if kind == "goal":
         natural = r'我给自己定(?:个|一个)目标[：:]'
         if re.search(natural, evidence_quote):
             # Quoting a conditional or another speaker's declaration is not consent.
-            return re.match(natural, message_text.strip()) is not None
+            return any(re.match(natural, clause) is not None for clause in direct)
         return '目标是' in evidence_quote or '我的目标' in evidence_quote
     return "我承诺" in evidence_quote
 

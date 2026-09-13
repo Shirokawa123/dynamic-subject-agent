@@ -58,22 +58,37 @@ def activity_boundary_reply(message: str) -> str | None:
     return None
 
 
-def explicit_creation_request(message: str) -> bool:
+def _creation_requests(message: str) -> tuple[int | None, ...]:
     message = expression_request_text(message)
     if is_rewrite_withdrawn(message):
-        return False
+        return ()
     # A constraint on style does not withdraw the requested act of writing.
     message = re.sub(r'(?:别|不要)写(?=成|得)', '', message)
     if any(word in message for word in ('别编', '不要编', '不许编', '不要写', '别写', '不要创作', '不要想象', '什么意思', '怎么做', '的是谁', '的人是谁', '解释一下', '解释这')):
-        return False
+        return ()
     if message.strip().startswith('如果让你') and '你会写什么' in message:
-        return True
-    if any(re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:短句|祝福|文案|短诗)(?:吧)?', clause.strip())
-        for clause in re.split(r'[。！？!?，,]', message)):
-        return True
+        return (None,)
+    requests = []
     # An imperative clause, not a mention inside a past account or quotation.
-    return any(re.match(r'^(?:(?:请|帮我|替我)(?:给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?:一句|一首|个|一个)|配(?:一句话|一句|个文案)|创作|想象一下|编(?:一个|个))', clause.strip())
-        for clause in re.split(r'[。！？!?，,]', message))
+    for clause in re.split(r'[。！？!?，,；;\n]', message):
+        clause = clause.strip()
+        version = re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:短句|祝福|文案|短诗)(?:吧)?', clause)
+        imperative = re.match(r'^(?:(?:请|帮我|替我)(?:给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?|给[^。！？!?，,]{0,20}|为[^。！？!?，,]{1,20})?(?:写(?P<count>一句|两句|2句|一首|个|一个)|配(?:一句话|一句|个文案)|创作|想象一下|编(?:一个|个))', clause)
+        if version or imperative:
+            two = (imperative is not None and imperative.group('count') in {'两句', '2句'}
+                   or version is not None and re.search(r'(?:两|2)句(?:祝福|短句|短诗)', clause) is not None)
+            requests.append(2 if two else None)
+    return tuple(requests)
+
+
+def explicit_creation_request(message: str) -> bool:
+    return bool(_creation_requests(message))
+
+
+def creation_failure_reply(message: str) -> str:
+    if len(_creation_requests(message)) > 1:
+        return '这条消息包含多个创作要求，本轮没有生成作品。请一次明确一份作品。'
+    return '这次没有完成你请求的创作或改写。'
 
 
 def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversation', continuation_allowed: bool = False) -> str | None:
@@ -95,6 +110,8 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
         if len(re.sub(r'\s+', '', body)) > limit:
             return None
     if reply_kind == 'creative':
+        if len(_creation_requests(message)) > 1:
+            return None
         if not (explicit_creation_request(message) or continuation_allowed) or not isinstance(text, str) or not text.strip():
             return None
         rendered = CREATIVE_REPLY_PREFIX + text.strip()
@@ -109,10 +126,8 @@ def contextual_reply(text: object, *, message: str, reply_kind: str = 'conversat
 
 
 def requested_creative_sentence_count(message: str) -> int | None:
-    if not explicit_creation_request(message):
-        return None
-    return 2 if any(re.fullmatch(r'(?:你)?(?:先|那就|就|请)?给我一版[^。！？!?，,]*(?:两|2)句(?:祝福|短句)(?:吧)?', clause.strip())
-        for clause in re.split(r'[。！？!?，,]', expression_request_text(message))) else None
+    requests = _creation_requests(message)
+    return requests[0] if len(requests) == 1 else None
 
 
 def repeats_previous_expression(text: str, previous: str) -> bool:

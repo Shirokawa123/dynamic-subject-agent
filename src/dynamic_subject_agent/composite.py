@@ -524,14 +524,13 @@ class ControlledCompositeCognition(CognitionEngine):
         memory_relevant = memory_recalled or memory_changed
         from dynamic_subject_agent.runtime_identity_reply import MISSING_REVISION_REPLY, FAILED_REVISION_REPLY
         memory_answer = memory_proposal.expression_candidate.is_memory_answer
-        preserve_memory_expression = (memory_proposal.memory_write_requested or memory_answer or memory_proposal.expression_candidate.is_creative
+        preserve_memory_expression = (memory_proposal.memory_write_requested or memory_proposal.memory_continuation is not None or memory_answer or memory_proposal.expression_candidate.is_creative
             or memory_proposal.expression_candidate.text in {MISSING_REVISION_REPLY, FAILED_REVISION_REPLY}
             or is_memory_status_query(command.utterance))
         knowledge_continuation = None
         if knowledge_cited and (memory_relevant or preserve_memory_expression):
             memory_text = memory_proposal.expression_candidate.text
-            independent_knowledge_creation = (memory_proposal.memory_write_requested
-                and not memory_proposal.expression_candidate.is_creative
+            independent_knowledge_creation = (not memory_proposal.expression_candidate.is_creative
                 and knowledge_proposal.expression_candidate.is_creative
                 and explicit_creation_request(command.utterance) and not is_dialogue_continuation(command.utterance))
             if memory_proposal.memory_write_requested and not memory_proposal.expression_candidate.is_creative:
@@ -544,6 +543,8 @@ class ControlledCompositeCognition(CognitionEngine):
                     memory_proposal = replace(memory_proposal, memory_continuation=None)
             if independent_knowledge_creation:
                 knowledge_continuation = knowledge_proposal.expression_candidate
+                memory_text = ''
+                memory_proposal = replace(memory_proposal, memory_continuation=None)
             knowledge_text = ('' if preserve_memory_expression and not independent_knowledge_creation and knowledge_proposal.expression_candidate.is_creative
                 else knowledge_proposal.expression_candidate.text)
             if not preserve_memory_expression:
@@ -691,6 +692,11 @@ class ControlledCompositeCognition(CognitionEngine):
         command: SubjectCommand, outcomes: CompleteDomainOutcomeSet,
     ) -> ExpressionCandidate:
         expression = self._express_capabilities(proposal=proposal, context=context, command=command, outcomes=outcomes)
+        from dynamic_subject_agent.runtime_identity_reply import CREATIVE_REPLY_PREFIX, creation_failure_reply
+        if explicit_creation_request(command.utterance) and not expression.text.startswith(CREATIVE_REPLY_PREFIX):
+            failure = creation_failure_reply(command.utterance)
+            if failure not in expression.text:
+                expression = ExpressionCandidate('\n\n'.join(part for part in (expression.text, failure) if part), command.language)
         receipt = memory_write_receipt(outcomes.experience, requested=proposal.memory_write_requested)
         if receipt is None:
             return expression

@@ -301,8 +301,10 @@ def route_participant_goal_deterministically(
         (r"^我的目标是([^。；;！？!?]+)(?:[。；;！？!?]|$)", "create", "goal", (), "active"),
         (r"^我承诺([^。；;！？!?]+)(?:[。；;！？!?]|$)", "create", "commitment", (), "active"),
     )
+    from dynamic_subject_agent.current_message import direct_statement_clauses
+    clauses = direct_statement_clauses(message)
     for pattern, action, kind, candidates, next_status in patterns:
-        match = re.match(pattern, text)
+        match = next((matched for clause in clauses if (matched := re.match(pattern, clause))), None)
         if match is None:
             continue
         terms = match.group(1).strip()

@@ -517,12 +517,23 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         write_requested = (result.proposal.action in {LivingMemoryAction.CREATE, LivingMemoryAction.REVISE}
                            or explicit_memory_write_request(command.utterance)
                            or not is_creative and not recalled_ids and contains_memory_write_claim(reply_text))
-        continuation = None
+        from dynamic_subject_agent.runtime_identity_reply import creation_failure_reply
+        creation_requested = explicit_creation_request(command.utterance)
+        if creation_requested and not is_creative:
+            # Failure is independent of whether Memory proposed a write.
+            # Existing factual/activity/reminder boundaries are kept alongside.
+            failure = creation_failure_reply(command.utterance)
+            if factual_boundary is None and reminder_request_kind(command.utterance) is None and activity_boundary_reply(command.utterance) is None:
+                reply_text = failure
+            elif failure not in reply_text:
+                reply_text += '\n\n' + failure
+        continuation = (ExpressionCandidate(reply_text, command.language, is_creative=is_creative, dialogue_priority=True)
+                        if is_creative or creation_requested else None)
         if write_requested:
             if is_creative or factual_boundary is not None or reminder_request_kind(command.utterance) is not None or activity_boundary_reply(command.utterance) is not None:
                 continuation = ExpressionCandidate(reply_text, command.language, is_creative=is_creative, dialogue_priority=True)
             elif explicit_creation_request(command.utterance) or is_dialogue_continuation(command.utterance):
-                continuation = ExpressionCandidate('这次没有完成你请求的创作或改写。', command.language, dialogue_priority=True)
+                continuation = ExpressionCandidate(creation_failure_reply(command.utterance), command.language, dialogue_priority=True)
             elif independent_memory_question(command.utterance, result.proposal.evidence_quote):
                 independent = ('这次还没能可靠地回答你另外的问题。' if contains_memory_write_claim(reply_text)
                                or self._split and (not refinement_used or refined_kind != 'conversation')
