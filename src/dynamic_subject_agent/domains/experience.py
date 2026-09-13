@@ -35,6 +35,7 @@ from dynamic_subject_agent.participant_goals import (
 )
 from dynamic_subject_agent.temporal_grounding import TemporalGrounding
 from dynamic_subject_agent.memory_control import MemoryWithdrawal, select_memory_withdrawal
+from dynamic_subject_agent.memory_evidence_scope import MemoryEvidenceStatus, scope_memory_evidence
 
 
 @dataclass(frozen=True)
@@ -496,6 +497,15 @@ class ExperienceDomain:
                     "memory_id": candidate.candidate_id,
                 },
             )
+        scoped = scope_memory_evidence(request.current_user_message, evidence)
+        if scoped.status is not MemoryEvidenceStatus.ELIGIBLE:
+            return (
+                'living-memory.' + scoped.status.value,
+                {'status': (LivingMemoryDecisionStatus.NO_OP.value
+                    if scoped.status is MemoryEvidenceStatus.PARTICIPANT_ONLY else LivingMemoryDecisionStatus.REJECTED.value),
+                 'recalled_memory_ids': list(candidate.recalled_memory_ids)},
+            )
+        evidence = scoped.evidence
         payload: dict[str, object] = {
             "status": LivingMemoryDecisionStatus.ACCEPTED.value,
             "memory_id": candidate.candidate_id,

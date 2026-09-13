@@ -1,3 +1,3 @@
 # 当前工作
 
-当前无执行切片。[Slice-33：复合请求完整响应](slice-33-compound-requests.md) 已完成，build为dogfood-s33，655项回归通过；20轮真实记录及重启见 [报告](../reports/2026-09-13-slice-33/REPORT.md)。包含用户另行批准的DeepSeek官方返回名兼容，历史外发与其他有限边界保持；下一项工作先确定用户目标和新任务书。
+当前执行 [Slice-34：连续体验与核心问题对照](slice-34-continuous-experience.md)。用户批准连续真实对话、问题排序及一个最影响体验的共同问题修复；基线cb92244 / dogfood-s33。先验收再选修复，不扩大Provider用途或状态范围。

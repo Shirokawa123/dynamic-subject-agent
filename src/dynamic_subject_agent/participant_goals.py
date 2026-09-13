@@ -17,6 +17,15 @@ MAX_EVIDENCE_QUOTE_CHARS = 1_000
 ACTIVE_RECORD_LIMIT = 20
 REPLY_RECORD_LIMIT = 5
 
+DIRECT_OPERATION_PATTERNS = (
+    (r'^我给自己定(?:个|一个)目标[：:]([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),
+    (r'^(?:我改主意了[：:]\s*)?把[^。；;！？!?]+的目标改成([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal'),
+    (r'^我的目标改为([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal'),
+    (r'^我的承诺改为([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'commitment'),
+    (r'^我的目标是([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),
+    (r'^我承诺([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'commitment'),
+)
+
 DIRECT_TRANSITION_COMMANDS = (
     ('goal', 'achieved', ('我的目标已达成', '目标已达成')),
     ('goal', 'abandoned', ('我放弃这个目标', '我放弃目标')),
