@@ -142,3 +142,18 @@ def test_numbered_edit_changes_only_its_target_or_reports_failure(tmp_path, repl
             assert '没有形成新的改写版本' in result.projection.expression_text
     finally:
         opened.app.close()
+
+
+def test_current_supplied_multi_paragraph_draft_retains_all_other_sentences(tmp_path):
+    class Partial(DraftProvider):
+        def reply(self, request):
+            return LivingMemoryReplyResult('窗边停着一缕风。', 'zh', 'creative')
+    opened = open_composite(tmp_path, Partial(), goal=NoopGoal())
+    try:
+        result = submit(opened, '原文是：「灯光落在纸上。晚风经过窗边。\n\n远山仍然安静。」第二句我想改成带窗的意象。')
+        assert '灯光落在纸上。' in result.projection.expression_text
+        assert '窗边停着一缕风。' in result.projection.expression_text
+        assert '远山仍然安静。' in result.projection.expression_text
+        assert '\n\n远山仍然安静。' in result.projection.expression_text
+    finally:
+        opened.app.close()
