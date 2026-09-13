@@ -1,6 +1,6 @@
 # Slice-36：偏好场景与更新语义
 
-状态：in progress。用户确认推进已说明方案，基线37721c8 / dogfood-s35。
+状态：completed。用户确认推进已说明方案，基线37721c8 / dogfood-s35，实现dogfood-s36。710项回归、19轮真实后台及重启验收、独立复核完成，见 [报告](../reports/2026-09-13-slice-36/REPORT.md)。
 
 ## 用户结果
 

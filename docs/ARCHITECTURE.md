@@ -54,6 +54,8 @@ Knowledge 与 Memory 同轮合并时，非创作 Memory 表达只引用当前用
 
 ## 数据
 
+Slice-36对完整明确颜色偏好句提供本地场景路由：场景按字面匹配，当前可解析active记录完整引用；无关场景/无场景颜色不混入，同场景普通偏好多值不按时间猜替换，显式“也喜欢”与唯一基准并存。新颜色无补充/更正意图先澄清；简单“场景改用颜色”仅对唯一无其他尾句记录revise，复杂/多条需要完整旧新原文。库存/披露不明不答颜色或更正，裸补充不借历史推断场景。Domain在目标证据收窄后复核最终写入依据，并使用能力本地preference_memories canonical完整active快照及真实完整性；Provider/recall原20条窗口不变，缺快照不能证明唯一性。没有新store、模型字段/用途/调用阶段，旧史保留；非闭集句式、颜色别名和多意图仍有限。见 [Slice-36报告](reports/2026-09-13-slice-36/REPORT.md)。
+
 Slice-35仅将结构完整的五类已知目标局部失败解释为“没有Memory revision”：无Memory片段、exact Goal failed-closed/noop/reason_code、受限顶层字段与experience-1.0版本同时满足才成立；未知/额外/不匹配结果仍unknown。其后原identity、完整性、冻结basis、pending、控制与预算检查不变，目标消息仍不进入历史，未扩大recent_dialogue用途。编号修改只替换同一已授权作品的指定句：接受单替换句或同句数完整稿，保留其他原句及段落，重组全文再检查；无对应句数或未变明确失败。历史按原首段稿件契约，当前完整重贴不套首段截断，不新建稿件store。见 [Slice-35报告](reports/2026-09-13-slice-35/REPORT.md)。
 
 Slice-34在ExperienceDomain完成原逐字、ID、动作和kind校验之后，按共享的既有目标/承诺闭集语法与完整引用跨度限定Memory写入依据。仅处理无逗号的明确操作分句：候选中扣除这些操作后只剩一段连续原文才保存；纯操作为Memory NoOp，多段、重复定位不明或有限依赖限定残余为rejected，不拼接/改述。引用/假设与逗号复合结构不据此裁切，目标成败不授权Memory替换独立安排。旧混合历史不迁移，用户明确Memory更正仍正常追加；Provider输入、调用、历史用途和原消息Admission不变，回执读取最终内容。该有限分工不等于通用事实/目标语义分库，详见 [连续体验对照](reports/2026-09-13-slice-34/REPORT.md)。

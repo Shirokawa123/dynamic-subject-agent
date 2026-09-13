@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s35`。已修复目标局部失败误挡刚交付作品的历史判断；编号修改只替换指定句，保留其他原句，当前重贴多段原文保留全部段落。真实连续修改、重启后继续修改及多段原文修改成立，生成失败和不回找旧稿的边界也保留，见 [Slice-35报告](docs/reports/2026-09-13-slice-35/REPORT.md)。目标更新不误伤独立安排的既有修复保持；颜色召回仍可能过宽，任意自然表达与生成成功不保证。DeepSeek旧请求名由官方路由至V4.1-Flash，仅接受两个精确返回名；含控制/未知历史不外发，不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s36`。明确“我做〔场景〕时偏爱什么颜色”只引用对应场景记录；旧偏好多值不按时间猜最新，显式“也喜欢”作为补充，未明确的新颜色先澄清。唯一简单记录可用“场景改用颜色”修订，多条或带其他内容的旧记录需完整原文确认。19轮真实验收与重启结果见 [Slice-36报告](docs/reports/2026-09-13-slice-36/REPORT.md)。该能力复用完整本地Memory库存与原子修订，不扩大模型数据用途；任意别名、模糊颜色和无场景跟进仍有限。此前目标/记忆分工与作品连续修改保持；DeepSeek仅接受已核实的两个返回名，不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。
