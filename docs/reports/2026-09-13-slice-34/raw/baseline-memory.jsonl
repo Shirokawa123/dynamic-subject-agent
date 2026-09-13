@@ -1,0 +1,78 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我最近在筹备一本小刊物，有点忙，但想按自己的节奏完成。", "active_contents": ["我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我最近在筹备一本小刊物，有点忙，但想按自己的节奏完成。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "按自己的节奏来挺好的，小刊物本来就该有它自己的呼吸。忙归忙，别把那份想做的感觉挤没了。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我做封面时偏爱雾紫色，排版喜欢留白。", "active_contents": ["我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "记住了，你做封面偏爱雾紫色，排版喜欢留白。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我做封面时偏爱雾紫色，排版喜欢留白。", "selected_contents": [], "recent_dialogue": [{"user_text": "我最近在筹备一本小刊物，有点忙，但想按自己的节奏完成。", "assistant_text": "按自己的节奏来挺好的，小刊物本来就该有它自己的呼吸。忙归忙，别把那份想做的感觉挤没了。"}], "reply_kind": "conversation", "reply_text": "雾紫配留白，听起来就很安静、有呼吸感。封面和排版按这个方向走，整本刊物的气质会挺统一的。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我周六整理栖云手册，但如果校样没到就顺延。我的目标是今年完成四篇随笔。", "active_contents": ["我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "好的，我记住了：你周六整理栖云手册，校样没到就顺延；今年目标是完成四篇随笔。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我周六整理栖云手册，但如果校样没到就顺延。我的目标是今年完成四篇随笔。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。周六整理栖云手册、校样没到就顺延，今年完成四篇随笔——这些我记下了。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "active_contents": ["我周六整理栖云手册，但如果校样没到就顺延。我的目标是今年完成四篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "revise", "base_reply": "好，我记下了：你今年的目标是完成六篇随笔。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把今年完成随笔的目标从四篇改为六篇。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "栖云手册的安排是什么？", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "栖云手册的安排是什么？", "selected_contents": [], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我的目标是什么？", "active_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "action": "none", "base_reply": "你今年的目标有：完成六篇随笔；读完三本书。另外你还提到过今年读完两本书。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我的目标是什么？", "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "active_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "慢一点也没关系，灯会等纸页把光收齐。\n慢一点也算抵达，字会在夜里自己发芽。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句我想改成带窗的意象。", "active_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句我想改成带窗的意象。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "窗里留一盏灯，等夜色慢慢靠岸。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "更正记忆：栖云手册改到周日整理，但校样没到仍然顺延。", "active_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "好，我记住了：栖云手册改到周日整理，校样没到仍然顺延。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "更正记忆：栖云手册改到周日整理，但校样没到仍然顺延。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，栖云手册改到周日整理，校样没到仍顺延。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

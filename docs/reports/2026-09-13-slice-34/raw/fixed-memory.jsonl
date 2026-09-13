@@ -1,0 +1,78 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我最近在筹备一本小刊物，有点忙，但想按自己的节奏完成。", "active_contents": ["栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我最近在筹备一本小刊物，有点忙，但想按自己的节奏完成。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "按自己的节奏来挺好的，筹备刊物本来就急不得。忙归忙，别把自己逼太紧。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我做封面时偏爱浅杏色，排版喜欢留白。", "active_contents": ["栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "记住了，你做封面时偏爱浅杏色，排版喜欢留白。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我做封面时偏爱浅杏色，排版喜欢留白。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "浅杏色配留白，听起来很舒服，也容易让封面显得干净、有呼吸感。你平时会怎么处理标题和主视觉的位置？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我周六整理澄湾手册，但如果校样没到就顺延。我的目标是今年完成五篇短文。", "active_contents": ["我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "记下了：周六整理澄湾手册，校样没到就顺延；今年完成五篇短文。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我周六整理澄湾手册，但如果校样没到就顺延。我的目标是今年完成五篇短文。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。周六整理澄湾手册、校样没到就顺延，今年完成五篇短文——这些我记下了。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "failure_code": "network-failure"}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把今年完成五篇短文的目标改成今年完成七篇短文。", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "create", "base_reply": "好，我记住了：今年完成七篇短文。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把今年完成五篇短文的目标改成今年完成七篇短文。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把今年完成五篇短文的目标改为七篇。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "澄湾手册的安排是什么？", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。"], "selected_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。"], "action": "none", "base_reply": "你周六整理澄湾手册，但如果校样没到就顺延。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "澄湾手册的安排是什么？", "selected_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我的目标是什么？", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "action": "none", "base_reply": "你提到过的目标有：今年完成六篇随笔（这是把原来的四篇改成的六篇）；今年读完三本书；另外还有一条是今年读完两本书。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我的目标是什么？", "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "不必赶在灯灭前写完，慢一点，字也会自己亮起来。\n把未完成留在桌上，明天它仍会等你落笔。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句我想改成带窗的意象。", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句我想改成带窗的意象。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "窗把夜色裁成一方，灯火在玻璃上轻轻回望。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "更正记忆：澄湾手册改到周日整理，但校样没到仍然顺延。", "active_contents": ["我周六整理澄湾手册，但如果校样没到就顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "revise", "base_reply": "好，我记下了：澄湾手册改到周日整理，校样没到仍然顺延。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "更正记忆：澄湾手册改到周日整理，但校样没到仍然顺延。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

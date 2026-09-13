@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s33`。明确的记忆、目标与两句创作可同轮分别处理；目标分句可位于消息前中后，确认引用最终实际结果，创作未完成会明确说明。完整引用、条件、撤回和多操作仍受检查，多份创作需一次指定一份。真实“安排＋两句诗→修改第二句”和“记忆＋目标＋两句诗”已走通，见 [Slice-33 报告](docs/reports/2026-09-13-slice-33/REPORT.md)。DeepSeek旧请求名现由官方路由至V4.1-Flash，兼容仅接受两个精确返回名称。含目标/显式记住的历史仍不外发，后续改稿可能需贴完整原文；任意中文组合及语义分库存不保证。有限指名查询歧义不猜测，逻辑遗忘保留原历史；当前不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s34`。连续出版场景的26轮前后对照发现并修复了“修改目标会覆盖独立安排记忆”：明确目标操作不再作为Memory替代内容，混合候选只保留可确认的一段连续独立原文，其他情况NoOp或拒绝，不拼接或清洗旧历史。修复后安排查询、后续更正和重启恢复成立，见 [连续对话](docs/reports/2026-09-13-slice-34/CONVERSATION.md) 与 [验收报告](docs/reports/2026-09-13-slice-34/REPORT.md)。该流程中的第二句续接失败、颜色召回过宽仍未解决，不能把安全拒绝算成完成。DeepSeek旧请求名由官方路由至V4.1-Flash，仅接受两个精确返回名；含目标/控制的历史外发仍受限，多份创作、逗号复合语义和任意中文仍有限。当前不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。
