@@ -1,0 +1,23 @@
+{
+  "redaction": "No credential, authorization header, internal identity/profile/timeline ID, entry ID, or timestamp is retained.",
+  "transport": {"method": "GET", "path": "/api/state", "after": "sequence 17"},
+  "http_status": 200,
+  "response": {
+    "build_id": "dogfood-s36",
+    "display_name": "许澄",
+    "conversation_history_status": "available",
+    "history_count": 17,
+    "last_sequence": 17,
+    "participant_goal_count": 0,
+    "memory_count": 5,
+    "memories": [
+      {"content": "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。", "kind": "durable", "status": "active"},
+      {"content": "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。", "kind": "durable", "status": "active"},
+      {"content": "周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。", "kind": "plan", "status": "superseded"},
+      {"content": "写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。", "kind": "durable", "status": "superseded"},
+      {"content": "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。", "kind": "durable", "status": "active"}
+    ],
+    "situated_state": null,
+    "medium_state": {"baseline": "settled", "version": 0}
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "redaction": "No credential, authorization header, internal identity/profile/timeline ID, entry ID, or timestamp is retained.",
+  "transport": {"method": "GET", "path": "/api/state", "after": "dedicated service stop and restart against the same temporary root"},
+  "http_status": 200,
+  "response": {"build_id": "dogfood-s36", "display_name": "许澄", "conversation_history_status": "available", "history_count": 10, "last_sequence": 10, "memory_count": 4, "participant_goal_count": 0}
+}
