@@ -1,3 +1,3 @@
 # 当前工作
 
-当前无执行切片。[独立验收：混合场景连续体验](slice-independent-mixed-scene-acceptance.md) 已完成，基线 `e96475b` / `dogfood-s39`。目标/Memory竞争与共同写作连续修改问题已记录；下一步需要新的用户目标与任务书。
+当前执行 [Slice-40：混合自然目标的识别与记忆分工](slice-40-mixed-goal-operations.md)，基线6f9ea62 / dogfood-s39。按用户确认先诊断独立验收13/14/21/22轮，修复明确目标操作与独立安排分工；共同写作与偏好澄清留待后续。

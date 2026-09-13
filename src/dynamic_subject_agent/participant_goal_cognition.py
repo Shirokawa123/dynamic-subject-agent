@@ -294,6 +294,15 @@ def route_participant_goal_deterministically(
             reply_text=reply,
             experience_summary="Python 直接查询参与者承诺。",
         )
+    from dynamic_subject_agent.current_goal_commands import applicable_goal_commands
+    commands = applicable_goal_commands(message, tuple(target.record for target in targets))
+    if commands:
+        command = commands[0]
+        matches = tuple(target for target in goals if target.record.terms == command.old_terms)
+        return DeterministicParticipantGoalRoute(
+            candidate=ParticipantGoalCommitmentCandidate(command.action, 'goal', command.terms,
+                matches[0].turn_ref if len(matches) == 1 else None, 'active', command.evidence),
+            selected_turn_refs=(), reply_text='目标操作以本轮结果为准。', experience_summary='绑定当前目标动作和逐字参数。')
     from dynamic_subject_agent.natural_goals import named_goal_changes, matching_goal_refs
     changes = named_goal_changes(message)
     if changes:

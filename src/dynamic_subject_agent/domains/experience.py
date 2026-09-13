@@ -525,7 +525,8 @@ class ExperienceDomain:
                     "memory_id": candidate.candidate_id,
                 },
             )
-        scoped = scope_memory_evidence(request.current_user_message, evidence)
+        scoped = scope_memory_evidence(request.current_user_message, evidence,
+            goal_records=request.current_state.participant_goal_commitments)
         if scoped.status is not MemoryEvidenceStatus.ELIGIBLE:
             return (
                 'living-memory.' + scoped.status.value,

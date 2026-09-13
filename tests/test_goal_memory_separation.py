@@ -136,7 +136,7 @@ def test_legacy_mixed_memory_is_not_rewritten_by_goal_revision(tmp_path, monkeyp
     opened = open_composite(tmp_path, MixedMemory(), goal=NoopGoal())
     try:
         with monkeypatch.context() as old:
-            old.setattr(experience, 'scope_memory_evidence', lambda message, evidence: MemoryEvidenceScope(MemoryEvidenceStatus.ELIGIBLE, evidence))
+            old.setattr(experience, 'scope_memory_evidence', lambda message, evidence, **kwargs: MemoryEvidenceScope(MemoryEvidenceStatus.ELIGIBLE, evidence))
             submit(opened, PLAN + GOAL)
         before = memories(opened)
         assert before[0].content == PLAN + GOAL

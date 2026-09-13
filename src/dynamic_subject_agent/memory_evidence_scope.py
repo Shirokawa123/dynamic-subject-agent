@@ -19,13 +19,14 @@ class MemoryEvidenceScope:
     evidence: str
 
 
-def scope_memory_evidence(message: str, evidence: str) -> MemoryEvidenceScope:
+def scope_memory_evidence(message: str, evidence: str, *, goal_records=()) -> MemoryEvidenceScope:
     """Reduce only validated verbatim evidence; never join disjoint remnants."""
     operations = tuple(statement for statement in direct_statement_spans(message)
         if not any(char in statement.text for char in '，,') and (
             any(re.fullmatch(pattern, statement.text) for pattern, _, _ in DIRECT_OPERATION_PATTERNS)
             or any(statement.text in phrases for _, _, phrases in DIRECT_TRANSITION_COMMANDS)))
-    natural = named_goal_changes(message)
+    from dynamic_subject_agent.current_goal_commands import applicable_goal_commands
+    natural = (*named_goal_changes(message), *applicable_goal_commands(message, goal_records))
     if named_goal_changes(evidence) and not natural:
         return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
     if natural:

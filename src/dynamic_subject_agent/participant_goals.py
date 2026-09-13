@@ -21,7 +21,7 @@ PARTICIPANT_GOAL_FAILURE_CODES = frozenset({
     'participant-goal-selection-invalid', 'participant-goal-reply-failed', 'participant-goal-reply-invalid',
 })
 
-SELF_GOAL_PREFIX = r'我(?:也)?给自己定(?:个|一个)目标[：:]'
+from dynamic_subject_agent.current_goal_commands import SELF_GOAL_PREFIX
 DIRECT_OPERATION_PATTERNS = (
     ('^' + SELF_GOAL_PREFIX + r'([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),
     (r'^(?:我改主意了[：:]\s*)?把[^。；;！？!?]+的目标改成([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal'),
@@ -200,18 +200,26 @@ def named_goal_revision_matches(message: str, terms: str) -> bool:
 
 def _has_conflicting_operation_intent(message: str) -> bool:
     # Inspect the whole admitted message, not a provider-selected first clause.
-    commands = re.findall(
+    commands = list(re.finditer(
         SELF_GOAL_PREFIX + r'|我的(?:目标|承诺)(?:是|改为)|'
         r'我承诺|把[^。；;！？!?]+的目标改成', message,
-    )
+    ))
     terminal_pattern = '|'.join(
         re.escape(phrase) for _, _, phrases in DIRECT_TRANSITION_COMMANDS for phrase in phrases
     )
-    commands.extend(re.findall(terminal_pattern, message))
+    commands.extend(re.finditer(terminal_pattern, message))
     from dynamic_subject_agent.natural_goals import named_goal_changes
-    commands.extend(change.evidence for change in named_goal_changes(message))
+    from dynamic_subject_agent.current_goal_commands import current_goal_commands
+    count = len(commands) + len(named_goal_changes(message))
+    for command in current_goal_commands(message):
+        # Count the new command once without hiding other commands in operands.
+        head = re.search(SELF_GOAL_PREFIX, command.evidence) if command.action == 'create' else None
+        already_counted = head is not None and any(
+            match.start() == command.start + head.start() for match in commands)
+        if not already_counted:
+            count += 1
     withdrawal = re.search(r'(?:不要|不用|别)(?:再)?(?:保存|记录|记(?:住|下)?)', message)
-    return len(commands) > 1 or withdrawal is not None
+    return count > 1 or withdrawal is not None
 
 
 class ParticipantGoalCommitmentEngine:
@@ -234,6 +242,20 @@ class ParticipantGoalCommitmentEngine:
             )
         if inventory_complete is not True or len(current_records) >= 100:
             return _plan(source_user_message_id, decision='rejected', reason_code='goal_inventory_incomplete')
+        from dynamic_subject_agent.current_goal_commands import applicable_goal_commands, current_goal_commands
+        explicit = applicable_goal_commands(message_text, tuple(target.record for target in current_records))
+        if not explicit and isinstance(candidate.evidence_quote, str) and current_goal_commands(candidate.evidence_quote):
+            return _plan(source_user_message_id, decision='rejected', reason_code='unsupported_goal_change')
+        if explicit:
+            command = explicit[0]
+            if (len(explicit) != 1 or not command.supported or candidate.action != command.action
+                or candidate.kind != 'goal' or candidate.terms != command.terms or candidate.evidence_quote != command.evidence):
+                return _plan(source_user_message_id, decision='rejected', reason_code='unsupported_goal_change')
+            if command.action == 'revise':
+                matches = tuple(target.turn_ref for target in current_records if target.record.kind == 'goal'
+                    and target.record.status == 'active' and target.record.terms == command.old_terms)
+                if len(matches) != 1 or matches[0] != candidate.target_ref:
+                    return _plan(source_user_message_id, decision='rejected', reason_code='ambiguous_target_evidence')
         if _has_conflicting_operation_intent(message_text):
             return _plan(
                 source_user_message_id,
@@ -525,6 +547,10 @@ def _allowed_terminal_statuses(kind: str) -> tuple[str, ...]:
 
 
 def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str) -> bool:
+    from dynamic_subject_agent.current_goal_commands import current_goal_commands
+    if kind == 'goal' and any(command.action == 'create' and command.supported and command.evidence == evidence_quote
+        for command in current_goal_commands(message_text)):
+        return True
     from dynamic_subject_agent.current_message import direct_statement_clauses
     direct = tuple(clause for clause in direct_statement_clauses(message_text) if evidence_quote.rstrip('。') in clause)
     if not direct:
@@ -540,6 +566,9 @@ def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str)
 
 def _has_explicit_revision_intent(kind: str, evidence_quote: str) -> bool:
     if kind == 'goal':
+        from dynamic_subject_agent.current_goal_commands import current_goal_commands
+        if any(command.action == 'revise' and command.supported for command in current_goal_commands(evidence_quote)):
+            return True
         from dynamic_subject_agent.natural_goals import named_goal_changes
         if len(named_goal_changes(evidence_quote)) == 1:
             return True
