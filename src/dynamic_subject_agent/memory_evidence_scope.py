@@ -26,7 +26,16 @@ def scope_memory_evidence(message: str, evidence: str, *, goal_records=()) -> Me
             any(re.fullmatch(pattern, statement.text) for pattern, _, _ in DIRECT_OPERATION_PATTERNS)
             or any(statement.text in phrases for _, _, phrases in DIRECT_TRANSITION_COMMANDS)))
     from dynamic_subject_agent.current_goal_commands import applicable_goal_commands
-    natural = (*named_goal_changes(message), *applicable_goal_commands(message, goal_records))
+    current = applicable_goal_commands(message, goal_records)
+    lifted = applicable_goal_commands(evidence, goal_records)
+    if lifted:
+        if not evidence or message.count(evidence) != 1:
+            return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
+        offset = message.index(evidence)
+        if any(not any(command.evidence == fragment.evidence and command.start == offset + fragment.start
+            for command in current) for fragment in lifted):
+            return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
+    natural = (*named_goal_changes(message), *current)
     if named_goal_changes(evidence) and not natural:
         return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
     if natural:

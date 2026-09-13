@@ -130,3 +130,23 @@ def test_provider_cannot_unwrap_quoted_revision(tmp_path, prefix):
         assert goals(opened) == before
     finally:
         opened.app.close()
+
+
+@pytest.mark.parametrize('prefix,suffix', [('朋友说：“', '。”'), ('如果晴天，就', '。')])
+def test_memory_provider_cannot_lift_a_reported_goal_edit(tmp_path, prefix, suffix):
+    command = '把目标「读完散文集」改成「先读两章」'
+    class Lifted(WholeMemory):
+        def propose(self, request):
+            if request.current_user_message.startswith(prefix):
+                return LivingMemoryProviderResult(LivingMemoryProposal(LivingMemoryAction.REVISE,
+                    command, request.active_memories[0].memory_id, memory_kind='plan'), '提出修改。', '收到。', 'zh')
+            return super().propose(request)
+    opened = open_composite(tmp_path, Lifted(), goal=NoGoalModel())
+    try:
+        submit(opened, '明天我会带点心去读书会，也给自己定个目标：读完散文集。')
+        old_goals, old_memories = goals(opened), records(opened)
+        result = submit(opened, prefix + command + suffix)
+        assert result.projection.living_memory_status == 'rejected'
+        assert goals(opened) == old_goals and records(opened) == old_memories
+    finally:
+        opened.app.close()
