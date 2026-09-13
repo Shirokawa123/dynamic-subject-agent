@@ -345,6 +345,8 @@ class CognitionRuntimeView:
     living_memory_history: tuple[LivingMemoryRecord, ...] = ()
     relationship_stance_summary: str = ""
     participant_goal_commitments: tuple[ParticipantGoalCommitmentRecord, ...] = ()
+    participant_goal_inventory: tuple[ParticipantGoalCommitmentRecord, ...] | None = None
+    participant_goal_inventory_complete: bool = False
     situated_state: SituatedStateRecord | None = None
     observed_at_us: int = 0
     medium_state: MediumStateRecord | None = None
@@ -982,7 +984,7 @@ class SubjectRuntime:
         )
         participant_goals = self._engine.list_participant_goal_commitments(
             active_only=True,
-            limit=20,
+            limit=100,
         )
         situated_records = self._engine.list_situated_states(
             active_only=True,
@@ -1059,7 +1061,9 @@ class SubjectRuntime:
             canonical_memory_history=memory_history,
             memory_control_complete=len(memory_history) < 100,
             relationship_stance_summary=stance_summary,
-            participant_goal_commitments=projected_participant_goals,
+            participant_goal_commitments=projected_participant_goals[:20],
+            participant_goal_inventory=projected_participant_goals,
+            participant_goal_inventory_complete=len(participant_goals) < 100,
             situated_state=situated_state,
             observed_at_us=observed_at_us,
             medium_state=medium_state,

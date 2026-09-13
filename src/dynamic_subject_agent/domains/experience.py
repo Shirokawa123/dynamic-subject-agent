@@ -63,6 +63,7 @@ class ExperienceReadView:
     memory_control_complete: bool = True
     preference_memories: tuple[LivingMemoryRecord, ...] | None = None
     pending_preference: PendingPreference | None = None
+    participant_goal_inventory_complete: bool = True
 
 
 @dataclass(frozen=True)
@@ -632,6 +633,7 @@ class ExperienceDomain:
             message_text=request.current_user_message,
             current_records=active_targets(records),
             candidate=raw_candidate,
+            inventory_complete=request.current_state.participant_goal_inventory_complete,
         )
         payload: dict[str, object] = {
             "status": plan.decision.replace("_", "-"),

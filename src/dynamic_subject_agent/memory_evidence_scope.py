@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from dynamic_subject_agent.current_message import direct_statement_spans
 from dynamic_subject_agent.participant_goals import DIRECT_OPERATION_PATTERNS, DIRECT_TRANSITION_COMMANDS
+from dynamic_subject_agent.natural_goals import named_goal_changes
 
 
 class MemoryEvidenceStatus(str, Enum):
@@ -24,6 +25,16 @@ def scope_memory_evidence(message: str, evidence: str) -> MemoryEvidenceScope:
         if not any(char in statement.text for char in '，,') and (
             any(re.fullmatch(pattern, statement.text) for pattern, _, _ in DIRECT_OPERATION_PATTERNS)
             or any(statement.text in phrases for _, _, phrases in DIRECT_TRANSITION_COMMANDS)))
+    natural = named_goal_changes(message)
+    if named_goal_changes(evidence) and not natural:
+        return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
+    if natural:
+        if not evidence or message.count(evidence) != 1:
+            return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
+        offset = message.index(evidence)
+        if any(not change.supported and change.start < offset + len(evidence) and change.end > offset for change in natural):
+            return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
+        operations = tuple(sorted((*operations, *natural), key=lambda item: item.start))
     if not operations:
         return MemoryEvidenceScope(MemoryEvidenceStatus.ELIGIBLE, evidence)
     if not evidence or message.count(evidence) != 1:

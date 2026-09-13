@@ -294,6 +294,15 @@ def route_participant_goal_deterministically(
             reply_text=reply,
             experience_summary="Python 直接查询参与者承诺。",
         )
+    from dynamic_subject_agent.natural_goals import named_goal_changes, matching_goal_refs
+    changes = named_goal_changes(message)
+    if changes:
+        change = changes[0]
+        refs = matching_goal_refs(change, targets) if len(changes) == 1 else ()
+        return DeterministicParticipantGoalRoute(
+            candidate=ParticipantGoalCommitmentCandidate('revise', 'goal', change.terms,
+                refs[0] if len(refs) == 1 else None, 'active', change.evidence),
+            selected_turn_refs=(), reply_text='目标修改以本轮结果为准。', experience_summary='解析当前明确命名的目标修改。')
     from dynamic_subject_agent.current_message import direct_statement_clauses
     clauses = direct_statement_clauses(message)
     for pattern, action, kind in DIRECT_OPERATION_PATTERNS:
@@ -417,6 +426,8 @@ class ControlledParticipantGoalCognition(CognitionEngine):
         basis: ExperienceBasis,
     ) -> CognitiveProposal:
         records = tuple(context.participant_goal_commitments[:ACTIVE_RECORD_LIMIT])
+        inventory = context.participant_goal_inventory if context.participant_goal_inventory is not None else records
+        inventory_complete = context.participant_goal_inventory is not None and context.participant_goal_inventory_complete
         targets = active_targets(records)
         request = ParticipantGoalClassificationRequest(
             current_user_message=command.utterance,
@@ -432,8 +443,10 @@ class ControlledParticipantGoalCognition(CognitionEngine):
         )
         deterministic = route_participant_goal_deterministically(
             command.utterance,
-            targets=targets,
+            targets=active_targets(inventory),
         )
+        if deterministic is not None:
+            records, targets = inventory, active_targets(inventory)
         if deterministic is not None:
             result = ParticipantGoalClassificationResult(
                 candidate=deterministic.candidate,
@@ -506,8 +519,9 @@ class ControlledParticipantGoalCognition(CognitionEngine):
         prechecked = ParticipantGoalCommitmentEngine().evaluate(
             source_user_message_id=plan.operation_ref.operation_id,
             message_text=command.utterance,
-            current_records=targets,
+            current_records=active_targets(inventory),
             candidate=result.candidate,
+            inventory_complete=inventory_complete,
         )
         relevant = bool(selected) or prechecked.decision != "no_update"
         if deterministic is not None:
@@ -611,7 +625,8 @@ class ControlledParticipantGoalCognition(CognitionEngine):
                             memory.memory_id for memory in context.active_memories
                         ),
                         active_memories=context.active_memories,
-                        participant_goal_commitments=records,
+                        participant_goal_commitments=inventory,
+                        participant_goal_inventory_complete=inventory_complete,
                     ),
                     candidates=candidates,
                     current_user_message=command.utterance,

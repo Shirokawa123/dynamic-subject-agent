@@ -386,6 +386,7 @@ class ControlledCompositeCognition(CognitionEngine):
                     participant_goal_commitments=(
                         participant_request.current_state.participant_goal_commitments
                     ),
+                    participant_goal_inventory_complete=participant_request.current_state.participant_goal_inventory_complete,
                 ),
                 candidates=(
                     (() if participant_goal_selection_priority else experience_request.candidates)
@@ -769,6 +770,8 @@ class ControlledCompositeCognition(CognitionEngine):
                 'ambiguous_target_evidence': '还不能确定你要修改哪一条目标或承诺，这次没有更改。',
                 'duplicate_active_record': '这项目标或承诺已经记录过了，没有重复保存。',
                 'conflicting_operation_intent': '这条消息包含多个操作或撤回了保存意图，这次没有更改目标与承诺。请一次确认一项操作。',
+                'goal_inventory_incomplete': '这次无法核实完整目标清单，没有更改目标；请先核对已有记录。',
+                'unsupported_goal_change': '这条目标修改还有无法分清的内容，请把新目标与其他安排分开说明，这次没有更改。',
             }.get(reason, '这次没有保存或修改目标与承诺，请明确说明要记录或修改的内容。')
         elif participant_record_query_kind(command.utterance) is not None:
             query = route_participant_goal_deterministically(

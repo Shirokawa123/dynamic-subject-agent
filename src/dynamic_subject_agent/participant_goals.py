@@ -21,8 +21,9 @@ PARTICIPANT_GOAL_FAILURE_CODES = frozenset({
     'participant-goal-selection-invalid', 'participant-goal-reply-failed', 'participant-goal-reply-invalid',
 })
 
+SELF_GOAL_PREFIX = r'我(?:也)?给自己定(?:个|一个)目标[：:]'
 DIRECT_OPERATION_PATTERNS = (
-    (r'^我给自己定(?:个|一个)目标[：:]([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),
+    ('^' + SELF_GOAL_PREFIX + r'([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'create', 'goal'),
     (r'^(?:我改主意了[：:]\s*)?把[^。；;！？!?]+的目标改成([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal'),
     (r'^我的目标改为([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'goal'),
     (r'^我的承诺改为([^。；;！？!?]+)(?:[。；;！？!?]|$)', 'revise', 'commitment'),
@@ -200,13 +201,15 @@ def named_goal_revision_matches(message: str, terms: str) -> bool:
 def _has_conflicting_operation_intent(message: str) -> bool:
     # Inspect the whole admitted message, not a provider-selected first clause.
     commands = re.findall(
-        r'我给自己定(?:个|一个)目标[：:]|我的(?:目标|承诺)(?:是|改为)|'
+        SELF_GOAL_PREFIX + r'|我的(?:目标|承诺)(?:是|改为)|'
         r'我承诺|把[^。；;！？!?]+的目标改成', message,
     )
     terminal_pattern = '|'.join(
         re.escape(phrase) for _, _, phrases in DIRECT_TRANSITION_COMMANDS for phrase in phrases
     )
     commands.extend(re.findall(terminal_pattern, message))
+    from dynamic_subject_agent.natural_goals import named_goal_changes
+    commands.extend(change.evidence for change in named_goal_changes(message))
     withdrawal = re.search(r'(?:不要|不用|别)(?:再)?(?:保存|记录|记(?:住|下)?)', message)
     return len(commands) > 1 or withdrawal is not None
 
@@ -221,6 +224,7 @@ class ParticipantGoalCommitmentEngine:
         message_text: str,
         current_records: tuple[ParticipantGoalCommitmentTarget, ...],
         candidate: ParticipantGoalCommitmentCandidate | None,
+        inventory_complete: bool = True,
     ) -> ParticipantGoalCommitmentPlan:
         if candidate is None or candidate.action == "noop":
             return _plan(
@@ -228,6 +232,8 @@ class ParticipantGoalCommitmentEngine:
                 decision="no_update",
                 reason_code="no_candidate",
             )
+        if inventory_complete is not True or len(current_records) >= 100:
+            return _plan(source_user_message_id, decision='rejected', reason_code='goal_inventory_incomplete')
         if _has_conflicting_operation_intent(message_text):
             return _plan(
                 source_user_message_id,
@@ -359,6 +365,16 @@ class ParticipantGoalCommitmentEngine:
         current_records: tuple[ParticipantGoalCommitmentTarget, ...],
         candidate: ParticipantGoalCommitmentCandidate,
     ) -> ParticipantGoalCommitmentPlan:
+        from dynamic_subject_agent.natural_goals import named_goal_changes, matching_goal_refs
+        natural = named_goal_changes(message_text)
+        if named_goal_changes(candidate.evidence_quote) and not natural:
+            return _plan(source_user_message_id, decision='rejected', reason_code='unsupported_goal_change')
+        if natural and (len(natural) != 1 or not natural[0].supported):
+            return _plan(source_user_message_id, decision='rejected', reason_code='unsupported_goal_change')
+        if natural:
+            refs = matching_goal_refs(natural[0], current_records)
+            if len(refs) != 1:
+                return _plan(source_user_message_id, decision='rejected', reason_code='ambiguous_target_evidence' if refs else 'unknown_target_ref')
         target = _find_target(current_records, candidate.target_ref)
         if target is None:
             return _plan(
@@ -367,14 +383,19 @@ class ParticipantGoalCommitmentEngine:
                 reason_code="unknown_target_ref",
                 evidence_quote=candidate.evidence_quote,
             )
-        if target.record.kind == 'goal' and not named_goal_revision_matches(message_text, target.record.terms):
+        if natural:
+            change = natural[0]
+            if (matching_goal_refs(change, current_records) != (candidate.target_ref,)
+                or candidate.terms != change.terms or candidate.evidence_quote != change.evidence):
+                return _plan(source_user_message_id, decision='rejected', reason_code='ambiguous_target_evidence')
+        if not natural and target.record.kind == 'goal' and not named_goal_revision_matches(message_text, target.record.terms):
             return _plan(
                 source_user_message_id,
                 decision='rejected',
                 reason_code='ambiguous_target_evidence',
                 evidence_quote=candidate.evidence_quote,
             )
-        if _requires_target_term_evidence(target, current_records, message_text):
+        if not natural and _requires_target_term_evidence(target, current_records, message_text):
             return _plan(
                 source_user_message_id,
                 decision="rejected",
@@ -509,7 +530,7 @@ def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str)
     if not direct:
         return False
     if kind == "goal":
-        natural = r'我给自己定(?:个|一个)目标[：:]'
+        natural = SELF_GOAL_PREFIX
         if re.search(natural, evidence_quote):
             # Quoting a conditional or another speaker's declaration is not consent.
             return any(re.match(natural, clause) is not None for clause in direct)
@@ -519,6 +540,9 @@ def _has_explicit_user_intent(kind: str, evidence_quote: str, message_text: str)
 
 def _has_explicit_revision_intent(kind: str, evidence_quote: str) -> bool:
     if kind == 'goal':
+        from dynamic_subject_agent.natural_goals import named_goal_changes
+        if len(named_goal_changes(evidence_quote)) == 1:
+            return True
         return '目标改为' in evidence_quote or '的目标改成' in evidence_quote
     return '承诺改为' in evidence_quote
 
