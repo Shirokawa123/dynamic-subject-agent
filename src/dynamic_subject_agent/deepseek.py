@@ -129,6 +129,9 @@ from dynamic_subject_agent.medium_cognition import (
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-v4-flash"
+# Official 2026-09-10 compatibility redirect; request bytes remain unchanged.
+# https://api-docs.deepseek.com/updates/
+_ACCEPTED_RESPONSE_MODELS = (DEEPSEEK_MODEL, "deepseek-flash")
 DEEPSEEK_PROVIDER = "deepseek-official-api"
 DEEPSEEK_PROVIDER_AUTHORITY_ID = "02081deb-96be-4f1c-8a17-9cc39f8daaac"
 DEEPSEEK_TERMS_DISCLOSURE_ID = "d0ee253f-0789-4af2-93c2-89d9bd1a0b01"
@@ -523,7 +526,7 @@ def _post_identity_reply_content(
     except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
     if (
-        payload.get("model") != DEEPSEEK_MODEL
+        payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
         or not isinstance(choices, list)
         or len(choices) != 1
         or not isinstance(message, dict)
@@ -756,7 +759,7 @@ class DeepSeekCognitionProvider(CognitionProvider):
         except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
         if (
-            payload.get("model") != DEEPSEEK_MODEL
+            payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
             or not isinstance(choices, list)
             or len(choices) != 1
             or not isinstance(message, dict)
@@ -916,7 +919,7 @@ class DeepSeekLivingMemoryProvider:
         if needs_kind:
             expected_fields.add("memory_kind")
         if (
-            payload.get("model") != DEEPSEEK_MODEL
+            payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
             or not isinstance(choices, list)
             or len(choices) != 1
             or not isinstance(message, dict)
@@ -1175,7 +1178,7 @@ class DeepSeekKnowledgeProvider:
             "language",
         }
         if (
-            payload.get("model") != DEEPSEEK_MODEL
+            payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
             or not isinstance(choices, list)
             or len(choices) != 1
             or not isinstance(message, dict)
@@ -1368,7 +1371,7 @@ class DeepSeekRelationshipProvider:
             "language",
         }
         if (
-            payload.get("model") != DEEPSEEK_MODEL
+            payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
             or not isinstance(choices, list)
             or len(choices) != 1
             or not isinstance(message, dict)
@@ -1651,7 +1654,7 @@ class DeepSeekParticipantGoalProvider:
         except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
             raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
         if (
-            payload.get("model") != DEEPSEEK_MODEL
+            payload.get("model") not in _ACCEPTED_RESPONSE_MODELS
             or not isinstance(choices, list)
             or len(choices) != 1
             or not isinstance(message, dict)
