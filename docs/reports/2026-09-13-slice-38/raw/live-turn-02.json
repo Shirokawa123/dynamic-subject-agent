@@ -1,0 +1,276 @@
+{
+  "message": "是补充。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "durable",
+    "new_memory_content": "我做邀请卡时偏爱浅杏色。",
+    "expression": "已按你的确认补充记录此前提供的偏好：「我做邀请卡时偏爱浅杏色。」",
+    "head_sequence": 29,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 10,
+        "user_text": "是补充。",
+        "user_language": "zh",
+        "assistant_text": "本轮没有新增或更正记忆。",
+        "assistant_language": "zh",
+        "published_at_us": 1789294330165709,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 11,
+        "user_text": "我回来了。刚才早餐杯垫和周六请朋友吃饭的事，你还记得哪些？",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。」\n「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789294393617215,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 2 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 12,
+        "user_text": "我做早餐时现在喜欢什么颜色？写笔记的颜色不要混进来。",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789294399222633,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 13,
+        "user_text": "那张餐桌卡片我先自己写了两句：「雨停以后，桌上有光。愿周六的早晨慢一点。」第二句想换得更像邀请，但别太郑重。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1789294405113757,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 14,
+        "user_text": "第一句也别再提雨，换成窗边有光的感觉。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1789294411018168,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 15,
+        "user_text": "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。",
+        "user_language": "zh",
+        "assistant_text": "已更正这条记忆，新内容是：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789294430248123,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 16,
+        "user_text": "那我写笔记时现在喜欢什么颜色？早餐的杯垫别算进来。",
+        "user_language": "zh",
+        "assistant_text": "你之前说过：「写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789294436195731,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 1 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 17,
+        "user_text": "谢谢，今天先到这里。周六的早餐我会自己慢慢准备。",
+        "user_language": "zh",
+        "assistant_text": "好，周六慢慢准备就好。",
+        "assistant_language": "zh",
+        "published_at_us": 1789294441492065,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "used",
+            "message": "本轮召回了 2 条既有记忆。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 18,
+        "user_text": "我们顺手给周六的餐桌写两句小卡片吧，要明亮一点，不要像广告。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿晨光落在杯沿，也落在你手边。\n愿这一餐简单明亮，像刚洗过的果子。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296361645440,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 19,
+        "user_text": "那张餐桌卡片我先自己写了两句：「雨停以后，桌上有光。愿周六的早晨慢一点。」第二句想换得更像邀请，但别太郑重。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨停以后，桌上有光。周六早上，来坐一会儿吧。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296367500833,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 20,
+        "user_text": "第一句也别再提雨，换成窗边有光的感觉。",
+        "user_language": "zh",
+        "assistant_text": "这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296372320378,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 21,
+        "user_text": "原文是：「雨停以后，桌上有光。愿周六的早晨慢一点。」第一句也别再提雨，换成窗边有光的感觉。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边有光，桌上有光。愿周六的早晨慢一点。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296378381354,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 22,
+        "user_text": "咱们一起给读书角写两句短笺，轻松一点。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿合上书的你，心里还留着一点暖。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296384318724,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 23,
+        "user_text": "第二句也想换成欢迎邻居的感觉。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿来坐坐的你，像回到邻居家一样自在。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296391363793,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 24,
+        "user_text": "第一句希望改得更像轻声欢迎。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿推门进来的你，像被轻声唤了一声，慢慢坐下就好。\n愿来坐坐的你，像回到邻居家一样自在。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296632404879,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 25,
+        "user_text": "我刚写了两句：「窗边留着光。愿早晨慢一点。」第二句想改得像邀请。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边留着光。愿早晨慢一点，也等你来坐。",
+        "assistant_language": "zh",
+        "published_at_us": 1789296638399708,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 26,
+        "user_text": "如果我们一起给客厅写两句卡片，你会怎么做？",
+        "user_language": "zh",
+        "assistant_text": "我会先想这两句是给谁看的：进门的人、来坐的人，还是我们自己。然后一句放轻，像招呼；一句留白，像把位置让出来。比如可以写成“推门进来，先不用说话”和“这里有空位，也有热茶”。你想让卡片更偏欢迎，还是更偏安静？",
+        "assistant_language": "zh",
+        "published_at_us": 1789296646461803,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 27,
+        "user_text": "我做邀请卡时偏爱雾蓝色。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「我做邀请卡时偏爱雾蓝色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789299748859981,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我做邀请卡时偏爱雾蓝色。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 28,
+        "user_text": "我做邀请卡时偏爱浅杏色。",
+        "user_language": "zh",
+        "assistant_text": "“邀请卡”已有偏好：\n「我做邀请卡时偏爱雾蓝色。」\n“浅杏色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+        "assistant_language": "zh",
+        "published_at_us": 1789299754303271,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 29,
+        "user_text": "是补充。",
+        "user_language": "zh",
+        "assistant_text": "已按你的确认补充记录此前提供的偏好：「我做邀请卡时偏爱浅杏色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789299759286083,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我做邀请卡时偏爱浅杏色。」"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「我做邀请卡时偏爱浅杏色。」"
+      }
+    ]
+  }
+}

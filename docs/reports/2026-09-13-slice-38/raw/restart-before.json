@@ -1,0 +1,314 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s38",
+  "profile_id": "<internal-id>",
+  "display_name": "许澄",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": false
+    },
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "许澄",
+      "freeze_basis_digest": "e74d9d23e312ea4795599639839453565116ca059e2cf12bd586f618cb51028d",
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 21,
+      "user_text": "原文是：「雨停以后，桌上有光。愿周六的早晨慢一点。」第一句也别再提雨，换成窗边有光的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边有光，桌上有光。愿周六的早晨慢一点。",
+      "assistant_language": "zh",
+      "published_at_us": 1789296378381354,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 22,
+      "user_text": "咱们一起给读书角写两句短笺，轻松一点。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿合上书的你，心里还留着一点暖。",
+      "assistant_language": "zh",
+      "published_at_us": 1789296384318724,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 23,
+      "user_text": "第二句也想换成欢迎邻居的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿翻开的每一页，都像雨后窗边一样安静。\n愿来坐坐的你，像回到邻居家一样自在。",
+      "assistant_language": "zh",
+      "published_at_us": 1789296391363793,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 24,
+      "user_text": "第一句希望改得更像轻声欢迎。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿推门进来的你，像被轻声唤了一声，慢慢坐下就好。\n愿来坐坐的你，像回到邻居家一样自在。",
+      "assistant_language": "zh",
+      "published_at_us": 1789296632404879,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 25,
+      "user_text": "我刚写了两句：「窗边留着光。愿早晨慢一点。」第二句想改得像邀请。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n窗边留着光。愿早晨慢一点，也等你来坐。",
+      "assistant_language": "zh",
+      "published_at_us": 1789296638399708,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 26,
+      "user_text": "如果我们一起给客厅写两句卡片，你会怎么做？",
+      "user_language": "zh",
+      "assistant_text": "我会先想这两句是给谁看的：进门的人、来坐的人，还是我们自己。然后一句放轻，像招呼；一句留白，像把位置让出来。比如可以写成“推门进来，先不用说话”和“这里有空位，也有热茶”。你想让卡片更偏欢迎，还是更偏安静？",
+      "assistant_language": "zh",
+      "published_at_us": 1789296646461803,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 27,
+      "user_text": "我做邀请卡时偏爱雾蓝色。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「我做邀请卡时偏爱雾蓝色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299748859981,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做邀请卡时偏爱雾蓝色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 28,
+      "user_text": "我做邀请卡时偏爱浅杏色。",
+      "user_language": "zh",
+      "assistant_text": "“邀请卡”已有偏好：\n「我做邀请卡时偏爱雾蓝色。」\n“浅杏色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299754303271,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 29,
+      "user_text": "是补充。",
+      "user_language": "zh",
+      "assistant_text": "已按你的确认补充记录此前提供的偏好：「我做邀请卡时偏爱浅杏色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299759286083,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做邀请卡时偏爱浅杏色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 30,
+      "user_text": "是补充。",
+      "user_language": "zh",
+      "assistant_text": "当前没有可确认的偏好问题，请重新写明场景和颜色。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299764756240,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 31,
+      "user_text": "我做邀请卡时偏爱什么颜色？",
+      "user_language": "zh",
+      "assistant_text": "关于“邀请卡”的颜色偏好，你明确记录过：\n「我做邀请卡时偏爱浅杏色。」\n「我做邀请卡时偏爱雾蓝色。」\n其中明确表述或经确认的新增偏好作为补充保留。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299769080144,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 32,
+      "user_text": "我做书套时偏爱墨绿色。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「我做书套时偏爱墨绿色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299773744920,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做书套时偏爱墨绿色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 33,
+      "user_text": "我做书套时偏爱米白色。",
+      "user_language": "zh",
+      "assistant_text": "“书套”已有偏好：\n「我做书套时偏爱墨绿色。」\n“米白色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299779450730,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 34,
+      "user_text": "算了。",
+      "user_language": "zh",
+      "assistant_text": "已取消这次偏好更新，原有记录保持不变。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299784641309,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 35,
+      "user_text": "我做书套时偏爱什么颜色？",
+      "user_language": "zh",
+      "assistant_text": "关于“书套”的颜色偏好，你明确记录过：\n「我做书套时偏爱墨绿色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299789282270,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 36,
+      "user_text": "我做书套时偏爱米白色。",
+      "user_language": "zh",
+      "assistant_text": "“书套”已有偏好：\n「我做书套时偏爱墨绿色。」\n“米白色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299794157215,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 37,
+      "user_text": "换成新的。",
+      "user_language": "zh",
+      "assistant_text": "已按你的确认更正记录此前提供的偏好：「我做书套时偏爱米白色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299798958966,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做书套时偏爱米白色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 38,
+      "user_text": "我做书套时偏爱什么颜色？",
+      "user_language": "zh",
+      "assistant_text": "关于“书套”的颜色偏好，你明确记录过：\n「我做书套时偏爱米白色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299804713732,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 39,
+      "user_text": "我做信纸时偏爱浅灰色。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「我做信纸时偏爱浅灰色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789299809253669,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「我做信纸时偏爱浅灰色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 40,
+      "user_text": "我做信纸时偏爱浅黄色。",
+      "user_language": "zh",
+      "assistant_text": "“信纸”已有偏好：\n「我做信纸时偏爱浅灰色。」\n“浅黄色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+      "assistant_language": "zh",
+      "published_at_us": 1789299814456068,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "我做信纸时偏爱浅灰色。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做书套时偏爱米白色。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做书套时偏爱墨绿色。",
+      "status": "superseded",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做邀请卡时偏爱浅杏色。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做邀请卡时偏爱雾蓝色。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "写读书笔记时，我最近不想再用深蓝色了，改成墨绿色的笔。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "菜单这个目标我想改成先定下三道菜，朋友来吃早餐的安排不变。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "周六我准备请两个朋友来吃早餐；我也给自己定个目标：在周五前把菜单想清楚。",
+      "status": "superseded",
+      "memory_kind": "plan"
+    },
+    {
+      "content": "写读书笔记的时候，我反而偏爱深蓝色的笔，安静一点更能专心。",
+      "status": "superseded",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "我做早餐时喜欢用青柠色的杯垫，看到它就觉得人醒过来了。",
+      "status": "active",
+      "memory_kind": "durable"
+    }
+  ],
+  "knowledge_count": 1,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}
