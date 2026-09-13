@@ -1,0 +1,35 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我的目标是什么？", "active_contents": ["澄湾手册改到周日整理，但校样没到仍然顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "action": "none", "base_reply": "你今年的目标是完成六篇随笔；另外你也提到过今年读完三本书，还有一条是今年读完两本书。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我的目标是什么？", "selected_contents": ["把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "active_contents": ["澄湾手册改到周日整理，但校样没到仍然顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请给这本小刊物写两句关于慢慢完成的短诗。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "不必赶在灯灭前写完，慢一点，字也会自己找到光。\n让每一页都等一等，等墨色沉下来，再交给明天。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句我想改成带窗的意象。", "active_contents": ["澄湾手册改到周日整理，但校样没到仍然顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句我想改成带窗的意象。", "selected_contents": [], "recent_dialogue": [{"user_text": "请给这本小刊物写两句关于慢慢完成的短诗。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n不必赶在灯灭前写完，慢一点，字也会自己找到光。\n让每一页都等一等，等墨色沉下来，再交给明天。"}], "reply_kind": "creative", "reply_text": "不必赶在灯灭前写完，慢一点，字也会自己找到光。\n让每一页都等一等，等窗边亮起来，再交给明天。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想改成带月的意象。", "active_contents": ["澄湾手册改到周日整理，但校样没到仍然顺延。", "我做封面时偏爱浅杏色，排版喜欢留白。", "栖云手册改到周日整理，但校样没到仍然顺延。", "把今年完成四篇随笔的目标改成今年完成六篇随笔。", "我做封面时偏爱雾紫色，排版喜欢留白。", "我喜欢柔和的蓝色", "我周二整理晴湾手册，但下雨就顺延。我的目标是今年读完三本书。", "我周日整理松岚清单，但如果样张未到就顺延。", "我周六整理苔桥笔记，但如果样张没到就顺延。", "我周四整理栖木清单，但下雨就改到周五。我的目标是今年读完两本书。", "我周三整理星溪稿件，但只在样张齐全时开始。", "我更喜欢克制的祝福", "我喜欢浅金色封面", "砚河手册改到周一整理，但没收到校样仍然顺延。", "我周三整理新月港手册。", "我周五整理雾桥手册。", "我周日整理银湾报告。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我想改成带月的意象。", "selected_contents": [], "recent_dialogue": [{"user_text": "第二句我想改成带窗的意象。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n不必赶在灯灭前写完，慢一点，字也会自己找到光。让每一页都等一等，等窗边亮起来，再交给明天。"}], "reply_kind": "creative", "reply_text": "不必赶在月落前写完，慢一点，字也会自己找到光。让每一页都等一等，等窗边亮起来，再交给明天。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

@@ -49,6 +49,6 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s34`。连续出版场景的26轮前后对照发现并修复了“修改目标会覆盖独立安排记忆”：明确目标操作不再作为Memory替代内容，混合候选只保留可确认的一段连续独立原文，其他情况NoOp或拒绝，不拼接或清洗旧历史。修复后安排查询、后续更正和重启恢复成立，见 [连续对话](docs/reports/2026-09-13-slice-34/CONVERSATION.md) 与 [验收报告](docs/reports/2026-09-13-slice-34/REPORT.md)。该流程中的第二句续接失败、颜色召回过宽仍未解决，不能把安全拒绝算成完成。DeepSeek旧请求名由官方路由至V4.1-Flash，仅接受两个精确返回名；含目标/控制的历史外发仍受限，多份创作、逗号复合语义和任意中文仍有限。当前不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s35`。已修复目标局部失败误挡刚交付作品的历史判断；编号修改只替换指定句，保留其他原句，当前重贴多段原文保留全部段落。真实连续修改、重启后继续修改及多段原文修改成立，生成失败和不回找旧稿的边界也保留，见 [Slice-35报告](docs/reports/2026-09-13-slice-35/REPORT.md)。目标更新不误伤独立安排的既有修复保持；颜色召回仍可能过宽，任意自然表达与生成成功不保证。DeepSeek旧请求名由官方路由至V4.1-Flash，仅接受两个精确返回名；含控制/未知历史不外发，不提供定时或自动提醒，其他边界见 [架构契约](docs/ARCHITECTURE.md)。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。
