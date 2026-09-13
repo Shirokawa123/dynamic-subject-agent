@@ -281,6 +281,24 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                 withheld = tuple(m.memory_id for m in control_active)
             active = tuple(m for m in active if m.memory_id not in withheld)
         available = tuple(m for m in control_active if m.memory_id not in withheld)
+        from dynamic_subject_agent.scoped_preferences import route_preference
+        preference = route_preference(command.utterance, context.canonical_memory_history,
+            complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
+        if preference is not None:
+            base = self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='按当前明确场景处理偏好，写入以最终裁决为准。',
+                expression_candidate=ExpressionCandidate(preference.reply, command.language, is_memory_answer=True, dialogue_priority=True))
+            candidates = ()
+            if preference.action in {'create', 'revise'}:
+                candidates = (ExperienceChangeCandidate(candidate_id=str(uuid5(NAMESPACE_URL, 'scoped-preference:' + basis.operation_id)),
+                    target_experience_id=basis.experience_id, evidence_refs=(basis.operation_id,),
+                    memory_action=preference.action, evidence_quote=preference.evidence,
+                    supersedes_memory_id=preference.target, memory_kind='durable'),)
+            return replace(base, memory_write_requested=bool(candidates), impact_envelope=replace(base.impact_envelope,
+                experience=ExperienceAdjudicationRequest(basis=basis,
+                    current_state=ExperienceReadView(basis.verified_prefix_digest, tuple(m.memory_id for m in control_active), control_active,
+                        memory_control_complete=context.memory_control_complete),
+                    candidates=candidates, current_user_message=command.utterance, source_user_message_id=basis.operation_id)))
         status_answer = exact_memory_status_answer(command.utterance, context.canonical_memory_history,
             complete=context.memory_control_complete, readable=not disclosure_unavailable and not withheld)
         if status_answer is not None:

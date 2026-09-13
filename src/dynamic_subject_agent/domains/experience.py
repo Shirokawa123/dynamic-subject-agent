@@ -492,6 +492,10 @@ class ExperienceDomain:
                     "memory_id": candidate.candidate_id,
                 },
             )
+        from dynamic_subject_agent.scoped_preferences import preference_change_allowed
+        if not preference_change_allowed(request.current_user_message, evidence, candidate.memory_action,
+            candidate.supersedes_memory_id, candidate.memory_kind, active_memories, complete=request.current_state.memory_control_complete):
+            return 'living-memory.preference-conflict', {'status': LivingMemoryDecisionStatus.REJECTED.value, 'memory_id': candidate.candidate_id}
         scoped = scope_memory_evidence(request.current_user_message, evidence)
         if scoped.status is not MemoryEvidenceStatus.ELIGIBLE:
             return (
