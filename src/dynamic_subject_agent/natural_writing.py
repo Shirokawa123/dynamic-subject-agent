@@ -3,6 +3,8 @@ import re
 
 
 def collaborative_clause(clause: str) -> str:
+    # A discourse lead-in does not change the following direct writing act.
+    clause = re.sub(r'^那就(?=请|帮我|替我|给|为|写|编|创作)', '', clause)
     return re.sub(r'^(?:(?:我们|咱们)(?:一起|顺手|先|来|再)*|(?:一起|顺手))(?=给|为|写|编|创作)', '', clause)
 
 
@@ -19,7 +21,7 @@ def natural_sentence_index(message: str) -> int | None:
             if match is None:
                 continue
             tail = match[2]
-            direct = re.match(r'^(?:我)?(?:也)?(?:想|希望|请)?(?:保留|改(?:成|为|得|一下)|换(?:成|为|得|一下))', tail)
+            direct = re.match(r'^(?:我)?(?:也)?(?:想|希望|请)?(?:再)?(?:保留|改(?:成|为|得|一下)|换(?:成|为|得|一下))', tail)
             wording = (re.fullmatch(r'(?:也)?(?:别|不要)(?:再)?提[^，,]{1,16}', tail)
                 and position + 1 < len(clauses)
                 and re.match(r'^\s*(?:请)?(?:改成|改为|换成|换得)', clauses[position + 1]))
