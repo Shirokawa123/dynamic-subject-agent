@@ -2,7 +2,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
-from dynamic_subject_agent.current_message import direct_statement_spans
+from dynamic_subject_agent.current_message import direct_statement_spans, mask_quoted_text
 from dynamic_subject_agent.participant_goals import DIRECT_OPERATION_PATTERNS, DIRECT_TRANSITION_COMMANDS
 from dynamic_subject_agent.natural_goals import named_goal_changes
 
@@ -19,8 +19,64 @@ class MemoryEvidenceScope:
     evidence: str
 
 
+def _context_bounds(message: str, span: re.Match) -> tuple[int, int]:
+    source = message[span.start():span.end()]
+    context = source.strip().removeprefix('请记住：').lstrip()
+    left = span.start() + source.index(context)
+    right = span.start() + len(source.rstrip('。！？!?；;\n \t'))
+    return left, right
+
+
+def _preserves_source_context(message: str, evidence: str) -> bool:
+    """Verbatim text is insufficient when an excerpt drops its source scope.
+
+    Presence is checked by Domain; confirmed preferences use their separately
+    verified source message, so evidence absent from this short answer is not
+    reinterpreted here. Quoted excerpts preserve their containing source unit
+    (apart from the explicit recording wrapper), or an existing exact
+    preference-replacement parameter whose target is checked by Domain later.
+    """
+    if not evidence or evidence not in message:
+        return True
+    if evidence.strip() in {message.strip(), message.strip().removeprefix('请记住：')}:
+        return True
+    masked = mask_quoted_text(message)
+    spans = tuple(re.finditer(r'[^。！？!?；;\n]+[。！？!?；;\n]?', masked))
+    # The ordinary request parser inserts a sentence boundary at a quote close.
+    # For attribution, keep following text such as "小夏说" in the same unit.
+    quote_mask = ''.join(' ' if original in '”」’"' and char == '。' else char
+        for original, char in zip(message, masked))
+    quote_units = tuple(re.finditer(r'[^。！？!?；;\n]+[。！？!?；;\n]?', quote_mask))
+    bound_prefix = r'^(?:如果|假如|假设|要是|除非|只有|只要|[^，,。！？!?；;：:\n]{1,24}(?:说|表示|提到|告诉我)(?:[：:,，]|(?=我|你|他|她)))'
+    for occurrence in re.finditer(re.escape(evidence), message):
+        start, end = occurrence.span()
+        if masked[start:end] != message[start:end]:
+            from dynamic_subject_agent.scoped_preferences import explicit_preference_replacement
+            replacement = explicit_preference_replacement(message)
+            prefix_space = len(message) - len(message.lstrip())
+            if replacement is None or evidence != replacement[2] or start != prefix_space + replacement.start(2):
+                for unit in quote_units:
+                    if unit.end() <= start or unit.start() >= end:
+                        continue
+                    left, right = _context_bounds(message, unit)
+                    if start > left or end < right:
+                        return False
+        for span in spans:
+            if span.end() <= start or span.start() >= end:
+                continue
+            source = message[span.start():span.end()]
+            context = source.strip().removeprefix('请记住：').lstrip()
+            if re.match(bound_prefix, context):
+                left, right = _context_bounds(message, span)
+                if start > left or end < right:
+                    return False
+    return True
+
+
 def scope_memory_evidence(message: str, evidence: str, *, goal_records=()) -> MemoryEvidenceScope:
     """Reduce only validated verbatim evidence; never join disjoint remnants."""
+    if not _preserves_source_context(message, evidence):
+        return MemoryEvidenceScope(MemoryEvidenceStatus.AMBIGUOUS, '')
     operations = tuple(statement for statement in direct_statement_spans(message)
         if not any(char in statement.text for char in '，,') and (
             any(re.fullmatch(pattern, statement.text) for pattern, _, _ in DIRECT_OPERATION_PATTERNS)

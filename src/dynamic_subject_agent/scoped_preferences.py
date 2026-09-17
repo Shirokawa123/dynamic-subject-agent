@@ -64,6 +64,12 @@ def recorded_preference(record: LivingMemoryRecord) -> ColorPreference | None:
         return None
     return replace(parsed, additive=parsed.additive or record.preference_additive)
 
+
+def explicit_preference_replacement(message: str):
+    """Only the existing complete old/new literal command, not quoted speech."""
+    match = re.fullmatch(r'更正记忆：把「([^」]+)」改成「([^」]+)」[。]?', message.strip())
+    return match if match is not None and _preference(match[2]) is not None else None
+
 def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, complete: bool, readable: bool = True) -> PreferenceRoute | None:
     """No guessed aliases, inferred recency, or cross-scenario replacements."""
     text = message.strip()
@@ -72,7 +78,7 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
     query = _QUERY.fullmatch(text)
     if query and len(direct_statement_clauses(text.rstrip('？?'))) != 1:
         query = None
-    literal = re.fullmatch(r'更正记忆：把「([^」]+)」改成「([^」]+)」[。]?', text)
+    literal = explicit_preference_replacement(text)
     body = text.removeprefix('更正记忆：').removeprefix('请记住：')
     pref = _preference(literal[2] if literal else body)
     if query is None and pref is None:
