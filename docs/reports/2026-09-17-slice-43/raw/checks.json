@@ -1,0 +1,36 @@
+{
+  "checks": {
+    "all_desktop_requests_committed": true,
+    "first_draft_two_sentences": true,
+    "natural_softening_delivered": false,
+    "first_repost_followup_preserves_other_sentence": true,
+    "preference_question_does_not_write": true,
+    "bookmark_query_has_both_colors_without_storage_box": true,
+    "arrangement_and_goal_created": true,
+    "goal_change_with_tablecloth_tail_delivered": false,
+    "rejected_goal_change_keeps_both_inventories": true,
+    "pending_replacement_after_restart_accepted": true,
+    "paper_bag_query_only_replacement": true,
+    "cross_topic_edit_requires_repost": true,
+    "second_repost_followup_preserves_other_sentence": true,
+    "condition_and_report_do_not_create_goals": true,
+    "reported_first_person_not_saved_without_attribution": false,
+    "changed_topic_invalidates_preference_confirmation": true,
+    "final_history_is_last_twenty": true
+  },
+  "capability_failures": [
+    {
+      "head": 19,
+      "capabilities": [
+        "participant_goal_status"
+      ]
+    },
+    {
+      "head": 22,
+      "capabilities": [
+        "participant_goal_status"
+      ]
+    }
+  ],
+  "overall_smooth_experience": false
+}

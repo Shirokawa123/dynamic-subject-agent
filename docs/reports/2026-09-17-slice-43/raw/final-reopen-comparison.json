@@ -1,0 +1,11 @@
+{
+  "equal": true,
+  "compared_fields": [
+    "display_name",
+    "build_id",
+    "memories",
+    "participant_goals",
+    "conversation_history_status",
+    "conversation_history"
+  ]
+}

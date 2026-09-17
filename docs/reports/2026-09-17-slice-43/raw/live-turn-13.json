@@ -1,0 +1,226 @@
+{
+  "message": "给纸袋挑颜色时，我通常喜欢浅灰色。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "durable",
+    "new_memory_content": "给纸袋挑颜色时，我通常喜欢浅灰色。",
+    "expression": "已记录你的原话：「给纸袋挑颜色时，我通常喜欢浅灰色。」",
+    "head_sequence": 14,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "周六社区要办旧书交换会，我想给每本书夹一张小书签，陪我想想怎么写吧。",
+        "user_language": "zh",
+        "assistant_text": "好呀，旧书交换会配小书签这个点子挺温柔的。你想让书签偏哪种感觉？比如：\n\n- **一句话小诗**：短、留白多，适合夹在书里被偶然翻到。- **交换寄语**：像“愿它在你手里，翻到新的一页”，适合陌生人之间的传递。- **书与人的小句子**：围绕“旧书换新读者”来写，主题更贴活动。- **轻幽默**：比如“我读过，现在轮到你了”，轻松不煽情。如果你愿意，我可以先按其中一种感觉，帮你写几句不同长度的小书签文案，你再挑顺眼的改。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657527484457,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在某一页停得久一点，像遇见一个愿意听你说话的人。\n愿下一位翻开你的人，正好需要这一页。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657532939053,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 3,
+        "user_text": "第一句我想更轻一点，别用“故事”这个词。",
+        "user_language": "zh",
+        "assistant_text": "这次没能给出符合你请求的回复，我不会用擅自创作的内容代替。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657538899220,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 4,
+        "user_text": "原文是：「书页里停着一束光。愿下一双手慢慢翻开。」第二句请改得像邀请。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n书页里停着一束光。请下一双手慢慢翻开。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657544235866,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 5,
+        "user_text": "第一句再改成风掠过书页的感觉。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风掠过书页。请下一双手慢慢翻开。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657549951682,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 6,
+        "user_text": "给书签挑颜色时，我通常喜欢墨绿色，远看也安静。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「给书签挑颜色时，我通常喜欢墨绿色，远看也安静。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789657554012078,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「给书签挑颜色时，我通常喜欢墨绿色，远看也安静。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 7,
+        "user_text": "我做收纳盒时喜欢浅蓝色。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「我做收纳盒时喜欢浅蓝色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789657557338744,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我做收纳盒时喜欢浅蓝色。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 8,
+        "user_text": "最近书签用米白色也不错，我拿不准这算添一种还是换掉原来的。",
+        "user_language": "zh",
+        "assistant_text": "“书签”已有偏好：\n「给书签挑颜色时，我通常喜欢墨绿色，远看也安静。」\n“米白色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657561787051,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 9,
+        "user_text": "是补充。",
+        "user_language": "zh",
+        "assistant_text": "已按你的确认补充记录此前提供的偏好：「最近书签用米白色也不错，我拿不准这算添一种还是换掉原来的。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789657565955893,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「最近书签用米白色也不错，我拿不准这算添一种还是换掉原来的。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 10,
+        "user_text": "我做书签时喜欢什么颜色？",
+        "user_language": "zh",
+        "assistant_text": "关于“书签”的颜色偏好，你明确记录过：\n「最近书签用米白色也不错，我拿不准这算添一种还是换掉原来的。」\n「给书签挑颜色时，我通常喜欢墨绿色，远看也安静。」\n其中明确表述或经确认的新增偏好作为补充保留。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657569816361,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 11,
+        "user_text": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「周六我会带两块桌布去旧书交换会，」\n\n已记录你的目标：「把书签的两句正文定下来」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657575574721,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「周六我会带两块桌布去旧书交换会，」"
+          },
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已记录一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 12,
+        "user_text": "把目标“把书签的两句正文定下来”改成“先写好一句邀请”，桌布照带。",
+        "user_language": "zh",
+        "assistant_text": "这次没有保存或更正这条记忆，原有记录保持不变。\n\n这条目标修改还有无法分清的内容，请把新目标与其他安排分开说明，这次没有更改。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657581072464,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "kept",
+            "message": "候选内容没有通过证据规则，现有记忆保持不变。"
+          },
+          {
+            "capability": "目标与承诺",
+            "kind": "kept",
+            "message": "表述没有通过明确证据规则，现有记录保持不变。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 13,
+        "user_text": "我现在有哪些目标？",
+        "user_language": "zh",
+        "assistant_text": "你当前的目标是：把书签的两句正文定下来。",
+        "assistant_language": "zh",
+        "published_at_us": 1789657586157300,
+        "explanations": [
+          {
+            "capability": "目标与承诺",
+            "kind": "used",
+            "message": "回答参考了 1 条已记录的目标或承诺。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 14,
+        "user_text": "给纸袋挑颜色时，我通常喜欢浅灰色。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「给纸袋挑颜色时，我通常喜欢浅灰色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789657590565450,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「给纸袋挑颜色时，我通常喜欢浅灰色。」"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「给纸袋挑颜色时，我通常喜欢浅灰色。」"
+      }
+    ]
+  }
+}
