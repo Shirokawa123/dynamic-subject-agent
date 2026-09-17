@@ -1,0 +1,50 @@
+{
+  "message": "我周六带两块桌布去旧书交换会。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "plan",
+    "new_memory_content": "我周六带两块桌布去旧书交换会。",
+    "expression": "已记录你的原话：「我周六带两块桌布去旧书交换会。」",
+    "head_sequence": 1,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "我周六带两块桌布去旧书交换会。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「我周六带两块桌布去旧书交换会。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789658842960811,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我周六带两块桌布去旧书交换会。」"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「我周六带两块桌布去旧书交换会。」"
+      }
+    ]
+  }
+}

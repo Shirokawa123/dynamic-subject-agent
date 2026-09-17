@@ -1,0 +1,28 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小林说：我下周会去看展览。", "active_contents": ["我周日会去河边画画。", "我周日带三盒彩笔。", "我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小林说：我下周会去看展览。", "selected_contents": [], "recent_dialogue": [{"user_text": "如果下雨，我周日会留在家里。", "assistant_text": "收到。"}, {"user_text": "我周日会去河边画画。", "assistant_text": "已记录你的原话：「我周日会去河边画画。」"}], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请记住：我给纸箱起名“松风”。", "active_contents": ["我周日会去河边画画。", "我周日带三盒彩笔。", "我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "create", "evidence_quote": "我给纸箱起名“松风”。", "memory_kind": "durable", "base_reply": "记住了，你的纸箱叫“松风”。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请记住：我给纸箱起名“松风”。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小周说：「小林说：‘我周日要带蛋糕。’」", "active_contents": ["我给纸箱起名“松风”。", "我周日会去河边画画。", "我周日带三盒彩笔。", "我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小周说：「小林说：‘我周日要带蛋糕。’」", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。你转述的是小周说小林周日要带蛋糕，这条信息我记下了。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

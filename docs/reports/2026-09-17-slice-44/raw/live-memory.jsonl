@@ -1,0 +1,53 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我周六带两块桌布去旧书交换会。", "active_contents": [], "selected_contents": [], "action": "create", "base_reply": "好，我记下了：周六你会带两块桌布去旧书交换会。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我周六带两块桌布去旧书交换会。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，周六带两块桌布去旧书交换会。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小夏说：“我给自己定个目标：把桌布叠整齐。”", "active_contents": ["我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小夏说：“我给自己定个目标：把桌布叠整齐。”", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "听起来是个挺实在的小目标。叠整齐这件事，慢慢来就好。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小周说：“我周日要带饼干。”", "active_contents": ["我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "create", "base_reply": "好，我记住了：小周周日要带饼干。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小周说：“我周日要带饼干。”", "selected_contents": [], "recent_dialogue": [{"user_text": "你现在记得哪些内容？", "assistant_text": "当前可用于召回的活跃记录：\n「我周六带两块桌布去旧书交换会。」"}], "reply_kind": "conversation", "reply_text": "收到，小周周日要带饼干。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小夏说：“我周六会带蛋糕。”；我周日带三盒彩笔。", "active_contents": ["我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "create", "base_reply": "好，我记下了——你周日带三盒彩笔。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小夏说：“我周六会带蛋糕。”；我周日带三盒彩笔。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到。周六蛋糕、周日三盒彩笔，这两项我记下了。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "如果下雨，我周日会留在家里。", "active_contents": ["我周日带三盒彩笔。", "我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "如果下雨，我周日会留在家里。", "selected_contents": [], "recent_dialogue": [{"user_text": "小夏说：“我周六会带蛋糕。”；我周日带三盒彩笔。", "assistant_text": "已记录你的原话：「我周日带三盒彩笔。」"}], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我周日会去河边画画。", "active_contents": ["我周日带三盒彩笔。", "我周六带两块桌布去旧书交换会。"], "selected_contents": [], "action": "create", "base_reply": "好，我记住了，你周日会去河边画画。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我周日会去河边画画。", "selected_contents": [], "recent_dialogue": [{"user_text": "小夏说：“我周六会带蛋糕。”；我周日带三盒彩笔。", "assistant_text": "已记录你的原话：「我周日带三盒彩笔。」"}, {"user_text": "如果下雨，我周日会留在家里。", "assistant_text": "收到。"}], "reply_kind": "conversation", "reply_text": "收到。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

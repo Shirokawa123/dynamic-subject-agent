@@ -1,0 +1,64 @@
+{
+  "checks": {
+    "11_committed_turns": true,
+    "all_desktop_http_success": true,
+    "original_report_no_unattributed_write": true,
+    "new_report_candidate_rejected": true,
+    "independent_self_statement_saved": true,
+    "quoted_name_self_statement_saved": true,
+    "nested_report_does_not_write": true,
+    "final_inventory_exactly_four_self_statements": true,
+    "no_report_promoted_to_goal": true
+  },
+  "observations": {
+    "transport_calls": 63,
+    "transport_http_200": 63,
+    "transport_failures": [],
+    "capability_failures": [
+      {
+        "head": 2,
+        "fields": [
+          "participant_goal_status"
+        ]
+      }
+    ],
+    "proposal_actions": [
+      {
+        "message": "我周六带两块桌布去旧书交换会。",
+        "action": "create"
+      },
+      {
+        "message": "小夏说：“我给自己定个目标：把桌布叠整齐。”",
+        "action": "none"
+      },
+      {
+        "message": "小周说：“我周日要带饼干。”",
+        "action": "create"
+      },
+      {
+        "message": "小夏说：“我周六会带蛋糕。”；我周日带三盒彩笔。",
+        "action": "create"
+      },
+      {
+        "message": "如果下雨，我周日会留在家里。",
+        "action": "none"
+      },
+      {
+        "message": "我周日会去河边画画。",
+        "action": "create"
+      },
+      {
+        "message": "小林说：我下周会去看展览。",
+        "action": "none"
+      },
+      {
+        "message": "请记住：我给纸箱起名“松风”。",
+        "action": "create"
+      },
+      {
+        "message": "小周说：「小林说：‘我周日要带蛋糕。’」",
+        "action": "none"
+      }
+    ]
+  }
+}
