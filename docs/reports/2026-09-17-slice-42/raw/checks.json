@@ -1,0 +1,25 @@
+{
+  "checks": {
+    "17_committed_turns": true,
+    "all_desktop_http_success": true,
+    "whole_natural_source_retained": true,
+    "question_before_write": true,
+    "supplement_preserves_both": true,
+    "query_scope_isolated": true,
+    "repeated_answer_no_write": true,
+    "restart_replace_committed": true,
+    "replace_keeps_other_scopes": true,
+    "replacement_query": true,
+    "cancel_no_write": true,
+    "topic_change_invalidates_choice": true,
+    "only_nonpreference_turn_calls_memory_provider": true
+  },
+  "observations": {
+    "transport_calls": 70,
+    "transport_http_200": 69,
+    "transport_failures": [
+      "network-failure"
+    ],
+    "head6_situated_status": "failed-closed"
+  }
+}

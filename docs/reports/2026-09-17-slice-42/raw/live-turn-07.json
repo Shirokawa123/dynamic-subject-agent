@@ -1,0 +1,138 @@
+{
+  "message": "最近信封用浅黄色也不错，我拿不准这算添一种还是换掉原来的。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "“信封”已有偏好：\n「给信封挑颜色时，我通常喜欢浅灰色。」\n“浅黄色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+    "head_sequence": 8,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "给展台贴纸挑颜色时，我通常喜欢砖红色，远看也不冷。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「给展台贴纸挑颜色时，我通常喜欢砖红色，远看也不冷。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789655996569497,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「给展台贴纸挑颜色时，我通常喜欢砖红色，远看也不冷。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "我做工具标签时喜欢海军蓝色。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「我做工具标签时喜欢海军蓝色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789656000751293,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「我做工具标签时喜欢海军蓝色。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 3,
+        "user_text": "最近展台贴纸用米白色也不错，我拿不准这算添一种还是换掉原来的。",
+        "user_language": "zh",
+        "assistant_text": "“展台贴纸”已有偏好：\n「给展台贴纸挑颜色时，我通常喜欢砖红色，远看也不冷。」\n“米白色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+        "assistant_language": "zh",
+        "published_at_us": 1789656005670233,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 4,
+        "user_text": "是补充。",
+        "user_language": "zh",
+        "assistant_text": "已按你的确认补充记录此前提供的偏好：「最近展台贴纸用米白色也不错，我拿不准这算添一种还是换掉原来的。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789656009730611,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「最近展台贴纸用米白色也不错，我拿不准这算添一种还是换掉原来的。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 5,
+        "user_text": "我做展台贴纸时喜欢什么颜色？",
+        "user_language": "zh",
+        "assistant_text": "关于“展台贴纸”的颜色偏好，你明确记录过：\n「最近展台贴纸用米白色也不错，我拿不准这算添一种还是换掉原来的。」\n「给展台贴纸挑颜色时，我通常喜欢砖红色，远看也不冷。」\n其中明确表述或经确认的新增偏好作为补充保留。",
+        "assistant_language": "zh",
+        "published_at_us": 1789656014265814,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 6,
+        "user_text": "是补充。",
+        "user_language": "zh",
+        "assistant_text": "当前没有可确认的偏好问题，请重新写明场景和颜色。",
+        "assistant_language": "zh",
+        "published_at_us": 1789656036667293,
+        "explanations": [
+          {
+            "capability": "当前姿态",
+            "kind": "failed",
+            "message": "本轮短时姿态处理未能完成；没有写入新姿态。"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 7,
+        "user_text": "给信封挑颜色时，我通常喜欢浅灰色。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「给信封挑颜色时，我通常喜欢浅灰色。」",
+        "assistant_language": "zh",
+        "published_at_us": 1789656040512296,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「给信封挑颜色时，我通常喜欢浅灰色。」"
+          }
+        ],
+        "citations": []
+      },
+      {
+        "head_sequence": 8,
+        "user_text": "最近信封用浅黄色也不错，我拿不准这算添一种还是换掉原来的。",
+        "user_language": "zh",
+        "assistant_text": "“信封”已有偏好：\n「给信封挑颜色时，我通常喜欢浅灰色。」\n“浅黄色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。",
+        "assistant_language": "zh",
+        "published_at_us": 1789656044951041,
+        "explanations": [],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": []
+  }
+}

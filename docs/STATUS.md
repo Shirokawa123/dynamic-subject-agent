@@ -4,4 +4,4 @@
 - Memory、Knowledge、Relationship、目标承诺、Situated、Medium、Windows UI 和持久身份已迁入。
 - 参与者目标/承诺、Situated State 与 Medium State 均完成真实 DeepSeek、Windows UI、持久化和重启验收，状态为 STABLE。
 - ModelGateway、ProviderAdapter 能力声明、provider/account credential slot 与 noop-null canonicalizer 已完成；明确目标查询/变化为 Python 路径。
-- 已验收 build 为 `dogfood-s41`：共同写作原19/20轮连续修改与“那就请写”首稿已修复，复用原编号重组和历史边界。795 passed、10轮真实后台与两次重开见 [报告](reports/2026-09-17-slice-41/REPORT.md)。有限句式和Provider/隐私边界保持；自由偏好澄清、任意自然改述及换话题后回找稿件仍未完成，不据此迁移记忆框架。
+- 已验收 build 为 `dogfood-s42`：自然场景颜色与未决补充/替换进入原canonical确认流程；旧未确认文本不升级为确定偏好。813 passed、17轮真实后台与两次重开见 [报告](reports/2026-09-17-slice-42/REPORT.md)（第6轮独立Situated网络失败保留）。有限句式与Provider/隐私边界保持；下一建议独立混合持续体验复验，不据此迁移记忆框架。
