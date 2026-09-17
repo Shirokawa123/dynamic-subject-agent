@@ -1207,6 +1207,7 @@ class LivingMemoryRecord:
     memory_kind: str = "durable"
     temporal_anchor: TemporalAnchor | None = None
     preference_additive: bool = False
+    preference_confirmed: bool = False
 
 
 @dataclass(frozen=True)
@@ -6156,6 +6157,7 @@ class TimelineEngine:
                     memory_kind=str(memory.get("memory_kind", "durable")),
                     temporal_anchor=temporal_anchor,
                     preference_additive=confirmation is not None and confirmation['choice'] == 'supplement',
+                    preference_confirmed=confirmation is not None,
                 )
             except (KeyError, TypeError, ValueError):
                 raise PublicationFailedClosed(

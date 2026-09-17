@@ -65,7 +65,7 @@ def make_question(message, records, *, complete, source_id, profile_id, timeline
     return q if PreferenceQuestion.parse(q.to_dict()) is not None else None
 
 def resolve(message, pending, records, *, complete, profile_id, timeline_id, now):
-    from dynamic_subject_agent.scoped_preferences import PreferenceRoute, _preference
+    from dynamic_subject_agent.scoped_preferences import PreferenceRoute, _preference, recorded_preference
     selected = choice(message)
     if selected is None:
         return None
@@ -92,7 +92,7 @@ def resolve(message, pending, records, *, complete, profile_id, timeline_id, now
         return PreferenceRoute('none', reply='原偏好内容无法确认，这次没有更新。')
     if selected == 'supplement':
         return PreferenceRoute('create', q.evidence)
-    matches = [(r, p) for r in records if r.status == 'active' and (p := _preference(r.content)) is not None and p.scope == pref.scope]
+    matches = [(r, p) for r in records if r.status == 'active' and (p := recorded_preference(r)) is not None and p.scope == pref.scope]
     if len(matches) != 1 or matches[0][1].tail:
         return PreferenceRoute('none', reply='替换对象不唯一或还包含其他内容，这次没有更新；请提供完整旧原文和新原文。')
     return PreferenceRoute('revise', q.evidence, matches[0][0].memory_id)

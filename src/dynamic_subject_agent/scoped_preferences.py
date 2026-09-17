@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 _SCOPE = r'(?P<scope>[^，,。！？!?；;：:\n「」“”]{1,24}?)'
 _COLOR = r'(?P<color>[^，,。！？!?；;：:\n「」“”]{1,24}色)'
 _STATEMENT = re.compile(r'我(?:做)?' + _SCOPE + r'时(?P<add>也)?(?:偏爱|喜欢)' + _COLOR + r'(?P<tail>(?:[，,][^。！？!?；;\n]+)?)[。]?')
+_NATURAL_STATEMENT = re.compile(r'给' + _SCOPE + r'挑颜色时[，,]我(?:通常)?(?P<add>也)?(?:偏爱|喜欢)' + _COLOR + r'(?P<tail>(?:[，,][^。！？!?；;\n]+)?)[。]?')
+_UNCERTAIN = re.compile(r'(?:最近)?' + _SCOPE + r'用' + _COLOR + r'也不错(?P<tail>[，,](?:我)?(?:拿不准|不确定)(?:这算|是)(?:添一种|补充)还是(?:换掉原来的|替换))[。]?')
 _CHANGE = re.compile(_SCOPE + r'改用' + _COLOR + r'[。]?')
 _QUERY = re.compile(r'我(?:现在|目前)?(?:做)?' + _SCOPE + r'时(?:现在|目前)?(?:偏爱|喜欢)(?:什么|哪种)颜色[？?。]?')
 UNAVAILABLE = '这次无法核实该场景的完整偏好记录，暂不判断当前偏好或执行更正。'
@@ -21,6 +23,7 @@ class ColorPreference:
     color: str
     additive: bool
     tail: str
+    needs_choice: bool = False
 
 @dataclass(frozen=True)
 class PreferenceRoute:
@@ -33,11 +36,18 @@ class PreferenceRoute:
 def _preference(text: str) -> ColorPreference | None:
     if len(direct_statement_clauses(text)) != 1:
         return None
-    match = _STATEMENT.fullmatch(text.strip())
+    match = _STATEMENT.fullmatch(text.strip()) or _NATURAL_STATEMENT.fullmatch(text.strip())
     if match:
         if any(marker in match['color'] for marker in ('不', '而', '但', '且', '或', '以及', '只', '如果')):
             return None
         return ColorPreference(match['scope'], match['color'], bool(match['add']), match['tail'])
+    match = _UNCERTAIN.fullmatch(text.strip())
+    if match:
+        # An explicitly undecided option must never become a direct write.
+        if (any(marker in match['scope'] for marker in ('如果', '假如', '假设', '要是', '朋友', '他说', '她说', '你说'))
+            or any(marker in match['color'] for marker in ('不', '而', '但', '且', '或', '以及', '只', '如果'))):
+            return None
+        return ColorPreference(match['scope'], match['color'], False, match['tail'], needs_choice=True)
     match = _CHANGE.fullmatch(text.strip())
     if match and any(marker in match['color'] for marker in ('不', '而', '但', '且', '或', '以及', '只', '如果')):
         return None
@@ -45,6 +55,14 @@ def _preference(text: str) -> ColorPreference | None:
 
 def _quotes(records: tuple[LivingMemoryRecord, ...]) -> str:
     return '\n'.join(f'「{content}」' for content in dict.fromkeys(record.content for record in records))
+
+
+def recorded_preference(record: LivingMemoryRecord) -> ColorPreference | None:
+    """Undecided legacy text alone cannot prove the user confirmed a choice."""
+    parsed = _preference(record.content)
+    if parsed is None or (parsed.needs_choice and not record.preference_confirmed):
+        return None
+    return replace(parsed, additive=parsed.additive or record.preference_additive)
 
 def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, complete: bool, readable: bool = True) -> PreferenceRoute | None:
     """No guessed aliases, inferred recency, or cross-scenario replacements."""
@@ -62,8 +80,8 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
     if not complete or not readable:
         return PreferenceRoute('none', reply=UNAVAILABLE)
     scope = query['scope'] if query else pref.scope
-    matched = tuple((record, replace(parsed, additive=parsed.additive or record.preference_additive)) for record in records if record.status == 'active'
-        and (parsed := _preference(record.content)) is not None and parsed.scope == scope)
+    matched = tuple((record, parsed) for record in records if record.status == 'active'
+        and (parsed := recorded_preference(record)) is not None and parsed.scope == scope)
     selected = tuple(record for record, _ in matched)
     if query:
         if not selected:
@@ -78,11 +96,13 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
         lead = '其中明确表述或经确认的新增偏好作为补充保留。' if len(colors) > 1 else ''
         return PreferenceRoute('none', reply=f'关于“{scope}”的颜色偏好，你明确记录过：\n{quotes}' + ('\n' + lead if lead else ''))
     if literal:
+        if pref.needs_choice:
+            return PreferenceRoute('none', reply='新原文仍未明确补充还是替换，这次没有更正。请先单独说明该场景的新颜色，再确认选择。')
         old = tuple(record for record in selected if record.content == literal[1])
         if len(old) != 1:
             return PreferenceRoute('none', reply='无法按完整旧原文唯一定位同场景的活跃偏好，这次没有更正。')
         return PreferenceRoute('revise', literal[2], old[0].memory_id)
-    changing = text.startswith('更正记忆：') or _CHANGE.fullmatch(body) is not None
+    changing = not pref.needs_choice and (text.startswith('更正记忆：') or _CHANGE.fullmatch(body) is not None)
     if changing:
         if len(matched) != 1:
             return PreferenceRoute('none', reply=f'“{scope}”的旧偏好无法唯一确定。这次没有更正；请用“更正记忆：把「完整旧原文」改成「完整新原文」”指定一条。')
@@ -94,6 +114,8 @@ def route_preference(message: str, records: tuple[LivingMemoryRecord, ...], *, c
         return PreferenceRoute('revise', body, old.memory_id)
     if any(parsed.color == pref.color and parsed.tail == pref.tail for _, parsed in matched):
         return PreferenceRoute('none', reply='该场景已有相同颜色和限定内容的记录，本轮没有重复保存。')
+    if pref.needs_choice and not matched:
+        return PreferenceRoute('none', reply=f'暂时没有能明确对应“{scope}”场景的旧偏好，无法判断补充或替换。请把该场景的完整偏好重新说明，这次暂未保存。')
     if matched and not pref.additive:
         return PreferenceRoute('none', evidence=body, needs_choice=True, reply=f'“{scope}”已有偏好：\n{_quotes(selected[:5])}\n“{pref.color}”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。')
     return PreferenceRoute('create', body)
