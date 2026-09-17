@@ -1,0 +1,32 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句再改成指尖沾着泥土的感觉。", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句再改成指尖沾着泥土的感觉。", "selected_contents": [], "recent_dialogue": [{"user_text": "第二句我想再改得像轻声邀请。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n泥土在掌心慢慢有了形状。\n要不要一起，把今天捏成喜欢的样子？"}], "reply_kind": "creative", "reply_text": "指尖沾着泥土的感觉慢慢有了形状。\n要不要一起，把今天捏成喜欢的样子？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句再改成轻声邀请，别再提旧话题。", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句再改成轻声邀请，别再提旧话题。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "那就把灯留着，等你愿意的时候，轻轻来坐一会儿。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「指尖沾着泥土。一起捏一只小杯吧。」第二句再改成问句。", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「指尖沾着泥土。一起捏一只小杯吧。」第二句再改成问句。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "指尖沾着泥土。一起捏一只小杯，好吗？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句再改成晨光照在陶土上的感觉。", "active_contents": [], "selected_contents": [], "action": "none", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句再改成晨光照在陶土上的感觉。", "selected_contents": [], "recent_dialogue": [{"user_text": "原文是：「指尖沾着泥土。一起捏一只小杯吧。」第二句再改成问句。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n指尖沾着泥土。一起捏一只小杯，好吗？"}], "reply_kind": "creative", "reply_text": "晨光照在陶土上。一起捏一只小杯，好吗？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

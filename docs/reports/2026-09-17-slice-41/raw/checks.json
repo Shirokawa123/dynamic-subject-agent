@@ -1,0 +1,16 @@
+{
+  "10_committed_turns": true,
+  "all_http_success": true,
+  "one_two_sentence_draft_per_success": true,
+  "original_second_sentence_preserved": true,
+  "first_sentence_preserved_after_new_draft": true,
+  "new_topic_first_sentence_preserved": true,
+  "restart_second_sentence_preserved": true,
+  "control_requests_repost": true,
+  "reposted_draft_first_sentence_preserved": true,
+  "reposted_continuation_second_sentence_preserved": true,
+  "no_memory_changes": true,
+  "control_has_no_history": true,
+  "repost_has_no_history": true,
+  "latest_pair_for_numbered_edits": true
+}

@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s41",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "原文是：「路过的人，留一小段空白。把今天的颜色带走。」第二句请改得更像邀请，不要命令口气。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n路过的人，留一小段空白。要不要把今天的颜色也带走？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647193998342,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": [],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

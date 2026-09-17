@@ -1,0 +1,127 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s41",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "原文是：「路过的人，留一小段空白。把今天的颜色带走。」第二句请改得更像邀请，不要命令口气。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n路过的人，留一小段空白。要不要把今天的颜色也带走？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647193998342,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "第一句再改成有风吹过纸边的感觉，别用“路过”。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风从纸边过，留一小段空白。要不要把今天的颜色也带走？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647199594463,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "那就请写两句吧：一行像邀请，一行像留给路人的空白，不要太像宣传语。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风从纸边过，要不要一起留一小段空白？\n路过的人，这一页还空着，等你来写。",
+      "assistant_language": "zh",
+      "published_at_us": 1789647206901362,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "第二句请再换成邀请大家留下一个词的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风从纸边过，要不要一起留一小段空白？\n路过的人，留下一个词，让这一页有你的痕迹。",
+      "assistant_language": "zh",
+      "published_at_us": 1789647215294600,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "请给陶艺桌写两句小卡片，第一句写泥土，第二句写一起动手。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n泥土在掌心慢慢有了形状。\n一起动手，把今天捏成喜欢的样子。",
+      "assistant_language": "zh",
+      "published_at_us": 1789647221359870,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "第二句我想再改得像轻声邀请。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n泥土在掌心慢慢有了形状。\n要不要一起，把今天捏成喜欢的样子？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647227907929,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 7,
+      "user_text": "第一句再改成指尖沾着泥土的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n指尖沾着泥土的感觉慢慢有了形状。\n要不要一起，把今天捏成喜欢的样子？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647325057287,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 8,
+      "user_text": "第二句再改成轻声邀请，别再提旧话题。",
+      "user_language": "zh",
+      "assistant_text": "这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。",
+      "assistant_language": "zh",
+      "published_at_us": 1789647330736606,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 9,
+      "user_text": "原文是：「指尖沾着泥土。一起捏一只小杯吧。」第二句再改成问句。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n指尖沾着泥土。一起捏一只小杯，好吗？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647337226516,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 10,
+      "user_text": "第一句再改成晨光照在陶土上的感觉。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n晨光照在陶土上。一起捏一只小杯，好吗？",
+      "assistant_language": "zh",
+      "published_at_us": 1789647344498483,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": [],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

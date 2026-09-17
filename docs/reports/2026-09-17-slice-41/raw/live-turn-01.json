@@ -1,0 +1,48 @@
+{
+  "message": "第一句再改成有风吹过纸边的感觉，别用“路过”。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风从纸边过，留一小段空白。要不要把今天的颜色也带走？",
+    "head_sequence": 2,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "原文是：「路过的人，留一小段空白。把今天的颜色带走。」第二句请改得更像邀请，不要命令口气。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n路过的人，留一小段空白。要不要把今天的颜色也带走？",
+        "assistant_language": "zh",
+        "published_at_us": 1789647193998342,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "第一句再改成有风吹过纸边的感觉，别用“路过”。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n风从纸边过，留一小段空白。要不要把今天的颜色也带走？",
+        "assistant_language": "zh",
+        "published_at_us": 1789647199594463,
+        "explanations": [],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": []
+  }
+}
