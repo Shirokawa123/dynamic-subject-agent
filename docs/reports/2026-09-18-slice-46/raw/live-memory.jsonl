@@ -1,0 +1,45 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。", "active_contents": [], "selected_contents": [], "action": "create", "evidence_quote": "周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。", "memory_kind": "plan", "base_reply": "好，我记下了：周六你带两块桌布去旧书交换会，还要把书签的两句正文定下来。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "好，换到周六的旧书交换会。两块桌布和把书签那两句正文定下来，这个目标挺具体。你希望那两句往哪个方向走——偏温柔、偏利落，还是想带点交换会的味道？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把目标“把书签的两句正文定下来”改成“先写好一句邀请”，桌布照带。", "active_contents": ["周六我会带两块桌布去旧书交换会，"], "selected_contents": [], "action": "revise", "evidence_quote": "把目标“把书签的两句正文定下来”改成“先写好一句邀请”，桌布照带。", "memory_kind": "durable", "base_reply": "好，记下了：周六旧书交换会，目标改成先写好一句邀请，桌布照带两块。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把目标“把书签的两句正文定下来”改成“先写好一句邀请”，桌布照带。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，目标改为“先写好一句邀请”，桌布照带。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我现在有哪些目标？", "active_contents": ["周六我会带两块桌布去旧书交换会，"], "selected_contents": ["周六我会带两块桌布去旧书交换会，"], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "我记得你提过，周六你会带两块桌布去旧书交换会。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我现在有哪些目标？", "selected_contents": ["周六我会带两块桌布去旧书交换会，"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "换个话题：明天我会带雨伞去植物园，也给自己定个目标：画好一页植物速写。", "active_contents": ["周六我会带两块桌布去旧书交换会，"], "selected_contents": [], "action": "create", "evidence_quote": "明天我会带雨伞去植物园，也给自己定个目标：画好一页植物速写。", "memory_kind": "plan", "base_reply": "好，我记住了：明天你会带雨伞去植物园，目标是画好一页植物速写。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "换个话题：明天我会带雨伞去植物园，也给自己定个目标：画好一页植物速写。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "好，换到植物园这个话题。明天带伞、画一页植物速写，听起来是个很具体的小目标。你想先聊画什么植物，还是怎么安排这一页的构图？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "植物速写这个目标我想改成先画两片叶子，雨伞照带。", "active_contents": ["明天我会带雨伞去植物园，", "周六我会带两块桌布去旧书交换会，"], "selected_contents": [], "action": "revise", "evidence_quote": "植物速写这个目标我想改成先画两片叶子，雨伞照带。", "memory_kind": "durable", "base_reply": "好，那明天去植物园就先画两片叶子，雨伞也照带。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "植物速写这个目标我想改成先画两片叶子，雨伞照带。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把植物速写先缩到两片叶子，雨伞照带。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

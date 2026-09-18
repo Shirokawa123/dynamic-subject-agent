@@ -1,0 +1,16 @@
+{
+  "checks": {
+    "11_committed": true,
+    "original_edit": true,
+    "named_edit": true,
+    "restart_edit": true,
+    "two_invalid_tails_rejected": true,
+    "invalid_keeps_state": true,
+    "no_new_object_memory": true
+  },
+  "observations": {
+    "transport_calls": 64,
+    "http200": 64,
+    "transport_failures": []
+  }
+}

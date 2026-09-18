@@ -1,0 +1,60 @@
+{
+  "message": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": "plan",
+    "new_memory_content": "周六我会带两块桌布去旧书交换会，",
+    "expression": "已记录你的原话：「周六我会带两块桌布去旧书交换会，」\n\n已记录你的目标：「把书签的两句正文定下来」。",
+    "head_sequence": 1,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。",
+        "user_language": "zh",
+        "assistant_text": "已记录你的原话：「周六我会带两块桌布去旧书交换会，」\n\n已记录你的目标：「把书签的两句正文定下来」。",
+        "assistant_language": "zh",
+        "published_at_us": 1789728233507827,
+        "explanations": [
+          {
+            "capability": "记忆",
+            "kind": "changed",
+            "message": "已形成新记录：「周六我会带两块桌布去旧书交换会，」"
+          },
+          {
+            "capability": "目标与承诺",
+            "kind": "changed",
+            "message": "已记录一项目标或承诺。"
+          }
+        ],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "accepted",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": "accepted",
+    "participant_goal_action": "create",
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": [
+      {
+        "capability": "记忆",
+        "kind": "changed",
+        "message": "已形成新记录：「周六我会带两块桌布去旧书交换会，」"
+      },
+      {
+        "capability": "目标与承诺",
+        "kind": "changed",
+        "message": "已记录一项目标或承诺。"
+      }
+    ]
+  }
+}

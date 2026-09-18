@@ -1,0 +1,61 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s46",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "换个话题：周六我会带两块桌布去旧书交换会，也给自己定个目标：把书签的两句正文定下来。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「周六我会带两块桌布去旧书交换会，」\n\n已记录你的目标：「把书签的两句正文定下来」。",
+      "assistant_language": "zh",
+      "published_at_us": 1789728233507827,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「周六我会带两块桌布去旧书交换会，」"
+        },
+        {
+          "capability": "目标与承诺",
+          "kind": "changed",
+          "message": "已记录一项目标或承诺。"
+        }
+      ],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "周六我会带两块桌布去旧书交换会，",
+      "status": "active",
+      "memory_kind": "plan"
+    }
+  ],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [
+    {
+      "kind": "goal",
+      "terms": "把书签的两句正文定下来",
+      "status": "active",
+      "evidence_quote": "也给自己定个目标：把书签的两句正文定下来"
+    }
+  ],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}
