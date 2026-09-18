@@ -414,6 +414,8 @@ class ControlledLivingMemoryCognition(CognitionEngine):
         refined_kind = None
         expression_failure_used = False
         revision_index = sentence_revision_index(command.utterance)
+        from dynamic_subject_agent.natural_writing import sentence_edit_forbidden_terms
+        forbidden_terms = sentence_edit_forbidden_terms(command.utterance, revision_index) if revision_index is not None else ()
         from dynamic_subject_agent.runtime_identity_reply import supplied_draft_candidates
         current_draft_present = bool(supplied_draft_candidates(command.utterance))
         revision_supplied = revision_index is not None and has_supplied_sentence(command.utterance, revision_index)
@@ -488,10 +490,12 @@ class ControlledLivingMemoryCognition(CognitionEngine):
                         message=command.utterance, reply_kind=reply_result.reply_kind,
                         continuation_allowed=revision_supplied or (bool(recent_dialogue) and is_dialogue_continuation(command.utterance)
                             and (revision_index is None or revision_ready)))
+                if revision_ready and (forbidden_terms is None or (forbidden_terms and reply_result.reply_kind != 'creative')):
+                    guarded_reply = None
                 if guarded_reply is not None and guarded_reply.startswith(CREATIVE_REPLY_PREFIX) and revision_index is not None and revision_ready:
                     from dynamic_subject_agent.runtime_identity_reply import complete_sentence_revision, supplied_draft_text
                     original = supplied_draft_text(command.utterance) if revision_supplied else recent_dialogue[-1].assistant_text
-                    revised = complete_sentence_revision(guarded_reply, original, revision_index, source_is_history=not revision_supplied)
+                    revised = complete_sentence_revision(guarded_reply, original, revision_index, source_is_history=not revision_supplied, forbidden_terms=forbidden_terms or ())
                     guarded_reply = (contextual_reply(revised, message=command.utterance, reply_kind='creative', continuation_allowed=True)
                                      if revised is not None else None)
                 if (guarded_reply is not None and recent_dialogue and is_dialogue_continuation(command.utterance)

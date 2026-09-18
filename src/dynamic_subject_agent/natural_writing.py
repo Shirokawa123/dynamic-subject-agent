@@ -51,3 +51,33 @@ def authored_drafts(message: str) -> tuple[str | None, ...]:
             body = next(part for part in match.groups() if part)
             drafts.append(None if any(char in body for char in '「」“”"') else body)
     return tuple(drafts)
+
+
+def sentence_edit_forbidden_terms(message: str, index: int) -> tuple[str, ...] | None:
+    """Literal current constraints; None means a malformed quoted constraint."""
+    from dynamic_subject_agent.current_message import mask_quoted_text
+    masked = mask_quoted_text(message)
+    numeral = {1: '一1', 2: '二2', 3: '三3'}[index]
+    pairs = {'“': '”', '「': '」', '‘': '’', '"': '"'}
+    terms = []
+    for unit in re.finditer(r'[^。！？!?；;\n]+[。！？!?；;\n]?', masked):
+        visible = unit[0].strip()
+        raw = message[unit.start():unit.end()].strip().rstrip('。！？!?；;')
+        if re.match(r'^第[' + numeral + r']句', visible):
+            clauses = re.split(r'[，,]', raw)[1:]
+        elif re.match(r'^(?:也)?(?:别|不要)(?:再)?用', visible):
+            clauses = re.split(r'[，,]', raw)
+        else:
+            continue
+        for clause in clauses:
+            match = re.fullmatch(r'(?:也)?(?:别|不要)(?:再)?用([“「‘"])([^“”「」‘’"。！？!?；;，,\n]{1,24})([”」’"])(?:这个词)?', clause.strip())
+            if match and pairs[match[1]] == match[3] and match[2].strip():
+                terms.append(match[2])
+            elif (re.match(r'^(?:也)?(?:别|不要)(?:再)?用', clause.strip())
+                and any(char in clause for char in '“”「」‘’"')):
+                return None
+            else:
+                # Unknown intervening clauses may establish report/condition
+                # scope. Do not promote a later fragment into an instruction.
+                break
+    return tuple(dict.fromkeys(terms))

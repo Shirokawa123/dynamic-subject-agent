@@ -190,7 +190,7 @@ def supplied_draft_text(message: str) -> str | None:
     return candidates[0] if len(candidates) == 1 else None
 
 
-def complete_sentence_revision(text: str, original: str, index: int, *, source_is_history: bool) -> str | None:
+def complete_sentence_revision(text: str, original: str, index: int, *, source_is_history: bool, forbidden_terms: tuple[str, ...] = ()) -> str | None:
     """Apply one numbered replacement to the same already-authorized draft."""
     old_body = expression_body(original)
     if source_is_history:
@@ -201,7 +201,7 @@ def complete_sentence_revision(text: str, original: str, index: int, *, source_i
     if not 1 <= index <= len(old) or len(new) not in {1, len(old)}:
         return None
     replacement = new[0] if len(new) == 1 else new[index - 1]
-    if replacement == old[index - 1]:
+    if replacement == old[index - 1] or any(term in replacement for term in forbidden_terms):
         return None
     target = matches[index - 1]
     leading_space = target[0][:len(target[0]) - len(target[0].lstrip())]
