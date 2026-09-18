@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 import re
 from dynamic_subject_agent.current_message import direct_statement_spans
+from dynamic_subject_agent.unchanged_arrangement import is_unchanged_arrangement
 
 _PREFIX = r'(?:(?:换个话题|说正事)[：:]|[（(]诊断对照[）)])'
 SELF_GOAL_PREFIX = r'我(?:也)?给自己定(?:个|一个)目标[：:]'
@@ -52,7 +53,7 @@ def current_goal_commands(message: str) -> tuple[CurrentGoalCommand, ...]:
         pairs = {'“': '”', '「': '」', '"': '"'}
         paired = pairs[matched['oq']] == matched['oc'] and pairs[matched['nq']] == matched['nc']
         tail = matched['tail'].rstrip('。').strip()
-        unchanged = not tail or re.fullmatch(r'[，,](?:(?:安排|计划)(?:保持)?不变|(?:椅子|工具|材料|点心)照带)', tail) is not None
+        unchanged = not tail or (tail.startswith(('，', ',')) and is_unchanged_arrangement(tail[1:]))
         commands.append(CurrentGoalCommand('revise', matched['new'], message[:matched.end('nc')].strip(),
             0, len(message), matched['old'], bool(matched['label']), paired and unchanged))
     return tuple(commands)

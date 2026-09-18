@@ -1,7 +1,8 @@
 """Literal goal-change commands and their independent unchanged context."""
 from dataclasses import dataclass
 import re
-from dynamic_subject_agent.current_message import direct_statement_spans
+from dynamic_subject_agent.current_message import DirectStatement, direct_statement_spans
+from dynamic_subject_agent.unchanged_arrangement import is_unchanged_arrangement
 
 @dataclass(frozen=True)
 class NamedGoalChange:
@@ -14,7 +15,15 @@ class NamedGoalChange:
 
 def named_goal_changes(message: str) -> tuple[NamedGoalChange, ...]:
     changes = []
-    for statement in direct_statement_spans(message):
+    statements = direct_statement_spans(message)
+    raw = message.strip().rstrip('。')
+    parts = re.split(r'[，,]', raw, maxsplit=1)
+    if (not statements and len(parts) == 2 and any(char in parts[1] for char in '“”「」"')
+        and len(direct_statement_spans(parts[0])) == 1):
+        # A quoted tail cannot hide a current explicit edit from the rejection
+        # path and let Memory save the command instead. The tail stays invalid.
+        statements = (DirectStatement(raw, len(message) - len(message.lstrip()), len(message)),)
+    for statement in statements:
         parts = re.split(r'[，,]', statement.text, maxsplit=1)
         match = re.fullmatch(r'([^，,。！？!?；;：:]{2,60}?)(?:这个|这项)目标我(?:想|希望)?(?:改成|改为|换成)([^，,。！？!?；;：:]{1,500})', parts[0])
         if match is None:
@@ -25,10 +34,7 @@ def named_goal_changes(message: str) -> tuple[NamedGoalChange, ...]:
             tail = parts[1].strip()
             # A closed nominal structure cannot silently swallow another action
             # or condition. Unrecognized context must be stated separately.
-            supported = supported and re.fullmatch(
-                r'(?:(?:原有|原来|其他|其它|别的)(?:的)?|'
-                r'(?:我|我们|朋友|同事|家人)(?:来|一起)?(?:吃(?:早餐|午餐|晚餐)|聚餐|见面|出游)的)?'
-                r'(?:安排|计划)(?:保持)?不变', tail) is not None
+            supported = supported and is_unchanged_arrangement(tail)
         changes.append(NamedGoalChange(name, match[2].strip(), parts[0], statement.start, statement.end, supported))
     return tuple(changes)
 
