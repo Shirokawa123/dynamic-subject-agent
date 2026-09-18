@@ -355,6 +355,7 @@ class CognitionRuntimeView:
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_preference_question: Callable[[], object | None] | None = None
+    load_subject_tasks: Callable[[], tuple] | None = None
     load_withheld_memory_ids: Callable[[], tuple[str, ...]] | None = None
     memory_control_complete: bool = True
     canonical_memory_history: tuple[LivingMemoryRecord, ...] = ()
@@ -1077,6 +1078,7 @@ class SubjectRuntime:
                 (lambda: self._engine.preference_question_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
+            load_subject_tasks=self._engine.list_subject_tasks,
             load_withheld_memory_ids=(
                 (lambda: self._engine.withheld_memory_ids_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
@@ -1093,6 +1095,9 @@ class SubjectRuntime:
             active_only=active_only,
             limit=limit,
         )
+
+    def list_subject_tasks(self):
+        return self._engine.list_subject_tasks()
 
     def list_conversation_turns(
         self,
@@ -1187,6 +1192,8 @@ class SubjectRuntime:
         """Durably admit one command without coupling admission to waiting."""
 
         self._context.validate_command(command)
+        if command.declared_intent == 'subject-task-v1' and not getattr(self._cognition, 'supports_subject_tasks', False):
+            raise PreAdmissionRejected('subject-tasks-unavailable', 'explicit task cognition is unavailable')
         self._cognition.preflight(
             context=self._cognition_view(),
             command=command,
@@ -1213,6 +1220,8 @@ class SubjectRuntime:
             else self._engine._query_command(operation_ref)
         )
         self._context.validate_command(command)
+        if command.declared_intent == 'subject-task-v1' and not getattr(self._cognition, 'supports_subject_tasks', False):
+            raise PreAdmissionRejected('subject-tasks-unavailable', 'explicit task cognition is unavailable')
         self._cognition.preflight(
             context=self._cognition_view(),
             command=command,
@@ -1296,7 +1305,7 @@ class SubjectRuntime:
                 detail=error.detail,
             )
         try:
-            self._validate_proposal(proposal, experience_basis)
+            self._validate_proposal(proposal, experience_basis, command)
         except (
             DomainAdjudicationFailedClosed,
             ExperienceImpactEnvelopeRejected,
@@ -1425,6 +1434,7 @@ class SubjectRuntime:
         self,
         proposal: object,
         basis: ExperienceBasis,
+        command: SubjectCommand | None = None,
     ) -> None:
         if type(proposal) is not CognitiveProposal:
             raise TypeError("CognitionEngine must return CognitiveProposal")
@@ -1441,6 +1451,14 @@ class SubjectRuntime:
             or proposal.impact_envelope.basis != basis
         ):
             raise ValueError("Cognition proposal is outside runtime authority")
+        task_request = proposal.impact_envelope.agency
+        if task_request.task_command is not None:
+            if command is None or command.declared_intent != 'subject-task-v1' or task_request.admitted_command != command.utterance:
+                raise ValueError('task proposal differs from admitted command')
+            if task_request.current_state.tasks != self._engine.list_subject_tasks():
+                raise ValueError('task proposal differs from canonical task state')
+        elif command is not None and command.declared_intent == 'subject-task-v1':
+            raise ValueError('explicit task has no task adjudication')
 
     def _validate_expression(
         self,

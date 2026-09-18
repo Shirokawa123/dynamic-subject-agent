@@ -47,7 +47,7 @@ from dynamic_subject_agent.source_character_authoring import (
 )
 from dynamic_subject_agent.studio import QualifiedRuntimeInput
 
-DOGFOOD_BUILD_ID = "dogfood-s47"
+DOGFOOD_BUILD_ID = "dogfood-s49"
 
 
 class OpenedLocalProduct:
@@ -212,6 +212,9 @@ def open_deepseek_local_product(
         situated_gateway=situated_gateway,
         medium_gateway=medium_gateway,
     )
+    from dynamic_subject_agent.subject_task_cognition import SubjectTaskCognition
+    from dynamic_subject_agent.subject_task_provider import DeepSeekSubjectTaskAdapter
+    cognition = SubjectTaskCognition(cognition, ModelGateway(DeepSeekSubjectTaskAdapter(**provider_kwargs)))
     source_authoring = TextSourceCharacterAuthoring(
         gateway=ModelGateway(
             SourceCharacterProviderAdapter(

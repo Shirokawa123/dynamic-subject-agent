@@ -24,6 +24,16 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 
 ## Experience Cycle
 
+### Slice-49 主体任务协商
+
+`ApplicationFacade.subject_task(SubjectTaskCommand, idempotency_key)` 是显式任务入口；普通聊天不推导任务。`SubjectTaskCognition` 只包装该intent，其他消息原样委托既有六能力。Agency Domain校验真实Admission与完整canonical任务快照；snapshot不符在Publication前FailedClosed。任务记录/闭集模型提议/最终回执进入同一Agency decision reason，重放再运行裁决比对，不建任务store。此阶段没有effect，accepted仅表示待处理，不代表成品生成或保存。
+
+请求与修订消息≤1000字符，本地正文≤16000字符，整个JSON还受既有32768字符Admission上限约束；超限在提交前拒绝，正文不截断。非NFC字段在JSON内转义，以保留正文原字符与换行。每身份最多5项未结束任务，其中至多1项accepted；needs_input/deferred可重新提交，终态不能恢复。取消与stale操作不调用模型；失败/拒绝修订不覆盖原任务，accepted的降级修订也不覆盖。模型拒绝只在本地能核实不支持动作时成为declined，其余无依据拒绝为failed。闭集核实不等于通用意图识别。
+
+新DeepSeek Agency提议经ModelGateway，每次有效显式请求/修订最多1次，只发送当前消息、固定目录/规则和≤5项未结束任务kind/summary/status（摘要各≤200字符）。修订排除自身旧摘要，避免把自己当竞争任务。本地正文、task_id、runtime identity、聊天历史与其他Domain数据不外发。任务轮在聊天投影中只显示“主体任务操作”和最终回执，不成为近期对话外发来源。
+
+新身份binding持久化`subject-task-cycle-1.0`，闭集映射授权chat和subject-task-v1；旧`m0-a-cycle-1.0`只保留chat。读取/恢复/导出必须由binding版本派生权限，不信任任意gate内容；未知版本失败关闭。此处不迁移旧binding、不改旧Timeline schema/effect约束。桌面任务草稿仅在当前页面内按身份分别保留；提交绑定身份、目标revision和幂等key。完整执行和旧身份升级尚未实现。
+
 `ApplicationFacade → Admission → bounded Cognition → Domain adjudication → grounded Expression → atomic TimelineOutcome → post-commit effect`
 
 模型输出只能成为候选。Domain 独立返回 accepted、rejected、NoOp 或 FailedClosed；完整 Outcome 全可见或全不可见。effect 只消费已提交引用，失败不会重跑经历。

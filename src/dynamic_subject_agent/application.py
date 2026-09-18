@@ -6,6 +6,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
 from enum import Enum
 from hashlib import sha256
+import json
 from threading import RLock
 from time import time_ns
 from collections.abc import Callable
@@ -40,6 +41,7 @@ from dynamic_subject_agent.timeline import (
     SubjectCommand,
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
+from dynamic_subject_agent.subject_tasks import SubjectTaskCommand, SubjectTaskRecord, TASK_INTENT
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
@@ -74,6 +76,7 @@ ApplicationOperationKind = OperationKind
 
 
 class ApplicationQueryKind(str, Enum):
+    SUBJECT_TASKS = "subject-tasks"
     CURRENT = "current"
     RUNTIME = "runtime"
     TIMELINE = "timeline"
@@ -177,6 +180,7 @@ class AuthorizedOperationProjection:
     medium_state_before_baseline: str | None = None
     medium_state_reason_code: str | None = None
     medium_state_signal: str | None = None
+    subject_task: SubjectTaskRecord | None = None
 
 
 @dataclass(frozen=True)
@@ -234,6 +238,12 @@ class LivingMemoryApplicationProjection:
 
 
 @dataclass(frozen=True)
+class SubjectTasksApplicationProjection:
+    records: tuple[SubjectTaskRecord, ...]
+    enabled: bool
+
+
+@dataclass(frozen=True)
 class RelationshipApplicationProjection:
     interactions: tuple[RelationshipStanceInteraction, ...]
 
@@ -274,6 +284,7 @@ ApplicationProjection: TypeAlias = (
     | RuntimeApplicationProjection
     | TimelineApplicationProjection
     | LivingMemoryApplicationProjection
+    | SubjectTasksApplicationProjection
     | RelationshipApplicationProjection
     | ParticipantGoalCommitmentApplicationProjection
     | SituatedStateApplicationProjection
@@ -615,6 +626,7 @@ class _ApplicationRouter:
                     timeline_id=self._binding.timeline_id,
                 )
             )
+            subject_tasks = self._list_subject_tasks() if query.kind is ApplicationQueryKind.SUBJECT_TASKS else None
             memories = (
                 None
                 if query.kind is not ApplicationQueryKind.LIVING_MEMORY
@@ -668,7 +680,19 @@ class _ApplicationRouter:
             medium_state=medium_state,
             knowledge_entries=knowledge_entries,
             conversation_turns=conversation_turns,
+            subject_tasks=subject_tasks,
         )
+
+    def subject_task(self, command: object, *, idempotency_key: str) -> ApplicationOperationResponse:
+        if type(command) is not SubjectTaskCommand:
+            return _unavailable('typed-subject-task-required')
+        return self.submit(SubjectCommand.contribute_utterance(target_profile_id=self._binding.profile_id,
+            target_timeline_id=self._binding.timeline_id, declared_intent=TASK_INTENT,
+            utterance=command.to_json(),language='zh',provenance='project-original'),idempotency_key=idempotency_key)
+
+    def _list_subject_tasks(self):
+        with self._lease() as lease:
+            return lease.list_subject_tasks()
 
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
         with self._lock:
@@ -857,6 +881,9 @@ class ApplicationFacade:
     def control(self, command: object) -> ApplicationHostResponse:
         return self.__router.control(command)
 
+    def subject_task(self, command: object, *, idempotency_key: str) -> ApplicationOperationResponse:
+        return self.__router.subject_task(command,idempotency_key=idempotency_key)
+
     def follow(self, operation_ref: object) -> ApplicationOperationResponse:
         return self.__router.follow(operation_ref)
 
@@ -935,10 +962,18 @@ def _create_application_facade(
     )
 
 
+def _subject_task_record(outcome) -> SubjectTaskRecord | None:
+    if outcome.decision.rule_version != 'agency-task-1.0':
+        return None
+    record = json.loads(outcome.decision.reason)['subject_task']
+    return SubjectTaskRecord.from_dict(record) if record is not None else None
+
+
 def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
     state = result.snapshot.operation_state
     if state is OperationState.COMPLETED and result.outcome is not None:
         projection = AuthorizedOperationProjection(
+            subject_task=_subject_task_record(result.outcome.agency_outcome),
             operation_kind=OperationKind.SUBJECT,
             operation_state=ApplicationOperationStatus.TERMINAL,
             timeline_outcome_id=result.outcome.outcome_id,
@@ -1212,8 +1247,12 @@ def _from_query(
     medium_state: MediumStateRecord | None = None,
     knowledge_entries: tuple[KnowledgeApplicationEntry, ...] | None = None,
     conversation_turns: tuple[ConversationTurnRecord, ...] | None = None,
+    subject_tasks: tuple[SubjectTaskRecord, ...] | None = None,
 ) -> ApplicationQueryResponse:
-    if kind is ApplicationQueryKind.CURRENT:
+    if kind is ApplicationQueryKind.SUBJECT_TASKS and subject_tasks is not None:
+        from dynamic_subject_agent.host import SUBJECT_TASK_CONTRACT_VERSION
+        projection = SubjectTasksApplicationProjection(subject_tasks,binding.runtime_contract_version == SUBJECT_TASK_CONTRACT_VERSION)
+    elif kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
             profile_id=binding.profile_id,
             timeline_id=binding.timeline_id,

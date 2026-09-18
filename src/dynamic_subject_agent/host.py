@@ -123,6 +123,24 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
     }
 )
 ALLOWED_INTENTS = ("ask-collaborator-status",)
+SUBJECT_TASK_CONTRACT_VERSION = "subject-task-cycle-1.0"
+SUBJECT_TASK_INTENTS = (*ALLOWED_INTENTS, "subject-task-v1")
+
+
+def _intents_for_contract(version: str) -> tuple[str, ...]:
+    if version == RUNTIME_CONTRACT_VERSION:
+        return ALLOWED_INTENTS
+    if version == SUBJECT_TASK_CONTRACT_VERSION:
+        return SUBJECT_TASK_INTENTS
+    raise RuntimeHostFailedClosed("unsupported-runtime-contract", "unknown runtime contract")
+
+
+def _contract_for_intents(intents: tuple[str, ...]) -> str:
+    if intents == ALLOWED_INTENTS:
+        return RUNTIME_CONTRACT_VERSION
+    if intents == SUBJECT_TASK_INTENTS:
+        return SUBJECT_TASK_CONTRACT_VERSION
+    raise RuntimeHostFailedClosed("unsupported-runtime-contract", "unknown runtime intent grant")
 ALLOWED_PROVENANCE = ("project-original",)
 REQUIRED_CAPABILITIES = frozenset(
     {"fake-cognition", "four-domain-typed-noop", "host-authoring"}
@@ -2280,7 +2298,7 @@ def _corrective_timeline_is_canonical_one_cycle(
                 authority_scope_id=binding.authority_scope_id,
                 profile_id=binding.profile_id,
                 timeline_id=binding.timeline_id,
-                allowed_intents=ALLOWED_INTENTS,
+                allowed_intents=_intents_for_contract(binding.runtime_contract_version),
                 allowed_provenance=ALLOWED_PROVENANCE,
                 binding_id=binding.binding_id,
                 binding_revision=binding.binding_revision,
@@ -2435,7 +2453,7 @@ def _corrective_timeline_state(
                     authority_scope_id=binding.authority_scope_id,
                     profile_id=binding.profile_id,
                     timeline_id=binding.timeline_id,
-                    allowed_intents=ALLOWED_INTENTS,
+                    allowed_intents=_intents_for_contract(binding.runtime_contract_version),
                     allowed_provenance=ALLOWED_PROVENANCE,
                     binding_id=binding.binding_id,
                     binding_revision=binding.binding_revision,
@@ -2650,7 +2668,7 @@ def _corrective_successor_write_projection(
         authority_scope_id=str(uuid5(NAMESPACE_URL, f"m0-12-authority-scope:{binding_id}")),
         profile_id=profile_id,
         timeline_id=plan.target_timeline_id,
-        allowed_intents=ALLOWED_INTENTS,
+        allowed_intents=_intents_for_contract(predecessor_binding.runtime_contract_version),
         allowed_provenance=ALLOWED_PROVENANCE,
         binding_id=binding_id,
         binding_revision=revision,
@@ -3251,6 +3269,11 @@ class RuntimeLease:
         self._require_active()
         self._host._require_binding_permit(self.binding)
         return self._lane.worker.call("list_conversation_turns", limit=limit)
+
+    def list_subject_tasks(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call('list_subject_tasks')
 
     def list_relationship_interactions(
         self,
@@ -4086,7 +4109,7 @@ class RuntimeHost:
                 ),
                 profile_id=qri.profile_id,
                 timeline_id=target_timeline_id,
-                allowed_intents=ALLOWED_INTENTS,
+                allowed_intents=_intents_for_contract(predecessor.runtime_contract_version),
                 allowed_provenance=ALLOWED_PROVENANCE,
                 binding_id=binding_id,
                 binding_revision=predecessor.binding_revision + 1,
@@ -4337,7 +4360,7 @@ class RuntimeHost:
                         qri.genesis_snapshot_id, qri.knowledge_snapshot_id,
                         _canonical_json(list(qri.policy_decision_ids)),
                         qri.capabilities.manifest_version, qri.provider_authority,
-                        RUNTIME_KIND, RUNTIME_CONTRACT_VERSION,
+                        RUNTIME_KIND, _contract_for_intents(authority.allowed_intents),
                         studio_location.root_id, studio_location.profile_store_id,
                         location.root_id, location.control_store_id,
                         _canonical_json(timeline_root.to_dict()), timeline_root.root_id,
@@ -6729,7 +6752,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=timeline_id,
-            allowed_intents=ALLOWED_INTENTS,
+            allowed_intents=(SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=1,
@@ -6841,7 +6864,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=active.timeline_id,
-            allowed_intents=ALLOWED_INTENTS,
+            allowed_intents=_intents_for_contract(active.runtime_contract_version),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=revision,
@@ -6992,7 +7015,7 @@ class RuntimeHost:
                     qri.capabilities.manifest_version,
                     qri.provider_authority,
                     RUNTIME_KIND,
-                    RUNTIME_CONTRACT_VERSION,
+                    _contract_for_intents(authority.allowed_intents),
                     self._studio_location.root_id,
                     self._studio_location.profile_store_id,
                     self._location.root_id,
@@ -7127,7 +7150,7 @@ class RuntimeHost:
             expected != (str(row[23]), str(row[24]), str(row[25]))
             or binding.runtime_kind != RUNTIME_KIND
             or binding.provider_authority not in _SUPPORTED_PROVIDER_AUTHORITIES
-            or binding.runtime_contract_version != RUNTIME_CONTRACT_VERSION
+            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION}
             or binding.studio_root_id != self._studio_location.root_id
             or binding.studio_store_id != self._studio_location.profile_store_id
             or binding.host_root_id != self._location.root_id
@@ -7324,7 +7347,7 @@ class RuntimeHost:
             authority_scope_id=binding.authority_scope_id,
             profile_id=binding.profile_id,
             timeline_id=binding.timeline_id,
-            allowed_intents=ALLOWED_INTENTS,
+            allowed_intents=_intents_for_contract(binding.runtime_contract_version),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding.binding_id,
             binding_revision=binding.binding_revision,
@@ -9316,7 +9339,7 @@ def _data_control_timeline_authority(
         authority_scope_id=binding.authority_scope_id,
         profile_id=binding.profile_id,
         timeline_id=binding.timeline_id,
-        allowed_intents=ALLOWED_INTENTS,
+        allowed_intents=_intents_for_contract(binding.runtime_contract_version),
         allowed_provenance=ALLOWED_PROVENANCE,
         binding_id=binding.binding_id,
         binding_revision=binding.binding_revision,

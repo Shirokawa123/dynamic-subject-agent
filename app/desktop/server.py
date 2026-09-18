@@ -402,6 +402,35 @@ class AppState:
             "medium_state": self._medium_state(),
         }
 
+    def subject_tasks(self) -> dict:
+        from dataclasses import asdict
+        from dynamic_subject_agent.application import ApplicationQuery, ApplicationQueryKind
+        result = self.product.application.query(ApplicationQuery(ApplicationQueryKind.SUBJECT_TASKS,
+            self.product.profile_id, self.product.timeline_id))
+        if result.status.value != 'available':
+            return {'ok': False, 'status': result.status.value, 'message': '无法核实主体任务，请稍后重试。'}
+        return {'ok': True, 'enabled': result.projection.enabled, 'profile_id': self.product.profile_id,
+            'tasks': [asdict(record) for record in result.projection.records],
+            'message': '' if result.projection.enabled else '此身份保留旧运行权限，尚未启用主体任务；普通聊天不受影响。'}
+
+    def submit_subject_task(self, payload: dict) -> dict:
+        from dynamic_subject_agent.application import SubjectTaskCommand
+        data = dict(payload)
+        if data.pop('expected_profile_id', None) != self.product.profile_id:
+            return {'ok': False, 'status': 'conflict', 'message': '当前身份已变化，请刷新任务面板。'}
+        key = data.pop('idempotency_key', None)
+        command = SubjectTaskCommand(**data)
+        pending = self.product.application.subject_task(command,idempotency_key=key)
+        if pending.status.value not in {'pending','terminal'}:
+            return {'ok': False, 'status': pending.status.value, 'message': '任务请求冲突或不可用；本次未覆盖原任务，请刷新查看。'}
+        if pending.operation_ref is None:
+            return {'ok': False, 'status': pending.status.value, 'message': '此任务暂不能提交；请确认当前身份支持主体任务。'}
+        result = self.product.application.wait(pending.operation_ref,timeout_seconds=30)
+        return {'ok': result.status.value == 'terminal', 'status': result.status.value,
+            'changed': bool(result.projection and result.projection.subject_task is not None),
+            'profile_id': self.product.profile_id,
+            'message': result.projection.expression_text if result.projection and result.projection.expression_text else '任务处理尚未完成，请刷新查看；不要重复提交。'}
+
     def _participant_goals(self) -> list[dict]:
         from dynamic_subject_agent.application import (
             ApplicationQuery,
@@ -992,6 +1021,18 @@ class DesktopState:
                 return {"ok": False, "stage": "credential", "code": "setup-required"}
             return self._app.submit_turn(text)
 
+    def subject_tasks(self) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {'ok': False, 'message': '请先连接模型。'}
+            return self._app.subject_tasks()
+
+    def submit_subject_task(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {'ok': False, 'message': '请先连接模型。'}
+            return self._app.submit_subject_task(payload)
+
     def preview_character_source(self, payload: dict) -> dict:
         with self._lock:
             if self._app is None:
@@ -1138,6 +1179,9 @@ def build_handler(state: DesktopState):
             elif path == "/api/state":
                 payload = state.snapshot()
                 self._json(200 if payload.get("ok") else 409, payload)
+            elif path == "/api/tasks":
+                payload = state.subject_tasks()
+                self._json(200 if payload.get("ok") else 409, payload)
             elif path == "/api/setup":
                 self._json(200, state.setup_snapshot())
             elif path == "/api/authoring/draft":
@@ -1150,6 +1194,15 @@ def build_handler(state: DesktopState):
                 self._json(404, {"error": "not-found"})
 
         def do_POST(self) -> None:  # noqa: N802
+            if self.path == "/api/tasks":
+                try:
+                    payload = self._read_json(maximum=131072)
+                    result = state.submit_subject_task(payload)
+                except (ValueError, TypeError, UnicodeError):
+                    self._json(400, {"ok": False, "message": "任务输入不完整或超出长度限制。"})
+                    return
+                self._json(200 if result.get('ok') else 409, result)
+                return
             if self.path == "/api/credential":
                 try:
                     payload = self._read_json(maximum=8_192)

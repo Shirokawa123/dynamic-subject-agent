@@ -628,10 +628,14 @@ def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
+    dormant = DormantDeepSeekCognition()
+    # New identities opt into the task contract; dormant preflight still denies
+    # submission. Existing bindings are read by their persisted version.
+    dormant.supports_subject_tasks = True
     host = RuntimeHost.create(
         identity.experiment_base,
         studio_location=identity.studio_location,
-        cognition=DormantDeepSeekCognition(),
+        cognition=dormant,
     )
     try:
         host.open_runtime(identity.qri, timeline_id=timeline_id)

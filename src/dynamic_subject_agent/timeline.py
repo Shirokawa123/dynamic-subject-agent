@@ -6715,12 +6715,12 @@ class TimelineEngine:
             records.append(
                 ConversationTurnRecord(
                     head_sequence=int(row[0]),
-                    user_text=command.utterance,
+                    user_text=('主体任务操作' if command.declared_intent == 'subject-task-v1' else command.utterance),
                     user_language=command.language,
                     assistant_text=outcome.expression.text,
                     assistant_language=outcome.expression.language,
                     published_at_us=published_at_us,
-                    outcome_summary=ConversationOutcomeSummary.from_outcome(outcome),
+                    outcome_summary=(None if command.declared_intent == 'subject-task-v1' else ConversationOutcomeSummary.from_outcome(outcome)),
                 )
             )
             previous_outcome = outcome
@@ -6741,6 +6741,42 @@ class TimelineEngine:
                 "empty canonical history does not match the Timeline head",
             )
         return tuple(records[-limit:])
+
+    def list_subject_tasks(self):
+        from dataclasses import asdict
+        from dynamic_subject_agent.subject_tasks import TASK_INTENT, SubjectTaskCommand, SubjectTaskProposal, decide, validate_task_reason
+        # Verify the complete canonical chain, including non-task publications.
+        self.list_conversation_turns(limit=1)
+        rows = self._writer.execute('''SELECT op.operation_id,op.contract_version,op.operation_kind,
+            hex(op.payload_fingerprint),d.decision_id FROM timeline_outcome AS o
+            JOIN subject_operation AS op ON op.operation_id=o.operation_id
+            JOIN candidate_decision_record AS d ON d.plan_id=o.plan_id AND d.scope='agency'
+            ORDER BY o.head_sequence''').fetchall()
+        records = {}
+        for row in rows:
+            ref = OperationRef(str(row[1]),self._location.root_id,self._location.timeline_store_id,
+                self._authority.authority_scope_id,str(UUID(bytes=bytes(row[0]))),OperationKind(str(row[2])),str(row[3]).lower())
+            command = self._query_command(ref)
+            decision = self._read_decision(bytes(row[4]))
+            if decision.rule_version != 'agency-task-1.0':
+                if command.declared_intent == TASK_INTENT:
+                    raise PublicationFailedClosed('task-history-invalid','task result has no task adjudication')
+                continue
+            try:
+                if command.declared_intent != TASK_INTENT:
+                    raise ValueError('task result without explicit task request')
+                reason = json.loads(decision.reason)
+                validate_task_reason(reason)
+                source = SubjectTaskCommand.from_json(command.utterance)
+                proposal = SubjectTaskProposal(**reason['proposal']) if reason['proposal'] else None
+                record, reply = decide(source,proposal,tuple(records.values()),new_id=ref.operation_id)
+                if reason['subject_task'] != (asdict(record) if record else None) or reason['reply'] != reply:
+                    raise ValueError('task transition does not match canonical source')
+                if record:
+                    records[record.task_id] = record
+            except (ValueError, TypeError, KeyError, AttributeError):
+                raise PublicationFailedClosed('task-history-invalid','task transition could not be verified') from None
+        return tuple(records.values())
 
     def withheld_memory_ids_before(self, operation_ref: OperationRef, *, expected_head: int) -> tuple[str, ...]:
         """Unpublished withdrawal intent restricts disclosure, never fakes state.

@@ -103,9 +103,20 @@
     </div>
   </div>
 </div>
+<div class="setup-screen" id="tasks-screen" hidden>
+  <div class="setup-card" style="max-width:700px;max-height:85vh;overflow:auto">
+    <h2>主体任务</h2>
+    <p>任务说明会发给模型提出处理建议，正文仅保留在本地。当前阶段支持接收、补充、暂缓和取消，尚不生成成品或保存文件。</p>
+    <label>任务类型<select id="task-kind"><option value="draft_text">文字起草</option><option value="save_text">文本保存</option></select></label>
+    <label>任务说明<textarea id="task-message" maxlength="1000" rows="3" style="width:100%" placeholder="例如：请帮我写两句读书会邀请"></textarea></label>
+    <label>待保存正文（只供本地使用）<textarea id="task-content" maxlength="16000" rows="4" style="width:100%"></textarea></label>
+    <button id="task-submit">交付任务</button><button id="task-new">新任务</button><button id="task-refresh">刷新</button><button id="close-tasks">关闭</button>
+    <div class="setup-status" id="task-status" role="status"></div><div id="task-list"></div>
+  </div>
+</div>
 <div class="app">
   <div class="chat">
-    <header><div><h1 id="subject-name">Avery</h1><div id="build-id" class="build-id">dogfood</div></div><div class="header-actions"><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
+    <header><div><h1 id="subject-name">Avery</h1><div id="build-id" class="build-id">dogfood</div></div><div class="header-actions"><button id="open-tasks" class="quiet-button">主体任务</button><button id="open-authoring" class="quiet-button">来源建角</button><button id="open-setup" class="quiet-button">连接设置</button></div></header>
     <div id="log"></div>
   </div>
   <div class="rail">
@@ -867,6 +878,69 @@ closeSetupButton.addEventListener("click", () => {
 keyInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") saveCredential();
 });
+const taskScreen = document.getElementById("tasks-screen");
+const taskMessage = document.getElementById("task-message");
+const taskContent = document.getElementById("task-content");
+const taskKind = document.getElementById("task-kind");
+const taskStatus = document.getElementById("task-status");
+const taskSubmit = document.getElementById("task-submit");
+let taskProfile = null, taskEditing = null, taskRequest = null, taskBusy = false;
+const taskDrafts = new Map();
+const taskLabels = {accepted:"已接受，待处理", needs_input:"需要补充", deferred:"暂缓", declined:"未接受", cancelled:"已取消", completed:"已完成", failed:"处理失败"};
+async function refreshTasks() {
+  try {
+    const response = await fetch("/api/tasks"); const data = await response.json();
+    if (!data.ok) throw new Error(data.message || "任务读取失败");
+    if (taskProfile && taskProfile !== data.profile_id) {
+      taskDrafts.set(taskProfile,{kind:taskKind.value,message:taskMessage.value,content:taskContent.value,editing:taskEditing,request:taskRequest});
+      const draft = taskDrafts.get(data.profile_id);
+      taskKind.value = draft ? draft.kind : "draft_text";
+      taskMessage.value = draft ? draft.message : "";
+      taskContent.value = draft ? draft.content : "";
+      taskEditing = draft ? draft.editing : null;
+      taskRequest = draft ? draft.request : null;
+      taskSubmit.textContent = taskEditing ? "重新提交" : "交付任务";
+      taskStatus.textContent = "已切换到当前身份的任务草稿；其他身份的未提交内容仍保留在各自面板中。";
+    }
+    taskProfile = data.profile_id; taskSubmit.disabled = !data.enabled || taskBusy;
+    if (!data.enabled) taskStatus.textContent = data.message;
+    const list = document.getElementById("task-list"); list.replaceChildren();
+    for (const record of data.tasks.slice().reverse()) {
+      const card = document.createElement("div"); card.className = "card";
+      const label = document.createElement("strong"); label.textContent = taskLabels[record.status] || "状态无法识别";
+      const summary = document.createElement("p"); summary.textContent = record.summary;
+      card.append(label, summary);
+      if (["accepted", "needs_input", "deferred"].includes(record.status)) {
+        const edit = document.createElement("button"); edit.textContent = "补充或重新提交";
+        edit.onclick = () => { if (taskBusy) return; taskEditing = record; taskKind.value = record.kind; taskMessage.value = record.request_text; taskContent.value = record.content; taskRequest = null; taskSubmit.textContent = "重新提交"; };
+        const cancel = document.createElement("button"); cancel.textContent = "取消任务";
+        cancel.onclick = () => sendTask({action:"cancel",task_id:record.task_id,expected_revision:record.revision});
+        card.append(edit,cancel);
+      }
+      list.append(card);
+    }
+    if (!data.tasks.length) { const empty = document.createElement("p"); empty.textContent = "当前没有主体任务。"; list.append(empty); }
+  } catch (error) { taskStatus.textContent = "任务读取未完成，请刷新重试。"; taskSubmit.disabled = true; }
+}
+async function sendTask(command) {
+  if (taskBusy || !taskProfile) return;
+  const payload = {...command,expected_profile_id:taskProfile};
+  const signature = JSON.stringify(payload);
+  if (!taskRequest || taskRequest.signature !== signature) taskRequest = {signature,key:"task-" + crypto.randomUUID()};
+  taskBusy = true; taskSubmit.disabled = true; taskStatus.textContent = "正在处理任务……";
+  try {
+    const response = await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,idempotency_key:taskRequest.key})});
+    const data = await response.json(); taskStatus.textContent = data.message || "任务处理未完成。";
+    if (data.ok) { taskRequest = null; if (data.changed && (command.action !== "cancel" || (taskEditing && taskEditing.task_id === command.task_id))) { taskEditing = null; taskSubmit.textContent = "交付任务"; } }
+  } catch (error) { taskStatus.textContent = "连接中断；请先刷新任务，再用相同内容重试。"; }
+  finally { taskBusy = false; await refreshTasks(); }
+}
+document.getElementById("open-tasks").onclick = async () => { taskScreen.hidden = false; await refreshTasks(); };
+document.getElementById("close-tasks").onclick = async () => { taskScreen.hidden = true; await refreshState(true); };
+document.getElementById("task-refresh").onclick = refreshTasks;
+document.getElementById("task-new").onclick = () => { if (taskBusy) return; taskEditing = null; taskRequest = null; taskMessage.value = ""; taskContent.value = ""; taskSubmit.textContent = "交付任务"; };
+taskSubmit.onclick = () => sendTask({action:taskEditing ? "revise" : "request", kind:taskKind.value,message:taskMessage.value,content:taskContent.value,task_id:taskEditing ? taskEditing.task_id : null,expected_revision:taskEditing ? taskEditing.revision : null});
+
 (async () => {
   const snapshot = await refreshSetup();
   if (snapshot && snapshot.product_ready) await refreshState(true);

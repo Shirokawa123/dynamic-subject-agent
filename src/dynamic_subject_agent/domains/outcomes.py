@@ -60,6 +60,13 @@ def _validate_reasoned_noop(
             f"{expected_scope} reason must be an object",
         )
     allowed_keys = {"code", "provenance"}
+    if expected_scope == 'agency' and decision.rule_version == 'agency-task-1.0':
+        from dynamic_subject_agent.subject_tasks import validate_task_reason
+        try:
+            validate_task_reason(reason)
+        except (ValueError, TypeError, AttributeError):
+            raise DomainOutcomeSetRejected('invalid-task-outcome', 'invalid subject task record') from None
+        allowed_keys.update({'subject_task','proposal','reply'})
     if expected_scope == "experience" and "living_memory" in reason:
         allowed_keys.add("living_memory")
     if expected_scope == "experience" and "knowledge" in reason:

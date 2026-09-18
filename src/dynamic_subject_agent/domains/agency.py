@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, replace
+import json
+from dynamic_subject_agent.subject_tasks import SubjectTaskCommand, SubjectTaskProposal, SubjectTaskRecord, decide
 
 from dynamic_subject_agent.timeline import AgencyDomainOutcome
 from dynamic_subject_agent.domains._shared import (
@@ -29,6 +31,7 @@ class AgencyReadView:
     project_refs: tuple[str, ...]
     commitment_refs: tuple[str, ...]
     action_refs: tuple[str, ...]
+    tasks: tuple[SubjectTaskRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -36,12 +39,16 @@ class AgencyAdjudicationRequest:
     basis: ExperienceBasis
     current_state: AgencyReadView
     candidates: tuple[AgencyChangeCandidate, ...]
+    task_command: SubjectTaskCommand | None = None
+    task_proposal: SubjectTaskProposal | None = None
+    admitted_command: str = ''
 
 
 class AgencyDomain:
     """Adjudicate Agency inputs without creating or dispatching effects."""
 
     material_change_capability = DomainCapabilityState.UNAVAILABLE
+    subject_task_capability = DomainCapabilityState.AVAILABLE
 
     def adjudicate(self, request: AgencyAdjudicationRequest) -> AgencyDomainOutcome:
         if not isinstance(request, AgencyAdjudicationRequest):
@@ -81,6 +88,22 @@ class AgencyDomain:
                 "material-change-capability-unavailable",
                 "M0-A cannot safely adjudicate an Agency material-change candidate",
             )
+        if request.task_command is not None:
+            try:
+                if SubjectTaskCommand.from_json(request.admitted_command) != request.task_command:
+                    raise ValueError('task command differs from admission')
+                for item in require_tuple(request.current_state.tasks, domain='agency', field='tasks'):
+                    SubjectTaskRecord.from_dict(asdict(item))
+                record, reply = decide(request.task_command, request.task_proposal, request.current_state.tasks, new_id=basis.operation_id)
+            except (TypeError, ValueError, AttributeError):
+                raise DomainAdjudicationFailedClosed('agency', 'invalid-task-input', 'task input could not be verified') from None
+            decision = replace(noop_decision(basis,scope='agency',reason_code='subject-task.result'),
+                rule_version='agency-task-1.0', reason=json.dumps({'code':'subject-task.result',
+                    'provenance':basis.source_provenance,
+                    'subject_task':asdict(record) if record else None, 'reply':reply,
+                    'proposal':asdict(request.task_proposal) if isinstance(request.task_proposal,SubjectTaskProposal) else None},
+                    ensure_ascii=False,sort_keys=True,separators=(',',':')))
+            return AgencyDomainOutcome(stable_id(basis,'agency-outcome'),decision,False)
         return AgencyDomainOutcome(
             outcome_id=stable_id(basis, "agency-outcome"),
             decision=noop_decision(

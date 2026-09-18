@@ -30,7 +30,7 @@
 
 ## 产品顺序
 
-当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。下一项工作必须先有新的用户目标与切片任务书；Agency、effect、人格发展、Reflection 与主动消息不在已授权范围。
+当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。用户已批准D-026受控Agency提议与逐次确认的应用目录文本新建，并授权按单切片自主推进至完整v1；具体投影与本地执行边界见 `docs/plans/v1-completion.md`。人格发展、Reflection、主动消息及不可逆旧数据迁移仍未授权。
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 

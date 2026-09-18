@@ -4,4 +4,4 @@
 - Memory、Knowledge、Relationship、目标承诺、Situated、Medium、Windows UI 和持久身份已迁入。
 - 参与者目标/承诺、Situated State 与 Medium State 均完成真实 DeepSeek、Windows UI、持久化和重启验收，状态为 STABLE。
 - ModelGateway、ProviderAdapter 能力声明、provider/account credential slot 与 noop-null canonicalizer 已完成；明确目标查询/变化为 Python 路径。
-- 当前产品仍 `dogfood-s47`（Slice-47：893 passed）；用户已授权自主推进至完整v1或重大决策。Slice-48完成[收口路线](plans/v1-completion.md)及Agency/effect代码缺口核对，等待首版任务协商/新Provider用途的A/B决定，未新增运行能力或外发。
+- 当前产品 `dogfood-s49`：D-026已批准；主体任务接收/澄清/暂缓/修订/取消、身份隔离和重启通过真实DeepSeek验收；907项全量及最终18项任务回归通过，详见[报告](reports/2026-09-18-slice-49/REPORT.md)。尚无文件effect，旧身份不自动升级；按[完整v1路线](plans/v1-completion.md)自主继续。

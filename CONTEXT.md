@@ -4,6 +4,14 @@
 
 ## Language
 
+**Subject Task**:
+主体对用户显式交付的文字工作作出的、可查询进展与结果的任务承担；接受、暂缓、取消和完成是有依据的不同事实。
+_Avoid_: Participant goal, conversational promise, autonomous background activity
+
+**Artifact Approval**:
+用户对一项确定文本成品及其保存操作的逐次批准；内容或操作变化使该批准不再适用。
+_Avoid_: General conversation consent, unlimited filesystem permission
+
 **Logical Forgetting**:
 用户撤回某条既有记忆的活跃使用，使其不再参与通常召回与后续外发；原有本地聊天及审计历史仍保留。
 _Avoid_: Physical deletion, rewritten fact, temporary dialogue cutoff
