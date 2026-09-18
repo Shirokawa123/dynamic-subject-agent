@@ -44,6 +44,8 @@ def test_style_has_a_single_numbered_target(tmp_path, message):
     '小夏说：“第一句我想更轻一点。”', '小夏说，第一句我想更轻一点。',
     '如果第一句我想更轻一点，你怎么看？', '我昨天说，第一句我想更轻一点。',
     EDIT + '算了，不要改了。', '第一句我想更轻一点。第二句我想更短一点。',
+    '第一句我想更轻一点，第二句我想更短一点。',
+    '第一句我想更轻一点，第二句再短一些。',
 ])
 def test_report_condition_withdrawal_and_multiple_targets_are_not_edit_permission(tmp_path, message):
     opened = open_composite(tmp_path, Writer(), goal=NoopGoal())

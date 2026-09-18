@@ -12,7 +12,8 @@ def natural_sentence_index(message: str, *, style_only: bool = False) -> int | N
     from dynamic_subject_agent.recent_dialogue import expression_request_text
     from dynamic_subject_agent.current_message import mask_quoted_text
     indexes = []
-    for sentence in re.split(r'[。！？!?；;\n]', expression_request_text(mask_quoted_text(message))):
+    request_text = expression_request_text(mask_quoted_text(message))
+    for sentence in re.split(r'[。！？!?；;\n]', request_text):
         if re.match(r'^\s*(?:如果|假如|要是|假设)', sentence):
             continue
         clauses = re.split(r'[，,]', sentence)
@@ -24,13 +25,17 @@ def natural_sentence_index(message: str, *, style_only: bool = False) -> int | N
             direct = re.match(r'^(?:我)?(?:也)?(?:想|希望|请)?(?:再)?(?:保留|改(?:成|为|得|一下)|换(?:成|为|得|一下))', tail)
             # A numbered current wish can request a style change without 改.
             # Do not lift it out of a preceding reported/conditional clause.
-            style = position == 0 and re.fullmatch(
+            style = re.fullmatch(
                 r'(?:我)?(?:也)?(?:想|希望|请)(?:再)?更[^。！？!?；;：:，,]{1,20}(?:一点|一些|些|点)', tail)
+            if style and position != 0:
+                return None
             wording = (re.fullmatch(r'(?:也)?(?:别|不要)(?:再)?提[^，,]{1,16}', tail)
                 and position + 1 < len(clauses)
                 and re.match(r'^\s*(?:请)?(?:改成|改为|换成|换得)', clauses[position + 1]))
             if direct or wording or style:
                 indexes.append(({'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[match[1]], bool(style)))
+    if any(style for _, style in indexes) and len(re.findall(r'第[一二三四五六七八九十0-9]+句', request_text)) != 1:
+        return None
     return indexes[0][0] if len(indexes) == 1 and (not style_only or indexes[0][1]) else None
 
 
