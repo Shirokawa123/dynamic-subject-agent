@@ -1,0 +1,48 @@
+{
+  "message": "第一句我想更轻一点，别用“故事”这个词。",
+  "response": {
+    "ok": true,
+    "new_memory_kind": null,
+    "new_memory_content": null,
+    "expression": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。",
+    "head_sequence": 2,
+    "conversation_history_status": "available",
+    "conversation_history": [
+      {
+        "head_sequence": 1,
+        "user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。",
+        "user_language": "zh",
+        "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿这本书在翻动里慢慢变旧，却不被读薄。\n愿下一位读者在某一页停住时，也愿意把自己的那点光留在页边。",
+        "assistant_language": "zh",
+        "published_at_us": 1789726535832252,
+        "explanations": [],
+        "citations": []
+      },
+      {
+        "head_sequence": 2,
+        "user_text": "第一句我想更轻一点，别用“故事”这个词。",
+        "user_language": "zh",
+        "assistant_text": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。",
+        "assistant_language": "zh",
+        "published_at_us": 1789726540676882,
+        "explanations": [],
+        "citations": []
+      }
+    ],
+    "living_memory_status": "no-op",
+    "memory_withdrawal_status": null,
+    "recalled_ids": [],
+    "knowledge_status": null,
+    "relationship_status": "no-update",
+    "relationship_event": null,
+    "participant_goal_status": null,
+    "participant_goal_action": null,
+    "situated_state_status": null,
+    "situated_state_action": null,
+    "situated_state_posture": null,
+    "medium_state_status": "no-update",
+    "medium_state_baseline": "settled",
+    "citations": [],
+    "explanations": []
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s45",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿这本书在翻动里慢慢变旧，却不被读薄。\n愿下一位读者在某一页停住时，也愿意把自己的那点光留在页边。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726535832252,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "第一句我想更轻一点，别用“故事”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726540676882,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": [],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

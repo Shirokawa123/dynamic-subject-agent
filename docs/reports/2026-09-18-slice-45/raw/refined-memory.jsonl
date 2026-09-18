@@ -1,0 +1,32 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。", "selected_contents": [], "recent_dialogue": [{"user_text": "第二句请更口语一些。", "assistant_text": "这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。"}, {"user_text": "请给面包店写两句小卡片，第一句写香气，第二句写邀请。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n刚出炉的香气，轻轻飘到街角。\n进来坐坐，挑一只喜欢的面包吧。"}], "reply_kind": "creative", "reply_text": "愿你在翻页时，遇见一段舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想更轻一点，别用“故事”这个词。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我想更轻一点，别用“故事”这个词。", "selected_contents": [], "recent_dialogue": [{"user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一段舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。"}], "reply_kind": "creative", "reply_text": "愿你在翻页时，遇见一句舍不得跳过的句子。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句请更口语一些。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句请更口语一些。", "selected_contents": [], "recent_dialogue": [{"user_text": "第一句我想更轻一点，别用“故事”这个词。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一句舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。"}], "reply_kind": "creative", "reply_text": "愿你合上书的时候，心里还能留下一点想带走的安静。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请给面包店写两句小卡片，第一句写香气，第二句写邀请。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "刚出炉的麦香顺着门缝溜出来，像一条暖烘烘的小路。推门进来吧，趁它还热着。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请给面包店写两句小卡片，第一句写香气，第二句写邀请。", "selected_contents": [], "recent_dialogue": [{"user_text": "第一句我想更轻一点，别用“故事”这个词。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一句舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。"}, {"user_text": "第二句请更口语一些。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一句舍不得跳过的句子。\n愿你合上书的时候，心里还能留下一点想带走的安静。"}], "reply_kind": "creative", "reply_text": "麦香和黄油香从门缝里轻轻飘出来。\n推门进来吧，刚出炉的那一盘正等着你。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

@@ -1,0 +1,53 @@
+{
+  "heads": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "initial_version_heads": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "prompt_version_heads": [
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "final_version_heads": [
+    13,
+    14,
+    15,
+    16,
+    17
+  ],
+  "unchanged_generation_failures": [
+    2,
+    14
+  ],
+  "ambiguity_refused_head": 15,
+  "explicit_repost_and_followup_heads": [
+    16,
+    17
+  ]
+}

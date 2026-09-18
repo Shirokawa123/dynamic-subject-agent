@@ -1,0 +1,40 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "请给书页写两句短诗。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "请给书页写两句短诗。", "selected_contents": [], "recent_dialogue": [{"user_text": "原文是：「清晨有面包的香气。来尝一口吧。」第一句我想更轻一点。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n清晨飘着一点面包香。来尝一口吧。"}], "reply_kind": "creative", "reply_text": "书页轻翻，像风掠过安静的窗。\n愿每个字，都落在温柔的心上。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想更轻一点，别用“故事”这个词。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我想更轻一点，别用“故事”这个词。", "selected_contents": [], "recent_dialogue": [{"user_text": "请给书页写两句短诗。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n书页轻翻，像风掠过安静的窗。\n愿每个字，都落在温柔的心上。"}], "reply_kind": "creative", "reply_text": "书页轻翻，像风掠过安静的窗。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想更轻一点，第二句我想更短一点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我想更轻一点，第二句我想更短一点。", "selected_contents": [], "recent_dialogue": [{"user_text": "请给书页写两句短诗。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n书页轻翻，像风掠过安静的窗。\n愿每个字，都落在温柔的心上。"}, {"user_text": "第一句我想更轻一点，别用“故事”这个词。", "assistant_text": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。"}], "reply_kind": "creative", "reply_text": "书页轻翻，像风掠过窗。\n愿每个字，落在温柔心上。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「微风吹过门边。来尝一口吧。」第二句我想更含蓄一点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「微风吹过门边。来尝一口吧。」第二句我想更含蓄一点。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "要不要，尝一口呢？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我希望更明亮一点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我希望更明亮一点。", "selected_contents": [], "recent_dialogue": [{"user_text": "原文是：「微风吹过门边。来尝一口吧。」第二句我想更含蓄一点。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n微风吹过门边。要不要，尝一口呢？"}], "reply_kind": "creative", "reply_text": "阳光落在门边。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

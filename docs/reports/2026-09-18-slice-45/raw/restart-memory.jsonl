@@ -1,0 +1,33 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我希望更温柔一点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我希望更温柔一点。", "selected_contents": [], "recent_dialogue": [{"user_text": "请给面包店写两句小卡片，第一句写香气，第二句写邀请。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n麦香和黄油香从门缝里轻轻飘出来。\n推门进来吧，刚出炉的那一盘正等着你。"}], "reply_kind": "creative", "reply_text": "麦香和黄油香从门缝里柔柔地漫出来。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句也想再更简短点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句也想再更简短点。", "selected_contents": [], "recent_dialogue": [{"user_text": "第一句我希望更温柔一点。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n麦香和黄油香从门缝里柔柔地漫出来。\n推门进来吧，刚出炉的那一盘正等着你。"}], "reply_kind": "creative", "reply_text": "推门进来吧，刚出炉的那一盘正等你。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想更轻一点，别再提旧词。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「清晨有面包的香气。来尝一口吧。」第一句我想更轻一点。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "「清晨有面包的香气。」想更轻的话，可以试试把「有」字去掉，让气味自己浮上来——比如「清晨，面包的香气。」或者再轻一点：「清晨，面包香。」后面那句「来尝一口吧。」保持原样就很好，轻的句子配一句邀请，节奏刚好。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「清晨有面包的香气。来尝一口吧。」第一句我想更轻一点。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "清晨飘着一点面包香。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

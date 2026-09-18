@@ -1,0 +1,87 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s45",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿这本书在翻动里慢慢变旧，却不被读薄。\n愿下一位读者在某一页停住时，也愿意把自己的那点光留在页边。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726535832252,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "第一句我想更轻一点，别用“故事”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726540676882,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "第二句请更口语一些。",
+      "user_language": "zh",
+      "assistant_text": "这轮没有可安全用于修改的对应句子。请贴出要修改的完整原文，再说明希望保留或调整什么。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726545852130,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "请给面包店写两句小卡片，第一句写香气，第二句写邀请。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n刚出炉的香气，轻轻飘到街角。\n进来坐坐，挑一只喜欢的面包吧。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726551984749,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "那就请写两句吧：一句给书，一句留给下一位读者，不要像宣传口号。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一段舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726744679864,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "第一句我想更轻一点，别用“故事”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n愿你在翻页时，遇见一句舍不得跳过的句子。\n愿你合上书时，心里还留着一点想带走的安静。",
+      "assistant_language": "zh",
+      "published_at_us": 1789726749735723,
+      "explanations": [],
+      "citations": []
+    }
+  ],
+  "memories": [],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

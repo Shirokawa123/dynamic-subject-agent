@@ -1,3 +1,3 @@
 # 当前工作
 
-[Slice-45：自然局部改稿](slice-45-natural-style-edit.md) 执行中，用户授权三个连续切片中的1/3。基线f00e044 / dogfood-s44；后两项分别在前项收口后建立任务书。
+Slice-45已完成，dogfood-s45 / d1f6482，852 passed；生成重复限制见[报告](../reports/2026-09-18-slice-45/REPORT.md)。用户授权的三个连续切片已完成1/3，下一项独立安排与目标尾句将单独开书。

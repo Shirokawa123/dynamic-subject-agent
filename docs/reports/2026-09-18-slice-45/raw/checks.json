@@ -1,0 +1,17 @@
+{
+  "checks": {
+    "12_committed": true,
+    "initial_repeat_failure_preserved": true,
+    "final_original_edit_keeps_second": true,
+    "next_edit_keeps_first": true,
+    "restart_edit_keeps_second": true,
+    "restart_next_edit_keeps_first": true,
+    "controlled_history_requires_repost": true,
+    "reposted_edit_keeps_second": true
+  },
+  "observations": {
+    "transport_calls": 74,
+    "http200": 74,
+    "failures": []
+  }
+}
