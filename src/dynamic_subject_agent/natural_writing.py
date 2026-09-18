@@ -22,10 +22,14 @@ def natural_sentence_index(message: str) -> int | None:
                 continue
             tail = match[2]
             direct = re.match(r'^(?:我)?(?:也)?(?:想|希望|请)?(?:再)?(?:保留|改(?:成|为|得|一下)|换(?:成|为|得|一下))', tail)
+            # A numbered current wish can request a style change without 改.
+            # Do not lift it out of a preceding reported/conditional clause.
+            style = position == 0 and re.fullmatch(
+                r'(?:我)?(?:也)?(?:想|希望|请)(?:再)?更[^。！？!?；;：:，,]{1,20}(?:一点|一些|些|点)', tail)
             wording = (re.fullmatch(r'(?:也)?(?:别|不要)(?:再)?提[^，,]{1,16}', tail)
                 and position + 1 < len(clauses)
                 and re.match(r'^\s*(?:请)?(?:改成|改为|换成|换得)', clauses[position + 1]))
-            if direct or wording:
+            if direct or wording or style:
                 indexes.append({'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[match[1]])
     return indexes[0] if len(indexes) == 1 else None
 
