@@ -42,6 +42,7 @@ from dynamic_subject_agent.timeline import (
 )
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.subject_tasks import SubjectTaskCommand, SubjectTaskRecord, TASK_INTENT
+from dynamic_subject_agent.text_artifacts import TextSaveApproval, TextArtifactResponse, TEXT_EFFECT_INTENT
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
@@ -181,6 +182,7 @@ class AuthorizedOperationProjection:
     medium_state_reason_code: str | None = None
     medium_state_signal: str | None = None
     subject_task: SubjectTaskRecord | None = None
+    committed_effect_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -241,6 +243,8 @@ class LivingMemoryApplicationProjection:
 class SubjectTasksApplicationProjection:
     records: tuple[SubjectTaskRecord, ...]
     enabled: bool
+    effects_enabled: bool = False
+    saved_paths: tuple[tuple[str,str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -694,6 +698,32 @@ class _ApplicationRouter:
         with self._lease() as lease:
             return lease.list_subject_tasks()
 
+    def preview_text_artifact(self, task_id, revision):
+        try:
+            with self._lease() as lease:
+                preview=lease.preview_text_artifact(task_id,revision)
+            return TextArtifactResponse('available',preview) if preview else TextArtifactResponse('unavailable',message='当前任务不能保存；请确认已接受、正文完整且身份支持保存。')
+        except Exception:
+            return TextArtifactResponse('failed-closed',message='无法核实保存预览。')
+
+    def approve_text_artifact(self, approval, *, idempotency_key):
+        if type(approval) is not TextSaveApproval:
+            return _unavailable('typed-text-save-approval-required')
+        return self.submit(SubjectCommand.contribute_utterance(target_profile_id=self._binding.profile_id,
+            target_timeline_id=self._binding.timeline_id,declared_intent=TEXT_EFFECT_INTENT,
+            utterance=approval.to_json(),language='zh',provenance='project-original'),idempotency_key=idempotency_key)
+
+    def recover_text_artifacts(self):
+        from dynamic_subject_agent.host import TEXT_EFFECT_CONTRACT_VERSION
+        if self._binding.runtime_contract_version!=TEXT_EFFECT_CONTRACT_VERSION:
+            return TextArtifactResponse('unavailable',message='此身份尚未启用文本保存。')
+        try:
+            with self._lease() as lease:
+                lease.recover_text_artifacts()
+            return TextArtifactResponse('available',message='已核对先前批准的保存操作，请查看任务结果。')
+        except Exception:
+            return TextArtifactResponse('failed-closed',message='保存结果尚不能核实，没有重复执行未知操作。')
+
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
         with self._lock:
             self._require_open()
@@ -884,6 +914,15 @@ class ApplicationFacade:
     def subject_task(self, command: object, *, idempotency_key: str) -> ApplicationOperationResponse:
         return self.__router.subject_task(command,idempotency_key=idempotency_key)
 
+    def preview_text_artifact(self, task_id, revision):
+        return self.__router.preview_text_artifact(task_id,revision)
+
+    def approve_text_artifact(self, approval, *, idempotency_key):
+        return self.__router.approve_text_artifact(approval,idempotency_key=idempotency_key)
+
+    def recover_text_artifacts(self):
+        return self.__router.recover_text_artifacts()
+
     def follow(self, operation_ref: object) -> ApplicationOperationResponse:
         return self.__router.follow(operation_ref)
 
@@ -963,7 +1002,7 @@ def _create_application_facade(
 
 
 def _subject_task_record(outcome) -> SubjectTaskRecord | None:
-    if outcome.decision.rule_version != 'agency-task-1.0':
+    if outcome.decision.rule_version not in ('agency-task-1.0','agency-text-effect-1.0'):
         return None
     record = json.loads(outcome.decision.reason)['subject_task']
     return SubjectTaskRecord.from_dict(record) if record is not None else None
@@ -973,6 +1012,7 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
     state = result.snapshot.operation_state
     if state is OperationState.COMPLETED and result.outcome is not None:
         projection = AuthorizedOperationProjection(
+            committed_effect_count=len(result.outcome.committed_effect_set.reference_ids),
             subject_task=_subject_task_record(result.outcome.agency_outcome),
             operation_kind=OperationKind.SUBJECT,
             operation_state=ApplicationOperationStatus.TERMINAL,
@@ -1250,8 +1290,11 @@ def _from_query(
     subject_tasks: tuple[SubjectTaskRecord, ...] | None = None,
 ) -> ApplicationQueryResponse:
     if kind is ApplicationQueryKind.SUBJECT_TASKS and subject_tasks is not None:
-        from dynamic_subject_agent.host import SUBJECT_TASK_CONTRACT_VERSION
-        projection = SubjectTasksApplicationProjection(subject_tasks,binding.runtime_contract_version == SUBJECT_TASK_CONTRACT_VERSION)
+        from dynamic_subject_agent.host import SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION
+        projection = SubjectTasksApplicationProjection(subject_tasks,binding.runtime_contract_version in (SUBJECT_TASK_CONTRACT_VERSION,TEXT_EFFECT_CONTRACT_VERSION),
+            binding.runtime_contract_version==TEXT_EFFECT_CONTRACT_VERSION,
+            tuple((r.task_id,str(binding.timeline_root.root/'artifacts'/f'text-{r.task_id}-r{r.revision-2}.txt'))
+                for r in subject_tasks if r.status=='completed' and r.reason=='saved'))
     elif kind is ApplicationQueryKind.CURRENT:
         projection: ApplicationProjection = CurrentApplicationProjection(
             profile_id=binding.profile_id,

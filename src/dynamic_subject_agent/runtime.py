@@ -114,6 +114,7 @@ class RuntimeFaultPoint(str, Enum):
     AFTER_DOMAIN_OUTCOMES = "after-domain-outcomes"
     BEFORE_PUBLICATION = "before-publication"
     AFTER_PUBLICATION = "after-publication"
+    AFTER_EFFECT_FILE = 'after-effect-file'
 
 
 class RuntimeInterrupted(Exception):
@@ -356,6 +357,7 @@ class CognitionRuntimeView:
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
+    load_artifact_preview: Callable | None = None
     load_withheld_memory_ids: Callable[[], tuple[str, ...]] | None = None
     memory_control_complete: bool = True
     canonical_memory_history: tuple[LivingMemoryRecord, ...] = ()
@@ -1079,6 +1081,7 @@ class SubjectRuntime:
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
             load_subject_tasks=self._engine.list_subject_tasks,
+            load_artifact_preview=self._engine.preview_text_artifact,
             load_withheld_memory_ids=(
                 (lambda: self._engine.withheld_memory_ids_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
@@ -1098,6 +1101,18 @@ class SubjectRuntime:
 
     def list_subject_tasks(self):
         return self._engine.list_subject_tasks()
+
+    def preview_text_artifact(self, task_id, revision):
+        return self._engine.preview_text_artifact(task_id,revision)
+
+    def recover_text_artifacts(self):
+        from dynamic_subject_agent.text_artifacts import publish_text
+        if 'confirmed-text-save-v1' not in self._context.authority.allowed_intents:
+            return
+        for preview,ref in self._engine._pending_text_effects():
+            result=publish_text(preview,canonical_root=self._engine._location.root,
+                fault_hook=lambda stage:self._hit(RuntimeFaultPoint.AFTER_EFFECT_FILE,ref) if stage=='after-file' else None)
+            self._engine._append_effect_receipt(preview,ref,result)
 
     def list_conversation_turns(
         self,
@@ -1192,6 +1207,7 @@ class SubjectRuntime:
         """Durably admit one command without coupling admission to waiting."""
 
         self._context.validate_command(command)
+        self.recover_text_artifacts()
         if command.declared_intent == 'subject-task-v1' and not getattr(self._cognition, 'supports_subject_tasks', False):
             raise PreAdmissionRejected('subject-tasks-unavailable', 'explicit task cognition is unavailable')
         self._cognition.preflight(
@@ -1244,6 +1260,7 @@ class SubjectRuntime:
         *,
         admission_replayed: bool,
     ) -> RuntimeResult:
+        self.recover_text_artifacts()
         snapshot = self._engine.query(operation_ref)
         if snapshot.operation_state is OperationState.COMPLETED:
             return RuntimeResult(
@@ -1362,6 +1379,7 @@ class SubjectRuntime:
         self._hit(RuntimeFaultPoint.BEFORE_PUBLICATION, operation_ref)
         published = self._engine.publish(commit_plan)
         self._hit(RuntimeFaultPoint.AFTER_PUBLICATION, operation_ref)
+        self.recover_text_artifacts()
         return RuntimeResult(
             operation_ref=operation_ref,
             snapshot=self._engine.query(operation_ref),
@@ -1452,6 +1470,14 @@ class SubjectRuntime:
         ):
             raise ValueError("Cognition proposal is outside runtime authority")
         task_request = proposal.impact_envelope.agency
+        if task_request.artifact_approval is not None:
+            approval=task_request.artifact_approval
+            if (command is None or command.declared_intent!='confirmed-text-save-v1' or task_request.admitted_command!=command.utterance
+                or task_request.current_state.tasks!=self._engine.list_subject_tasks()
+                or task_request.artifact_preview!=self._engine.preview_text_artifact(approval.task_id,approval.revision)):
+                raise ValueError('artifact approval differs from canonical state')
+        elif command is not None and command.declared_intent=='confirmed-text-save-v1':
+            raise ValueError('artifact approval lacks adjudication')
         if task_request.task_command is not None:
             if command is None or command.declared_intent != 'subject-task-v1' or task_request.admitted_command != command.utterance:
                 raise ValueError('task proposal differs from admitted command')
@@ -1558,7 +1584,7 @@ class SubjectRuntime:
             runtime_authority_id=self._context.runtime_authority_id,
             stage_order=M0_A_STAGE_ORDER,
             domain_participation=M0_A_DOMAIN_PARTICIPATION,
-            committed_effects_available=False,
+            committed_effects_available='confirmed-text-save-v1' in self._context.authority.allowed_intents,
         )
 
     def _build_experience_basis(
@@ -1606,6 +1632,8 @@ class SubjectRuntime:
             outcomes.agency.decision,
             outcomes.relationship.decision,
         )
+        from dynamic_subject_agent.text_artifacts import effect_from_reason
+        effect=effect_from_reason(outcomes.agency.decision)
         return CycleCommitPlan(
             plan_id=_runtime_id(operation_id, attempt_id, "commit-plan"),
             cycle_plan_id=cycle_plan.cycle_plan_id,
@@ -1653,9 +1681,9 @@ class SubjectRuntime:
                     attempt_id,
                     "committed-effect-set",
                 ),
-                reference_ids=(),
-                dispatch_state=EffectDispatchState.UNAVAILABLE,
-                reason="real committed-effect dispatch is unavailable in M0-A",
+                reference_ids=(effect.effect_id,) if effect else (),
+                dispatch_state=EffectDispatchState.READY if effect else EffectDispatchState.UNAVAILABLE,
+                reason='exact text save approved' if effect else "real committed-effect dispatch is unavailable in M0-A",
             ),
         )
 

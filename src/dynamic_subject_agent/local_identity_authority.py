@@ -632,6 +632,7 @@ def _create_identity_host(
     # New identities opt into the task contract; dormant preflight still denies
     # submission. Existing bindings are read by their persisted version.
     dormant.supports_subject_tasks = True
+    dormant.supports_text_effects = True
     host = RuntimeHost.create(
         identity.experiment_base,
         studio_location=identity.studio_location,

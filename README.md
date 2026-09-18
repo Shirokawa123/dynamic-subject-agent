@@ -26,8 +26,10 @@
 - 用户可选择候选并显式保存为 SubjectStudio 内未封存草稿；支持重启恢复、选择 revision 和显式删除。保存与删除均需单独确认。
 - 未封存草稿可生成 exact Profile/Genesis/Knowledge 映射和稳定 Freeze Basis；用户再次确认 exact basis 后可幂等创建新的来源封存身份。原有身份不被替换，两个身份使用独立 QRI、Knowledge snapshot、Host 与 Timeline，并可显式切换和跨重启恢复。
 - 软件内配置 DeepSeek key，安全保存到 Windows Credential Manager，并支持验证、替换和删除。
+- 新建身份支持显式主体文字任务：接受、澄清、暂缓、有限拒绝、修订与取消，和用户目标/承诺分开保存。
+- 已接受任务可预览完整正文和精确文件位置，逐次确认后在应用专用目录新建UTF-8文本；支持重复确认保护、完成/失败回执与中断恢复。正文保存不调用模型，不覆盖或删除现有文件。
 
-当前最小产品范围已完成 Windows 隔离身份真实长链、project-original 纯文本建角封存、多身份切换与重启验收。下一项能力需重新定义切片；视频/音频、私人来源、Agency、effect、人格发展、Reflection 与主动消息不在当前范围。
+当前范围包括 Windows 隔离身份真实长链、原创纯文本建角封存、多身份切换、主体任务与一种受控本地执行。视频/音频、私人来源、人格发展、Reflection、主动消息、任意工具与对外执行仍不在范围内。旧身份保持原格式与权限，不自动迁移；新功能以新建身份验收。
 
 ## 安装与测试
 
@@ -49,6 +51,8 @@ powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 
 首次启动会显示“连接 DeepSeek”：粘贴 key 后点击“保存并验证”。软件只向 DeepSeek `/models` 发送 Bearer 鉴权验证，不发送聊天内容；key 存入 Windows Credential Manager，不进入仓库、数据库或 Timeline。
 
-当前内部体验 build 为 `dogfood-s40`。当前自述“安排，也给自己定个目标”可分别保存；引号指定完整旧、新目标时可修改目标并保留独立安排，重启后可继续操作。新增解析由目标路由、Python裁决和Memory分工共享，防止从转述或条件中截取操作后覆盖安排。原独立验收四轮与13轮真实后台见 [Slice-40报告](docs/reports/2026-09-13-slice-40/REPORT.md)。支持范围仍有限，复杂条件和意译不猜测；独立验收发现的共同写作连续修改与自由偏好澄清问题仍待处理。其他边界见 [架构契约](docs/ARCHITECTURE.md)。
+当前内部体验 build 为 `dogfood-s50`。点击“主体任务”，填写任务说明和本地正文；模型只协商是否接受，保存须再点击“预览保存”，核对完整正文与路径后确认。起草可先在聊天中完成，再把选定成品贴入任务。已批准操作中断后可在任务卡点击“核对已批准的保存”，下一次提交也会先恢复。任务完成后显示本地文件路径；完成记录说明保存当时的结果，不监控之后的外部编辑。
+
+旧身份仍可聊天，任务/保存能力按原权限显示不可用；使用新建身份体验新功能，无需手工改数据库。详见[任务协商报告](docs/reports/2026-09-18-slice-49/REPORT.md)、[保存验收报告](docs/reports/2026-09-18-slice-50/REPORT.md)和[架构契约](docs/ARCHITECTURE.md)。有限自然语法、生成失败与旧报告中的体验限制仍有效，不承诺任意自然表达都成功。
 
 产品定义见 `docs/PRODUCT.md`，架构见 `docs/ARCHITECTURE.md`，当前唯一工作见 `docs/slices/current.md`。

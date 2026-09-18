@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, replace
 import json
 from dynamic_subject_agent.subject_tasks import SubjectTaskCommand, SubjectTaskProposal, SubjectTaskRecord, decide
+from dynamic_subject_agent.text_artifacts import TextSaveApproval, TextArtifactPreview, approve
 
 from dynamic_subject_agent.timeline import AgencyDomainOutcome
 from dynamic_subject_agent.domains._shared import (
@@ -42,6 +43,8 @@ class AgencyAdjudicationRequest:
     task_command: SubjectTaskCommand | None = None
     task_proposal: SubjectTaskProposal | None = None
     admitted_command: str = ''
+    artifact_approval: TextSaveApproval | None = None
+    artifact_preview: TextArtifactPreview | None = None
 
 
 class AgencyDomain:
@@ -88,6 +91,20 @@ class AgencyDomain:
                 "material-change-capability-unavailable",
                 "M0-A cannot safely adjudicate an Agency material-change candidate",
             )
+        if request.artifact_approval is not None:
+            try:
+                if request.task_command is not None or TextSaveApproval.from_json(request.admitted_command)!=request.artifact_approval:
+                    raise ValueError('approval differs from admission')
+                record,effect,reply=approve(request.artifact_approval,request.current_state.tasks,request.artifact_preview)
+                if effect and (effect.profile_id!=basis.profile_id or effect.timeline_id!=basis.timeline_id):
+                    raise ValueError('effect identity differs from admission')
+            except (TypeError,ValueError,AttributeError):
+                raise DomainAdjudicationFailedClosed('agency','invalid-artifact-approval','exact approval could not be verified') from None
+            decision=replace(noop_decision(basis,scope='agency',reason_code='text-effect.result'),rule_version='agency-text-effect-1.0',
+                reason=json.dumps({'code':'text-effect.result','provenance':basis.source_provenance,
+                    'subject_task':asdict(record) if record else None,'reply':reply,'approval':asdict(request.artifact_approval),
+                    'effect':asdict(effect) if effect else None},ensure_ascii=False,sort_keys=True,separators=(',',':')))
+            return AgencyDomainOutcome(stable_id(basis,'agency-outcome'),decision,bool(effect))
         if request.task_command is not None:
             try:
                 if SubjectTaskCommand.from_json(request.admitted_command) != request.task_command:

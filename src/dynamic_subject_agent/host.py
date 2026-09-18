@@ -125,6 +125,8 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
 ALLOWED_INTENTS = ("ask-collaborator-status",)
 SUBJECT_TASK_CONTRACT_VERSION = "subject-task-cycle-1.0"
 SUBJECT_TASK_INTENTS = (*ALLOWED_INTENTS, "subject-task-v1")
+TEXT_EFFECT_CONTRACT_VERSION = 'subject-text-effect-cycle-1.0'
+TEXT_EFFECT_INTENTS = (*SUBJECT_TASK_INTENTS, 'confirmed-text-save-v1')
 
 
 def _intents_for_contract(version: str) -> tuple[str, ...]:
@@ -132,6 +134,8 @@ def _intents_for_contract(version: str) -> tuple[str, ...]:
         return ALLOWED_INTENTS
     if version == SUBJECT_TASK_CONTRACT_VERSION:
         return SUBJECT_TASK_INTENTS
+    if version == TEXT_EFFECT_CONTRACT_VERSION:
+        return TEXT_EFFECT_INTENTS
     raise RuntimeHostFailedClosed("unsupported-runtime-contract", "unknown runtime contract")
 
 
@@ -140,6 +144,8 @@ def _contract_for_intents(intents: tuple[str, ...]) -> str:
         return RUNTIME_CONTRACT_VERSION
     if intents == SUBJECT_TASK_INTENTS:
         return SUBJECT_TASK_CONTRACT_VERSION
+    if intents == TEXT_EFFECT_INTENTS:
+        return TEXT_EFFECT_CONTRACT_VERSION
     raise RuntimeHostFailedClosed("unsupported-runtime-contract", "unknown runtime intent grant")
 ALLOWED_PROVENANCE = ("project-original",)
 REQUIRED_CAPABILITIES = frozenset(
@@ -3274,6 +3280,16 @@ class RuntimeLease:
         self._require_active()
         self._host._require_binding_permit(self.binding)
         return self._lane.worker.call('list_subject_tasks')
+
+    def preview_text_artifact(self, task_id, revision):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call('preview_text_artifact',task_id,revision)
+
+    def recover_text_artifacts(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        return self._lane.worker.call('recover_text_artifacts')
 
     def list_relationship_interactions(
         self,
@@ -6752,7 +6768,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=timeline_id,
-            allowed_intents=(SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
+            allowed_intents=(TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=1,
@@ -7150,7 +7166,7 @@ class RuntimeHost:
             expected != (str(row[23]), str(row[24]), str(row[25]))
             or binding.runtime_kind != RUNTIME_KIND
             or binding.provider_authority not in _SUPPORTED_PROVIDER_AUTHORITIES
-            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION}
+            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION}
             or binding.studio_root_id != self._studio_location.root_id
             or binding.studio_store_id != self._studio_location.profile_store_id
             or binding.host_root_id != self._location.root_id

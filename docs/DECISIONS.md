@@ -1,5 +1,9 @@
 # 当前决定
 
+## D-027：仅新身份使用可验证文本effect版本
+
+2026-09-18，D-026范围内的实现决定：新binding使用独立text-effect contract和Timeline schema 2，旧v1保持原权限与原数据，不做就地迁移。保存intent进入既有Publication的真实eligible/ready引用；结果在同一canonical store追加receipt及count/head摘要。读接口不dispatch，只有有permit的runtime worker恢复已批准操作。固定目标冲突失败，不覆盖、不删除、不自动换名。此版本选择保持旧数据可读，代价是旧身份暂不可使用新保存功能；既有身份升级仍是未来需用户决定的迁移，当前没有执行授权。
+
 ## D-026：受控主体任务与精确本地文本执行
 
 2026-09-18，用户明确选择并批准v1路线A：角色对显式交付的文字任务提议接受、澄清、暂缓或拒绝，由Python裁决。新增Agency提议仅发往api.deepseek.com，沿用现有Windows Credential Manager DeepSeek slot；每次显式任务最多1次，输入仅当前消息≤1000字符、固定任务目录/规则和当前身份最多5项未结束主体任务的kind/summary/status（每摘要≤200字符、合计≤1000）。聊天历史、Memory、关系、身份设定、内部ID不进入该投影。首个effect限逐次精确预览/确认后在应用专用目录新建文本，不覆盖、删除或对外发送。主体任务与用户目标分开，复用单Timeline，不以模型输出直接写状态。此决定解除D-003对该精确范围的等待，不授权人格发展、主动消息、任意工具或不可逆数据迁移。

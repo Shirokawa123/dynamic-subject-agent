@@ -410,7 +410,8 @@ class AppState:
         if result.status.value != 'available':
             return {'ok': False, 'status': result.status.value, 'message': '无法核实主体任务，请稍后重试。'}
         return {'ok': True, 'enabled': result.projection.enabled, 'profile_id': self.product.profile_id,
-            'tasks': [asdict(record) for record in result.projection.records],
+            'effects_enabled':result.projection.effects_enabled,
+            'tasks': [dict(asdict(record),saved_path=dict(result.projection.saved_paths).get(record.task_id)) for record in result.projection.records],
             'message': '' if result.projection.enabled else '此身份保留旧运行权限，尚未启用主体任务；普通聊天不受影响。'}
 
     def submit_subject_task(self, payload: dict) -> dict:
@@ -430,6 +431,30 @@ class AppState:
             'changed': bool(result.projection and result.projection.subject_task is not None),
             'profile_id': self.product.profile_id,
             'message': result.projection.expression_text if result.projection and result.projection.expression_text else '任务处理尚未完成，请刷新查看；不要重复提交。'}
+
+    def text_artifact(self, payload: dict) -> dict:
+        from dataclasses import asdict
+        from dynamic_subject_agent.application import TextSaveApproval
+        data=dict(payload)
+        if data.pop('expected_profile_id',None)!=self.product.profile_id:
+            return {'ok':False,'message':'身份已变化，请重新打开预览。'}
+        action=data.pop('action',None)
+        if action=='preview' and set(data)=={'task_id','revision'}:
+            result=self.product.application.preview_text_artifact(**data)
+            return {'ok':result.status=='available','message':result.message,'preview':asdict(result.preview) if result.preview else None,
+                'profile_id':self.product.profile_id}
+        if action=='recover' and not data:
+            result=self.product.application.recover_text_artifacts()
+            return {'ok':result.status=='available','message':result.message}
+        if action=='approve':
+            key=data.pop('idempotency_key',None)
+            approval=TextSaveApproval(**data)
+            pending=self.product.application.approve_text_artifact(approval,idempotency_key=key)
+            if pending.status.value not in ('pending','terminal') or pending.operation_ref is None:
+                return {'ok':False,'message':'保存确认冲突或不可用，请重新预览。'}
+            result=self.product.application.wait(pending.operation_ref,timeout_seconds=30)
+            return {'ok':result.status.value=='terminal','message':result.projection.expression_text if result.projection else '请刷新任务核实结果。'}
+        raise ValueError('invalid artifact command')
 
     def _participant_goals(self) -> list[dict]:
         from dynamic_subject_agent.application import (
@@ -1033,6 +1058,12 @@ class DesktopState:
                 return {'ok': False, 'message': '请先连接模型。'}
             return self._app.submit_subject_task(payload)
 
+    def text_artifact(self, payload: dict) -> dict:
+        with self._lock:
+            if self._app is None:
+                return {'ok':False,'message':'请先连接模型。'}
+            return self._app.text_artifact(payload)
+
     def preview_character_source(self, payload: dict) -> dict:
         with self._lock:
             if self._app is None:
@@ -1194,6 +1225,14 @@ def build_handler(state: DesktopState):
                 self._json(404, {"error": "not-found"})
 
         def do_POST(self) -> None:  # noqa: N802
+            if self.path == '/api/tasks/artifact':
+                try:
+                    result=state.text_artifact(self._read_json(maximum=8192))
+                except (ValueError,TypeError,UnicodeError):
+                    self._json(400,{'ok':False,'message':'保存确认无效，请重新预览。'})
+                    return
+                self._json(200 if result.get('ok') else 409,result)
+                return
             if self.path == "/api/tasks":
                 try:
                     payload = self._read_json(maximum=131072)

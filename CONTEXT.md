@@ -59,3 +59,11 @@ _Avoid_: Absence experience, offline life, last app open
 **Lifeworld**:
 主体从封存前提、已提交经历和获授权现实观察中形成的有意义环境；Civil Time 只是其未来坐标之一，不能单独生成世界事件。
 _Avoid_: World clock, invented offline life, omniscient world state
+
+**Text Artifact**:
+主体文字任务中，经用户核对完整正文与保存位置并逐次批准后形成的本地文本成品；任务接受本身不代表成品已经存在。
+_Avoid_: Chat reply, accepted task, automatic export
+
+**Effect Receipt**:
+一项已提交执行意图的可核实终态结果；它说明当次执行成功或失败，不担保成品之后没有被外部修改。
+_Avoid_: Model promise, execution intent, current file monitor

@@ -34,6 +34,16 @@ Presentation Adapter 只通过 `ApplicationFacade` 提交命令、等待结果�
 
 新身份binding持久化`subject-task-cycle-1.0`，闭集映射授权chat和subject-task-v1；旧`m0-a-cycle-1.0`只保留chat。读取/恢复/导出必须由binding版本派生权限，不信任任意gate内容；未知版本失败关闭。此处不迁移旧binding、不改旧Timeline schema/effect约束。桌面任务草稿仅在当前页面内按身份分别保留；提交绑定身份、目标revision和幂等key。完整执行和旧身份升级尚未实现。
 
+### Slice-50 精确文本effect
+
+后续新身份使用`subject-text-effect-cycle-1.0`，额外授权`confirmed-text-save-v1`并新建Timeline schema 2；control schema仍为1，旧Timeline及binding不迁移。v2允许真实Agency eligible及单个ready effect引用，仍沿用Publication原子提交；旧v1只允许空effect。`TextSaveApproval`绑定task revision与preview basis，basis包含policy、root/身份、正文原字节摘要、完整正文和精确目录/文件名。只接受当前accepted且正文非空的任务；stale、已取消、跨身份或旧contract批准不执行。
+
+`ApplicationFacade.preview_text_artifact`纯读取；`approve_text_artifact`提交唯一intent，任务转executing，不能再修订/取消。确认无模型调用。本地目录固定canonical root/artifacts；目标名固定，冲突不偷偷换名。File Adapter先exclusive创建暂存、flush/fsync，再用同卷hardlink新建目标。已有目标只有与本次暂存samefile且exact bytes相同才认作恢复成功；独立同内容文件、部分暂存或链接路径失败且不覆盖/删除。暂存硬链接保留，不建立第二权威数据store。支持进程中断恢复，不声称对任意文件系统/硬件断电提供超出底层的保证。
+
+同一Timeline SQLite追加终态effect_receipt，包含effect/outcome引用及digest、head sequence、结果、正文摘要与文件名；receipt chain与单独count/head摘要同事务提交，尾删、错序、孤立及引用不符FailedClosed。重放在对应intent之后应用completed/failed；缺receipt的intent只能是最后一个Outcome，否则拒绝后续历史。Domain模型不产生receipt。Runtime在有permit的worker上，于admit和resume/freeze前、Publication后恢复；文件成功而receipt未提交时不会重写目标。纯查询、预览、导出或治理冷启动不dispatch。已冻结attempt只在当时head继续，旧basis不会借新receipt继续生成。
+
+导出读事务中核实完整任务/receipt链，并包括实际Timeline schema、receipt和head。`recover_text_artifacts`是显式恢复入口，旧contract返回unavailable；下次提交也先恢复。产品不开新后台调度，关闭程序后不承诺继续运行。历史completed与文件现在是否仍在/是否被外部改动分开；任务面板给出原保存位置。既有聊天创作可由用户明确选择后贴为本地正文，本切片不新增任务生成Provider用途。
+
 `ApplicationFacade → Admission → bounded Cognition → Domain adjudication → grounded Expression → atomic TimelineOutcome → post-commit effect`
 
 模型输出只能成为候选。Domain 独立返回 accepted、rejected、NoOp 或 FailedClosed；完整 Outcome 全可见或全不可见。effect 只消费已提交引用，失败不会重跑经历。

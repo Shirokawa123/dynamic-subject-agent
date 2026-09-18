@@ -60,6 +60,13 @@ def _validate_reasoned_noop(
             f"{expected_scope} reason must be an object",
         )
     allowed_keys = {"code", "provenance"}
+    if expected_scope=='agency' and decision.rule_version=='agency-text-effect-1.0':
+        from dynamic_subject_agent.text_artifacts import effect_from_reason
+        try:
+            effect_from_reason(decision)
+        except (ValueError,TypeError,KeyError,AttributeError):
+            raise DomainOutcomeSetRejected('invalid-text-effect','invalid exact text approval') from None
+        allowed_keys.update({'subject_task','reply','approval','effect'})
     if expected_scope == 'agency' and decision.rule_version == 'agency-task-1.0':
         from dynamic_subject_agent.subject_tasks import validate_task_reason
         try:
@@ -263,7 +270,8 @@ class CompleteDomainOutcomeSet:
         )
         for decision, scope in decisions:
             _validate_reasoned_noop(decision, expected_scope=scope)
-        if self.agency.committed_effect_eligible:
+        from dynamic_subject_agent.text_artifacts import effect_from_reason
+        if self.agency.committed_effect_eligible != bool(effect_from_reason(self.agency.decision)):
             raise DomainOutcomeSetRejected(
                 "agency-effect-ineligible",
                 "M0-A Agency outcomes cannot authorize a committed effect",

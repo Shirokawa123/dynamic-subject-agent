@@ -11,6 +11,8 @@
   .rail h2 { font-size:13px; font-weight:normal; letter-spacing:2px; margin:0 0 10px; color:#5f5645; }
   .card { background:#faf7ef; border:1px solid #ddd3bf; border-radius:4px; padding:8px 10px; margin-bottom:8px; font-family:ui-monospace,Consolas,monospace; font-size:11px; line-height:1.7; }
   .card .k { color:#9a7b3f; }
+  #tasks-screen .card { font-family:inherit; font-size:14px; overflow-wrap:anywhere; }
+  #tasks-screen label { display:block; margin:10px 0; }
   header { margin-bottom:22px; }
   h1 { font-size:20px; font-weight:normal; letter-spacing:2px; margin:0; }
   .turn { margin-bottom:24px; }
@@ -106,12 +108,18 @@
 <div class="setup-screen" id="tasks-screen" hidden>
   <div class="setup-card" style="max-width:700px;max-height:85vh;overflow:auto">
     <h2>主体任务</h2>
-    <p>任务说明会发给模型提出处理建议，正文仅保留在本地。当前阶段支持接收、补充、暂缓和取消，尚不生成成品或保存文件。</p>
+    <p>任务说明和少量未结束任务摘要会交给模型协商，正文只保存在本机。起草可先在聊天中完成，将选定正文贴到这里；任务接受后，预览并逐次确认保存为新文本文件。</p>
     <label>任务类型<select id="task-kind"><option value="draft_text">文字起草</option><option value="save_text">文本保存</option></select></label>
     <label>任务说明<textarea id="task-message" maxlength="1000" rows="3" style="width:100%" placeholder="例如：请帮我写两句读书会邀请"></textarea></label>
     <label>待保存正文（只供本地使用）<textarea id="task-content" maxlength="16000" rows="4" style="width:100%"></textarea></label>
     <button id="task-submit">交付任务</button><button id="task-new">新任务</button><button id="task-refresh">刷新</button><button id="close-tasks">关闭</button>
     <div class="setup-status" id="task-status" role="status"></div><div id="task-list"></div>
+    <div id="artifact-preview" hidden class="card">
+      <h3>确认本次保存</h3><p>只新建下列文件，不覆盖已有文件。确认后即使关闭页面，也可能在下次运行时完成已批准的保存。</p>
+      <p id="artifact-path" style="overflow-wrap:anywhere"></p>
+      <pre id="artifact-content" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:35vh;overflow:auto"></pre>
+      <button id="artifact-confirm">确认保存这份完整正文</button><button id="artifact-dismiss">返回，不保存</button>
+    </div>
   </div>
 </div>
 <div class="app">
@@ -885,13 +893,16 @@ const taskKind = document.getElementById("task-kind");
 const taskStatus = document.getElementById("task-status");
 const taskSubmit = document.getElementById("task-submit");
 let taskProfile = null, taskEditing = null, taskRequest = null, taskBusy = false;
+let artifactPreview = null, artifactKey = null;
+function clearArtifactPreview() { artifactPreview = null; artifactKey = null; document.getElementById("artifact-preview").hidden = true; }
 const taskDrafts = new Map();
-const taskLabels = {accepted:"已接受，待处理", needs_input:"需要补充", deferred:"暂缓", declined:"未接受", cancelled:"已取消", completed:"已完成", failed:"处理失败"};
+const taskLabels = {accepted:"已接受，待处理", needs_input:"需要补充", deferred:"暂缓", declined:"未接受", cancelled:"已取消", completed:"已保存", failed:"处理失败", executing:"已批准，待核实保存结果"};
 async function refreshTasks() {
   try {
     const response = await fetch("/api/tasks"); const data = await response.json();
     if (!data.ok) throw new Error(data.message || "任务读取失败");
     if (taskProfile && taskProfile !== data.profile_id) {
+      clearArtifactPreview();
       taskDrafts.set(taskProfile,{kind:taskKind.value,message:taskMessage.value,content:taskContent.value,editing:taskEditing,request:taskRequest});
       const draft = taskDrafts.get(data.profile_id);
       taskKind.value = draft ? draft.kind : "draft_text";
@@ -910,12 +921,21 @@ async function refreshTasks() {
       const label = document.createElement("strong"); label.textContent = taskLabels[record.status] || "状态无法识别";
       const summary = document.createElement("p"); summary.textContent = record.summary;
       card.append(label, summary);
+      if (record.saved_path) { const path = document.createElement("p"); path.textContent = "已保存到：" + record.saved_path; card.append(path); }
       if (["accepted", "needs_input", "deferred"].includes(record.status)) {
         const edit = document.createElement("button"); edit.textContent = "补充或重新提交";
         edit.onclick = () => { if (taskBusy) return; taskEditing = record; taskKind.value = record.kind; taskMessage.value = record.request_text; taskContent.value = record.content; taskRequest = null; taskSubmit.textContent = "重新提交"; };
         const cancel = document.createElement("button"); cancel.textContent = "取消任务";
         cancel.onclick = () => sendTask({action:"cancel",task_id:record.task_id,expected_revision:record.revision});
         card.append(edit,cancel);
+      }
+      if (data.effects_enabled && record.status === "accepted" && record.content.trim()) {
+        const preview = document.createElement("button"); preview.textContent = "预览保存";
+        preview.onclick = () => artifactAction({action:"preview",task_id:record.task_id,revision:record.revision}); card.append(preview);
+      }
+      if (data.effects_enabled && record.status === "executing") {
+        const recover = document.createElement("button"); recover.textContent = "核对已批准的保存";
+        recover.onclick = () => artifactAction({action:"recover"}); card.append(recover);
       }
       list.append(card);
     }
@@ -931,10 +951,31 @@ async function sendTask(command) {
   try {
     const response = await fetch("/api/tasks",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...payload,idempotency_key:taskRequest.key})});
     const data = await response.json(); taskStatus.textContent = data.message || "任务处理未完成。";
-    if (data.ok) { taskRequest = null; if (data.changed && (command.action !== "cancel" || (taskEditing && taskEditing.task_id === command.task_id))) { taskEditing = null; taskSubmit.textContent = "交付任务"; } }
+    if (data.ok) { taskRequest = null; if (data.changed) clearArtifactPreview(); if (data.changed && (command.action !== "cancel" || (taskEditing && taskEditing.task_id === command.task_id))) { taskEditing = null; taskSubmit.textContent = "交付任务"; } }
   } catch (error) { taskStatus.textContent = "连接中断；请先刷新任务，再用相同内容重试。"; }
   finally { taskBusy = false; await refreshTasks(); }
 }
+async function artifactAction(command, profile = taskProfile) {
+  if (taskBusy || !profile) return;
+  taskBusy = true; taskSubmit.disabled = true; document.getElementById("artifact-confirm").disabled = true;
+  try {
+    const response = await fetch("/api/tasks/artifact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...command,expected_profile_id:profile})});
+    const data = await response.json(); taskStatus.textContent = data.message || "请核对完整预览。";
+    if (data.ok && command.action === "preview") {
+      artifactPreview = {...data.preview,profile_id:data.profile_id}; artifactKey = "artifact-" + crypto.randomUUID();
+      document.getElementById("artifact-path").textContent = data.preview.directory + "/" + data.preview.filename;
+      document.getElementById("artifact-content").textContent = data.preview.content;
+      document.getElementById("artifact-preview").hidden = false;
+    } else if (data.ok) { clearArtifactPreview(); }
+  } catch (error) { taskStatus.textContent = "连接中断；请刷新任务核实保存结果，原确认可安全重试。"; }
+  finally { taskBusy = false; document.getElementById("artifact-confirm").disabled = false; await refreshTasks(); }
+}
+document.getElementById("artifact-confirm").onclick = () => {
+  if (!artifactPreview) return;
+  const p = artifactPreview;
+  return artifactAction({action:"approve",task_id:p.task_id,revision:p.revision,basis:p.basis,idempotency_key:artifactKey},p.profile_id);
+};
+document.getElementById("artifact-dismiss").onclick = () => { if (!taskBusy) clearArtifactPreview(); };
 document.getElementById("open-tasks").onclick = async () => { taskScreen.hidden = false; await refreshTasks(); };
 document.getElementById("close-tasks").onclick = async () => { taskScreen.hidden = true; await refreshState(true); };
 document.getElementById("task-refresh").onclick = refreshTasks;

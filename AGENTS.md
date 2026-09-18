@@ -67,6 +67,7 @@ Knowledge 事实表达保留完整来源上下文，后续合并不得删改限�
 ## Module 与测试
 
 - 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。
+- 修改主体任务或本地保存时读ARCHITECTURE的Slice-49/50：新binding的schema 2才允许真实effect；v1不自动升级，receipt完整性与恢复顺序必须验证。预览/查询/导出不执行，保存确认不调用Provider。
 - `LocalIdentityAuthority` 独占本地 identity registry、v1/v2 state、freeze/replay/select、authority 校验和 Host/Timeline 准备；`local_product` 只消费已验证 active authority 并装配 cognition/ApplicationFacade。
 - 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
 - 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。

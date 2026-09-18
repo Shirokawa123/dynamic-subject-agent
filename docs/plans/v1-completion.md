@@ -1,6 +1,6 @@
 # 完整v1收口路线与连续推进
 
-2026-09-18。用户授权持续推进至较完整成品或确需重大决策，并明确批准下述A路线，见D-026。产品定义仍以PRODUCT为准；本文件是路线与决策方案，不替代唯一执行切片current.md。Slice-49已接入主体任务生命周期并完成隔离身份真实验收；文件执行尚未完成，完整v1仍在推进。
+2026-09-18。用户授权持续推进至较完整成品或确需重大决策，并明确批准下述A路线，见D-026。产品定义仍以PRODUCT为准；本文件是路线与决策方案，不替代唯一执行切片current.md。Slice-49完成任务生命周期；Slice-50已接通精确批准的文本保存并通过隔离生产验收，正在收口全量回归。随后冻结版本做最终混合验收；旧身份迁移尚未执行。
 
 ## 自主执行与停止条件
 
@@ -20,11 +20,11 @@
 
 不承诺任意自然语言、通用任务执行、多模态、全自动人格成长、主动消息或完全离线推理。
 
-## 已证实缺口及接缝
+## 基线缺口与当前进展
 
-- `domains/agency.py`：AgencyDomain.material_change_capability为UNAVAILABLE；任何非空实质候选拒绝，结果committed_effect_eligible=False。存在类型不代表具备自主任务生命周期。
-- `runtime.py`：committed_effects_available=False；构建的CommittedEffectSet引用为空、dispatch_state为UNAVAILABLE。没有产品可调用的真实执行闭环。
-- `model_gateway.py`：现有12类运行任务及来源提取，没有Agency任务；任何新增用途不能借现有reply授权隐式实现。
+- Slice-48核对时Agency任务与effect尚不可用；Slice-49现在提供受控任务协商，Slice-50的新binding提供真实eligible/ready effect及receipt。旧binding保持原权限，不能把新身份验收当旧身份升级。
+- ModelGateway已增加获批准的Agency提议；保存确认和恢复均无模型调用。起草仍经已有聊天创作并由用户明确选择/粘贴，不偷偷增加生成用途。
+- 新Timeline schema 2及receipt chain/count/head保持一个canonical store；旧v1不就地改变，升级决定需要另行取得授权。
 - 单Timeline、Publication、ApplicationFacade、identity隔离和恢复均已有基础。优先扩展这些接缝，不叠加第二个任务权威或模型数据库。
 - 当前自然表达重复、引用冗余和独立Goal失败保留在Slice-45/47报告；按阻塞用户任务/损坏状态程度处理，不追求逐句穷举。
 

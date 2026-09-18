@@ -110,6 +110,7 @@ class LivingMemoryDecisionStatus(str, Enum):
 
 class EffectDispatchState(str, Enum):
     UNAVAILABLE = "unavailable"
+    READY = 'ready'
 
 
 class FaultPoint(str, Enum):
@@ -2456,6 +2457,19 @@ _TIMELINE_DDL = (
 )
 
 _CONTROL_TABLES = frozenset({"root_record", "store_manifest", "timeline_registration"})
+_EMPTY_EFFECT_HEAD = hashlib.sha256(b'text-effect-receipts-1').hexdigest()
+_EFFECT_DDL = (
+    '''CREATE TABLE effect_receipt (
+        ordinal INTEGER PRIMARY KEY CHECK (ordinal>0), effect_id TEXT NOT NULL UNIQUE,
+        outcome_id BLOB NOT NULL UNIQUE REFERENCES timeline_outcome(outcome_id),
+        head_sequence INTEGER NOT NULL UNIQUE CHECK (head_sequence>0),
+        receipt_json TEXT NOT NULL, previous_digest TEXT NOT NULL, receipt_digest TEXT NOT NULL UNIQUE
+    )''',
+    '''CREATE TABLE effect_receipt_head (
+        singleton INTEGER PRIMARY KEY CHECK (singleton=1), receipt_count INTEGER NOT NULL CHECK (receipt_count>=0),
+        receipt_digest TEXT NOT NULL
+    )''',
+)
 _TIMELINE_TABLES = frozenset(
     {
         "admission_gate",
@@ -2516,6 +2530,7 @@ def _insert_manifest(
     store_kind: str,
     schema_family: str,
     created_at_us: int | None = None,
+    schema_version: int = SCHEMA_VERSION,
 ) -> None:
     connection.execute(
         """
@@ -2537,7 +2552,7 @@ def _insert_manifest(
             store_id,
             store_kind,
             schema_family,
-            SCHEMA_VERSION,
+            schema_version,
             CONTRACT_VERSION,
             PERSISTENCE_VERSION,
             ROOT_EPOCH,
@@ -2605,9 +2620,20 @@ def _bootstrap_timeline(
     connection = _connect_new_writer(location.timeline_database)
     try:
         _begin(connection)
+        effects = 'confirmed-text-save-v1' in authority.allowed_intents
+        schema_version = 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
+            if effects:
+                statement=statement.replace('CHECK (committed_effect_eligible = 0)', 'CHECK (committed_effect_eligible IN (0,1))')
+                statement=statement.replace('CHECK (effect_count = 0)', 'CHECK (effect_count IN (0,1))')
+                statement=statement.replace("CHECK (reference_ids_json = '[]')", '')
+                statement=statement.replace("CHECK (dispatch_state = 'unavailable')", "CHECK (dispatch_state IN ('unavailable','ready'))")
             connection.execute(statement)
-        connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        if effects:
+            for statement in _EFFECT_DDL:
+                connection.execute(statement)
+            connection.execute('INSERT INTO effect_receipt_head VALUES (1,0,?)', (_EMPTY_EFFECT_HEAD,))
+        connection.execute(f"PRAGMA user_version = {schema_version}")
         _insert_manifest(
             connection,
             root_id=location.root_id,
@@ -2615,6 +2641,7 @@ def _bootstrap_timeline(
             store_kind="timeline",
             schema_family=TIMELINE_SCHEMA_FAMILY,
             created_at_us=created_at_us,
+            schema_version=schema_version,
         )
         connection.execute(
             """
@@ -2764,18 +2791,20 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version != SCHEMA_VERSION:
+    if user_version not in ((1,2) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
         )
     row = _manifest_row(connection)
+    if row[4] != user_version:
+        raise AdmissionFailedClosed('unsupported-schema-version','schema version differs from the canonical manifest')
     expected = (
         root_id,
         store_id,
         store_kind,
         schema_family,
-        SCHEMA_VERSION,
+        user_version,
         CONTRACT_VERSION,
         PERSISTENCE_VERSION,
         ROOT_EPOCH,
@@ -2792,6 +2821,8 @@ def _verify_store_integrity(
     *,
     expected_tables: frozenset[str],
 ) -> None:
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==2:
+        expected_tables=expected_tables | {'effect_receipt','effect_receipt_head'}
     try:
         tables = frozenset(
             row[0]
@@ -3287,6 +3318,8 @@ class TimelineEngine:
             )
             gate = _read_admission_gate(writer)
             authority = gate.authority
+            if (writer.execute('PRAGMA user_version').fetchone()[0]==2) != ('confirmed-text-save-v1' in authority.allowed_intents):
+                raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if authority.timeline_id != location.timeline_id:
                 raise AdmissionFailedClosed(
                     "store-identity-mismatch",
@@ -4096,7 +4129,6 @@ class TimelineEngine:
             )
         if (
             plan.relationship_outcome.relationship_target_id != plan.profile_id
-            or plan.agency_outcome.committed_effect_eligible
         ):
             raise CommitPlanRejected(
                 "commit-plan-domain-invalid",
@@ -4107,12 +4139,14 @@ class TimelineEngine:
                 "commit-plan-revisions-unavailable",
                 "M0 07 accepts an explicit empty RevisionSet only",
             )
-        if (
-            plan.committed_effect_set.reference_ids
-            or plan.committed_effect_set.dispatch_state
-            is not EffectDispatchState.UNAVAILABLE
-            or not plan.committed_effect_set.reason.strip()
-        ):
+        from dynamic_subject_agent.text_artifacts import effect_from_reason
+        effect = effect_from_reason(plan.agency_outcome.decision)
+        expected_refs = (effect.effect_id,) if effect else ()
+        if (plan.agency_outcome.committed_effect_eligible != bool(effect)
+            or plan.committed_effect_set.reference_ids != expected_refs
+            or plan.committed_effect_set.dispatch_state is not (EffectDispatchState.READY if effect else EffectDispatchState.UNAVAILABLE)
+            or (effect and 'confirmed-text-save-v1' not in self._authority.allowed_intents)
+            or not plan.committed_effect_set.reason.strip()):
             raise CommitPlanRejected(
                 "commit-plan-effects-unavailable",
                 "M0 committed effects must be explicit empty and unavailable",
@@ -4892,7 +4926,7 @@ class TimelineEngine:
                 dispatch_state,
                 reason,
                 set_digest
-            ) VALUES (?, ?, 0, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 _publication_uuid_bytes(
@@ -4900,6 +4934,7 @@ class TimelineEngine:
                     "effect_set_id",
                 ),
                 plan_id,
+                len(plan.committed_effect_set.reference_ids),
                 _canonical_json(plan.committed_effect_set.reference_ids),
                 plan.committed_effect_set.dispatch_state.value,
                 plan.committed_effect_set.reason,
@@ -5630,7 +5665,7 @@ class TimelineEngine:
             """,
             (set_id,),
         ).fetchone()
-        if row is None or int(row[0]) != 0:
+        if row is None or int(row[0]) not in (0,1):
             raise PublicationFailedClosed(
                 "canonical-publication-incomplete",
                 "explicit empty CommittedEffectSet is absent",
@@ -5641,6 +5676,8 @@ class TimelineEngine:
             dispatch_state=EffectDispatchState(str(row[2])),
             reason=str(row[3]),
         )
+        if len(value.reference_ids)!=int(row[0]) or (value.reference_ids and 'confirmed-text-save-v1' not in self._authority.allowed_intents):
+            raise PublicationFailedClosed('effect-reference-invalid','effect references differ from authority')
         self._assert_record_digest("committed-effect-set", value, row[4])
         return value
 
@@ -6715,12 +6752,12 @@ class TimelineEngine:
             records.append(
                 ConversationTurnRecord(
                     head_sequence=int(row[0]),
-                    user_text=('主体任务操作' if command.declared_intent == 'subject-task-v1' else command.utterance),
+                    user_text=('主体任务操作' if command.declared_intent in ('subject-task-v1','confirmed-text-save-v1') else command.utterance),
                     user_language=command.language,
                     assistant_text=outcome.expression.text,
                     assistant_language=outcome.expression.language,
                     published_at_us=published_at_us,
-                    outcome_summary=(None if command.declared_intent == 'subject-task-v1' else ConversationOutcomeSummary.from_outcome(outcome)),
+                    outcome_summary=(None if command.declared_intent in ('subject-task-v1','confirmed-text-save-v1') else ConversationOutcomeSummary.from_outcome(outcome)),
                 )
             )
             previous_outcome = outcome
@@ -6743,23 +6780,94 @@ class TimelineEngine:
         return tuple(records[-limit:])
 
     def list_subject_tasks(self):
+        return self._verified_subject_tasks()[0]
+
+    def preview_text_artifact(self, task_id, revision):
+        from dynamic_subject_agent.text_artifacts import make_preview
+        if 'confirmed-text-save-v1' not in self._authority.allowed_intents:
+            return None
+        record=next((r for r in self.list_subject_tasks() if r.task_id==task_id and r.revision==revision),None)
+        return make_preview(record,root_id=self._location.root_id,profile_id=self._authority.profile_id,
+            timeline_id=self._authority.timeline_id,directory=self._location.root/'artifacts') if record else None
+
+    def _effect_receipts(self):
+        from dynamic_subject_agent.text_artifacts import FILE_RESULTS
+        if 'confirmed-text-save-v1' not in self._authority.allowed_intents:
+            return ()
+        try:
+            rows=self._writer.execute('SELECT ordinal,effect_id,outcome_id,head_sequence,receipt_json,previous_digest,receipt_digest FROM effect_receipt ORDER BY ordinal').fetchall()
+            previous=_EMPTY_EFFECT_HEAD; receipts=[]; last_sequence=0
+            for ordinal,row in enumerate(rows,1):
+                value=json.loads(row[4])
+                if (set(value)!={'effect_id','outcome_id','outcome_digest','head_sequence','result','content_digest','filename','ordinal','previous_digest'}
+                    or value['result'] not in FILE_RESULTS or type(value['head_sequence']) is not int
+                    or value['ordinal']!=ordinal or row[0]!=ordinal or value['effect_id']!=row[1]
+                    or value['outcome_id']!=str(UUID(bytes=bytes(row[2]))) or value['head_sequence']!=row[3]
+                    or row[3]<=last_sequence or value['previous_digest']!=previous or row[5]!=previous):
+                    raise ValueError('invalid effect receipt lineage')
+                digest=hashlib.sha256(_canonical_json(value).encode()).hexdigest()
+                if row[6]!=digest:
+                    raise ValueError('invalid effect receipt digest')
+                previous=digest;last_sequence=row[3];receipts.append(value)
+            if self._writer.execute('SELECT receipt_count,receipt_digest FROM effect_receipt_head WHERE singleton=1').fetchone()!=(len(rows),previous):
+                raise ValueError('effect receipt head differs from records')
+            return tuple(receipts)
+        except (sqlite3.Error,ValueError,TypeError,KeyError):
+            raise PublicationFailedClosed('effect-receipts-invalid','canonical effect receipts could not be verified') from None
+
+    def _verified_subject_tasks(self):
         from dataclasses import asdict
         from dynamic_subject_agent.subject_tasks import TASK_INTENT, SubjectTaskCommand, SubjectTaskProposal, decide, validate_task_reason
+        from dynamic_subject_agent.text_artifacts import TEXT_EFFECT_INTENT, TextSaveApproval, make_preview, approve, effect_from_reason
         # Verify the complete canonical chain, including non-task publications.
         self.list_conversation_turns(limit=1)
+        receipts={r['head_sequence']:r for r in self._effect_receipts()}
         rows = self._writer.execute('''SELECT op.operation_id,op.contract_version,op.operation_kind,
-            hex(op.payload_fingerprint),d.decision_id FROM timeline_outcome AS o
+            hex(op.payload_fingerprint),d.decision_id,o.head_sequence,o.outcome_id,o.outcome_digest FROM timeline_outcome AS o
             JOIN subject_operation AS op ON op.operation_id=o.operation_id
             JOIN candidate_decision_record AS d ON d.plan_id=o.plan_id AND d.scope='agency'
             ORDER BY o.head_sequence''').fetchall()
-        records = {}
+        records = {};pending=[]
         for row in rows:
             ref = OperationRef(str(row[1]),self._location.root_id,self._location.timeline_store_id,
                 self._authority.authority_scope_id,str(UUID(bytes=bytes(row[0]))),OperationKind(str(row[2])),str(row[3]).lower())
             command = self._query_command(ref)
             decision = self._read_decision(bytes(row[4]))
+            if decision.rule_version=='agency-text-effect-1.0':
+                try:
+                    if command.declared_intent!=TEXT_EFFECT_INTENT:
+                        raise ValueError('effect without explicit approval')
+                    reason=json.loads(decision.reason);effect=effect_from_reason(decision)
+                    source=TextSaveApproval.from_json(command.utterance)
+                    old=records.get(source.task_id)
+                    preview=make_preview(old,root_id=self._location.root_id,profile_id=self._authority.profile_id,
+                        timeline_id=self._authority.timeline_id,directory=self._location.root/'artifacts') if old and old.revision==source.revision else None
+                    record,expected,reply=approve(source,tuple(records.values()),preview)
+                    if effect!=expected or reason['subject_task']!=(asdict(record) if record else None) or reason['reply']!=reply or reason['approval']!=asdict(source):
+                        raise ValueError('effect differs from canonical approval')
+                    if record:
+                        records[record.task_id]=record
+                    receipt=receipts.pop(row[5],None)
+                    if effect:
+                        if receipt:
+                            expected_receipt={'effect_id':effect.effect_id,'outcome_id':str(UUID(bytes=bytes(row[6]))),
+                                'outcome_digest':bytes(row[7]).hex(),'head_sequence':row[5],
+                                'content_digest':effect.content_digest,'filename':effect.filename}
+                            if any(receipt[k]!=v for k,v in expected_receipt.items()):
+                                raise ValueError('effect receipt does not match intent')
+                            records[record.task_id]=replace(record,status='completed' if receipt['result']=='created' else 'failed',
+                                revision=record.revision+1,reason='saved' if receipt['result']=='created' else 'file_failed')
+                        elif row[5]!=len(rows):
+                            raise ValueError('publication follows unresolved effect')
+                        else:
+                            pending.append((effect,ref))
+                    elif receipt:
+                        raise ValueError('receipt without effect')
+                except (ValueError,TypeError,KeyError,AttributeError):
+                    raise PublicationFailedClosed('text-effect-history-invalid','text effect could not be replayed') from None
+                continue
             if decision.rule_version != 'agency-task-1.0':
-                if command.declared_intent == TASK_INTENT:
+                if command.declared_intent in (TASK_INTENT,TEXT_EFFECT_INTENT):
                     raise PublicationFailedClosed('task-history-invalid','task result has no task adjudication')
                 continue
             try:
@@ -6776,7 +6884,35 @@ class TimelineEngine:
                     records[record.task_id] = record
             except (ValueError, TypeError, KeyError, AttributeError):
                 raise PublicationFailedClosed('task-history-invalid','task transition could not be verified') from None
-        return tuple(records.values())
+        if receipts:
+            raise PublicationFailedClosed('orphan-effect-receipt','effect receipt has no matching intent')
+        return tuple(records.values()),tuple(pending)
+
+    def _pending_text_effects(self):
+        return self._verified_subject_tasks()[1]
+
+    def _append_effect_receipt(self, preview, operation_ref, result):
+        from dynamic_subject_agent.text_artifacts import FILE_RESULTS
+        if result not in FILE_RESULTS or (preview,operation_ref) not in self._pending_text_effects():
+            raise PublicationFailedClosed('effect-receipt-source-invalid','receipt requires a verified pending effect')
+        outcome=self.query_outcome(operation_ref)
+        previous_rows=self._effect_receipts()
+        previous=self._writer.execute('SELECT receipt_digest FROM effect_receipt_head WHERE singleton=1').fetchone()[0]
+        value={'effect_id':preview.effect_id,'outcome_id':outcome.outcome_id,'outcome_digest':outcome.outcome_digest,
+            'head_sequence':outcome.head_sequence,'result':result,'content_digest':preview.content_digest,
+            'filename':preview.filename,'ordinal':len(previous_rows)+1,'previous_digest':previous}
+        encoded=_canonical_json(value);digest=hashlib.sha256(encoded.encode()).hexdigest()
+        try:
+            _begin(self._writer)
+            if self._writer.execute('SELECT receipt_count,receipt_digest FROM effect_receipt_head WHERE singleton=1').fetchone()!=(len(previous_rows),previous):
+                raise PublicationFailedClosed('effect-receipt-conflict','receipt head changed')
+            self._writer.execute('INSERT INTO effect_receipt VALUES (?,?,?,?,?,?,?)',(value['ordinal'],preview.effect_id,
+                UUID(outcome.outcome_id).bytes,outcome.head_sequence,encoded,previous,digest))
+            self._writer.execute('UPDATE effect_receipt_head SET receipt_count=?,receipt_digest=? WHERE singleton=1',(value['ordinal'],digest))
+            _commit(self._writer)
+        except Exception:
+            _rollback_if_needed(self._writer)
+            raise
 
     def withheld_memory_ids_before(self, operation_ref: OperationRef, *, expected_head: int) -> tuple[str, ...]:
         """Unpublished withdrawal intent restricts disclosure, never fakes state.
@@ -7212,13 +7348,20 @@ def _data_control_export_snapshot(
                 "SELECT event_kind FROM subject_event ORDER BY recorded_at_us, event_id"
             ).fetchall()
         ]
+        effect_export={}
+        actual_schema=engine._writer.execute('PRAGMA user_version').fetchone()[0]
+        if actual_schema==2:
+            engine._verified_subject_tasks()
+            effect_export={'effect_receipts':engine._effect_receipts(),
+                'effect_receipt_head':engine._writer.execute('SELECT receipt_count,receipt_digest FROM effect_receipt_head WHERE singleton=1').fetchone()}
         engine._writer.execute("COMMIT")
         transaction_open = False
         return {
             "runtime_timeline": {
                 "record_kind": "runtime-timeline",
                 "schema_family": TIMELINE_SCHEMA_FAMILY,
-                "schema_version": SCHEMA_VERSION,
+                "schema_version": actual_schema,
+                **effect_export,
                 "contract_version": CONTRACT_VERSION,
                 "persistence_version": PERSISTENCE_VERSION,
                 "source_root": location.to_dict(),

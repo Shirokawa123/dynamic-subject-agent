@@ -9,7 +9,7 @@ from uuid import UUID
 
 TASK_INTENT = 'subject-task-v1'
 KINDS = ('draft_text', 'save_text')
-OPEN = ('accepted', 'needs_input', 'deferred')
+OPEN = ('accepted', 'needs_input', 'deferred', 'executing')
 STATUSES = (*OPEN, 'declined', 'cancelled', 'completed', 'failed')
 POLICY = ('subject-tasks-1.0: only draft_text and save_text; propose accept, clarify, defer or decline. '
     'Accept explicit text work, clarify unclear requests, defer when another accepted task is open, '
@@ -84,7 +84,7 @@ class SubjectTaskRecord:
             or not isinstance(item.request_text, str) or not 1 <= len(item.request_text) <= 1000
             or item.summary != item.request_text[:200] or not isinstance(item.content, str) or len(item.content) > 16000
             or item.reason not in ('supported_request', 'clarification_requested', 'capacity', 'unsupported_request',
-                'provider_failed', 'invalid_proposal', 'missing_content', 'cancelled')):
+                'provider_failed', 'invalid_proposal', 'missing_content', 'cancelled', 'save_approved', 'saved', 'file_failed')):
             raise ValueError('invalid task record values')
         return item
 
@@ -125,7 +125,7 @@ class SubjectTaskProjection:
 def decide(command: SubjectTaskCommand, proposal: SubjectTaskProposal | None,
     records: tuple[SubjectTaskRecord, ...], *, new_id: str) -> tuple[SubjectTaskRecord | None, str]:
     old = next((r for r in records if r.task_id == command.task_id), None)
-    if command.action != 'request' and (old is None or old.revision != command.expected_revision or old.status not in OPEN):
+    if command.action != 'request' and (old is None or old.revision != command.expected_revision or old.status not in OPEN or old.status=='executing'):
         return None, '任务状态已变化或不能操作，请刷新后查看。'
     if command.action == 'cancel':
         return replace(old, status='cancelled', revision=old.revision+1, reason='cancelled'), '已取消这项主体任务，没有执行文件操作。'
@@ -142,7 +142,7 @@ def decide(command: SubjectTaskCommand, proposal: SubjectTaskProposal | None,
         status, reason = 'needs_input', 'missing_content'
     elif proposal.decision == 'clarify':
         status, reason = 'needs_input', proposal.reason
-    elif any(r.status == 'accepted' for r in others):
+    elif any(r.status in ('accepted','executing') for r in others):
         status, reason = 'deferred', 'capacity'
     elif proposal.decision == 'defer':
         status, reason = 'failed', 'invalid_proposal'
