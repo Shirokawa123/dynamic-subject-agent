@@ -60,6 +60,44 @@ def test_empty_goal_query_is_not_answered_from_memory(tmp_path):
         app.close()
 
 
+@pytest.mark.parametrize('populated',[False,True])
+def test_explicit_combined_goal_list_reads_canonical_records_without_goal_model(tmp_path,populated):
+    model=_ScriptedParticipantGoalProvider(fail_classify=True)
+    _,qri,timeline,app=_composition(tmp_path,model,memory_provider=_MisleadingMemory())
+    try:
+        if populated:
+            _submit(app,qri,timeline,'我的目标是写完展台卡片。')
+            _submit(app,qri,timeline,'我承诺周五带来样张。')
+        before=_query(app,qri,timeline)
+        result=_submit(app,qri,timeline,'列出我的目标和承诺。')
+        assert not model.classification_requests and not model.reply_requests
+        assert _query(app,qri,timeline)==before
+        text=result.projection.expression_text
+        if populated:
+            assert '目标：写完展台卡片' in text and '承诺：周五带来样张' in text
+        else:
+            assert text=='你目前还没有明确记录的目标或承诺。'
+    finally:app.close()
+
+
+def test_local_goal_query_does_not_read_the_smaller_provider_window(tmp_path,monkeypatch):
+    from dataclasses import replace
+    from dynamic_subject_agent.composite import ControlledCompositeCognition
+    original=ControlledCompositeCognition._express_other_capabilities
+    def bounded(self,**kwargs):
+        kwargs['context']=replace(kwargs['context'],participant_goal_commitments=())
+        return original(self,**kwargs)
+    monkeypatch.setattr(ControlledCompositeCognition,'_express_other_capabilities',bounded)
+    model=_ScriptedParticipantGoalProvider(fail_classify=True)
+    _,qri,timeline,app=_composition(tmp_path,model)
+    try:
+        _submit(app,qri,timeline,'我的目标是写完展台卡片。')
+        result=_submit(app,qri,timeline,'请列出我的目标。')
+        assert result.projection.expression_text=='你当前的目标是：写完展台卡片。'
+        assert not model.classification_requests
+    finally:app.close()
+
+
 def test_report_goal_create_revise_and_query(tmp_path):
     _, qri, timeline, app = _composition(tmp_path, _ScriptedParticipantGoalProvider(), memory_provider=_MisleadingMemory())
     try:

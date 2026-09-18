@@ -241,11 +241,14 @@ class DeterministicParticipantGoalRoute:
 
 def participant_record_query_kind(message: str) -> str | None:
     bare = re.sub(r'\s+', '', message).rstrip('。！？!?')
+    if bare in {'列出我的目标和承诺','请列出我的目标和承诺','我的目标和承诺有哪些','我有哪些目标和承诺'}:
+        return 'all'
     for kind, noun in (('goal', '目标'), ('commitment', '承诺')):
         if bare in {
             f'我的{noun}是什么', f'我现在的{noun}是什么',
             f'我目前的{noun}是什么', f'我有哪些{noun}',
             f'我的{noun}有哪些', f'我现在有哪些{noun}', f'我目前有哪些{noun}',
+            f'列出我的{noun}', f'请列出我的{noun}',
         }:
             return kind
     return None
@@ -264,6 +267,12 @@ def route_participant_goal_deterministically(
     commitments = tuple(
         target for target in targets if target.record.kind == "commitment"
     )
+    if participant_record_query_kind(message)=='all':
+        selected=targets[:REPLY_RECORD_LIMIT]
+        reply=('以下是已记录的目标与承诺（最多显示5条）：\n' + '\n'.join(
+            ('目标：' if t.record.kind=='goal' else '承诺：') + t.record.terms for t in selected)
+            if selected else '你目前还没有明确记录的目标或承诺。')
+        return DeterministicParticipantGoalRoute(None,tuple(t.turn_ref for t in selected),reply,'Python直接查询参与者目标与承诺。')
     if participant_record_query_kind(message) == 'goal':
         selected = goals[:REPLY_RECORD_LIMIT]
         reply = (

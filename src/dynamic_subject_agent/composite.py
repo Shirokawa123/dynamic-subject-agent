@@ -774,8 +774,11 @@ class ControlledCompositeCognition(CognitionEngine):
                 'unsupported_goal_change': '这条目标修改还有无法分清的内容，请把新目标与其他安排分开说明，这次没有更改。',
             }.get(reason, '这次没有保存或修改目标与承诺，请明确说明要记录或修改的内容。')
         elif participant_record_query_kind(command.utterance) is not None:
+            inventory=context.participant_goal_inventory
+            if inventory is None or not context.participant_goal_inventory_complete:
+                return ExpressionCandidate('当前目标清单未能完整核实，请在目标与承诺面板核对。',command.language)
             query = route_participant_goal_deterministically(
-                command.utterance, targets=active_targets(context.participant_goal_commitments),
+                command.utterance, targets=active_targets(inventory),
             )
             return ExpressionCandidate(query.reply_text, command.language)
         elif status == 'accepted':
