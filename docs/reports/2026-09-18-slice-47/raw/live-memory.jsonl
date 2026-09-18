@@ -1,0 +1,46 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「故事停在纸上。故事留在灯下。」第一句我想更轻一点，别用“故事”这个词。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「故事停在纸上。故事留在灯下。」第一句我想更轻一点，别用“故事”这个词。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "纸页停在灯下。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句我希望更温柔一点，不要用「故事」这个词。", "active_contents": [], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句我希望更温柔一点，不要用「故事」这个词。", "selected_contents": [], "recent_dialogue": [{"user_text": "原文是：「故事停在纸上。故事留在灯下。」第一句我想更轻一点，别用“故事”这个词。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n纸页停在灯下。故事留在灯下。"}], "reply_kind": "creative", "reply_text": "纸页停在灯下。余温留在灯下。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "换个话题：周日我会带雨伞去画画，也给自己定个目标：完成一页速写。", "active_contents": [], "selected_contents": [], "action": "create", "evidence_quote": "周日我会带雨伞去画画，也给自己定个目标：完成一页速写。", "memory_kind": "plan", "base_reply": "好，我记住了：周日你带雨伞去画画，目标是完成一页速写。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "换个话题：周日我会带雨伞去画画，也给自己定个目标：完成一页速写。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "好，换到画画这边。周日带伞去画速写，目标是一页，听起来很具体。你想让我陪你聊聊怎么安排这一页，还是先说说你打算画什么？"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "把目标“完成一页速写”改成“先画好两片叶子”，雨伞照带。", "active_contents": ["周日我会带雨伞去画画，"], "selected_contents": [], "action": "revise", "evidence_quote": "把目标“完成一页速写”改成“先画好两片叶子”，雨伞照带。", "memory_kind": "durable", "base_reply": "好，那周日画画的目标就改成先画好两片叶子，雨伞也照带。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "把目标“完成一页速写”改成“先画好两片叶子”，雨伞照带。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "收到，把目标改成“先画好两片叶子”，雨伞照带。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

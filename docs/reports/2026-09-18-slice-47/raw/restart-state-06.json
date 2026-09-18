@@ -1,0 +1,255 @@
+{
+  "ok": true,
+  "build_id": "dogfood-s47",
+  "profile_id": "<internal-id>",
+  "display_name": "Avery",
+  "identities": [
+    {
+      "identity_id": "<internal-id>",
+      "display_name": "Avery",
+      "freeze_basis_digest": null,
+      "active": true
+    }
+  ],
+  "conversation_history_status": "available",
+  "conversation_history": [
+    {
+      "head_sequence": 1,
+      "user_text": "原文是：「故事停在纸上。故事留在灯下。」第一句我想更轻一点，别用“故事”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n纸页停在灯下。故事留在灯下。",
+      "assistant_language": "zh",
+      "published_at_us": 1789729819589935,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 2,
+      "user_text": "第二句我希望更温柔一点，不要用「故事」这个词。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n纸页停在灯下。余温留在灯下。",
+      "assistant_language": "zh",
+      "published_at_us": 1789729826147702,
+      "explanations": [
+        {
+          "capability": "当前姿态",
+          "kind": "changed",
+          "message": "本轮进入“温和”姿态；30 分钟内还会延续一轮。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 3,
+      "user_text": "换个话题：周日我会带雨伞去画画，也给自己定个目标：完成一页速写。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「周日我会带雨伞去画画，」\n\n已记录你的目标：「完成一页速写」。",
+      "assistant_language": "zh",
+      "published_at_us": 1789729832398803,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「周日我会带雨伞去画画，」"
+        },
+        {
+          "capability": "目标与承诺",
+          "kind": "changed",
+          "message": "已记录一项目标或承诺。"
+        },
+        {
+          "capability": "当前姿态",
+          "kind": "used",
+          "message": "本轮沿用了“温和”姿态；本轮结束后回到中性。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 4,
+      "user_text": "把目标“完成一页速写”改成“先画好两片叶子”，雨伞照带。",
+      "user_language": "zh",
+      "assistant_text": "本轮没有新增或更正记忆。\n\n已修改你的目标：「先画好两片叶子」。",
+      "assistant_language": "zh",
+      "published_at_us": 1789729838242163,
+      "explanations": [
+        {
+          "capability": "目标与承诺",
+          "kind": "changed",
+          "message": "已按明确表述修订一项目标或承诺。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 5,
+      "user_text": "给画册封面挑颜色时，我通常喜欢墨绿色。",
+      "user_language": "zh",
+      "assistant_text": "已记录你的原话：「给画册封面挑颜色时，我通常喜欢墨绿色。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789729842937742,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「给画册封面挑颜色时，我通常喜欢墨绿色。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 6,
+      "user_text": "最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。",
+      "user_language": "zh",
+      "assistant_text": "“画册封面”已有偏好：\n「给画册封面挑颜色时，我通常喜欢墨绿色。」\n“米白色”是补充还是替换？这次暂未保存。请在下一条消息回答“是补充”“替换”或“算了”；30分钟内有效。\n\n资料《创刊号规格》写的是：「创刊号目标 32 页，A4 骑马钉装订，封面用 250g 牛皮纸，内页 120g 道林纸；夜景灯笼主题插画至少占 12 页。」\n\n资料没有说明的细节，我不能据此确定。",
+      "assistant_language": "zh",
+      "published_at_us": 1789729850305730,
+      "explanations": [
+        {
+          "capability": "目标与承诺",
+          "kind": "failed",
+          "message": "本轮目标与承诺处理未能完成；其他能力的结果仍然有效。"
+        }
+      ],
+      "citations": [
+        {
+          "title": "创刊号规格",
+          "source": "封存来源"
+        }
+      ]
+    },
+    {
+      "head_sequence": 7,
+      "user_text": "是补充。",
+      "user_language": "zh",
+      "assistant_text": "已按你的确认补充记录此前提供的偏好：「最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。」",
+      "assistant_language": "zh",
+      "published_at_us": 1789730003009905,
+      "explanations": [
+        {
+          "capability": "记忆",
+          "kind": "changed",
+          "message": "已形成新记录：「最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。」"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 8,
+      "user_text": "我做画册封面时喜欢什么颜色？",
+      "user_language": "zh",
+      "assistant_text": "关于“画册封面”的颜色偏好，你明确记录过：\n「最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。」\n「给画册封面挑颜色时，我通常喜欢墨绿色。」\n其中明确表述或经确认的新增偏好作为补充保留。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730008572045,
+      "explanations": [
+        {
+          "capability": "目标与承诺",
+          "kind": "failed",
+          "message": "本轮目标与承诺处理未能完成；其他能力的结果仍然有效。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 9,
+      "user_text": "原文是：「欢迎走进雨后的花园。雨后的花园留着光。」第一句我想更含蓄一点，别用“欢迎”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨停之后，花园的门正虚掩着。雨后的花园留着光。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730015405503,
+      "explanations": [
+        {
+          "capability": "目标与承诺",
+          "kind": "failed",
+          "message": "本轮目标与承诺处理未能完成；其他能力的结果仍然有效。"
+        }
+      ],
+      "citations": []
+    },
+    {
+      "head_sequence": 10,
+      "user_text": "第二句我想更明亮一点。不要用“雨后”这个词。",
+      "user_language": "zh",
+      "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨停之后，花园的门正虚掩着。花园的门正虚掩着，光从门缝里漫进来。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730022155953,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 11,
+      "user_text": "第一句我想更轻一点，别用“花园」这个词。",
+      "user_language": "zh",
+      "assistant_text": "这次没有形成新的改写版本。已有可用原文，但我没有完成这次修改。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730029456097,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 12,
+      "user_text": "小夏说：“我给自己定个目标：把桌布叠整齐。”",
+      "user_language": "zh",
+      "assistant_text": "这次没有新增或修改目标与承诺。请明确说明你的目标、承诺或要修改的记录。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730036244541,
+      "explanations": [],
+      "citations": []
+    },
+    {
+      "head_sequence": 13,
+      "user_text": "我现在有哪些目标？",
+      "user_language": "zh",
+      "assistant_text": "你当前的目标是：先画好两片叶子。",
+      "assistant_language": "zh",
+      "published_at_us": 1789730043402387,
+      "explanations": [
+        {
+          "capability": "目标与承诺",
+          "kind": "used",
+          "message": "回答参考了 1 条已记录的目标或承诺。"
+        }
+      ],
+      "citations": []
+    }
+  ],
+  "memories": [
+    {
+      "content": "最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "给画册封面挑颜色时，我通常喜欢墨绿色。",
+      "status": "active",
+      "memory_kind": "durable"
+    },
+    {
+      "content": "周日我会带雨伞去画画，",
+      "status": "active",
+      "memory_kind": "plan"
+    }
+  ],
+  "knowledge_count": 4,
+  "relationship_accepted_count": 0,
+  "relationship_latest_event": null,
+  "participant_goals": [
+    {
+      "kind": "goal",
+      "terms": "先画好两片叶子",
+      "status": "active",
+      "evidence_quote": "把目标“完成一页速写”改成“先画好两片叶子”"
+    },
+    {
+      "kind": "goal",
+      "terms": "完成一页速写",
+      "status": "superseded",
+      "evidence_quote": "也给自己定个目标：完成一页速写"
+    }
+  ],
+  "situated_state": null,
+  "medium_state": {
+    "baseline": "settled",
+    "version": 0
+  }
+}

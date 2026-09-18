@@ -1,0 +1,59 @@
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "原文是：「欢迎走进雨后的花园。雨后的花园留着光。」第一句我想更含蓄一点，别用“欢迎”这个词。", "active_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "原文是：「欢迎走进雨后的花园。雨后的花园留着光。」第一句我想更含蓄一点，别用“欢迎”这个词。", "selected_contents": [], "recent_dialogue": [], "reply_kind": "creative", "reply_text": "雨停之后，花园的门正虚掩着。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第二句我想更明亮一点。不要用“雨后”这个词。", "active_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第二句我想更明亮一点。不要用“雨后”这个词。", "selected_contents": [], "recent_dialogue": [{"user_text": "原文是：「欢迎走进雨后的花园。雨后的花园留着光。」第一句我想更含蓄一点，别用“欢迎”这个词。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨停之后，花园的门正虚掩着。雨后的花园留着光。"}], "reply_kind": "creative", "reply_text": "花园的门正虚掩着，光从门缝里漫进来。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "第一句我想更轻一点，别用“花园」这个词。", "active_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "第一句我想更轻一点，别用“花园」这个词。", "selected_contents": [], "recent_dialogue": [{"user_text": "第二句我想更明亮一点。不要用“雨后”这个词。", "assistant_text": "这是现在的即兴创作，不是资料事实或已发生的经历：\n雨停之后，花园的门正虚掩着。花园的门正虚掩着，光从门缝里漫进来。"}], "reply_kind": "creative", "reply_text": "雨停之后，院门正虚掩着。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "小夏说：“我给自己定个目标：把桌布叠整齐。”", "active_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "selected_contents": [], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "（无记忆相关内容）"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "小夏说：“我给自己定个目标：把桌布叠整齐。”", "selected_contents": [], "recent_dialogue": [], "reply_kind": "conversation", "reply_text": "听起来是个挺实在的小目标。叠桌布这种事，做起来顺手了会挺解压的。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "proposal", "message": "我现在有哪些目标？", "active_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "selected_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "action": "none", "evidence_quote": "", "memory_kind": "durable", "base_reply": "我这边记得的，和画册封面有关：你通常喜欢墨绿色，最近又觉得米白色也不错，还拿不准这算添一种还是换掉原来的。另外，周日你会带雨伞去画画。"}
+{"stage": "transport", "http_status": 200}
+{"stage": "reply", "message": "我现在有哪些目标？", "selected_contents": ["最近画册封面用米白色也不错，我拿不准这算添一种还是换掉原来的。", "给画册封面挑颜色时，我通常喜欢墨绿色。", "周日我会带雨伞去画画，"], "recent_dialogue": [], "reply_kind": "memory", "reply_text": ""}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}
+{"stage": "transport", "http_status": 200}

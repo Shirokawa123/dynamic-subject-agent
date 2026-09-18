@@ -1,0 +1,39 @@
+{
+  "checks": {
+    "14_committed": true,
+    "first_word_only_target": true,
+    "second_word_only_target": true,
+    "goal_edit_preserves_arrangement": true,
+    "pending_confirmed_after_restart": true,
+    "colors_coexist": true,
+    "new_topic_word_constraint": true,
+    "standalone_constraint": true,
+    "malformed_refused": true,
+    "reported_goal_not_written": true
+  },
+  "observations": {
+    "transport_calls": 87,
+    "http200": 87,
+    "transport_failures": [],
+    "capability_failures": [
+      {
+        "head": 6,
+        "fields": [
+          "participant_goal_status"
+        ]
+      },
+      {
+        "head": 8,
+        "fields": [
+          "participant_goal_status"
+        ]
+      },
+      {
+        "head": 9,
+        "fields": [
+          "participant_goal_status"
+        ]
+      }
+    ]
+  }
+}
