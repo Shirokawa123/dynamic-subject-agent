@@ -1,0 +1,10 @@
+{
+  "build_id": "dogfood-s51",
+  "prior_state_equal": true,
+  "model_requests": 0,
+  "tasks": [
+    "completed",
+    "declined",
+    "failed"
+  ]
+}

@@ -4,6 +4,8 @@
 
 产品语义不绑定具体模型：当前 DeepSeek 是第一个生产 Adapter；`ModelGateway`、任务契约和 credential slot 可接入后续云端或本地 Provider，而不修改 Domain 与 Timeline。
 
+快速体验见[使用指南](docs/USER_GUIDE.md)，当前候选版验收与已知限制见[Slice-51报告](docs/reports/2026-09-18-slice-51/REPORT.md)。
+
 当前产品支持：
 
 - Windows 本地聊天入口；
