@@ -55,7 +55,7 @@ from dynamic_subject_agent.relationship import (
 )
 from dynamic_subject_agent.relationship_events import ALL_RELATIONSHIP_EVENTS
 from dynamic_subject_agent.recent_dialogue import MAX_DIALOGUE_CHARS, MAX_DIALOGUE_TURNS, RecentDialogueTurn
-from dynamic_subject_agent.runtime_identity_reply import requested_creative_sentence_count
+from dynamic_subject_agent.runtime_identity_reply import requested_creative_sentence_count, style_revision_instruction
 from dynamic_subject_agent.living_memory import (
     ACTIVE_MEMORY_LIMIT,
     LivingMemoryAction,
@@ -1020,7 +1020,7 @@ class DeepSeekLivingMemoryProvider:
                         "role": "system",
                         "content": _LIVING_MEMORY_REPLY_SYSTEM_MESSAGE + (
                             '\n本轮明确要求两句：reply_text必须恰好两行，每行一句并以句号结束。两行分别表达祝福，不用一个逗号长句代替两句。不加说明、编号或第二份稿件。'
-                            if requested_creative_sentence_count(request.current_user_message) == 2 else ''),
+                            if requested_creative_sentence_count(request.current_user_message) == 2 else '') + style_revision_instruction(request.current_user_message),
                     },
                     {
                         "role": "user",

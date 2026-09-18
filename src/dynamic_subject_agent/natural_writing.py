@@ -8,7 +8,7 @@ def collaborative_clause(clause: str) -> str:
     return re.sub(r'^(?:(?:我们|咱们)(?:一起|顺手|先|来|再)*|(?:一起|顺手))(?=给|为|写|编|创作)', '', clause)
 
 
-def natural_sentence_index(message: str) -> int | None:
+def natural_sentence_index(message: str, *, style_only: bool = False) -> int | None:
     from dynamic_subject_agent.recent_dialogue import expression_request_text
     from dynamic_subject_agent.current_message import mask_quoted_text
     indexes = []
@@ -30,8 +30,8 @@ def natural_sentence_index(message: str) -> int | None:
                 and position + 1 < len(clauses)
                 and re.match(r'^\s*(?:请)?(?:改成|改为|换成|换得)', clauses[position + 1]))
             if direct or wording or style:
-                indexes.append({'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[match[1]])
-    return indexes[0] if len(indexes) == 1 else None
+                indexes.append(({'一': 1, '二': 2, '三': 3, '1': 1, '2': 2, '3': 3}[match[1]], bool(style)))
+    return indexes[0][0] if len(indexes) == 1 and (not style_only or indexes[0][1]) else None
 
 
 def authored_drafts(message: str) -> tuple[str | None, ...]:

@@ -135,6 +135,17 @@ def requested_creative_sentence_count(message: str) -> int | None:
     return requests[0] if len(requests) == 1 else None
 
 
+def style_revision_instruction(message: str) -> str:
+    from dynamic_subject_agent.natural_writing import natural_sentence_index
+    from dynamic_subject_agent.recent_dialogue import sentence_revision_index
+    index = natural_sentence_index(message, style_only=True)
+    if index is None or sentence_revision_index(message) != index:
+        return ''
+    return (f'\n本轮是对已有作品第{index}句的局部风格修改。原文只能取当前提供的原稿或recent_dialogue里的最近作品。'
+        'reply_kind用creative，reply_text只返回指定句修改后的一个新句子，不重抄整稿、不加解释；'
+        '必须实际修改该句，遵守当前风格与禁用词要求。其他句子由本地保留。没有可用原文时不要编造。')
+
+
 def repeats_previous_expression(text: str, previous: str) -> bool:
     previous_body = expression_body(previous)
     if previous.startswith(CREATIVE_REPLY_PREFIX):

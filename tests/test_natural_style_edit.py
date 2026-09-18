@@ -63,3 +63,18 @@ def test_missing_or_controlled_draft_requests_reposting(tmp_path):
         assert provider.replies[-1].recent_dialogue == ()
     finally:
         opened.app.close()
+
+def test_style_prompt_is_current_only_and_other_messages_keep_base_bytes():
+    import json
+    from dynamic_subject_agent.deepseek import DeepSeekLivingMemoryProvider
+    from dynamic_subject_agent.living_memory import LivingMemoryReplyRequest
+    from test_recent_dialogue import IDENTITY
+    def body(text):
+        return json.loads(DeepSeekLivingMemoryProvider.reply_outbound_bytes(LivingMemoryReplyRequest(text, (), IDENTITY, ())))
+    ordinary = body('你好。')
+    styled = body(EDIT)
+    assert '第1句的局部风格修改' in styled['messages'][0]['content']
+    assert styled.keys() == ordinary.keys()
+    assert json.loads(styled['messages'][1]['content'])['recent_dialogue'] == []
+    for text in ['小夏说：“第一句我想更轻一点。”', EDIT + '不要改了。', '第一句请改成有风的感觉。']:
+        assert body(text)['messages'][0]['content'] == ordinary['messages'][0]['content']
