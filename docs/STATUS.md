@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-19：用户认为旧候选版偏离预期，当前转入角色聊天体验需求对齐；原作世界优先、可选模式/起点、默认分支和跨世界网友身份已确认，接续见[方向记录](plans/character-chat-direction.md)。尚未实施角色生活、主动消息或EPUB/视频建角。
+
 - 2026-08-30：新产品仓库从救援仓库提交 `5b94eb5` 完成抽取，旧仓库与私人数据未修改。
 - Memory、Knowledge、Relationship、目标承诺、Situated、Medium、Windows UI 和持久身份已迁入。
 - 参与者目标/承诺、Situated State 与 Medium State 均完成真实 DeepSeek、Windows UI、持久化和重启验收，状态为 STABLE。
