@@ -4,7 +4,7 @@
 
 ## 当前产品方向讨论
 
-- 继续需求访谈、规划或提出下一实现方向前，先读 `docs/plans/character-chat-direction.md`。用户已指出旧v1与预期聊天体验差距较大；以其中已确认决定接续讨论，每轮将明确答案落盘，助手建议与未决问题分开。当前仅重新对齐需求，完整共享理解尚未达成，不沿旧v1/迁移路线自动扩建。
+- 继续需求访谈、规划或提出下一实现方向前，先读 `docs/plans/character-chat-direction.md`。Q1–Q17已确认并同步PRODUCT与D-028；完整运行机制和新数据用途尚未定。按当前唯一任务书推进独立原型，每轮明确答复落盘，助手建议与未决项分开，不沿旧v1/迁移路线自动扩建。
 
 ## 功能推进前的调研复用
 
@@ -34,7 +34,7 @@
 
 ## 产品顺序
 
-当前最小产品范围已完成：Memory、Knowledge、Relationship、参与者目标与承诺、Situated State、Medium State、六项同轮原子整合、Windows UI、持久身份及隔离身份真实长链/重启验收。用户已批准D-026受控Agency提议与逐次确认的应用目录文本新建，并授权按单切片自主推进至完整v1；具体投影与本地执行边界见 `docs/plans/v1-completion.md`。人格发展、Reflection、主动消息及不可逆旧数据迁移仍未授权。
+旧v1基线已实现Memory、Knowledge、Relationship、参与者目标与承诺、Situated/Medium、Windows UI、持久身份及D-026限定的任务/文本保存；细节见ARCHITECTURE运行基线。D-028已将角色生活和主动联系纳入新产品目标，当前先做无Provider调用的独立原型；真实生活/主动消息的数据用途和后台机制仍未落实，不能借目标确认直接启用。人格自动重写、Reflection及不可逆旧数据迁移仍未授权。
 
 project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
 

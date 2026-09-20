@@ -1,5 +1,9 @@
 # 当前决定
 
+## D-028：以已确认角色聊天体验重定产品目标，分阶段改造
+
+2026-09-20，依据用户Q1–Q17的明确答复，将PRODUCT同步为有来源人物、连续虚构生活和自然聊天的目标；首个参照为小说版和泉纱雾，具体决定保存在character-chat-direction.md。保留原身份、Timeline/Publication、Facade和安全模型接入基础，先以独立五情景原型判断设计，再分步实现新运行职责。此次区分目标结构、原型隔离和dogfood-s51运行基线，不改变旧binding/schema或原有Provider用途。生活/主动联系成为产品目标不等于已实现或已授权任何新外发；具体模型用途、后台机制与不可逆迁移仍需单独落实。原型反馈只由用户提供，旧测试数量不能替代新体验认可。
+
 ## D-027：仅新身份使用可验证文本effect版本
 
 2026-09-18，D-026范围内的实现决定：新binding使用独立text-effect contract和Timeline schema 2，旧v1保持原权限与原数据，不做就地迁移。保存intent进入既有Publication的真实eligible/ready引用；结果在同一canonical store追加receipt及count/head摘要。读接口不dispatch，只有有permit的runtime worker恢复已批准操作。固定目标冲突失败，不覆盖、不删除、不自动换名。此版本选择保持旧数据可读，代价是旧身份暂不可使用新保存功能；既有身份升级仍是未来需用户决定的迁移，当前没有执行授权。

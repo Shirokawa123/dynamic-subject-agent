@@ -1,7 +1,7 @@
 # 当前工作
 
-[Slice-52：角色聊天产品方向澄清与持久记录](slice-52-character-chat-direction.md) 进行中；Q1–Q17已确认，接续[首份演示Wayfinder地图](../../.scratch/character-chat-wayfinder/map.md)。先读[方向记录](../plans/character-chat-direction.md)，再按地图依赖选择未决票，不重复高层偏好问卷。
+[Slice-53：小说人物五情景独立原型](slice-53-character-chat-prototype.md) 待执行，是下一项唯一可执行工作。Q1–Q17及C1–C18已确认，PRODUCT/ARCHITECTURE/D-028已同步；先读[方向记录](../plans/character-chat-direction.md)与任务书，不重问已确认偏好。
 
-本轮只建立决策地图、核对公开技术资料并持久记录，不扩建正式产品。旧版927项测试只证明旧实现；原型预设/模拟和真实能力明确区分。素材、数据用途与原型反馈分别落实，不沿旧v1/迁移路线推进，不把原型目标明确等同于全部产品机制已定。
+原型只用独立工作区/分支及内存模拟，先本地核对人物依据；不调用Provider/凭据、不写正式身份，不冒称全文自动解析或真实生活引擎。预设台词/模拟时间/真实能力明确标注，交付后由用户评判，不能自行关闭体验票。
 
-[首份演示的小说素材准备](../../.scratch/character-chat-wayfinder/issues/02-reference-material.md)及[旧架构如何支撑新的角色聊天体验](../../.scratch/character-chat-wayfinder/issues/05-architecture-alignment.md)已解决；[评估报告](../plans/character-chat-architecture-alignment.md)明确保留基础、重组聊天、新增生活与分享职责。下一项原型开始前，先对齐新产品目标与旧契约，并落实人物依据、模拟/真实边界和唯一任务书；不要从清点文件直接进入旧产品加功能。此次没有运行代码、旧数据或Provider用途变更。
+Slice-52已收口，材料和架构评估票已解决，[原型票](../../.scratch/character-chat-wayfinder/issues/03-five-scene-prototype.md)待认领。新方向的真实运行契约/模型投影及旧身份迁移仍需后续独立落实。不要把旧v1的927项测试当作新体验已经通过。

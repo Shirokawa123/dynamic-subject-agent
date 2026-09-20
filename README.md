@@ -1,5 +1,7 @@
 # Dynamic Subject Agent
 
+2026-09-20：产品目标已对齐为有来源人物、连续虚构生活和自然聊天；当前运行代码仍是下述dogfood-s51基线。新方向先按[独立五情景原型任务书](docs/slices/slice-53-character-chat-prototype.md)验证体验，生活引擎、主动联系和全文人物解析尚未实现，见[产品定义](docs/PRODUCT.md)。
+
 一个本地优先、具有持续身份和可验证变化过程的主体型陪伴 Agent。角色的记忆、知识使用、关系状态与后续主体变化来自有来源的经历；模型只提出候选，Python 负责裁决和原子提交。
 
 产品语义不绑定具体模型：当前 DeepSeek 是第一个生产 Adapter；`ModelGateway`、任务契约和 credential slot 可接入后续云端或本地 Provider，而不修改 Domain 与 Timeline。
