@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'">
+<title>和泉纱雾 · 五情景聊天原型</title>
+<style>
+:root{font-family:"Segoe UI","Microsoft YaHei",sans-serif;color:#27383a;background:#f3f6f5;font-size:15px;line-height:1.65;--accent:#316965;--line:#dbe5e1}*{box-sizing:border-box}body{margin:0}button,select{font:inherit}button{cursor:pointer;border:1px solid var(--line);background:white;color:#35534f;border-radius:9px;padding:9px 14px}button:hover{background:#edf4f1}button:disabled{cursor:default;opacity:.42}button.primary{background:var(--accent);color:white;border-color:var(--accent)}button.selected{background:#deece6;border-color:#82a99b}a{color:var(--accent)}.page{max-width:1200px;margin:auto;padding:28px}.eyebrow{font-size:12px;letter-spacing:.12em;color:#52756b}h1{font-size:26px;letter-spacing:.02em;margin:6px 0}h2{font-size:16px;margin:0 0 12px}p{margin:6px 0}.muted{color:#627572;font-size:13px}.intro{max-width:920px;margin-bottom:22px}.badge{display:inline-block;background:#e1ebe5;border-radius:30px;padding:3px 10px;font-size:12px;color:#47685e;margin-left:6px}.layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start}.chat{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden}.chathead{padding:18px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}.avatar{width:44px;height:44px;border-radius:50%;background:#dfece6;color:#3d7564;display:grid;place-items:center;font-size:20px}.name{font-size:17px;font-weight:600}.presence{font-size:12px;color:#687c75}.conversation{height:clamp(250px,calc(100vh - 390px),480px);overflow:auto;padding:18px 24px;background:#f9fbfa}.empty{height:100%;display:grid;place-content:center;text-align:center;color:#7a8e87}.empty strong{font-size:22px;color:#587269;font-weight:500}.stamp{text-align:center;font-size:11px;color:#85918b;margin:12px 0}.row{display:flex;flex-direction:column;align-items:flex-start;margin:10px 0;gap:3px}.row.you{align-items:flex-end}.who{font-size:11px;color:#7d8d85}.bubble{padding:10px 14px;border-radius:3px 13px 13px 13px;background:white;border:1px solid #e5ebe8;max-width:85%;white-space:pre-wrap;font-size:15px}.you .bubble{background:#dfede5;border-color:#dfede5;border-radius:13px 3px 13px 13px}.composer{padding:14px 20px;background:white;border-top:1px solid var(--line)}.composer p{font-size:12px;color:#75857f}.card{background:white;border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:16px}.fields{display:grid;grid-template-columns:88px 1fr;gap:8px;font-size:13px}.fields dt{color:#7c8982}.fields dd{margin:0;color:#34524a}.event{font-size:12px;border-left:2px solid #a0c5b2;padding-left:10px;margin-top:12px;color:#65776e}.notice{min-height:42px;margin-top:12px;font-size:13px;color:#426656}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.tabs button{font-size:13px;padding:7px 11px}.walk{margin-top:20px}.steps{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}.steps button{font-size:13px}.steps button.done{background:#f0f5f2;color:#83948b}.walkdesc{font-size:13px;color:#687d73}.freedom{display:flex;flex-wrap:wrap;gap:7px}.freedom button{font-size:12px;padding:7px 10px}.footer{color:#819087;font-size:12px;margin:20px 0}details{margin:10px 0;font-size:13px}summary{cursor:pointer;color:#42675b}li{margin:6px 0}.panelnote{font-size:12px;color:#75857c}.ready{color:#3c745d}.full{width:100%;margin-top:12px}.statusbar{margin-bottom:18px;display:flex;gap:7px;flex-wrap:wrap}.statusbar span{font-size:12px;background:#e9efeb;border-radius:6px;padding:4px 9px}select{border:1px solid var(--line);border-radius:7px;background:white;padding:8px;width:100%;margin:5px 0}.source{max-width:1156px;margin-top:18px}.source p{font-size:13px}.legend{font-size:12px;color:#617b6e}.controlsline{display:flex;gap:8px;align-items:center;flex-wrap:wrap}@media(max-width:850px){.layout{grid-template-columns:1fr}.page{padding:16px}.conversation{height:440px}.side{display:grid;grid-template-columns:1fr 1fr;gap:12px}.side .card{margin:0}}@media(max-width:570px){.side{grid-template-columns:1fr}.bubble{max-width:94%}h1{font-size:22px}.conversation{padding:12px}.page{padding:12px}}
+</style>
+<main class="page">
+<header class="intro"><div class="eyebrow">CHARACTER CHAT / 行为原型 01</div><h1>和泉纱雾，聊天的另一端。</h1><p class="muted">这份原型想确认：初次相识、隔天分享和一次小分歧，能否形成自然、连续的相处感？</p><p class="legend">预设对话 · 手动模拟时间 · 无模型/网络/保存。它不能自由聊天，也没有自动分析整套小说。</p></header>
+<div class="statusbar" id="topstate"></div>
+<div class="layout"><section>
+<div class="chat"><div class="chathead"><div class="avatar" aria-hidden="true">纱</div><div><div class="name">和泉纱雾 <span class="badge">小说版 · 开篇背景</span></div><div class="presence" id="presence">还没有建立联系</div></div></div>
+<div id="conversation" class="conversation" aria-label="情景聊天记录" aria-live="polite"></div>
+<div class="composer"><div class="controlsline"><button class="primary" id="next">开始五情景演示</button><button id="show-all">直接看完整对话</button></div><p>按钮演示预先写好的情景，不会发送你真实输入的消息。</p></div></div>
+<section class="card walk"><h2>跟着情景看一遍</h2><div class="tabs" id="tabs" role="tablist" aria-label="情景选择"></div><p class="walkdesc" id="walkdesc"></p><div class="steps" id="steps"></div><p class="notice" id="notice" role="status"></p></section>
+</section><aside class="side">
+<section class="card"><h2>这一次相识</h2><label class="panelnote" for="character">人物 / 依据</label><select id="character"><option>和泉纱雾 · 用户提供小说第一卷</option></select><label class="panelnote" for="starting">起点</label><select id="starting"><option>第一章开篇背景 · 演示分支</option></select><p class="panelnote">这里展示选择流程。选项固定，不会触发导入、抽取或创建正式身份。</p></section>
+<section class="card"><h2>此刻发生了什么</h2><dl class="fields" id="state"></dl><div id="event" class="event"></div></section>
+<section class="card"><h2>也可以自己试试</h2><div class="freedom" id="free"></div><p class="panelnote">按任意顺序尝试；不满足条件时会解释原因。刷新或重置会清空演示。</p></section>
+</aside></div>
+<section class="card source"><details><summary>哪些来自小说，哪些只是这次演示的安排？</summary>
+<p><strong>本地核对的背景：</strong>第一卷第一章开篇的兄妹同住、纱雾多留在房间、面对面交流少；章内回忆说明绘画及线上作画交流已有早期经历。不能据此把她对陌生人的所有反应写死。</p>
+<p><strong>本次新增：</strong>跨世界频道、窗边杯子的练习画、隔天修改线条，以及所有聊天台词。都不是原作引文或原作剧情。起点没有带入同章后来关系变化、后卷发展或IF支线。</p>
+<p><strong>来源位置：</strong>用户提供第一卷，OEBPS/Text/ch5.html，按HTML p元素计数：9–16、25、922–934。后段只取明确回忆的先前背景。文件版本指纹和核对记录保存在本地索引。</p>
+<p><strong>实际运行：</strong>页面内存中的情景状态、消息列表、事件及去重/暂停逻辑。没有真实时间推进、模型生成、系统通知、文件上传或数据库。</p>
+</details></section>
+<footer class="footer">PROTOTYPE · 只用于讨论体验，尚未通过人物还原评价。新写台词需要你的反馈，不以演示可运行替代“像不像她”。</footer>
+</main>
+<script>
+// Pure state model: no DOM, persistence, timer or network.
+const Model=(()=>{
+ const initial=()=>({started:false,day:1,paused:false,waiting:false,hello:false,shared:false,recalled:false,disagreed:false,notifications:true,topics:0,messages:[],events:[],sent:[],notice:'选择一个情景，或直接看完整对话。'});
+ const msg=(s,who,text)=>s.messages.push({day:s.day,who,text});
+ const reduce=(old,action)=>{
+  if(action==='reset')return initial();
+  const s=structuredClone(old);s.notice='';
+  const topicDay=s.events.find(e=>e.id==='cup-start')?.day;
+  const topicWhen=topicDay===s.day?'刚才':topicDay===s.day-1?'昨天':'之前';
+  if(action==='start'){
+   if(s.started){s.notice='已经是同一次相识，不会重复创建对话。';return s;}
+   s.started=true;s.notice='选择已确认。跨世界频道是这份原型新增的设定。';return s;
+  }
+  if(!s.started){s.notice='先选择人物并建立本次演示。';return s;}
+  if(action==='pause'){s.paused=!s.paused;s.notice=s.paused?'模拟时间已暂停，仍可继续当前聊天。':'模拟时间恢复，可以推进到下一天。';return s;}
+  if(action==='toggle'){s.notifications=!s.notifications;s.notice=s.notifications?'允许主动开启新话题。':'主动联系已关闭；已有聊天和生活事件仍保留。';return s;}
+  if(action==='hello'){
+   if(s.hello){s.notice='初次相识已经发生，保留这段共同对话。';return s;}
+   msg(s,'you','你好。这个窗口能收到消息吗？');msg(s,'her','能。\n……你是谁？');msg(s,'you','一个刚连上这个频道的人。你不方便的话，晚点聊也行。');msg(s,'her','打字的话，可以。\n不过别一下问好多问题。');s.hello=true;s.notice='还只是刚认识的人，没有预设亲密关系。';return s;
+  }
+  if(!s.hello){s.notice='先完成初次相识。';return s;}
+  if(action==='today'){
+   if(s.shared){s.notice='已经聊过今天的事，不会重写那次对话。';return s;}
+   msg(s,'you','我今天做事总想一步弄好，结果一直没开始。你呢？');msg(s,'her','我在画一只杯子。');msg(s,'her','本来以为很简单。\n结果杯沿那条线，怎么看都不对。');msg(s,'you','那就先留着，明天再看一眼。不一定今晚就画完。');msg(s,'her','……我只是想把它画好。\n那就明天再看。');s.shared=true;s.events.push({day:s.day,id:'cup-start',text:'开始杯子练习，留下不满意的杯沿线条。'});s.notice='新增虚构日常已记录；“杯子”只是演示情节，不是小说事实。';return s;
+  }
+  if(action==='advance'){
+   if(s.paused){s.notice='时间暂停中，没有新的一天或新生活事件。';return s;}
+   s.day++;s.topics=0;
+   if(s.shared&&!s.events.some(e=>e.id==='cup-finished'))s.events.push({day:s.day,id:'cup-finished',text:'重看杯子练习，擦掉并重新画了一段线条。'});
+   s.notice='手动推进一个模拟日；已有事件不会重复发生。';return s;
+  }
+  if(action==='share'){
+   if(s.paused){s.notice='暂停期间不触发新的主动分享。';return s;}
+   if(!s.notifications){s.notice='主动联系已关闭，没有新消息。';return s;}
+   if(s.waiting){s.notice='上一条主动消息还没收到回复，不继续追问。';return s;}
+   const e=s.events.find(e=>e.id==='cup-finished'&&!s.sent.includes(e.id));
+   if(!e){s.notice='暂时没有尚未分享的新事情；不为凑消息而编一件。';return s;}
+   if(s.topics>=2){s.notice='今天主动开启话题已达上限，保留事件但不投递。';return s;}
+   msg(s,'her',topicWhen+'那只杯子。');msg(s,'her','我把那一小段擦掉，重新画了。\n这次顺眼一点了。');s.sent.push(e.id);s.topics++;s.waiting=true;s.notice='一件已发生的演示事件，形成一次主动新话题；两条气泡只计一次。';return s;
+  }
+  if(action==='reply'){
+   if(!s.waiting){s.notice='当前没有待回复的主动分享。';return s;}
+   msg(s,'you','还记得'+topicWhen+'那条线。看来放一放再看，确实有点用。');msg(s,'her','嗯。\n是'+topicWhen+'你说的那个办法。');s.waiting=false;s.recalled=true;s.notice='回应接上实际演示过的昨天；不是临时补一段共同历史。';return s;
+  }
+  if(action==='disagree'){
+   if(!s.recalled){s.notice='先回复她的隔天分享，再看看这次小分歧。';return s;}
+   if(s.disagreed){s.notice='这段分歧已经发生，不重复制造冲突。';return s;}
+   msg(s,'you','既然画好了，干脆马上给更多人看吧？');msg(s,'her','不要。\n还没到我想给人看的时候。');msg(s,'you','好，那等你自己想发的时候。');msg(s,'her','……也不是以后都不发。\n我想自己选。');s.disagreed=true;s.notice='她保留自己的选择；对话没有因一次拒绝变成关系惩罚。';return s;
+  }
+  return s;
+ };
+ return {initial,reduce};
+})();
+const scenarios=[
+ {name:'五个连续情景',description:'从选择人物开始，看她如何分享一件小事、接续昨天，再表达自己的意见。',steps:[['start','① 选择人物与起点'],['hello','② 初次相识'],['today','聊起今天的小事'],['advance','③ 推进到第二天'],['share','收到她主动分享'],['reply','④ 接上昨天的话题'],['disagree','⑤ 一次不同意见']]},
+ {name:'没有回复时',description:'收到消息后先不回复，再次尝试分享。观察她是否会追问，以及生活事件是否被重复制造。',steps:[['start','建立相识'],['hello','开始聊天'],['today','留下昨天的话题'],['advance','来到第二天'],['share','收到消息'],['share','先不回复，再试一次'],['reply','现在回复'],['share','检查同一件事会不会重发']]},
+ {name:'暂停与关闭联系',description:'暂停时间不妨碍继续聊天；关闭主动联系不删除已经发生的生活事件。',steps:[['start','建立相识'],['hello','初次聊天'],['today','今天的小事'],['pause','暂停时间'],['advance','尝试推进一天'],['pause','恢复时间'],['advance','推进一天'],['toggle','关闭主动联系'],['share','尝试分享'],['toggle','重新允许联系'],['share','分享已有事件']]}
+];
+let state=Model.initial(),active=0,step=0;
+const $=id=>document.getElementById(id);
+const act=a=>{state=Model.reduce(state,a);render();};
+const choose=i=>{active=i;step=0;state=Model.initial();render();};
+function next(){const list=scenarios[active].steps;if(step<list.length){state=Model.reduce(state,list[step][0]);step++;render();}}
+function render(){
+ $('topstate').replaceChildren();['模拟第 '+state.day+' 天',state.started?'已选择开篇背景':'等待开始',state.paused?'时间暂停':'手动推进时间','刷新后重置'].forEach(t=>{let e=document.createElement('span');e.textContent=t;$('topstate').append(e);});
+ $('presence').textContent=!state.started?'还没有建立联系':state.waiting?'留下了一条新消息':state.hello?'可以通过文字联系':'跨世界频道已建立';
+ const c=$('conversation');c.replaceChildren();if(!state.messages.length){const e=document.createElement('div');e.className='empty';const h=document.createElement('strong');h.textContent='从一声「你好」开始';e.append(h,document.createTextNode('这里还没有共同的聊天经历。'));c.append(e);}
+ let day=null;for(const m of state.messages){if(m.day!==day){day=m.day;const d=document.createElement('div');d.className='stamp';d.textContent='模拟第 '+day+' 天 · 预设情景';c.append(d);}const r=document.createElement('div');r.className='row '+(m.who==='you'?'you':'');const w=document.createElement('span');w.className='who';w.textContent=m.who==='you'?'你 · 演示发言':'纱雾 · 新写台词';const b=document.createElement('div');b.className='bubble';b.textContent=m.text;r.append(w,b);c.append(r);}c.scrollTop=c.scrollHeight;
+ const values=[['相识状态',state.hello?'初识网友':'尚未交谈'],['共同话题',state.shared?'杯子练习与一条线':'还没有'],['生活事件',state.events.length+' 件 · 演示新增'],['主动联系',state.notifications?'允许':'已关闭'],['今日新话题',state.topics+' / 2（上限）'],['未回复消息',state.waiting?'有，停止追问':'无'],['自主意见',state.disagreed?'想自己决定何时分享':'尚未触及'],['时间状态',state.paused?'暂停':'手动模拟']];$('state').replaceChildren();for(const [k,v]of values){let a=document.createElement('dt'),b=document.createElement('dd');a.textContent=k;b.textContent=v;$('state').append(a,b);}
+ $('event').textContent=state.events.length?state.events.map(e=>'第'+e.day+'天：'+e.text).join('\n'):'目前没有新生活事件。';$('event').style.whiteSpace='pre-wrap';$('notice').textContent=state.notice;
+ $('tabs').replaceChildren();scenarios.forEach((x,i)=>{let b=document.createElement('button');b.textContent=x.name;b.className=i===active?'selected':'';b.setAttribute('role','tab');b.setAttribute('aria-selected',String(i===active));b.onclick=()=>choose(i);$('tabs').append(b);});$('walkdesc').textContent=scenarios[active].description;
+ $('steps').replaceChildren();scenarios[active].steps.forEach(([action,title],i)=>{let b=document.createElement('button');b.textContent=(i<step?'✓ ':'')+title;b.disabled=i!==step;b.className=i<step?'done':i===step?'primary':'';b.onclick=next;$('steps').append(b);});$('next').disabled=step>=scenarios[active].steps.length;$('next').textContent=step<scenarios[active].steps.length?scenarios[active].steps[step][1]:'这一段演示结束';
+}
+const actions=[['start','选择人物'],['hello','打个招呼'],['today','聊今天'],['advance','推进一天'],['share','尝试主动分享'],['reply','回复她'],['disagree','不同意见'],['pause','暂停 / 恢复'],['toggle','允许 / 关闭联系'],['reset','重置演示']];
+for(const [action,title]of actions){const b=document.createElement('button');b.textContent=title;b.onclick=()=>{if(action==='reset')step=0;act(action);};$('free').append(b);}
+$('next').onclick=next;$('show-all').onclick=()=>{active=0;state=Model.initial();for(const [a]of scenarios[0].steps)state=Model.reduce(state,a);step=scenarios[0].steps.length;render();$('conversation').scrollTop=0;};render();
+</script>
+</html>
