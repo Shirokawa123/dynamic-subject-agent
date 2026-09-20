@@ -2,8 +2,8 @@
 
 Type: prototype
 Labels: wayfinder:prototype
-Status: open
-Assignee: none
+Status: claimed
+Assignee: root
 Parent: ../map.md
 Blocked by: 01, 02, 05
 
