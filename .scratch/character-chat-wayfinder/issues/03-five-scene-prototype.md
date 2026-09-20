@@ -5,7 +5,7 @@ Labels: wayfinder:prototype
 Status: open
 Assignee: none
 Parent: ../map.md
-Blocked by: 01, 02
+Blocked by: 01, 02, 05
 
 ## Question
 
