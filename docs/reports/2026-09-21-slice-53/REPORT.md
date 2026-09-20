@@ -1,0 +1,32 @@
+# Slice-53：五情景独立原型交付
+
+状态：原型已交付，人物感、连续性与交流自然度待用户评价。没有把原型当作正式角色生活系统，也没有把可运行当作体验通过。
+
+## 成果
+
+- 独立分支：`codex/prototype/sagiri-five-scenes`，提交`592d56e`；[HTML](https://github.com/Shirokawa123/dynamic-subject-agent/blob/592d56e/app/desktop/sagiri-chat.prototype.html)与[依据/限制说明](https://github.com/Shirokawa123/dynamic-subject-agent/blob/592d56e/app/desktop/sagiri-chat.prototype.notes.md)。未合入main。
+- 本地交付：`E:/dynamic-subject-agent/.artifacts/和泉纱雾-聊天原型.html`，SHA-256 `3c1aa6bd838ededb4ec544d060730e97b3c1bb8669959479105e3a225891f0d2`。
+- 隔离工作区：`E:/dynamic-subject-agent/.scratch/character-chat-prototype/`。单HTML含全部样式与脚本，设计上可双击用浏览器打开，无安装/服务器依赖。
+- 可以逐步看五情景，或点击“直接看完整对话”；另有未回复、暂停/关闭联系情景和自由操作。当前状态、共同话题、生活事件、未回复和投递次数可见。
+
+## 人物依据与新增情景
+
+仅本地核对用户提供第一卷的第一章开篇与同章明确回忆的先前经历。文件指纹为`aa2903b4dc781c90f56f65d03f5ac32b2ea8e108fb990a461be53271dfa45573`，文档为`OEBPS/Text/ch5.html`，按HTML p元素一基计数，取9–16、25、922–934段。可核对的背景包括兄妹同住、开篇多留在房间、面对面交流少，以及早已有绘画和线上交流经历；不将其简化为所有情况下都寡言。
+
+起点采用第一章开篇背景，不导入同章后来身份揭示导致的他人知情变化、关系进展、后卷或IF。详细本地依据记录位于`.local_indexes/eromanga-sensei/prototype-basis.json`；原文和本地索引未提交Git。
+
+跨世界频道、杯子练习、次日修改线条及所有台词都是演示新写内容。它们不是原作引文/事实，也不是自动人物提取结果。角色语气只是待评价草稿，未声称还原已经通过。
+
+## 实际机制与验证
+
+复用此前[架构研究](../../plans/character-chat-architecture-alignment.md)的事件先成立、分享/投递分离机制；使用prototype技能的纯JS状态转换加单页渲染，没有引入依赖。页面仅内存状态，刷新重置；不读写正式identity/Timeline，不调用Credential、Provider或系统通知，不使用localStorage。CSP禁止网络连接和外部资源。
+
+后台IAB经临时本地HTTP服务核对：完整五情景、未回复不追发、恢复联系后分享已有事件、同一事件不重复、暂停后日期不变、关闭联系不投递、推进多日后改称“之前”、刷新回初始状态。桌面截图检查排版。未增加产品测试套件，未运行旧版全量回归；临时页和验收服务已关闭。两处最后的纯台词措辞调整未改变状态逻辑。
+
+浏览器工具URL策略拒绝file://直接导航，未绕过。因此没有在该工具中验证本地文件直开；已完成HTTP页面操作核对，文件本身没有服务器依赖。
+
+## 明确限制
+
+原型不能自由模型聊天、真实导入小说、自动在后台过日子或产生系统通知。只有一个可分享的完成事件，能演示连续性、未回复和去重，不证明全天联系策略或重大剧情控制已实现。模拟时间的具体实现不是生产默认规则。
+
+接下来由用户指出哪段像/不像预期，再据此决定真实聊天与生活闭环的下一片；新Provider用途/预算仍须具体落实。Wayfinder原型票保持claimed/待反馈，后续反馈票不提前解锁，不以技术核对代替用户判断。
