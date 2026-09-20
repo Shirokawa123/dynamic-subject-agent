@@ -2,7 +2,7 @@
 
 Type: task
 Labels: wayfinder:task
-Status: claimed
+Status: resolved
 Assignee: root
 Parent: ../map.md
 Blocked by: none
@@ -18,3 +18,9 @@ Blocked by: none
 2026-09-20补充：用户指出补足人物可能需要更多小说，材料请求已放宽至同版本多卷/全套。数量未定、文件未提供；后卷里的早期背景与未来成长要分别核对，不以卷次机械决定角色知情。
 
 2026-09-20接续：root认领素材准备票。为用户准备本地目录`E:/dynamic-subject-agent/.local_sources/eromanga-sensei/`，受既有.local_sources忽略规则保护；支持用户上传附件或明确将文件放入该目录后通知。尚未收到明确指定的小说材料，不搜索其它私人目录。收到后先本地清点版本/卷次/章节与文件完整性，再确定人物依据及起点；不自动把小说发送给模型。该票仍未解决。
+
+## Answer
+
+2026-09-20：用户明确告知EPUB已放入指定目录，root完成本地清点。14份可读文件，标注第1–13卷及一份IF短篇；没有完全相同的文件指纹，spine引用和文本读取检查通过。不同制作/语言标签保留，未认定同一译本，IF不自动混入主线。
+
+详细依据见[小说素材接收与本地清点](../../../docs/reports/2026-09-20-novel-material-intake/REPORT.md)，本地索引位于`.local_indexes/eromanga-sensei/inventory.json`（Git忽略）。本票只解决素材入口与可读取性，未解决人物还原、具体开篇段落、语义时间或外发范围。无模型调用、无原文件修改，原型评价仍由用户反馈解决。

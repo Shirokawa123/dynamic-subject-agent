@@ -20,6 +20,7 @@ Status: open
 ## Decisions so far
 
 - [小说提取如何保留来源与起点边界](issues/01-novel-source-boundary.md)：复用阅读顺序与位置证据，独立核对剧情时间/人物知情；未选定依赖。地图建立前的用户体验决定仍见方向记录。
+- [首份演示的小说素材准备](issues/02-reference-material.md)：用户提供14份可读EPUB，卷次标注1–13及IF；仅完成本地清点，不默认统一译本或主线合并，未外发原文。
 
 ## Not yet specified
 
