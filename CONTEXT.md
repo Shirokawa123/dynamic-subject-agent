@@ -4,6 +4,14 @@
 
 ## Language
 
+**Story Starting Point**:
+用户选择与角色相遇时所在的故事阶段；它区分此前已经发生的经历与此后尚未发生的情节。
+_Avoid_: Full-book knowledge, chat creation timestamp
+
+**Story Branch**:
+从既定故事起点延续出的新事件与选择；既往经历保持，之后的走向可以变化，且不必离开原作世界。
+_Avoid_: Different world, rewritten past, imported future memory
+
 **Subject Task**:
 主体对用户显式交付的文字工作作出的、可查询进展与结果的任务承担；接受、暂缓、取消和完成是有依据的不同事实。
 _Avoid_: Participant goal, conversational promise, autonomous background activity
