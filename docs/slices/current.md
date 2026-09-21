@@ -1,6 +1,6 @@
 # 当前工作
 
-[Slice-53：小说人物五情景独立原型](slice-53-character-chat-prototype.md) 已交付、待用户评价，见[报告](../reports/2026-09-21-slice-53/REPORT.md)。本地HTML在`.artifacts/和泉纱雾-聊天原型.html`，独立原型分支提交592d56e；不重问Q1–Q17。
+[Slice-53：小说人物五情景独立原型](slice-53-character-chat-prototype.md) R1已交付待反馈，见[报告](../reports/2026-09-21-slice-53/REPORT.md)。最新HTML为`.artifacts/和泉纱雾-聊天原型-R1.html`，原型分支提交14d3041。用户仅初步认可流程，指出初版过于亲近、削弱绘画经验，人物还原未通过；不重问Q1–Q17。
 
 原型只用独立工作区/分支及内存模拟，先本地核对人物依据；不调用Provider/凭据、不写正式身份，不冒称全文自动解析或真实生活引擎。预设台词/模拟时间/真实能力明确标注，交付后由用户评判，不能自行关闭体验票。
 
