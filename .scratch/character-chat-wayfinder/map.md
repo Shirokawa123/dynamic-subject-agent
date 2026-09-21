@@ -22,6 +22,7 @@ Status: open
 - [小说提取如何保留来源与起点边界](issues/01-novel-source-boundary.md)：复用阅读顺序与位置证据，独立核对剧情时间/人物知情；未选定依赖。地图建立前的用户体验决定仍见方向记录。
 - [首份演示的小说素材准备](issues/02-reference-material.md)：用户提供14份可读EPUB，卷次标注1–13及IF；仅完成本地清点，不默认统一译本或主线合并，未外发原文。
 - [旧架构如何支撑新的角色聊天体验](issues/05-architecture-alignment.md)：保留可靠基础，重组聊天编排，分离生活事件与分享/投递；正式契约更新和原型评价仍待完成。
+- [五情景原型是否呈现了用户期待的聊天体验](issues/03-five-scene-prototype.md)：用户对R1评价“感觉还行”，仅作为流程/人物方向的初步反馈；完整人物建模与真实生成仍未验证。
 
 ## Not yet specified
 
