@@ -8,7 +8,7 @@ import pytest
 from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 from dynamic_subject_agent.character_dialogue import (
     CAPSULE, POLICY, MAX_ATTEMPTS, CharacterDialogueSession, DialogueProjection,
-    DialogueReply, DialogueRequest, plan_digest, plan_payload,
+    DialogueReply, DialogueRequest, plan_digest, plan_payload, character_context,
 )
 from dynamic_subject_agent.character_dialogue_provider import DeepSeekCharacterDialogueAdapter
 from dynamic_subject_agent.cognition import CredentialRef
@@ -79,11 +79,43 @@ def test_exact_projection_and_canonical_files_unchanged(lab):
     assert app.character_dialogue_send(request(app, "我是新网友")).status == "replied"
     assert app.character_dialogue_send(request(app, "刚才说的是什么？")).status == "replied"
     assert adapter.calls == [
-        dict(character=CAPSULE, current_message="我是新网友", recent_dialogue=[]),
-        dict(character=CAPSULE, current_message="刚才说的是什么？",
+        dict(character=character_context(), current_message="我是新网友", recent_dialogue=[]),
+        dict(character=character_context(), current_message="刚才说的是什么？",
              recent_dialogue=[dict(user_text="我是新网友", assistant_text="收到。")]),
     ]
     assert snapshot() == before
+
+
+def test_user_claims_and_previous_model_claims_never_populate_character_facts(lab):
+    app, adapter, _, _ = lab()
+    before = character_context()
+    # Deliberately ungrounded fake output. This tests provenance, not an LLM's accuracy.
+    adapter.reply = "昨晚我外出买了画材。"
+    app.character_dialogue_send(request(app, "你昨晚买东西了吧？"))
+    adapter.reply = "这是测试回复。"
+    app.character_dialogue_send(request(app, "刚才说去买东西，买了什么？"))
+    projection = adapter.calls[-1]
+    assert projection["character"] == before
+    assert projection["character"]["established_life_events"] == []
+    assert projection["recent_dialogue"] == [dict(user_text="你昨晚买东西了吧？",
+                                                  assistant_text="昨晚我外出买了画材。")]
+    assert "买了画材" not in json.dumps(projection["character"], ensure_ascii=False)
+    # A consumer mutating its projection must not mutate the next turn's fixed basis.
+    projection["character"]["known_background"].append("篡改的背景")
+    projection["character"]["established_life_events"].append("捏造的事件")
+    app.character_dialogue_send(request(app, "现在换个话题"))
+    assert adapter.calls[-1]["character"] == before
+
+
+def test_origin_partitions_survive_withdrawal_without_restoring_claims(lab):
+    app, adapter, _, _ = lab()
+    app.character_dialogue_send(request(app, "我们早就认识，而且一起旅行过。"))
+    app.character_dialogue_send(request(app, "不要使用之前的记录，现在只谈构图。"))
+    assert adapter.calls[-1]["recent_dialogue"] == []
+    assert adapter.calls[-1]["character"] == character_context()
+    app.character_dialogue_send(request(app, "开启后继续", history=True))
+    assert adapter.calls[-1]["recent_dialogue"] == []
+    assert adapter.calls[-1]["character"]["established_life_events"] == []
 
 
 def test_idempotency_conflict_stale_and_cross_lab(lab):
@@ -213,6 +245,9 @@ def test_offline_root_and_wrong_approval_never_touch_credentials(tmp_path, monke
     monkeypatch.setattr(WindowsCredentialStore, "load", forbidden)
     with pytest.raises(ValueError, match="approval"):
         open_character_dialogue_lab(tmp_path, approved_plan="wrong")
+    with pytest.raises(ValueError, match="approval"):
+        open_character_dialogue_lab(tmp_path, approved_plan=
+            "afa3645e0659cd13a2a31433370d6a8a9156e60fae991ad802fe4c9966c1f43e")
     with open_character_dialogue_lab(tmp_path) as product:
         app = product.application
         assert app.character_dialogue_status().mode == "offline"

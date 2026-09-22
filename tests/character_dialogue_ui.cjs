@@ -13,7 +13,7 @@ async function check(ambiguous) {
   const sent=[];
   const sandbox={document:{getElementById:get,createElement:element},crypto:{randomUUID:()=>`key-${++ids}`},
     fetch:async(url,options)=>{
-      if(url==='/plan')return {json:async()=>({plan:{capsule:'test'},digest:'d'})};
+      if(url==='/plan')return {json:async()=>({plan:{character_context:{known_background:['test'],interaction_setup:'setup',expression_guidance:'style',unknown_context:'unknown'}},digest:'d'})};
       if(url==='/status'){
         if(++statusReads>1)throw Error('status is now unavailable');
         return {ok:true,json:async()=>({lab_id:'lab',revision:0,attempts:0,history_enabled:true})};
