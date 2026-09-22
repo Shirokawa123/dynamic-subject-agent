@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dynamic_subject_agent.character_dialogue import CharacterDialogueSession
+
 from importlib import metadata
 from pathlib import Path
 from threading import RLock
@@ -111,6 +113,7 @@ def compose_application(
     _local_serving_stop_timeout_seconds: float = 30.0,
     relationship_mode: str = "off",
     _host_fault_hook: Callable[[RuntimeHostFaultPoint], None] | None = None,
+    _character_dialogue: CharacterDialogueSession | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -266,6 +269,7 @@ def compose_application(
                     _authorization=_local_serving_authorization,
                 )
             ),
+            _character_dialogue=_character_dialogue,
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,

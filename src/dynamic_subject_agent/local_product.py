@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from threading import Lock
+from uuid import uuid4
+
+from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload
 
 from dynamic_subject_agent.application import ApplicationFacade
 from dynamic_subject_agent.bootstrap import compose_application
@@ -91,6 +95,7 @@ def open_local_product(
     *,
     cognition: CognitionEngine,
     source_authoring: TextSourceCharacterAuthoring | None = None,
+    _character_dialogue: CharacterDialogueSession | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
 
@@ -106,6 +111,7 @@ def open_local_product(
         loaded=loaded,
         cognition=cognition,
         source_authoring=source_authoring,
+        character_dialogue=_character_dialogue,
     )
 
 
@@ -116,6 +122,7 @@ def _open_loaded_local_product(
     loaded: LoadedLocalIdentity,
     cognition: CognitionEngine,
     source_authoring: TextSourceCharacterAuthoring | None,
+    character_dialogue: CharacterDialogueSession | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
         m0_root=loaded.experiment_base,
@@ -126,6 +133,7 @@ def _open_loaded_local_product(
         _cognition=cognition,
         relationship_mode=config.relationship_mode,
         _source_authoring=source_authoring,
+        _character_dialogue=character_dialogue,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
         _local_identity_lister=authority.list,
@@ -246,3 +254,57 @@ __all__ = [
     "open_deepseek_local_product",
     "open_local_product",
 ]
+
+
+_REMOTE_LAB_LOCK = Lock()
+_REMOTE_LAB_OPENED = False
+
+
+def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = None) -> OpenedLocalProduct:
+    """Create a fresh lab only. Approval digest is an explicit operator assertion.
+
+    No existing identity path is accepted; no credential discovery occurs offline.
+    One remote lab per process prevents resetting the process's attempt budget.
+    """
+    global _REMOTE_LAB_OPENED
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.character_dialogue_provider import (
+        OfflineCharacterDialogueAdapter, DeepSeekCharacterDialogueAdapter, CharacterCredentialUnavailable,
+    )
+    if not isinstance(parent, Path) or not parent.is_absolute():
+        raise ValueError("absolute lab parent required")
+    if approved_plan is not None and approved_plan != plan_digest():
+        raise ValueError("current plan approval required")
+    adapter = OfflineCharacterDialogueAdapter()
+    if approved_plan is not None:
+        from dynamic_subject_agent.credentials import WindowsCredentialStore, DEEPSEEK_CREDENTIAL_SLOT, CredentialStoreUnavailable
+        from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT
+        if (DEEPSEEK_MODEL != plan_payload()["model"]
+                or DEEPSEEK_ENDPOINT != plan_payload()["endpoint"]):
+            raise ValueError("provider changed; new plan required")
+        with _REMOTE_LAB_LOCK:
+            if _REMOTE_LAB_OPENED:
+                raise ValueError("one remote lab per process")
+            _REMOTE_LAB_OPENED = True
+
+        class _LabResolver(DeepSeekCredentialResolver):
+            def resolve(self, credential_ref: CredentialRef) -> str:
+                # Loaded only on an explicit send, never on preview/status/startup.
+                try:
+                    key = WindowsCredentialStore().load(DEEPSEEK_CREDENTIAL_SLOT)
+                except CredentialStoreUnavailable:
+                    raise CharacterCredentialUnavailable() from None
+                if not key:
+                    raise CharacterCredentialUnavailable()
+                return key
+
+        adapter = DeepSeekCharacterDialogueAdapter(
+            transport=DeepSeekUrlLibTransport(credential_resolver=_LabResolver()),
+            credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,
+                                                   key_id=DEEPSEEK_CREDENTIAL_KEY_ID))
+    root = parent / ("dialogue-lab-" + uuid4().hex)
+    root.mkdir(parents=True, exist_ok=False)
+    config = LocalProductConfig(product_parent=root / "DynamicSubjectAgent" / "m0" / "experiments", state_path=root / "state.json",
+                                relationship_mode="off")
+    return open_local_product(config, cognition=DormantDeepSeekCognition(),
+                              _character_dialogue=CharacterDialogueSession(ModelGateway(adapter)))

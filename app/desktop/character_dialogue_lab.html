@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>纱雾 · 试聊准备</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef1f5;color:#253145;font:16px/1.65 system-ui,"Microsoft YaHei",sans-serif}main{max-width:840px;margin:32px auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 12px 45px #24334d0b}header{padding:24px 28px;border-bottom:1px solid #e9edf3}h1{font-size:22px;margin:0 0 4px}.muted{font-size:13px;color:#67758b}.badge{display:inline-block;background:#edf0ff;color:#5160a2;border-radius:16px;padding:2px 12px;margin-top:10px}#chat{height:360px;overflow:auto;padding:20px 28px}.message{white-space:pre-wrap;overflow-wrap:anywhere;margin:12px 0;max-width:85%;padding:12px 16px;border-radius:16px;background:#f0f3f8}.user{margin-left:auto;background:#edf0ff}.empty{text-align:center;color:#8591a4;padding-top:110px}form{padding:0 28px 24px}textarea{resize:vertical;width:100%;min-height:82px;border:1px solid #d7ddeb;border-radius:12px;padding:12px;font:inherit}button{border:0;border-radius:10px;background:#5264a4;color:white;padding:10px 24px;font:inherit;cursor:pointer}button:disabled{opacity:.5;cursor:default}.row{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-top:10px}#status{min-height:26px;color:#59677e;font-size:13px}details{border-top:1px solid #e9edf3;padding:18px 28px;font-size:14px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;color:#59677e}@media(max-width:600px){main{margin:0;border-radius:0;min-height:100vh}header,form,details{padding-left:18px;padding-right:18px}.row{align-items:flex-start}#chat{height:42vh;padding:15px}.message{max-width:95%}}
+</style>
+<main><header><h1>和泉纱雾</h1><div class="muted">小说第一卷开篇附近 · 初次相识</div><span class="badge">离线联调 · 固定回声</span><div class="muted">本页只检查发送与上下文开关。真实人物回复尚未启用。</div></header>
+<div id="chat" aria-live="polite"><div class="empty">发一条消息，检查试聊入口</div></div>
+<form id="form"><textarea id="message" maxlength="1000" placeholder="输入消息…" aria-label="消息" required></textarea><div class="row"><label class="muted"><input type="checkbox" id="history" checked>下次发送使用本次最近两轮<br>关闭或撤回后，再开启也不带回旧对话。</label><button id="send">发送</button></div><div id="status" role="status"></div></form>
+<details><summary>查看本次人物摘要与调用范围</summary><pre id="plan"></pre><p>不推进角色生活，不保存长期聊天；关闭服务后会话上下文丢弃。绘画能力、初识距离和未知近况仍需真实试聊检查。</p></details></main>
+<script>
+const token='__TOKEN__';let state,pending;
+const el=id=>document.getElementById(id);
+function add(text,who){el('chat').querySelector('.empty')?.remove();const div=document.createElement('div');div.className='message '+who;div.textContent=text;el('chat').append(div);el('chat').scrollTop=el('chat').scrollHeight;}
+function updateState(value){state=value;el('history').checked=state.history_enabled;el('status').textContent=`本次已尝试 ${state.attempts}/20 · ${state.history_enabled?'上下文已开启':'上下文已关闭'}`;}
+async function refresh(){const response=await fetch('/status');if(!response.ok)throw Error();updateState(await response.json());}
+el('form').onsubmit=async event=>{event.preventDefault();if(!state)return;el('send').disabled=true;el('history').disabled=true;el('message').disabled=true;
+if(!pending){pending={lab_id:state.lab_id,revision:state.revision,idempotency_key:crypto.randomUUID(),message:el('message').value,use_history:el('history').checked};add(pending.message,'user');}
+try{const response=await fetch('/send',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Token':token},body:JSON.stringify(pending)});if(!response.ok)throw Error();const result=await response.json();add(result.status==='replied'?result.reply_text:'这次没有生成回复：'+result.code,'assistant');updateState(result);pending=null;if(result.status==='replied')el('message').value='';el('send').textContent='发送';}
+catch{el('status').textContent='连接未确认。可用同一请求重取结果，不会再次调用模型。';el('send').textContent='重取结果';}
+finally{el('send').disabled=false;el('history').disabled=!!pending;el('message').disabled=!!pending;}};
+Promise.all([refresh(),fetch('/plan').then(r=>r.json()).then(x=>{el('plan').textContent=x.plan.capsule+'\n\n每次发送最多一次调用；当前消息≤1000字符，最近两轮合计≤4000字符，进程最多20次尝试。\n\n计划摘要：'+x.digest;})]).catch(()=>{el('status').textContent='服务未就绪，请重新打开页面。';});
+</script></html>

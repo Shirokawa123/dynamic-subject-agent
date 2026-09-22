@@ -20,6 +20,14 @@ ApplicationFacade仍为正式产品唯一业务Interface，open_local_product仍
 
 需要真正模型生成时，先完成具体用途、目的地、投影和预算方案并获授权，再建立相应任务书。原型代码留在独立原型分支，主线记录任务、证据与用户反馈；用户反馈之前不宣布原型体验通过。
 
+### Slice-55：隔离角色对话的离线准备
+
+`ApplicationFacade.character_dialogue_status/send`承载可选实验能力，普通产品默认unavailable。`local_product.open_character_dialogue_lab`仅在全新独立目录经`open_local_product`装配空白承载身份、Dormant cognition与独立会话；不读正式registry，不将承载身份信息传入人物摘要。实验会话是可丢弃的内存上下文，不是第二canonical store，也不提交ConversationTurn/Memory/关系/生活事件。关闭清空会话，不支持重启恢复。
+
+`CharacterDialogueSession`在锁内裁决lab_id/revision/幂等、输入上限、历史控制和预算，再经新ModelTask类型调用Gateway；重复请求重放原结果，冲突与stale不外发；失败计尝试且不重试。最多20次尝试、2个完整成功轮/4000字符；控制/关闭历史会清空窗口，之后显式开启只积累新轮。输出必须是≤1200字符的typed中文reply，格式裁决不等于人物事实语义验证。凭据不可用返回unavailable，网络/输出故障返回failed-closed。
+
+默认Adapter固定离线回声。真实Adapter复用既有单次DeepSeek Transport与JSON-envelope检查，但不复用旧用途授权；只有操作人显式传入当前计划digest才能装配，每进程最多一个真实实验，凭据延迟到发送时才读取。CLI真实路径目前只支持[待批准六条验收](plans/character-dialogue-live-trial.md)，失败即停；离线界面不开放真实发送。该参数不是用户批准的替代物。本片只完成离线验证，真实调用仍为0；旧12类请求保持原样。
+
 ### 旧假设如何过渡
 
 旧路径的“离线时间不产生经历”仍有效；新路径拟将“明确推进后提交的虚构事件”作为新增经历来源，两者不混用。旧Situated/Medium要求用户消息证据的规则不自动扩成角色自己的心理模型；新来源和状态含义需明确设计。下文有限Knowledge/Memory语法与原有12类请求仍约束旧实现，新目标不隐式扩大其数据范围。

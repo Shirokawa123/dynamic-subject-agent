@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, DialogueView
+
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
 from enum import Enum
@@ -334,6 +336,7 @@ class _ApplicationRouter:
         local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
         | None = None,
         knowledge_entries: tuple[KnowledgeEntry, ...] = (),
+        character_dialogue: CharacterDialogueSession | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -351,6 +354,9 @@ class _ApplicationRouter:
             TextSourceCharacterAuthoring,
         ):
             raise TypeError("source_authoring must be TextSourceCharacterAuthoring")
+        if character_dialogue is not None and not isinstance(character_dialogue, CharacterDialogueSession):
+            raise TypeError("typed character dialogue session required")
+        self._character_dialogue = character_dialogue
         self._source_authoring = source_authoring
         if source_studio_location is not None and not isinstance(
             source_studio_location,
@@ -724,6 +730,18 @@ class _ApplicationRouter:
         except Exception:
             return TextArtifactResponse('failed-closed',message='保存结果尚不能核实，没有重复执行未知操作。')
 
+    def character_dialogue_status(self) -> DialogueView:
+        with self._lock:
+            if self._closed or self._character_dialogue is None:
+                return DialogueView("unavailable", "character-dialogue-unavailable")
+            return self._character_dialogue.status()
+
+    def character_dialogue_send(self, request: object) -> DialogueView:
+        with self._lock:
+            if self._closed or self._character_dialogue is None:
+                return DialogueView("unavailable", "character-dialogue-unavailable")
+            return self._character_dialogue.send(request)
+
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
         with self._lock:
             self._require_open()
@@ -877,6 +895,8 @@ class _ApplicationRouter:
             if self._closed:
                 return
             self._closed = True
+        if self._character_dialogue is not None:
+            self._character_dialogue.close()
         self._executor.shutdown(wait=True, cancel_futures=False)
 
 
@@ -940,6 +960,12 @@ class ApplicationFacade:
     def query(self, query: object) -> ApplicationQueryResponse:
         return self.__router.query(query)
 
+    def character_dialogue_status(self) -> DialogueView:
+        return self.__router.character_dialogue_status()
+
+    def character_dialogue_send(self, request: object) -> DialogueView:
+        return self.__router.character_dialogue_send(request)
+
     def preview_character_source(self, request: object) -> TextSourcePreviewResponse:
         return self.__router.preview_character_source(request)
 
@@ -971,6 +997,7 @@ def _create_application_facade(
     _stop_runtime: Callable[[], RuntimeHealth] | None = None,
     _query_runtime: Callable[[], RuntimeHealth] | None = None,
     _follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
+    _character_dialogue: CharacterDialogueSession | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -988,6 +1015,7 @@ def _create_application_facade(
         stop_runtime=_stop_runtime,
         query_runtime=_query_runtime,
         follow_runtime=_follow_runtime,
+        character_dialogue=_character_dialogue,
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,
