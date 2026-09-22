@@ -9,21 +9,22 @@ from pathlib import Path
 import secrets
 from uuid import uuid4
 
-from dynamic_subject_agent.character_dialogue import DialogueRequest, TEST_MESSAGES, plan_payload, plan_digest
+from dynamic_subject_agent.character_dialogue import DialogueRequest, TEST_MESSAGES, plan_payload, plan_digest, GROUNDED_TEST_MESSAGES, grounded_plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import BasisPreviewRequest, BasisMessageRequest, TOPICS
 from dynamic_subject_agent.local_product import open_character_dialogue_lab
 
 
 def run_suite(application):
     rows = []
-    for message in TEST_MESSAGES:
+    grounded = application.character_dialogue_status().material_mode == "bounded"
+    for message in GROUNDED_TEST_MESSAGES if grounded else TEST_MESSAGES:
         current = application.character_dialogue_status()
         result = application.character_dialogue_send(DialogueRequest(
             current.lab_id, current.revision, uuid4().hex, message, current.history_enabled))
         rows.append(dict(message=message, result=asdict(result)))
         if result.status != "replied":
             break
-    return dict(plan_digest=plan_digest(), mode=application.character_dialogue_status().mode, rows=rows)
+    return dict(plan_digest=application.character_dialogue_status().plan_digest, mode=application.character_dialogue_status().mode, rows=rows)
 
 
 def make_server(application, port=0, *, basis_preview_enabled=False):
@@ -57,7 +58,7 @@ def make_server(application, port=0, *, basis_preview_enabled=False):
             if self.path == "/status":
                 return self.respond(200, asdict(application.character_dialogue_status()))
             if self.path == "/plan":
-                return self.respond(200, dict(plan=plan_payload(), digest=plan_digest()))
+                return self.respond(200, dict(plan=grounded_plan_payload() if application.character_dialogue_status().material_mode == "bounded" else plan_payload(), digest=application.character_dialogue_status().plan_digest))
             self.respond(404, {"error": "not-found"})
 
         def do_POST(self):
@@ -85,34 +86,47 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--approve-plan", help="仅在用户批准当前具体方案后，显式填写其摘要")
     parser.add_argument("--run-suite", action="store_true")
+    parser.add_argument("--grounded-chat", action="store_true", help="选材与回复整链路；默认离线")
+    parser.add_argument("--serve-after-suite", action="store_true", help="8条检查成功后在同一进程保留剩余试聊额度")
     parser.add_argument("--print-plan", action="store_true")
     parser.add_argument("--basis-preview", action="store_true", help="启用S59本地材料预览，不加入聊天投影")
     parser.add_argument("--preview-topic", choices=TOPICS, help="只打印该话题的本地材料预览")
     parser.add_argument("--preview-message", help="按有限明确问法预览整条消息的本地材料")
     parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
+    if args.serve_after_suite and not (args.grounded_chat and args.run_suite):
+        parser.error("连续试聊只用于材料模式的8条检查之后")
+    if args.grounded_chat and (args.basis_preview or args.preview_topic or args.preview_message is not None):
+        parser.error("材料聊天与独立预览参数不能混用")
     if args.preview_topic is not None and args.preview_message is not None:
         parser.error("请选择话题或消息中的一个预览入口")
+    if args.approve_plan is not None and args.grounded_chat and not (args.run_suite and args.serve_after_suite):
+        parser.error("材料版真实启动必须先运行8条检查，再在同一进程试聊")
     if (args.basis_preview or args.preview_topic or args.preview_message is not None) and (args.approve_plan is not None or args.run_suite):
         parser.error("材料预览必须单独离线运行")
     if args.print_plan:
-        print(json.dumps(dict(plan=plan_payload(), digest=plan_digest()), ensure_ascii=False, indent=2))
+        print(json.dumps(dict(plan=grounded_plan_payload() if args.grounded_chat else plan_payload(), digest=grounded_plan_digest() if args.grounded_chat else plan_digest()), ensure_ascii=False, indent=2))
         return
-    if args.approve_plan is not None and not args.run_suite:
+    if args.approve_plan is not None and not args.run_suite and not args.grounded_chat:
         parser.error("本轮真实入口仅开放已审阅的六条验收文本；交互页面保持离线")
     parent = Path(__file__).resolve().parents[2] / ".artifacts" / "character-dialogue-labs"
-    workspace = Path(__file__).resolve().parents[2] if args.basis_preview or args.preview_topic or args.preview_message is not None else None
-    with open_character_dialogue_lab(parent, approved_plan=args.approve_plan, basis_workspace=workspace) as product:
+    workspace = Path(__file__).resolve().parents[2] if args.grounded_chat or args.basis_preview or args.preview_topic or args.preview_message is not None else None
+    with open_character_dialogue_lab(parent, approved_plan=args.approve_plan, basis_workspace=workspace, grounded=args.grounded_chat) as product:
         if args.preview_topic or args.preview_message is not None:
             print(json.dumps(asdict(product.application.preview_conversation_basis(
                 BasisMessageRequest(args.preview_message) if args.preview_message is not None
                 else BasisPreviewRequest(args.preview_topic))), ensure_ascii=False, indent=2))
             return
         if args.run_suite:
-            print(json.dumps(run_suite(product.application), ensure_ascii=False, indent=2))
-            return
+            result = run_suite(product.application)
+            print(json.dumps(result, ensure_ascii=False, indent=2), flush=True)
+            if not args.serve_after_suite or any(row["result"]["status"] != "replied" for row in result["rows"]):
+                return
+            if product.application.start_character_dialogue_interactive().status != "ready":
+                raise RuntimeError("interactive-phase-unavailable")
         server = make_server(product.application, args.port, basis_preview_enabled=workspace is not None)
-        print(f"离线联调：http://127.0.0.1:{server.server_port} （固定回声；Ctrl+C关闭）", flush=True)
+        mode = "真实试聊" if product.application.character_dialogue_status().mode == "remote" else "离线联调（固定回声）"
+        print(f"{mode}：http://127.0.0.1:{server.server_port} （Ctrl+C关闭）", flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

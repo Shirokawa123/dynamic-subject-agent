@@ -30,6 +30,8 @@ ApplicationFacade仍为正式产品唯一业务Interface，open_local_product仍
 
 ### 旧假设如何过渡
 
+Slice-62增加显式grounded角色实验，Session持有只读材料选择Module；在每次一次Gateway任务前核验并形成selected_character_material[{content}]（≤2项/400字符），路径/证据/ID不外发。匹配请求的来源缺失/不一致停止生成，未匹配仅用基础上下文。接受的失败尝试也计预算，幂等不重试。新策略/材料目录/规则/试聊范围形成独立digest，旧R2 None投影保持原字节。Facade的一次阶段切换要求精确8条固定消息全部成功，清空试验上下文、重新开启空白上下文、保留8次已用额度；之后最多12次，重复切换不再清空或补充预算。本片仅离线准备，真实用途与新增材料范围见[待批准方案](plans/grounded-character-chat-trial.md)。
+
 Slice-61在同一材料预览Interface增加BasisMessageRequest，≤1000字符整句有限匹配，按具体问题缩小材料集合。未匹配no-op且不读来源，不代表没有相关经历；匹配后仍执行S60核验/排除规则。离线页面发送后自动请求预览，故障与聊天结果独立、旧响应不覆盖新结果；本片不增加模型字段或调用，不使用历史解决模糊指代。
 
 Slice-60增加可选的只读`ApplicationFacade.preview_conversation_basis`。显式离线lab配置固定已审阅S59包与源目录，逐次核验pack/EPUB/文档/段落，再按六个显式话题最多选择2项/400字符并返回排除说明。默认unavailable；缺文件unavailable；来源不符failed-closed；无适用材料no-op。该Module没有模型、Timeline或事实写入Interface，不改变R2出站投影。话题映射为人工限定检查工具，非自然消息分类；预览可用也不表示角色已愿意分享或材料外发获准。

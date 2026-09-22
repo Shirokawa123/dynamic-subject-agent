@@ -23,6 +23,13 @@ _BLOCKED = {
 }
 
 
+def material_contract() -> dict:
+    """Reviewable selection policy; this metadata is never model input."""
+    return dict(basis_digest=S59_DIGEST, max_items=2, max_chars=400,
+                allowed_contents=list(dict.fromkeys(text for choices in _CHOICES.values() for _, text in choices)),
+                message_rules=[dict(topic=t, pattern=p, item_ids=list(ids)) for t, p, ids in _MESSAGE_TOPICS])
+
+
 @dataclass(frozen=True)
 class BasisPreviewRequest:
     topic: str

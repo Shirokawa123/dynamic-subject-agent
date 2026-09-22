@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from dynamic_subject_agent.model_gateway import ModelGateway, ModelGatewayFailure, ModelTask, ModelTaskKind
 from dynamic_subject_agent.recent_dialogue import is_dialogue_control
+from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisMessageRequest, material_contract
 
 CHARACTER_FACTS = (
     "人物：小说版《埃罗芒阿老师》的和泉纱雾，第一卷开篇附近，12岁。",
@@ -84,6 +85,36 @@ def plan_digest() -> str:
                              separators=(",", ":")).encode()).hexdigest()
 
 
+GROUNDED_POLICY = POLICY.replace(
+    "established_life_events是摘要以外具体生活事件的唯一依据",
+    "established_life_events是既往背景摘要之外的新生活事件依据",
+) + (
+    "selected_character_material是本轮经本地核对并选用的既往背景摘要，按其明确内容使用，"
+    "不是刚发生的生活事件，不自动扩大分享范围。空列表只表示本轮未选用额外材料，"
+    "不表示没有其他经历。可自然回答被问到的部分，不照抄整份材料或主动扩展家庭细节。"
+    "不要从这几句材料推导具体练习方法、固定习惯、当日近况、情绪原因或亲密关系。"
+)
+GROUNDED_TEST_MESSAGES = (
+    "你好，你是怎么开始画画的？", "谁教你画画的？", "你小时候画过什么？",
+    "有人夸过你的画吗？", "你画画多久了？",
+    TEST_MESSAGES[3], TEST_MESSAGES[4], TEST_MESSAGES[5],
+)
+
+
+def grounded_plan_payload() -> dict:
+    plan = plan_payload()
+    plan.update(version="s62-1", policy=GROUNDED_POLICY, material=material_contract(),
+                test_messages=list(GROUNDED_TEST_MESSAGES), interactive_messages=True,
+                trial_attempts=8, remaining_user_attempts=12,
+                interactive_context="after eight successful checks: clear trial context, enable fresh history; budget unchanged")
+    return plan
+
+
+def grounded_plan_digest() -> str:
+    return sha256(json.dumps(grounded_plan_payload(), ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":")).encode()).hexdigest()
+
+
 @dataclass(frozen=True)
 class DialogueRequest:
     lab_id: str
@@ -97,6 +128,7 @@ class DialogueRequest:
 class DialogueProjection:
     message: str
     recent_dialogue: tuple[tuple[str, str], ...] = ()
+    selected_material: tuple[str, ...] | None = None
 
     def payload(self) -> dict:
         if (not isinstance(self.message, str) or not self.message.strip()
@@ -109,9 +141,17 @@ class DialogueProjection:
             raise ValueError("invalid dialogue history")
         if sum(len(t) for turn in self.recent_dialogue for t in turn) > 4000:
             raise ValueError("dialogue history exceeds budget")
-        return dict(character=character_context(), current_message=self.message,
+        payload = dict(character=character_context(), current_message=self.message,
                     recent_dialogue=[dict(user_text=u, assistant_text=a)
                                      for u, a in self.recent_dialogue])
+        if self.selected_material is not None:
+            if (type(self.selected_material) is not tuple or len(self.selected_material) > 2
+                    or any(type(text) is not str or text not in material_contract()["allowed_contents"]
+                           for text in self.selected_material)
+                    or sum(len(text) for text in self.selected_material) > 400):
+                raise ValueError("invalid selected character material")
+            payload["selected_character_material"] = [dict(content=text) for text in self.selected_material]
+        return payload
 
 
 @dataclass(frozen=True)
@@ -136,15 +176,19 @@ class DialogueView:
     mode: str = "unavailable"
     reply_text: str = ""
     plan_digest: str = ""
+    material_mode: str = "off"
 
 
 class CharacterDialogueSession:
     """Serializes attempts and context withdrawal; owns only disposable state."""
 
-    def __init__(self, gateway: ModelGateway):
+    def __init__(self, gateway: ModelGateway, *, basis: ConversationBasisPreview | None = None):
         if not isinstance(gateway, ModelGateway):
             raise TypeError("typed gateway required")
         self._gateway = gateway
+        if basis is not None and not isinstance(basis, ConversationBasisPreview):
+            raise TypeError("typed conversation basis required")
+        self._basis = basis
         self._lock = RLock()
         self._id = uuid4().hex
         self._revision = self._attempts = 0
@@ -152,16 +196,35 @@ class CharacterDialogueSession:
         self._history: list[tuple[str, str]] = []
         self._replies: dict[str, tuple[DialogueRequest, DialogueView]] = {}
         self._closed = False
+        self._interactive_started = False
 
     def _view(self, status="ready", code="", reply_text=""):
         return DialogueView(status, code, self._id, self._revision, self._attempts,
                             self._history_enabled,
                             "offline" if self._gateway.capabilities.local else "remote",
-                            reply_text, plan_digest())
+                            reply_text, grounded_plan_digest() if self._basis else plan_digest(),
+                            "bounded" if self._basis else "off")
 
     def status(self) -> DialogueView:
         with self._lock:
             return self._view("unavailable", "closed") if self._closed else self._view()
+
+    def start_interactive(self) -> DialogueView:
+        """One local phase transition; never replenishes budget or old history."""
+        with self._lock:
+            if self._closed:
+                return self._view("unavailable", "closed")
+            if self._interactive_started:
+                return self._view()
+            if (self._basis is None or self._attempts != len(GROUNDED_TEST_MESSAGES)
+                    or tuple(request.message for request, _ in self._replies.values()) != GROUNDED_TEST_MESSAGES
+                    or any(view.status != "replied" for _, view in self._replies.values())):
+                return self._view("rejected", "trial-not-complete")
+            self._history.clear()
+            self._history_enabled = True
+            self._interactive_started = True
+            self._revision += 1
+            return self._view()
 
     def send(self, request: object) -> DialogueView:
         with self._lock:
@@ -195,8 +258,17 @@ class CharacterDialogueSession:
             self._attempts += 1
             self._revision += 1
             try:
+                material = None
+                if self._basis is not None:
+                    preview = self._basis.preview(BasisMessageRequest(request.message))
+                    if preview.status not in ("ready", "no-op"):
+                        view = self._view("unavailable" if preview.status == "unavailable" else "failed-closed",
+                                          preview.code)
+                        self._replies[request.idempotency_key] = (request, view)
+                        return view
+                    material = tuple(item.text for item in preview.selected)
                 result = self._gateway.execute(ModelTask(ModelTaskKind.CHARACTER_DIALOGUE_REPLY,
-                    DialogueProjection(request.message, tuple(history))))
+                    DialogueProjection(request.message, tuple(history), material)))
                 if type(result.value) is not DialogueReply:
                     raise ValueError("typed reply required")
                 reply = result.value.reply_text

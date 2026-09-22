@@ -32,12 +32,16 @@ def local_basis(tmp_path):
     path.write_text(json.dumps(pack), encoding="utf-8")
     opened = []
 
-    def open_app(enabled=True):
+    def open_app(enabled=True, *, adapter=None):
         root = tmp_path / "product"
         config = LocalProductConfig(root / "experiments", root / "state.json")
         preview = ConversationBasisPreview(path, sources, expected_digest=
                     sha256(path.read_bytes()).hexdigest()) if enabled else None
-        product = open_local_product(config, cognition=DormantDeepSeekCognition(), _basis_preview=preview)
+        from dynamic_subject_agent.character_dialogue import CharacterDialogueSession
+        from dynamic_subject_agent.model_gateway import ModelGateway
+        dialogue = CharacterDialogueSession(ModelGateway(adapter), basis=preview) if adapter is not None else None
+        product = open_local_product(config, cognition=DormantDeepSeekCognition(), _basis_preview=preview,
+                                     _character_dialogue=dialogue)
         opened.append(product)
         return product, root
 

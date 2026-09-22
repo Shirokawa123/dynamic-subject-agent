@@ -747,6 +747,12 @@ class _ApplicationRouter:
                 return DialogueView("unavailable", "character-dialogue-unavailable")
             return self._character_dialogue.status()
 
+    def start_character_dialogue_interactive(self) -> DialogueView:
+        with self._lock:
+            if self._closed or self._character_dialogue is None:
+                return DialogueView("unavailable", "character-dialogue-unavailable")
+            return self._character_dialogue.start_interactive()
+
     def character_dialogue_send(self, request: object) -> DialogueView:
         with self._lock:
             if self._closed or self._character_dialogue is None:
@@ -976,6 +982,9 @@ class ApplicationFacade:
 
     def character_dialogue_status(self) -> DialogueView:
         return self.__router.character_dialogue_status()
+
+    def start_character_dialogue_interactive(self) -> DialogueView:
+        return self.__router.start_character_dialogue_interactive()
 
     def character_dialogue_send(self, request: object) -> DialogueView:
         return self.__router.character_dialogue_send(request)

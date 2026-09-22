@@ -6,7 +6,7 @@ from pathlib import Path
 from threading import Lock
 from uuid import uuid4
 
-from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload
+from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
 
 from dynamic_subject_agent.application import ApplicationFacade
@@ -265,7 +265,7 @@ _REMOTE_LAB_LOCK = Lock()
 _REMOTE_LAB_OPENED = False
 
 
-def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = None, basis_workspace: Path | None = None) -> OpenedLocalProduct:
+def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = None, basis_workspace: Path | None = None, grounded: bool = False) -> OpenedLocalProduct:
     """Create a fresh lab only. Approval digest is an explicit operator assertion.
 
     No existing identity path is accepted; no credential discovery occurs offline.
@@ -278,11 +278,14 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
     )
     if not isinstance(parent, Path) or not parent.is_absolute():
         raise ValueError("absolute lab parent required")
-    if approved_plan is not None and approved_plan != plan_digest():
+    if type(grounded) is not bool or (grounded and basis_workspace is None):
+        raise ValueError("grounded chat requires an explicit basis workspace")
+    expected_plan = grounded_plan_digest() if grounded else plan_digest()
+    if approved_plan is not None and approved_plan != expected_plan:
         raise ValueError("current plan approval required")
     basis_preview = None
     if basis_workspace is not None:
-        if approved_plan is not None:
+        if approved_plan is not None and not grounded:
             raise ValueError("basis preview is offline only")
         if not isinstance(basis_workspace, Path) or not basis_workspace.is_absolute():
             raise ValueError("absolute basis workspace required")
@@ -321,4 +324,4 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
     config = LocalProductConfig(product_parent=root / "DynamicSubjectAgent" / "m0" / "experiments", state_path=root / "state.json",
                                 relationship_mode="off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(),
-                              _basis_preview=basis_preview, _character_dialogue=CharacterDialogueSession(ModelGateway(adapter)))
+                              _basis_preview=basis_preview, _character_dialogue=CharacterDialogueSession(ModelGateway(adapter), basis=basis_preview if grounded else None))

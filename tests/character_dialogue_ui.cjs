@@ -96,4 +96,22 @@ async function checkAutomaticBasis() {
   assert.match(get('status').textContent,/3\/20/);
   assert.match(get('basis-result').textContent,/未取得预览/);
 }
-(async()=>{await check(false);await check(true);for(const state of ['ready','no-op','failed-closed'])await checkBasis(state);await checkAutomaticBasis();console.log('character dialogue UI: 6 scenarios passed');})().catch(error=>{console.error(error);process.exitCode=1;});
+async function checkGroundedMode() {
+  const nodes=new Map(),calls=[];
+  const get=id=>{if(!nodes.has(id))nodes.set(id,{value:'',checked:true,disabled:false,textContent:'',children:[],querySelector(){return null;},append(x){this.children.push(x);}});return nodes.get(id);};
+  const sandbox={document:{getElementById:get,createElement:()=>({})},crypto:{randomUUID:()=> 'last-key'},
+    fetch:async(url,options)=>{calls.push(url);
+      if(url==='/status')return {ok:true,json:async()=>({lab_id:'lab',mode:'remote',material_mode:'bounded',revision:19,attempts:19,history_enabled:true})};
+      if(url==='/plan')return {json:async()=>({plan:{character_context:{known_background:['test']},material:{}},digest:'d'})};
+      assert.equal(url,'/send');return {ok:true,json:async()=>({lab_id:'lab',mode:'remote',material_mode:'bounded',revision:20,attempts:20,history_enabled:true,status:'replied',reply_text:'model reply'})};
+    }};
+  vm.createContext(sandbox);vm.runInContext(source.replace('__BASIS_AUTO__','enabled'),sandbox);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(get('mode-badge').textContent,/真实试聊/);
+  assert.equal(get('basis-title').textContent,'查看人物材料依据');
+  get('message').value='hello';await get('form').onsubmit({preventDefault(){}});
+  assert.equal(calls.includes('/basis-preview'),false);
+  assert.equal(get('send').disabled,true);
+  assert.match(get('status').textContent,/还可发送 0 条/);
+}
+(async()=>{await check(false);await check(true);for(const state of ['ready','no-op','failed-closed'])await checkBasis(state);await checkAutomaticBasis();await checkGroundedMode();console.log('character dialogue UI: 7 scenarios passed');})().catch(error=>{console.error(error);process.exitCode=1;});

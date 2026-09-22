@@ -3,7 +3,7 @@ import json
 
 from dynamic_subject_agent.cognition import ProviderFailure, ProviderFailureCode
 
-from dynamic_subject_agent.character_dialogue import DialogueProjection, DialogueReply, POLICY
+from dynamic_subject_agent.character_dialogue import DialogueProjection, DialogueReply, POLICY, GROUNDED_POLICY
 from dynamic_subject_agent.deepseek import (
     DEEPSEEK_MODEL, DEEPSEEK_PROVIDER_AUTHORITY_ID,
     DeepSeekLivingMemoryProvider, _post_identity_reply_content,
@@ -38,7 +38,8 @@ class DeepSeekCharacterDialogueAdapter(ProviderAdapter):
     def outbound_bytes(projection: DialogueProjection) -> bytes:
         if type(projection) is not DialogueProjection:
             raise TypeError("typed dialogue projection required")
-        body = dict(model=DEEPSEEK_MODEL, messages=[dict(role="system", content=POLICY),
+        policy = POLICY if projection.selected_material is None else GROUNDED_POLICY
+        body = dict(model=DEEPSEEK_MODEL, messages=[dict(role="system", content=policy),
                     dict(role="user", content=json.dumps(projection.payload(), ensure_ascii=False,
                          sort_keys=True, separators=(",", ":")))],
                     thinking={"type": "disabled"}, response_format={"type": "json_object"},
