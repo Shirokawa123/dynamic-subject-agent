@@ -1,6 +1,6 @@
 # 当前工作
 
-[Slice-57：角色上下文来源分离](slice-57-character-context-authority.md) 离线修订完成，[R2六条复核方案](../plans/character-dialogue-r2-trial.md)待批准。Slice-56六次额度已消费；本片真实调用0，不能将结构验证称为人物质量改善已通过。
+[Slice-58：R2六条真实复核](slice-58-character-dialogue-r2-live.md) 已执行完成，6/6接口成功，额度全部消费，无追加。明确当日近况编造本轮未重现，第6条改善；第3/4条仍有个人经验扩展风险，整体人物质量未验收。见[报告](../reports/2026-09-22-slice-58/REPORT.md)。
 
 Slice-53 R1获“感觉还行”的初步反馈，独立原型14d3041保留；不把其手写台词当人物事实。用户指出初识过亲近、专业能力被弱化，两项作为档案校准依据。
 
