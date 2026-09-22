@@ -5,6 +5,7 @@ from __future__ import annotations
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, DialogueView
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisPreview
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView
+from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, EvidenceExtractionView
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
@@ -341,6 +342,7 @@ class _ApplicationRouter:
         character_dialogue: CharacterDialogueSession | None = None,
         basis_preview: ConversationBasisPreview | None = None,
         character_model: CharacterEvidenceModel | None = None,
+        evidence_extraction: EvidenceExtractionLab | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -364,6 +366,9 @@ class _ApplicationRouter:
             raise TypeError("typed basis preview required")
         if character_model is not None and not isinstance(character_model, CharacterEvidenceModel):
             raise TypeError("typed character evidence model required")
+        if evidence_extraction is not None and not isinstance(evidence_extraction, EvidenceExtractionLab):
+            raise TypeError("typed evidence extraction required")
+        self._evidence_extraction = evidence_extraction
         self._character_model = character_model
         self._basis_preview = basis_preview
         self._character_dialogue = character_dialogue
@@ -740,6 +745,12 @@ class _ApplicationRouter:
         except Exception:
             return TextArtifactResponse('failed-closed',message='保存结果尚不能核实，没有重复执行未知操作。')
 
+    def extract_character_evidence(self, request: object) -> EvidenceExtractionView:
+        with self._lock:
+            if self._closed or self._evidence_extraction is None:
+                return EvidenceExtractionView("unavailable", "evidence-extraction-unavailable")
+            return self._evidence_extraction.extract(request)
+
     def preview_character_model(self, request: object) -> CharacterModelView:
         with self._lock:
             if self._closed or self._character_model is None:
@@ -925,6 +936,8 @@ class _ApplicationRouter:
             self._closed = True
         if self._character_dialogue is not None:
             self._character_dialogue.close()
+        if self._evidence_extraction is not None:
+            self._evidence_extraction.close()
         self._executor.shutdown(wait=True, cancel_futures=False)
 
 
@@ -988,6 +1001,9 @@ class ApplicationFacade:
     def query(self, query: object) -> ApplicationQueryResponse:
         return self.__router.query(query)
 
+    def extract_character_evidence(self, request: object) -> EvidenceExtractionView:
+        return self.__router.extract_character_evidence(request)
+
     def preview_character_model(self, request: object) -> CharacterModelView:
         return self.__router.preview_character_model(request)
 
@@ -1037,6 +1053,7 @@ def _create_application_facade(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
+    _evidence_extraction: EvidenceExtractionLab | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -1057,6 +1074,7 @@ def _create_application_facade(
         character_dialogue=_character_dialogue,
         basis_preview=_basis_preview,
         character_model=_character_model,
+        evidence_extraction=_evidence_extraction,
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,

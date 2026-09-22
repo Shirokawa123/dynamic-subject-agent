@@ -9,6 +9,7 @@ from uuid import uuid4
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
+from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, extraction_plan_digest, extraction_plan_payload
 
 from dynamic_subject_agent.application import ApplicationFacade
 from dynamic_subject_agent.bootstrap import compose_application
@@ -100,6 +101,7 @@ def open_local_product(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
+    _evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
 
@@ -118,6 +120,7 @@ def open_local_product(
         character_dialogue=_character_dialogue,
         basis_preview=_basis_preview,
         character_model=_character_model,
+        evidence_extraction=_evidence_extraction,
     )
 
 
@@ -131,6 +134,7 @@ def _open_loaded_local_product(
     character_dialogue: CharacterDialogueSession | None = None,
     basis_preview: ConversationBasisPreview | None = None,
     character_model: CharacterEvidenceModel | None = None,
+    evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
         m0_root=loaded.experiment_base,
@@ -144,6 +148,7 @@ def _open_loaded_local_product(
         _character_dialogue=character_dialogue,
         _basis_preview=basis_preview,
         _character_model=character_model,
+        _evidence_extraction=evidence_extraction,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
         _local_identity_lister=authority.list,
@@ -279,7 +284,7 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
     global _REMOTE_LAB_OPENED
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     from dynamic_subject_agent.character_dialogue_provider import (
-        OfflineCharacterDialogueAdapter, DeepSeekCharacterDialogueAdapter, CharacterCredentialUnavailable,
+        OfflineCharacterDialogueAdapter, DeepSeekCharacterDialogueAdapter,
     )
     if not isinstance(parent, Path) or not parent.is_absolute():
         raise ValueError("absolute lab parent required")
@@ -299,7 +304,6 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
             basis_workspace / ".local_sources/eromanga-sensei", expected_digest=S59_DIGEST)
     adapter = OfflineCharacterDialogueAdapter()
     if approved_plan is not None:
-        from dynamic_subject_agent.credentials import WindowsCredentialStore, DEEPSEEK_CREDENTIAL_SLOT, CredentialStoreUnavailable
         from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT
         if (DEEPSEEK_MODEL != plan_payload()["model"]
                 or DEEPSEEK_ENDPOINT != plan_payload()["endpoint"]):
@@ -309,19 +313,8 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
                 raise ValueError("one remote lab per process")
             _REMOTE_LAB_OPENED = True
 
-        class _LabResolver(DeepSeekCredentialResolver):
-            def resolve(self, credential_ref: CredentialRef) -> str:
-                # Loaded only on an explicit send, never on preview/status/startup.
-                try:
-                    key = WindowsCredentialStore().load(DEEPSEEK_CREDENTIAL_SLOT)
-                except CredentialStoreUnavailable:
-                    raise CharacterCredentialUnavailable() from None
-                if not key:
-                    raise CharacterCredentialUnavailable()
-                return key
-
         adapter = DeepSeekCharacterDialogueAdapter(
-            transport=DeepSeekUrlLibTransport(credential_resolver=_LabResolver()),
+            transport=DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
             credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,
                                                    key_id=DEEPSEEK_CREDENTIAL_KEY_ID))
     root = parent / ("dialogue-lab-" + uuid4().hex)
@@ -343,3 +336,47 @@ def open_character_model_preview(parent: Path, *, draft_path: Path, source_root:
     root.mkdir(parents=True, exist_ok=False)
     config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(), _character_model=model)
+
+
+class _WindowsLabResolver(DeepSeekCredentialResolver):
+    def resolve(self, credential_ref: CredentialRef) -> str:
+        from dynamic_subject_agent.credentials import WindowsCredentialStore, DEEPSEEK_CREDENTIAL_SLOT, CredentialStoreUnavailable
+        from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
+        try:
+            key = WindowsCredentialStore().load(DEEPSEEK_CREDENTIAL_SLOT)
+        except CredentialStoreUnavailable:
+            raise CharacterCredentialUnavailable() from None
+        if not key:
+            raise CharacterCredentialUnavailable()
+        return key
+
+
+_REMOTE_EVIDENCE_OPENED = False
+
+
+def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan: str | None = None) -> OpenedLocalProduct:
+    """A single reviewed extraction run. Default offline; no source state adopted."""
+    global _REMOTE_EVIDENCE_OPENED
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.evidence_extraction_provider import OfflineEvidenceAdapter, DeepSeekEvidenceAdapter
+    from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT
+    if not isinstance(parent, Path) or not parent.is_absolute() or not isinstance(workspace, Path) or not workspace.is_absolute():
+        raise ValueError("explicit extraction paths required")
+    if approved_plan is not None and approved_plan != extraction_plan_digest():
+        raise ValueError("current extraction approval required")
+    adapter = OfflineEvidenceAdapter()
+    if approved_plan is not None:
+        if DEEPSEEK_MODEL != extraction_plan_payload()["model"] or DEEPSEEK_ENDPOINT != extraction_plan_payload()["endpoint"]:
+            raise ValueError("provider changed")
+        with _REMOTE_LAB_LOCK:
+            if _REMOTE_EVIDENCE_OPENED:
+                raise ValueError("one extraction run per process")
+            _REMOTE_EVIDENCE_OPENED = True
+        adapter = DeepSeekEvidenceAdapter(transport=DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
+            credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID))
+    lab = EvidenceExtractionLab(ModelGateway(adapter), workspace / ".local_indexes/eromanga-sensei/s67/input-packets-v2.json",
+                                workspace / ".local_sources/eromanga-sensei")
+    root = parent / ("evidence-lab-" + uuid4().hex)
+    root.mkdir(parents=True, exist_ok=False)
+    config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
+    return open_local_product(config, cognition=DormantDeepSeekCognition(), _evidence_extraction=lab)

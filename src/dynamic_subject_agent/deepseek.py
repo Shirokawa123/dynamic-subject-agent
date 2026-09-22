@@ -498,6 +498,20 @@ def _post_identity_reply_content(
     credential_ref: CredentialRef,
     body: bytes,
 ) -> dict[str, object]:
+    return _post_json_reply_content(transport, credential_ref, body,
+                                    max_output_tokens=_IDENTITY_REPLY_MAX_OUTPUT_TOKENS)
+
+
+def _post_json_reply_content(
+    transport: DeepSeekTransport,
+    credential_ref: CredentialRef,
+    body: bytes,
+    *,
+    max_output_tokens: int,
+    require_complete: bool = False,
+) -> dict[str, object]:
+    if type(max_output_tokens) is not int or not 1 <= max_output_tokens <= 2048:
+        raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     try:
         response = transport.post_json(
             endpoint=DEEPSEEK_ENDPOINT,
@@ -536,7 +550,8 @@ def _post_identity_reply_content(
         or not isinstance(content, dict)
         or prompt_tokens < 0
         or completion_tokens < 0
-        or completion_tokens > _IDENTITY_REPLY_MAX_OUTPUT_TOKENS
+        or completion_tokens > max_output_tokens
+        or (require_complete and choices[0].get("finish_reason") != "stop")
     ):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     return content

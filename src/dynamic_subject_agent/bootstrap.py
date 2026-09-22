@@ -5,6 +5,7 @@ from __future__ import annotations
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
+from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab
 
 from importlib import metadata
 from pathlib import Path
@@ -118,6 +119,7 @@ def compose_application(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
+    _evidence_extraction: EvidenceExtractionLab | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -276,6 +278,7 @@ def compose_application(
             _character_dialogue=_character_dialogue,
             _basis_preview=_basis_preview,
             _character_model=_character_model,
+            _evidence_extraction=_evidence_extraction,
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,

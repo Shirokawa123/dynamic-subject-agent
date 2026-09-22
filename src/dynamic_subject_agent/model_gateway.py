@@ -36,6 +36,7 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    CHARACTER_EVIDENCE_EXTRACTION = "character-evidence-extraction"
     CHARACTER_DIALOGUE_REPLY = "character-dialogue-reply"
     SUBJECT_TASK_PROPOSAL = "subject-task-proposal"
     LIVING_MEMORY_ANALYSIS = "living-memory-analysis"
