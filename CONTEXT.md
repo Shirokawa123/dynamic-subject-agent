@@ -4,6 +4,30 @@
 
 ## Language
 
+**Character Self-Knowledge**:
+角色对自身身份、经历、能力、关系、在意之事和所处处境的连贯认识；它不等于外部观察者掌握的全部人物资料。
+_Avoid_: Biography prompt, complete source corpus, isolated identity fields
+
+**Character Knowledge State**:
+某一故事阶段里角色对一件事的知情、相信或不确定状态；角色相信的内容与世界事实、是否愿意披露是不同问题。
+_Avoid_: Omniscience, disclosure permission, narrator knowledge
+
+**Autobiographical Experience**:
+归属于角色自身、对其认识自己有意义的既往经历；原作起点之前的背景与此后分支内的经历具有不同来历。
+_Avoid_: User claim, generated anecdote, elapsed time
+
+**Encounter Context**:
+双方如何能够联系、为何开始交流，以及当时各自能看到哪些信息的共同情境。
+_Avoid_: Earned intimacy, public character biography, unexplained chat channel
+
+**Disclosure Decision**:
+角色结合当前关系、话题与自身意愿，对已经知道的内容选择透露、保留或澄清的决定。
+_Avoid_: Missing knowledge, automatic trust, blanket refusal
+
+**Current Situation**:
+角色当时身处的环境、正在面对的事情、可支配精力与关注点；它与长期身份和过往经历不同。
+_Avoid_: Personality label, invented recent activity, user mood
+
 **Story Starting Point**:
 用户选择与角色相遇时所在的故事阶段；它区分此前已经发生的经历与此后尚未发生的情节。
 _Avoid_: Full-book knowledge, chat creation timestamp
