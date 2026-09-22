@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from html.parser import HTMLParser
 import json
+import re
+import unicodedata
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -24,6 +26,32 @@ _BLOCKED = {
 @dataclass(frozen=True)
 class BasisPreviewRequest:
     topic: str
+
+
+@dataclass(frozen=True)
+class BasisMessageRequest:
+    message: str
+
+
+# Whole-message contracts. Do not use a substring hit to disclose a memory.
+_MESSAGE_TOPICS = (
+    ("drawing-origins", r"你(?:是)?(?:怎么|如何)开始(?:画画|学画)(?:的)?(?:呢|呀|啊)?", ("T02", "T01")),
+    ("drawing-origins", r"(?:最初)?(?:是)?谁教你画画的(?:呢)?", ("T02",)),
+    ("drawing-origins", r"你小时候(?:都)?画(?:过)?(?:些)?什么(?:呢)?", ("T01",)),
+    ("drawing-experience", r"你(?:画画|学画)(?:有)?多久了(?:呢)?|你画了多少年(?:了)?|你(?:是)?什么时候开始(?:画画|学画)的(?:呢)?", ("T04",)),
+    ("art-feedback", r"有人夸过你的画吗|你(?:的画|画的画)(?:以前|曾经)?得到过什么评价|你(?:以前|曾经)?收到过(?:什么|怎样的)(?:绘画反馈|画作评价)", ("T03",)),
+    ("greeting", r"你好|嗨|你好呀", ()),
+    ("composition", r"插画的背景一定要很复杂才好吗|背景一定要画得很复杂吗", ()),
+)
+
+
+def _message_selection(message: str) -> tuple[str, tuple[str, ...]] | None:
+    text = re.sub(r"\s+", "", unicodedata.normalize("NFKC", message)).rstrip("。！？!?")
+    text = re.sub(r"^(?:你好|嗨)[,，]", "", text, count=1)
+    for topic, pattern, item_ids in _MESSAGE_TOPICS:
+        if re.fullmatch(pattern, text):
+            return topic, item_ids
+    return None
 
 
 @dataclass(frozen=True)
@@ -132,6 +160,15 @@ class ConversationBasisPreview:
         return {it["id"]: it for it in items}
 
     def preview(self, request: object) -> BasisPreview:
+        allowed_ids = None
+        if type(request) is BasisMessageRequest:
+            if not isinstance(request.message, str) or not request.message.strip() or len(request.message) > 1000:
+                return BasisPreview("rejected", "invalid-message")
+            selection = _message_selection(request.message)
+            if selection is None:
+                return BasisPreview("no-op", "message-not-matched")
+            topic, allowed_ids = selection
+            request = BasisPreviewRequest(topic)
         if type(request) is not BasisPreviewRequest or request.topic not in TOPICS:
             return BasisPreview("rejected", "unknown-topic")
         try:
@@ -142,6 +179,8 @@ class ConversationBasisPreview:
             return BasisPreview("failed-closed", "basis-integrity-failed", request.topic)
         selected = []
         for key, summary in _CHOICES.get(request.topic, ()):
+            if allowed_ids is not None and key not in allowed_ids:
+                continue
             item = items[key]
             citations = tuple(f"{r['file']} / {r['href']} / p{r['paragraph']}" for r in item["evidence"])
             selected.append(BasisItemView(key, item["title"], summary, "explicit-topic-preview", citations))

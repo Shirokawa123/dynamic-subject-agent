@@ -1,6 +1,6 @@
 # 当前工作
 
-[Slice-60：本地人物材料选择预览](slice-60-conversation-basis-preview.md) 已完成Facade/CLI/页面与验证，见[报告](../reports/2026-09-22-slice-60/REPORT.md)。只做闭集话题预览、依据校验和排除说明，未接自动聊天选材；R2投影/digest不变，真实调用0。两轮12次真实额度均已消费。
+[Slice-61：普通消息触发本地材料预览](slice-61-message-material-preview.md) 已完成有限整句匹配、自动预览与验证，见[报告](../reports/2026-09-22-slice-61/REPORT.md)。尚未接入真实回复，含糊消息不猜；R2投影/digest不变，两轮12次真实额度均已消费。
 
 Slice-53 R1获“感觉还行”的初步反馈，独立原型14d3041保留；不把其手写台词当人物事实。用户指出初识过亲近、专业能力被弱化，两项作为档案校准依据。
 

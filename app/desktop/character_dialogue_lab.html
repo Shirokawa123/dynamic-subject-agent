@@ -8,28 +8,30 @@
 <div id="chat" aria-live="polite"><div class="empty">发一条消息，检查试聊入口</div></div>
 <form id="form"><textarea id="message" maxlength="1000" placeholder="输入消息…" aria-label="消息" required></textarea><div class="row"><label class="muted"><input type="checkbox" id="history" checked>下次发送使用本次最近两轮<br>关闭或撤回后，再开启也不带回旧对话。</label><button id="send">发送</button></div><div id="status" role="status"></div></form>
 <details><summary>查看本次人物摘要与调用范围</summary><pre id="plan"></pre><p>不推进角色生活，不保存长期聊天；关闭服务后会话上下文丢弃。绘画能力、初识距离和未知近况仍需真实试聊检查。</p></details>
-<details><summary>本地材料预览 · 不发送给模型</summary>
-<p>仅供查看选择过程，不是角色回复。按明确话题选择，当前固定为开篇、初识；不会因声称熟悉而放开分享。</p>
+<details id="basis-inspector"><summary>本地材料预览 · 不发送给模型</summary>
+<p>仅供查看选择过程，不是角色回复。启用后会在发送消息时自动预览有限明确问法的材料；也可用下面的话题检查。当前固定为开篇、初识；不会因声称熟悉而放开分享。</p>
 <label>话题 <select id="basis-topic"><option value="greeting">初次问候</option><option value="drawing-origins">怎么开始画画</option><option value="drawing-experience">绘画经验</option><option value="art-feedback">作品反馈</option><option value="family">家庭近况</option><option value="composition">构图观点</option></select></label>
 <button type="button" id="preview-basis">查看材料</button><pre id="basis-result" aria-live="polite">需以 --basis-preview 启动本地入口。</pre>
 </details></main>
 <script>
-const token='__TOKEN__';let state,pending;
+const token='__TOKEN__';const autoBasis='__BASIS_AUTO__'==='enabled';let state,pending,basisSequence=0;
 const el=id=>document.getElementById(id);
 function add(text,who){el('chat').querySelector('.empty')?.remove();const div=document.createElement('div');div.className='message '+who;div.textContent=text;el('chat').append(div);el('chat').scrollTop=el('chat').scrollHeight;}
 function updateState(value){state=value;el('history').checked=state.history_enabled;el('status').textContent=`本次已尝试 ${state.attempts}/20 · ${state.history_enabled?'上下文已开启':'上下文已关闭'}`;}
 async function refresh(){const response=await fetch('/status');if(!response.ok)throw Error();updateState(await response.json());}
 el('form').onsubmit=async event=>{event.preventDefault();if(!state)return;el('send').disabled=true;el('history').disabled=true;el('message').disabled=true;
 if(!pending){pending={lab_id:state.lab_id,revision:state.revision,idempotency_key:crypto.randomUUID(),message:el('message').value,use_history:el('history').checked};add(pending.message,'user');}
-try{const response=await fetch('/send',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Token':token},body:JSON.stringify(pending)});if(!response.ok)throw Error();const result=await response.json();add(result.status==='replied'?result.reply_text:'这次没有生成回复：'+result.code,'assistant');updateState(result);pending=null;if(result.status==='replied')el('message').value='';el('send').textContent='发送';}
+try{const response=await fetch('/send',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Token':token},body:JSON.stringify(pending)});if(!response.ok)throw Error();const result=await response.json();add(result.status==='replied'?result.reply_text:'这次没有生成回复：'+result.code,'assistant');updateState(result);if(result.status==='replied'&&autoBasis){el('basis-inspector').open=true;void showBasis({message:pending.message});}pending=null;if(result.status==='replied')el('message').value='';el('send').textContent='发送';}
 catch{el('status').textContent='连接未确认。可用同一请求重取结果，不会再次调用模型。';el('send').textContent='重取结果';}
 finally{el('send').disabled=false;el('history').disabled=!!pending;el('message').disabled=!!pending;}};
-el('preview-basis').onclick=async()=>{el('preview-basis').disabled=true;el('basis-topic').disabled=true;
-try{const response=await fetch('/basis-preview',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Token':token},body:JSON.stringify({topic:el('basis-topic').value})});if(!response.ok)throw Error();const x=await response.json();
+async function showBasis(payload){const label=payload.message!==undefined?'对应消息：'+payload.message:'对应手动话题：'+payload.topic;const sequence=++basisSequence;el('preview-basis').disabled=true;el('basis-topic').disabled=true;el('basis-result').textContent='正在检查本地材料…';
+try{const response=await fetch('/basis-preview',{method:'POST',headers:{'Content-Type':'application/json','X-Lab-Token':token},body:JSON.stringify(payload)});if(!response.ok)throw Error();const x=await response.json();if(sequence!==basisSequence)return;
 const reasons={'time-not-established':'时间条件尚未落实','interpretation-only':'仅为场景归纳','private-background':'不适合初识默认分享','not-established':'尚无直接人物依据','wrong-subject':'属于其他角色','not-needed-for-topic':'本次话题不需要'};
-if(x.status==='ready'||x.status==='no-op'){el('basis-result').textContent=(x.selected.length?x.selected.map(v=>v.title+'：'+v.text+'\n出处：'+v.citations.join('；')).join('\n\n'):'本话题未选择人物往事；这不妨碍表达当下观点。')+'\n\n未选中：\n'+x.excluded.map(v=>v.title+'：'+(reasons[v.reason]||v.reason)).join('\n');}
-else {const errors={'basis-preview-unavailable':'此入口未启用材料预览。','basis-or-source-missing':'材料包或小说文件缺失。','basis-integrity-failed':'材料或出处已变化，需重新核对。','unknown-topic':'请选择支持的话题。'};el('basis-result').textContent=errors[x.code]||'这次未能取得可用材料。';}}
-catch{el('basis-result').textContent='未取得预览结果，请检查本地服务。';}
-finally{el('preview-basis').disabled=false;el('basis-topic').disabled=false;}};
+if(x.code==='message-not-matched'){el('basis-result').textContent='这条消息未匹配到支持的明确问法，未读取或选择人物材料；不是判定角色没有相关经历。';}
+else if(x.status==='ready'||x.status==='no-op'){el('basis-result').textContent=(x.selected.length?x.selected.map(v=>v.title+'：'+v.text+'\n出处：'+v.citations.join('；')).join('\n\n'):'本话题未选择人物往事；这不妨碍表达当下观点。')+'\n\n未选中：\n'+x.excluded.map(v=>v.title+'：'+(reasons[v.reason]||v.reason)).join('\n');}
+else {const errors={'basis-preview-unavailable':'此入口未启用材料预览。','basis-or-source-missing':'材料包或小说文件缺失。','basis-integrity-failed':'材料或出处已变化，需重新核对。','unknown-topic':'请选择支持的话题。'};el('basis-result').textContent=errors[x.code]||'这次未能取得可用材料。';}el('basis-result').textContent=label+'\n\n'+el('basis-result').textContent;}
+catch{if(sequence===basisSequence)el('basis-result').textContent='未取得预览结果，请检查本地服务。';}
+finally{if(sequence===basisSequence){el('preview-basis').disabled=false;el('basis-topic').disabled=false;}}}
+el('preview-basis').onclick=()=>showBasis({topic:el('basis-topic').value});
 Promise.all([refresh(),fetch('/plan').then(r=>r.json()).then(x=>{const c=x.plan.character_context;el('plan').textContent='已核对背景：\n'+c.known_background.join('\n')+'\n\n本次交流设定：\n'+c.interaction_setup+'\n\n表达建议（待验证）：\n'+c.expression_guidance+'\n\n尚无依据的内容：\n'+c.unknown_context+'\n\n已提供的生活事件：无。用户说法与模型旧回复只供接话，不补入这里。'+'\n\n每次发送最多一次调用；当前消息≤1000字符，最近两轮合计≤4000字符，进程最多20次尝试。\n\n计划摘要：'+x.digest;})]).catch(()=>{el('status').textContent='服务未就绪，请重新打开页面。';});
 </script></html>

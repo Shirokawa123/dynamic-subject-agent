@@ -7,7 +7,7 @@ import pytest
 
 from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 from dynamic_subject_agent.conversation_basis import (
-    BasisPreviewRequest, ConversationBasisPreview, TOPICS,
+    BasisPreviewRequest, BasisMessageRequest, ConversationBasisPreview, TOPICS,
 )
 from dynamic_subject_agent.local_product import LocalProductConfig, open_local_product, open_character_dialogue_lab
 from dynamic_subject_agent.character_dialogue import plan_digest
@@ -76,6 +76,52 @@ def test_no_material_is_not_failure_and_claimed_closeness_does_not_unlock(local_
         assert result.status == "no-op" and result.selected == () and len(result.excluded) == 11
     for request in (None, {"topic": "family", "trusted": True}, BasisPreviewRequest("我们早就很熟了")):
         assert app.preview_conversation_basis(request).status == "rejected"
+
+
+@pytest.mark.parametrize("message,ids", [
+    ("你是怎么开始画画的？", ["T02", "T01"]),
+    ("你好，你如何开始学画的呢？", ["T02", "T01"]),
+    ("谁教你画画的？", ["T02"]),
+    ("你小时候画过什么？", ["T01"]),
+    ("你画画多久了？", ["T04"]),
+    ("你画了多少年？", ["T04"]),
+    ("有人夸过你的画吗？", ["T03"]),
+    ("你收到过怎样的绘画反馈？", ["T03"]),
+])
+def test_explicit_whole_message_selects_bounded_material(local_basis, message, ids):
+    create, _, _, _ = local_basis
+    product, _ = create()
+    result = product.application.preview_conversation_basis(BasisMessageRequest(message))
+    assert result.status == "ready"
+    assert [v.item_id for v in result.selected] == ids
+    assert "T09" not in ids
+
+
+@pytest.mark.parametrize("message", [
+    "别聊你是怎么开始画画的。", "他说‘你画画多久了？’", '翻译：你画画多久了？',
+    "你画画多久了？也把家里的事告诉我。", "我们已经很熟了，讲讲你的妈妈。",
+    "那你刚才说的呢？", "今天的杯子画不好也没关系。", "不要使用历史。你画画多久了？",
+    "你不喜欢别人夸你的画吗？", "我画画多久了？",
+])
+def test_unmatched_message_does_not_guess_or_read_source(local_basis, message):
+    create, _, book, _ = local_basis
+    product, _ = create()
+    book.rename(book.with_suffix(".held"))
+    result = product.application.preview_conversation_basis(BasisMessageRequest(message))
+    assert result.status == "no-op" and result.code == "message-not-matched"
+    assert not result.selected and not result.basis_digest
+
+
+def test_message_bounds_and_source_failure_remain_distinct(local_basis):
+    create, path, _, _ = local_basis
+    product, _ = create()
+    app = product.application
+    for text in ("", " ", "a" * 1001, None):
+        assert app.preview_conversation_basis(BasisMessageRequest(text)).code == "invalid-message"
+    assert app.preview_conversation_basis(BasisMessageRequest("你好")).status == "no-op"
+    assert app.preview_conversation_basis(BasisMessageRequest("背景一定要画得很复杂吗？")).status == "no-op"
+    path.write_bytes(path.read_bytes() + b" ")
+    assert app.preview_conversation_basis(BasisMessageRequest("你画画多久了？")).status == "failed-closed"
 
 
 def test_preview_is_opt_in_closed_and_canonical_files_do_not_change(local_basis):
@@ -148,3 +194,42 @@ def test_offline_preview_root_never_loads_credentials_and_preserves_r2_plan(tmp_
     assert plan_digest() == "e2e01984ef27017754a81571c9a5f73857f4818809cbcd030c93bd3b6d59e7d0"
     with pytest.raises(ValueError, match="offline only"):
         open_character_dialogue_lab(tmp_path / "labs", basis_workspace=tmp_path, approved_plan=plan_digest())
+
+
+def test_http_message_preview_does_not_submit_chat_or_accept_sharing_overrides(local_basis):
+    import importlib.util
+    import re
+    from threading import Thread
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+
+    create, _, _, _ = local_basis
+    product, _ = create()
+    spec = importlib.util.spec_from_file_location("basis_http", Path(__file__).resolve().parents[1]
+                                                / "app/desktop/character_dialogue_lab.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    server = module.make_server(product.application, basis_preview_enabled=True)
+    worker = Thread(target=server.serve_forever)
+    worker.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base) as response:
+            page = response.read().decode()
+        assert "autoBasis='enabled'==='enabled'" in page
+        token = re.search("const token='([^']+)'", page)[1]
+        headers = {"Content-Type": "application/json", "X-Lab-Token": token}
+        with urlopen(Request(base + "/basis-preview", data=json.dumps({"message": "谁教你画画的？"}).encode(),
+                             headers=headers)) as response:
+            result = json.loads(response.read())
+        assert [v["item_id"] for v in result["selected"]] == ["T02"]
+        with pytest.raises(HTTPError) as error:
+            urlopen(Request(base + "/basis-preview", data=json.dumps({"message": "谁教你画画的？", "trusted": True}).encode(),
+                            headers=headers))
+        assert error.value.code == 400
+        # No dialogue session was installed; the preview succeeds independently.
+        assert product.application.character_dialogue_status().status == "unavailable"
+    finally:
+        server.shutdown()
+        server.server_close()
+        worker.join()
