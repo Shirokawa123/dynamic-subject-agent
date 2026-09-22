@@ -1,6 +1,6 @@
 # 当前工作
 
-[Slice-59：有出处的可聊内容](slice-59-character-conversation-basis.md) 已完成本地v0.2：11项候选、28处引用/19段验证，见[报告](../reports/2026-09-22-slice-59/REPORT.md)。未改R2投影、未调用Provider、未虚构当前事件。下一步可做候选预览/时间与分享选择边界；两轮12次真实额度均已消费。
+[Slice-60：本地人物材料选择预览](slice-60-conversation-basis-preview.md) 已完成Facade/CLI/页面与验证，见[报告](../reports/2026-09-22-slice-60/REPORT.md)。只做闭集话题预览、依据校验和排除说明，未接自动聊天选材；R2投影/digest不变，真实调用0。两轮12次真实额度均已消费。
 
 Slice-53 R1获“感觉还行”的初步反馈，独立原型14d3041保留；不把其手写台词当人物事实。用户指出初识过亲近、专业能力被弱化，两项作为档案校准依据。
 

@@ -30,6 +30,8 @@ ApplicationFacade仍为正式产品唯一业务Interface，open_local_product仍
 
 ### 旧假设如何过渡
 
+Slice-60增加可选的只读`ApplicationFacade.preview_conversation_basis`。显式离线lab配置固定已审阅S59包与源目录，逐次核验pack/EPUB/文档/段落，再按六个显式话题最多选择2项/400字符并返回排除说明。默认unavailable；缺文件unavailable；来源不符failed-closed；无适用材料no-op。该Module没有模型、Timeline或事实写入Interface，不改变R2出站投影。话题映射为人工限定检查工具，非自然消息分类；预览可用也不表示角色已愿意分享或材料外发获准。
+
 Slice-57离线修订：角色实验的character从单段字符串拆成固定背景、交流设定、表达建议、未知范围及固定空生活事件区，用户/模型原话不晋升事实；无事件写入入口。策略强调旧模型自述不能自证，允许当下观点但不补造既往习惯。此为来源区分与提示修订，非通用语义裁判，自由回复仍可能不实；R2尚未真实复核。新digest见[复核方案](plans/character-dialogue-r2-trial.md)，Slice-56旧批准的六次已消费，不能用于重跑。
 
 旧路径的“离线时间不产生经历”仍有效；新路径拟将“明确推进后提交的虚构事件”作为新增经历来源，两者不混用。旧Situated/Medium要求用户消息证据的规则不自动扩成角色自己的心理模型；新来源和状态含义需明确设计。下文有限Knowledge/Memory语法与原有12类请求仍约束旧实现，新目标不隐式扩大其数据范围。

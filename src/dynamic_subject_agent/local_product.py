@@ -7,6 +7,7 @@ from threading import Lock
 from uuid import uuid4
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload
+from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
 
 from dynamic_subject_agent.application import ApplicationFacade
 from dynamic_subject_agent.bootstrap import compose_application
@@ -96,6 +97,7 @@ def open_local_product(
     cognition: CognitionEngine,
     source_authoring: TextSourceCharacterAuthoring | None = None,
     _character_dialogue: CharacterDialogueSession | None = None,
+    _basis_preview: ConversationBasisPreview | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
 
@@ -112,6 +114,7 @@ def open_local_product(
         cognition=cognition,
         source_authoring=source_authoring,
         character_dialogue=_character_dialogue,
+        basis_preview=_basis_preview,
     )
 
 
@@ -123,6 +126,7 @@ def _open_loaded_local_product(
     cognition: CognitionEngine,
     source_authoring: TextSourceCharacterAuthoring | None,
     character_dialogue: CharacterDialogueSession | None = None,
+    basis_preview: ConversationBasisPreview | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
         m0_root=loaded.experiment_base,
@@ -134,6 +138,7 @@ def _open_loaded_local_product(
         relationship_mode=config.relationship_mode,
         _source_authoring=source_authoring,
         _character_dialogue=character_dialogue,
+        _basis_preview=basis_preview,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
         _local_identity_lister=authority.list,
@@ -260,7 +265,7 @@ _REMOTE_LAB_LOCK = Lock()
 _REMOTE_LAB_OPENED = False
 
 
-def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = None) -> OpenedLocalProduct:
+def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = None, basis_workspace: Path | None = None) -> OpenedLocalProduct:
     """Create a fresh lab only. Approval digest is an explicit operator assertion.
 
     No existing identity path is accepted; no credential discovery occurs offline.
@@ -275,6 +280,15 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
         raise ValueError("absolute lab parent required")
     if approved_plan is not None and approved_plan != plan_digest():
         raise ValueError("current plan approval required")
+    basis_preview = None
+    if basis_workspace is not None:
+        if approved_plan is not None:
+            raise ValueError("basis preview is offline only")
+        if not isinstance(basis_workspace, Path) or not basis_workspace.is_absolute():
+            raise ValueError("absolute basis workspace required")
+        basis_preview = ConversationBasisPreview(
+            basis_workspace / ".local_indexes/eromanga-sensei/s59/conversation-basis-v0.2.json",
+            basis_workspace / ".local_sources/eromanga-sensei", expected_digest=S59_DIGEST)
     adapter = OfflineCharacterDialogueAdapter()
     if approved_plan is not None:
         from dynamic_subject_agent.credentials import WindowsCredentialStore, DEEPSEEK_CREDENTIAL_SLOT, CredentialStoreUnavailable
@@ -307,4 +321,4 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
     config = LocalProductConfig(product_parent=root / "DynamicSubjectAgent" / "m0" / "experiments", state_path=root / "state.json",
                                 relationship_mode="off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(),
-                              _character_dialogue=CharacterDialogueSession(ModelGateway(adapter)))
+                              _basis_preview=basis_preview, _character_dialogue=CharacterDialogueSession(ModelGateway(adapter)))

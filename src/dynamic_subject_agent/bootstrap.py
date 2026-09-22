@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession
+from dynamic_subject_agent.conversation_basis import ConversationBasisPreview
 
 from importlib import metadata
 from pathlib import Path
@@ -114,6 +115,7 @@ def compose_application(
     relationship_mode: str = "off",
     _host_fault_hook: Callable[[RuntimeHostFaultPoint], None] | None = None,
     _character_dialogue: CharacterDialogueSession | None = None,
+    _basis_preview: ConversationBasisPreview | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -270,6 +272,7 @@ def compose_application(
                 )
             ),
             _character_dialogue=_character_dialogue,
+            _basis_preview=_basis_preview,
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,

@@ -10,6 +10,7 @@ import secrets
 from uuid import uuid4
 
 from dynamic_subject_agent.character_dialogue import DialogueRequest, TEST_MESSAGES, plan_payload, plan_digest
+from dynamic_subject_agent.conversation_basis import BasisPreviewRequest, TOPICS
 from dynamic_subject_agent.local_product import open_character_dialogue_lab
 
 
@@ -59,7 +60,7 @@ def make_server(application, port=0):
             self.respond(404, {"error": "not-found"})
 
         def do_POST(self):
-            if (not self.valid_host() or self.path != "/send"
+            if (not self.valid_host() or self.path not in ("/send", "/basis-preview")
                     or self.headers.get("X-Lab-Token") != token
                     or self.headers.get("Content-Type") != "application/json"):
                 return self.respond(403, {"error": "request-rejected"})
@@ -67,10 +68,13 @@ def make_server(application, port=0):
                 length = int(self.headers.get("Content-Length", "0"))
                 if not 0 < length <= 16384:
                     raise ValueError()
-                request = DialogueRequest(**json.loads(self.rfile.read(length)))
+                payload = json.loads(self.rfile.read(length))
+                request = (BasisPreviewRequest(**payload) if self.path == "/basis-preview"
+                           else DialogueRequest(**payload))
             except (ValueError, TypeError, UnicodeError):
                 return self.respond(400, {"error": "invalid-request"})
-            result = application.character_dialogue_send(request)
+            result = (application.preview_conversation_basis(request) if self.path == "/basis-preview"
+                      else application.character_dialogue_send(request))
             self.respond(200, asdict(result))
 
     return ThreadingHTTPServer(("127.0.0.1", port), Handler)
@@ -81,15 +85,24 @@ def main():
     parser.add_argument("--approve-plan", help="仅在用户批准当前具体方案后，显式填写其摘要")
     parser.add_argument("--run-suite", action="store_true")
     parser.add_argument("--print-plan", action="store_true")
+    parser.add_argument("--basis-preview", action="store_true", help="启用S59本地材料预览，不加入聊天投影")
+    parser.add_argument("--preview-topic", choices=TOPICS, help="只打印该话题的本地材料预览")
     parser.add_argument("--port", type=int, default=0)
     args = parser.parse_args()
+    if (args.basis_preview or args.preview_topic) and (args.approve_plan is not None or args.run_suite):
+        parser.error("材料预览必须单独离线运行")
     if args.print_plan:
         print(json.dumps(dict(plan=plan_payload(), digest=plan_digest()), ensure_ascii=False, indent=2))
         return
     if args.approve_plan is not None and not args.run_suite:
         parser.error("本轮真实入口仅开放已审阅的六条验收文本；交互页面保持离线")
     parent = Path(__file__).resolve().parents[2] / ".artifacts" / "character-dialogue-labs"
-    with open_character_dialogue_lab(parent, approved_plan=args.approve_plan) as product:
+    workspace = Path(__file__).resolve().parents[2] if args.basis_preview or args.preview_topic else None
+    with open_character_dialogue_lab(parent, approved_plan=args.approve_plan, basis_workspace=workspace) as product:
+        if args.preview_topic:
+            print(json.dumps(asdict(product.application.preview_conversation_basis(
+                BasisPreviewRequest(args.preview_topic))), ensure_ascii=False, indent=2))
+            return
         if args.run_suite:
             print(json.dumps(run_suite(product.application), ensure_ascii=False, indent=2))
             return
