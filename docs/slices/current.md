@@ -1,6 +1,6 @@
 # 当前工作
 
-[Slice-55：有界角色对话实验室的离线准备](slice-55-bounded-character-dialogue.md) 已完成离线实现与验证；[六条真实验收方案](../plans/character-dialogue-live-trial.md)待用户明确批准，当前真实调用0。批准前不得读取真实credential或调用Provider，不扩展交互消息范围。
+[Slice-56：六条角色对话真实验收](slice-56-character-dialogue-live-trial.md) 已执行完成，6次授权额度已消费，无重试或追加。接口6/6成功，人物内容整体未通过：第4条将用户暗示补成当日经历；详细结果见[报告](../reports/2026-09-22-slice-56/REPORT.md)。下一步优先准备用户断言/角色事实区分的本地修订，不自动增加真实调用。
 
 Slice-53 R1获“感觉还行”的初步反馈，独立原型14d3041保留；不把其手写台词当人物事实。用户指出初识过亲近、专业能力被弱化，两项作为档案校准依据。
 
