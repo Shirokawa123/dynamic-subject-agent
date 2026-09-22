@@ -2,6 +2,8 @@
 
 ## 契约适用范围（2026-09-20）
 
+Slice-66新增只读作者预览`ApplicationFacade.preview_character_model`：从显式审阅digest的本地证据草稿核验来源与结构，按已审主体、成立/获知时间和依赖生成提议起点视图及覆盖缺口；不作语义真伪判断、不封存、不接Provider。与运行人物状态严格分开，详细格式见[证据模型契约](plans/character-evidence-model-contract.md)。
+
 后续规划指引：用户在真实体验后明确要求连贯自我知识及根因修复，当前改造优先级见[第一性原则待办](plans/character-first-principles-backlog.md)。其F0–F8是待验证/待实施能力，不是新运行契约已生效；既有身份隔离、模型提议/Python裁决、Facade/Gateway及唯一Timeline继续成立，不由规划文档隐式扩大外发、持久化或迁移权限。
 
 PRODUCT已转向角色聊天。本文顶部的“目标结构”和“原型隔离”描述后续设计约束，不表示新增生产能力；其后从“外部seam”开始保留dogfood-s51的已实现运行基线与历史切片契约。旧数据、binding、schema及Provider投影继续按旧契约运行，不能因文档目标更新自动升级。

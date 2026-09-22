@@ -1,12 +1,11 @@
 """Read-only preview of a specifically reviewed local source pack."""
 from dataclasses import dataclass
 from hashlib import sha256
-from html.parser import HTMLParser
 import json
 import re
 import unicodedata
 from pathlib import Path
-from zipfile import ZipFile
+from dynamic_subject_agent.source_evidence import verify_source_evidence
 
 S59_DIGEST = "6dd22c5279e26958c55b94eefd00834e9a2b061b39fea5186de8d5806cee5b87"
 TOPICS = ("greeting", "drawing-origins", "drawing-experience", "art-feedback", "family", "composition")
@@ -80,28 +79,6 @@ class BasisPreview:
     basis_digest: str = ""
 
 
-class _Paragraphs(HTMLParser):
-    def __init__(self):
-        super().__init__(convert_charrefs=True)
-        self.rows = []
-        self.buf = None
-
-    def handle_starttag(self, tag, attrs):
-        if tag == "p":
-            if self.buf is not None:
-                self.rows.append("".join(self.buf).strip())
-            self.buf = []
-
-    def handle_data(self, data):
-        if self.buf is not None:
-            self.buf.append(data)
-
-    def handle_endtag(self, tag):
-        if tag == "p" and self.buf is not None:
-            self.rows.append("".join(self.buf).strip())
-            self.buf = None
-
-
 class ConversationBasisPreview:
     """Owns integrity checks and selection. No model, store, or fact-writing port."""
 
@@ -128,42 +105,10 @@ class ConversationBasisPreview:
                 or len(items) != 11
                 or {it["id"] for it in items} != {f"T{i:02}" for i in range(1, 12)}):
             raise ValueError("unreviewed schema")
-        # Cache only within this preview; every subsequent preview rechecks disk.
-        books, documents = {}, {}
         for item in items:
             if item["id"] != "T10" and not item["evidence"]:
                 raise ValueError("missing citation")
-            for ref in item["evidence"]:
-                name = ref["file"]
-                if not isinstance(name, str) or Path(name).name != name or "/" in name or "\\" in name:
-                    raise ValueError("invalid source name")
-                path = (self._sources / name).resolve(strict=True)
-                if not path.is_relative_to(self._sources.resolve(strict=True)):
-                    raise ValueError("source escapes supplied root")
-                if path not in books:
-                    with path.open("rb") as stream:
-                        books[path] = stream.read(32_000_001)
-                raw = books[path]
-                if len(raw) > 32_000_000 or sha256(raw).hexdigest() != ref["file_sha256"]:
-                    raise ValueError("source changed")
-                key = (path, ref["href"])
-                if key not in documents:
-                    from io import BytesIO
-                    with ZipFile(BytesIO(raw)) as archive:
-                        info = archive.getinfo(ref["href"])
-                        if info.file_size > 2_000_000:
-                            raise ValueError("document exceeds preview limit")
-                        content = archive.read(info)
-                    parser = _Paragraphs()
-                    parser.feed(content.decode("utf-8-sig"))
-                    parser.close()
-                    documents[key] = (sha256(content).hexdigest(), parser.rows)
-                digest, rows = documents[key]
-                n = ref["paragraph"]
-                if (digest != ref["document_sha256"] or type(n) is not int or not 1 <= n <= len(rows)
-                        or rows[n - 1] != ref["quote"]
-                        or sha256(rows[n - 1].encode()).hexdigest() != ref["quote_sha256"]):
-                    raise ValueError("citation mismatch")
+        verify_source_evidence(self._sources, [ref for item in items for ref in item["evidence"]])
         return {it["id"]: it for it in items}
 
     def preview(self, request: object) -> BasisPreview:

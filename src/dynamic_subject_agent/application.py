@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, DialogueView
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisPreview
+from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
@@ -339,6 +340,7 @@ class _ApplicationRouter:
         knowledge_entries: tuple[KnowledgeEntry, ...] = (),
         character_dialogue: CharacterDialogueSession | None = None,
         basis_preview: ConversationBasisPreview | None = None,
+        character_model: CharacterEvidenceModel | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -360,6 +362,9 @@ class _ApplicationRouter:
             raise TypeError("typed character dialogue session required")
         if basis_preview is not None and not isinstance(basis_preview, ConversationBasisPreview):
             raise TypeError("typed basis preview required")
+        if character_model is not None and not isinstance(character_model, CharacterEvidenceModel):
+            raise TypeError("typed character evidence model required")
+        self._character_model = character_model
         self._basis_preview = basis_preview
         self._character_dialogue = character_dialogue
         self._source_authoring = source_authoring
@@ -735,6 +740,12 @@ class _ApplicationRouter:
         except Exception:
             return TextArtifactResponse('failed-closed',message='保存结果尚不能核实，没有重复执行未知操作。')
 
+    def preview_character_model(self, request: object) -> CharacterModelView:
+        with self._lock:
+            if self._closed or self._character_model is None:
+                return CharacterModelView("unavailable", "character-model-unavailable")
+            return self._character_model.preview(request)
+
     def preview_conversation_basis(self, request: object) -> BasisPreview:
         with self._lock:
             if self._closed or self._basis_preview is None:
@@ -977,6 +988,9 @@ class ApplicationFacade:
     def query(self, query: object) -> ApplicationQueryResponse:
         return self.__router.query(query)
 
+    def preview_character_model(self, request: object) -> CharacterModelView:
+        return self.__router.preview_character_model(request)
+
     def preview_conversation_basis(self, request: object) -> BasisPreview:
         return self.__router.preview_conversation_basis(request)
 
@@ -1022,6 +1036,7 @@ def _create_application_facade(
     _follow_runtime: Callable[[OperationRef], RuntimeResult] | None = None,
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
+    _character_model: CharacterEvidenceModel | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -1041,6 +1056,7 @@ def _create_application_facade(
         follow_runtime=_follow_runtime,
         character_dialogue=_character_dialogue,
         basis_preview=_basis_preview,
+        character_model=_character_model,
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,

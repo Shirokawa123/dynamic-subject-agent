@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
+from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
 
 from dynamic_subject_agent.application import ApplicationFacade
 from dynamic_subject_agent.bootstrap import compose_application
@@ -98,6 +99,7 @@ def open_local_product(
     source_authoring: TextSourceCharacterAuthoring | None = None,
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
+    _character_model: CharacterEvidenceModel | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
 
@@ -115,6 +117,7 @@ def open_local_product(
         source_authoring=source_authoring,
         character_dialogue=_character_dialogue,
         basis_preview=_basis_preview,
+        character_model=_character_model,
     )
 
 
@@ -127,6 +130,7 @@ def _open_loaded_local_product(
     source_authoring: TextSourceCharacterAuthoring | None,
     character_dialogue: CharacterDialogueSession | None = None,
     basis_preview: ConversationBasisPreview | None = None,
+    character_model: CharacterEvidenceModel | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
         m0_root=loaded.experiment_base,
@@ -139,6 +143,7 @@ def _open_loaded_local_product(
         _source_authoring=source_authoring,
         _character_dialogue=character_dialogue,
         _basis_preview=basis_preview,
+        _character_model=character_model,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
         _local_identity_lister=authority.list,
@@ -325,3 +330,16 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
                                 relationship_mode="off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(),
                               _basis_preview=basis_preview, _character_dialogue=CharacterDialogueSession(ModelGateway(adapter), basis=basis_preview if grounded else None))
+
+
+def open_character_model_preview(parent: Path, *, draft_path: Path, source_root: Path,
+                                 reviewed_digest: str) -> OpenedLocalProduct:
+    """Read-only authoring preview in a new isolated product; no provider assembly."""
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    if not isinstance(parent, Path) or not parent.is_absolute():
+        raise ValueError("absolute preview parent required")
+    model = CharacterEvidenceModel(draft_path, source_root, expected_digest=reviewed_digest)
+    root = parent / ("character-model-" + uuid4().hex)
+    root.mkdir(parents=True, exist_ok=False)
+    config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
+    return open_local_product(config, cognition=DormantDeepSeekCognition(), _character_model=model)
