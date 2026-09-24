@@ -2,6 +2,8 @@
 
 ## 契约适用范围（2026-09-20）
 
+Slice-68实测后将语义候选提取限定为来源命题：模型不再输出知情者/成立阶段/获知阶段裁决，返回DTO中的这些字段由Python固定unknown，表示待审而非角色不知。按维度的固定策略与来源数据分开；本地审核后才能形成起点模型。响应诊断只可收集内容/结束状态/用量，不含鉴权、reasoning或tools。用户取消原3次跨轮上限仅覆盖同一组已授权原文，不扩大来源或自动重试；自动提取质量尚未通过。
+
 Slice-67新增显式资料候选提取：Facade.extract_character_evidence→ModelGateway独立任务，只接受已审样本包、权利/用途确认和一次尝试；结构/逐字引用通过也固定为candidate，不能自动封存或进入起点认识。默认离线；新DeepSeek用途单独2048输出上限，旧identity路径保持400。实际原文外发仍待[具体试点方案](plans/character-evidence-extraction-trial.md)批准。
 
 Slice-66新增只读作者预览`ApplicationFacade.preview_character_model`：从显式审阅digest的本地证据草稿核验来源与结构，按已审主体、成立/获知时间和依赖生成提议起点视图及覆盖缺口；不作语义真伪判断、不封存、不接Provider。与运行人物状态严格分开，详细格式见[证据模型契约](plans/character-evidence-model-contract.md)。

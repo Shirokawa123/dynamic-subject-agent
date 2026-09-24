@@ -354,7 +354,7 @@ class _WindowsLabResolver(DeepSeekCredentialResolver):
 _REMOTE_EVIDENCE_OPENED = False
 
 
-def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan: str | None = None) -> OpenedLocalProduct:
+def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan: str | None = None, response_audit=None) -> OpenedLocalProduct:
     """A single reviewed extraction run. Default offline; no source state adopted."""
     global _REMOTE_EVIDENCE_OPENED
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
@@ -373,8 +373,9 @@ def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan
                 raise ValueError("one extraction run per process")
             _REMOTE_EVIDENCE_OPENED = True
         adapter = DeepSeekEvidenceAdapter(transport=DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
-            credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID))
-    lab = EvidenceExtractionLab(ModelGateway(adapter), workspace / ".local_indexes/eromanga-sensei/s67/input-packets-v2.json",
+            credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
+            response_audit=response_audit)
+    lab = EvidenceExtractionLab(ModelGateway(adapter), workspace / ".local_indexes/eromanga-sensei/s68/focused-context-packets.json",
                                 workspace / ".local_sources/eromanga-sensei")
     root = parent / ("evidence-lab-" + uuid4().hex)
     root.mkdir(parents=True, exist_ok=False)

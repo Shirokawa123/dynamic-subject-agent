@@ -17,7 +17,6 @@ from dynamic_subject_agent.deepseek import DeepSeekTransport, DeepSeekHttpRespon
 
 def candidate():
     return dict(statement="A synthetic proposed memory.", dimension="biography", kind="fact", about=["subject"],
-                knower="unknown", event_time="before", knowledge_time="unknown",
                 evidence=[dict(label="p1", quote="synthetic source")])
 
 
@@ -100,7 +99,7 @@ def test_three_packet_budget_and_no_canonical_changes(extraction):
     assert "sample.epub" not in json.dumps(adapter.calls)
 
 
-@pytest.mark.parametrize("bad", ["quote", "label", "review", "time", "padding", "partial"])
+@pytest.mark.parametrize("bad", ["quote", "label", "review", "time", "padding", "partial", "other-knower", "unknown-time"])
 def test_invalid_candidates_do_not_become_partly_accepted(extraction, bad):
     create, _, _ = extraction
     product, adapter, _ = create()
@@ -110,6 +109,8 @@ def test_invalid_candidates_do_not_become_partly_accepted(extraction, bad):
     elif bad == "review": row["review"] = "reviewed"
     elif bad == "time": row["knowledge_time"] = "definitely"
     elif bad == "padding": row["statement"] = " " * 301 + "x"
+    elif bad == "other-knower": row["knower"] = "narrator"
+    elif bad == "unknown-time": row["knowledge_time"] = "before"
     else: adapter.value["candidates"].append(dict(candidate(), reviewed=True))
     result = product.application.extract_character_evidence(req())
     assert result.status == "failed-closed" and not result.candidates
@@ -132,6 +133,15 @@ def test_failure_counts_and_changed_source_prevents_delivery(extraction):
     assert len(adapter.calls) == 1
 
 
+def test_redundant_language_field_is_optional_but_conflicting_value_is_rejected(extraction):
+    create, _, _ = extraction
+    product, adapter, _ = create()
+    adapter.value.pop("language")
+    assert product.application.extract_character_evidence(req()).status == "candidates"
+    adapter.value["language"] = "en"
+    assert product.application.extract_character_evidence(req(1, "next")).status == "failed-closed"
+
+
 class Transport(DeepSeekTransport):
     def __init__(self, tokens=600, finish="stop"):
         self.calls, self.tokens, self.finish = [], tokens, finish
@@ -151,8 +161,39 @@ def test_new_wire_budget_and_complete_json_requirement(extraction,tokens,finish,
     product, _, _ = create(adapter)
     assert product.application.extract_character_evidence(req()).status == status
     wire = json.loads(transport.calls[0]["body"])
-    assert wire["max_tokens"] == 2048 and wire["messages"][0]["content"] == EXTRACTION_POLICY
+    assert wire["max_tokens"] == 2048 and wire["messages"][0]["content"].startswith(EXTRACTION_POLICY)
     assert "sample.epub" not in json.dumps(wire)
+
+
+def test_extractor_cannot_assign_target_awareness_or_time(extraction):
+    create, _, _ = extraction
+    product, adapter, _ = create()
+    result = product.application.extract_character_evidence(req())
+    assert result.status == "candidates"
+    row = result.candidates[0]
+    assert row.knower == row.event_time == row.knowledge_time == "unknown"
+    adapter.value["candidates"][0]["knower"] = "subject"
+    assert product.application.extract_character_evidence(req(1,"second")).status == "failed-closed"
+
+
+def test_audit_does_not_capture_credentials_reasoning_or_tools(extraction):
+    create, _, _ = extraction
+    class ExtraFieldsTransport(Transport):
+        def post_json(self, **kwargs):
+            response = super().post_json(**kwargs)
+            data = json.loads(response.body)
+            data["choices"][0]["message"]["reasoning_content"] = "private-reasoning"
+            data["choices"][0]["message"]["tool_calls"] = ["private-tool-argument"]
+            return DeepSeekHttpResponse(200,json.dumps(data).encode())
+    audits = []
+    adapter = DeepSeekEvidenceAdapter(transport=ExtraFieldsTransport(),
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
+        response_audit=audits.append)
+    product, _, _ = create(adapter)
+    assert product.application.extract_character_evidence(req()).status == "failed-closed"
+    serialized = json.dumps(audits)
+    assert "private-reasoning" not in serialized and "private-tool-argument" not in serialized
+    assert "credential_ref" not in serialized and "Authorization" not in serialized
 
 
 def test_offline_root_and_incorrect_plan_do_not_load_key(tmp_path,monkeypatch):
