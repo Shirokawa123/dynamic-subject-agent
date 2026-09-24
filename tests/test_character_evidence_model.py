@@ -29,6 +29,7 @@ def model_fixture(tmp_path, monkeypatch):
              time_basis="Explicit prior background in synthetic source.")
     draft = dict(version="character-evidence-draft-1", status="local-review-only", subject_id="self",
                  anchor=dict(id="start", status="proposed"),
+                 chat_stage_description="The reviewed moment before the public exhibition.",
                  entities=[dict(id=i, name=i, kind="person-reference") for i in ("self", "narrator", "other", "hidden")],
                  evidence=[ref], assertions=[a],
                  coverage_review={d:dict(assessment="partial", gaps=["Still incomplete."]) for d in DIMENSIONS})
@@ -281,3 +282,43 @@ def test_chat_context_refuses_empty_or_oversized_basis_instead_of_partial_person
     draft["assertions"] = [dict(template, id=f"a{i}", statement="长" * 1400) for i in range(20)]
     view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
     assert view.status == "rejected" and view.code == "self-knowledge-too-large" and not view.self_knowledge
+
+
+def test_chat_stage_is_explicit_reviewed_text_not_author_anchor_notes(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    draft["anchor"]["description"] = "AUTHOR_SECRET_FUTURE_MAPPING"
+    app = create().application
+    view = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert view.stage_description == draft["chat_stage_description"]
+    assert "AUTHOR_SECRET" not in json.dumps(asdict(view))
+    del draft["chat_stage_description"]
+    app = create().application
+    assert app.preview_character_model(CharacterModelRequest("self", "start")).status == "previewed"
+    view = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert view.status == "unavailable" and view.code == "chat-stage-not-reviewed"
+    assert not view.self_knowledge and view.opening is None
+
+
+@pytest.mark.parametrize("stage", [None, " ", "x" * 501])
+def test_invalid_chat_stage_fails_closed_with_reviewed_digest(model_fixture, stage):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    draft["chat_stage_description"] = stage
+    view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert view.status == "failed-closed" and not view.stage_description
+
+
+def test_public_opening_is_derived_from_encounter_not_private_character_facts(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    draft["assertions"][0]["statement"] = "PRIVATE_FAMILY_NAME_AND_JOB"
+    view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "PRIVATE_USER_MESSAGE"))
+    public = json.dumps(asdict(view.opening), ensure_ascii=False)
+    assert "PRIVATE" not in public
+    assert view.opening.channel == view.encounter.channel
+    assert view.opening.visible_interests == view.encounter.public_interests
+    assert all(tag in view.opening.recommendation for tag in view.encounter.public_interests)
+    assert "助手提出的分支动机" in view.encounter.proposed_motive
+    assert "助手提出的时间安放" in view.encounter.proposed_timing
+    assert not view.can_chat and not view.provider_ready

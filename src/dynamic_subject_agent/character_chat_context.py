@@ -37,9 +37,36 @@ class EncounterPreview:
     interest_basis: str = "这是相识草案的共同兴趣假设，尚未读取或确认用户个人兴趣档案。"
     public_identity: str = "仅公开兴趣；未设定公开真名、年龄、职业笔名关联或家事。"
     relationship: str = "初识；推荐不代表熟悉、互相信任或有义务回复。"
+    proposed_motive: str = (
+        "助手提出的分支动机：她想看看其他人关于绘画和插画的想法，遇到合适的话题可以聊几句。"
+        "这不是小说已有事件、固定习惯或对用户的预先好感。"
+    )
+    proposed_timing: str = (
+        "助手提出的时间安放：在明确起点的短暂交流空档收到首次私信；"
+        "不设精确分钟数，不把原作后续事件推进为已发生，也不每轮重置同一空档。"
+    )
     unresolved: tuple[str, ...] = (
-        "角色使用这个入口的具体动机尚未建立，不补造注册或近期使用经历。",
-        "私信在原作时间中的具体安放尚未确定；起点安排不随预览自动发生或永久重复。",
+        "本动机与时间安放仍是可审分支提案，尚未成为正式运行情境。",
+        "后续离线时间、忙闲与原作进度尚未接入；不能假称等待、已直播或刚完成作品。",
+    )
+
+
+@dataclass(frozen=True)
+class PublicOpening:
+    channel: str
+    recommendation: str
+    visible_interests: tuple[str, ...]
+    explanation: str
+    status: str = "proposed-branch"
+
+
+def public_opening(encounter: EncounterPreview) -> PublicOpening:
+    """Public surface derives only from encounter fields, never private knowledge."""
+    return PublicOpening(
+        channel=encounter.channel,
+        recommendation="基于" + "、".join(encounter.public_interests) + "兴趣推荐的联系人",
+        visible_interests=encounter.public_interests,
+        explanation="你们尚未认识。你可以从共同兴趣开始发一条私信，对方可以选择是否回应。",
     )
 
 
@@ -70,6 +97,8 @@ class CharacterChatContextView:
     history_status: str = "not-connected"
     provider_ready: bool = False
     can_chat: bool = False
+    stage_description: str = ""
+    opening: PublicOpening | None = None
 
 
 def valid_request(request: object) -> bool:
@@ -84,6 +113,8 @@ def prepare_context(model: CharacterModelView, message: str) -> CharacterChatCon
     """Keep the entire eligible basis; never copy author-side audit metadata."""
     if model.status != "previewed":
         return CharacterChatContextView(model.status, model.code)
+    if not model.chat_stage_description:
+        return CharacterChatContextView("unavailable", "chat-stage-not-reviewed")
     if not model.known:
         return CharacterChatContextView("unavailable", "no-eligible-self-knowledge")
     knowledge = tuple(SelfKnowledge(
@@ -93,7 +124,9 @@ def prepare_context(model: CharacterModelView, message: str) -> CharacterChatCon
     # Budget the actual escaped field representation, not only the prose.
     if len(json.dumps([asdict(item) for item in knowledge], ensure_ascii=False)) > MAX_KNOWLEDGE_CHARS:
         return CharacterChatContextView("rejected", "self-knowledge-too-large")
+    encounter = EncounterPreview()
     return CharacterChatContextView(
-        "previewed", self_knowledge=knowledge, encounter=EncounterPreview(),
+        "previewed", self_knowledge=knowledge, encounter=encounter,
         disclosure=DISCLOSURE, continuity=CONTINUITY, current_message=message,
+        stage_description=model.chat_stage_description, opening=public_opening(encounter),
     )

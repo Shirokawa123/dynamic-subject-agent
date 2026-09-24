@@ -108,6 +108,7 @@ class CharacterModelView:
     citations: tuple[CharacterEvidenceCitation, ...] = ()
     draft_digest: str = ""
     sealed_from_draft: bool = False
+    chat_stage_description: str = ""
 
 
 class CharacterEvidenceModel:
@@ -142,6 +143,9 @@ class CharacterEvidenceModel:
             raise ValueError("missing subject")
         if draft["anchor"]["status"] not in ("proposed", "reviewed") or not draft["anchor"]["id"]:
             raise ValueError("invalid anchor")
+        stage = draft.get("chat_stage_description", "")
+        if not isinstance(stage, str) or len(stage) > 500 or (stage and not stage.strip()):
+            raise ValueError("invalid chat stage")
         refs = draft["evidence"]
         evidence = {e["id"]: e for e in refs}
         if not refs or len(refs) > 2000 or len(evidence) != len(refs):
@@ -278,7 +282,8 @@ class CharacterEvidenceModel:
                 anchor_status=draft["anchor"]["status"], known=tuple(known), excluded=tuple(excluded),
                 coverage=tuple(coverage), entities=tuple(CharacterEntity(e["id"], e["name"], e["kind"])
                     for e in draft["entities"] if e["id"] in known_entities),
-                citations=tuple(self._citation(e) for e in evidence.values()), draft_digest=self._digest)
+                citations=tuple(self._citation(e) for e in evidence.values()), draft_digest=self._digest,
+                chat_stage_description=draft.get("chat_stage_description", ""))
         except FileNotFoundError:
             return CharacterModelView("unavailable", "draft-or-source-missing")
         except Exception:

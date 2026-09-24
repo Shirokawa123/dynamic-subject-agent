@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-71：离线角色对话上下文](slice-71-offline-character-context.md)已收口，见[报告](../reports/2026-09-24-slice-71/REPORT.md)。Facade/CLI可装配30项持续本人知识、相识草案、披露约束和独立输入；61项相关测试通过，最终补充后27项专项通过。无Provider或历史写入。
+[Slice-72：明确起点与相识依据](slice-72-explicit-encounter-basis.md)已收口，见[报告](../reports/2026-09-24-slice-72/REPORT.md)。明确阶段摘要、相识动机/时间草案及同源公开开场已可预览；66项相关测试、实际v8/CLI通过。
 
-下一片先建立任务书，补明确起点语义、角色使用入口的分支动机/时间及历史接续契约，形成可审的新Provider投影；不把当前离线View直接当生产请求，不复用已消费旧试聊额度。资料层不能代替自然表达验收。
+下一片先建立任务书，将已核验背景/具体相识提案组装成独立角色回复候选请求，完成离线校验并准备精确新增外发范围。历史仍not-connected，不能直接套用依赖旧Memory状态的选择器；provider_ready/can_chat均false，不启动旧试聊。

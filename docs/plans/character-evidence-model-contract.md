@@ -39,3 +39,7 @@ CLI接受显式草稿路径、来源目录、审阅digest、主体与锚点，�
 Facade的preview_character_chat_context接受CharacterChatContextRequest(subject_id, anchor_id, current_message)，消息为非空字符串且最多1000字符。复用每次完整来源核验与起点判断；只取全部known的摘要、维度、kind、derivation和相对时间，不复制作者审查字段或实体标签。序列化知识超过20,000字符拒绝，不做部分人格回退。错误/损坏/关闭沿用明确结果。
 
 新View附proposed-branch兴趣推荐/跨世界情境、披露和连续性约束，history_status=not-connected、provider_ready=false、can_chat=false；没有模型或canonical写入。CLI --chat-message与--context互斥。角色具体入口动机、私信时刻和可外发起点文字尚未确定，预览不是可直接发送的模型任务。
+
+## Slice-72明确起点与相识
+
+草稿可提供chat_stage_description（字符串<=500字符，不可全空白）；缺失/空字符串仍兼容作者预览，但聊天上下文unavailable/chat-stage-not-reviewed。该字段与草稿共同校验digest，禁止自动复制作者anchor.description。聊天View显示明确stage_description。Encounter包含助手提出的动机/时间安放，不升级为运行事实；PublicOpening仅由Encounter字段生成且status=proposed-branch，不从本人知识或消息提取私人信息。后续历史依赖和接续要求见[契约草案](character-history-integration-contract.md)，本片未实现历史。
