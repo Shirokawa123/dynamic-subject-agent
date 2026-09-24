@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-24：Slice-74回应用户对平铺人物知识的质疑，确认连贯档案未进入请求、30项目前全量装配；补针对性论文/项目比较，下一步先修人物组织层，暂停直接接Provider，见[研究](research/2026-09-24-character-knowledge-hierarchy.md)。
+
 - 2026-09-24：Slice-73接通Facade精确回复请求及仅local Gateway候选路径，输出不承载状态；77项测试与两路复核通过。实际v8请求预览成功，真实Provider/历史未接，见[报告](reports/2026-09-24-slice-73/REPORT.md)。
 
 - 2026-09-24：Slice-72补显式聊天阶段摘要、具体相识分支提案及同源公开开场；66项相关测试与实际v8/CLI通过。历史接续契约已核对旧Memory依赖，但未接历史或Provider，见[报告](reports/2026-09-24-slice-72/REPORT.md)。
