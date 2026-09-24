@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-72：明确起点与相识依据](slice-72-explicit-encounter-basis.md)已收口，见[报告](../reports/2026-09-24-slice-72/REPORT.md)。明确阶段摘要、相识动机/时间草案及同源公开开场已可预览；66项相关测试、实际v8/CLI通过。
+[Slice-73：人物上下文到回复候选](slice-73-character-reply-candidate.md)已收口，见[报告](../reports/2026-09-24-slice-73/REPORT.md)。Facade精确请求预览和仅local Gateway候选路径成立，77项测试通过；实际v8请求5739字符、30项知识。未调用真实模型或接历史。
 
-下一片先建立任务书，将已核验背景/具体相识提案组装成独立角色回复候选请求，完成离线校验并准备精确新增外发范围。历史仍not-connected，不能直接套用依赖旧Memory状态的选择器；provider_ready/can_chat均false，不启动旧试聊。
+下一片先建立任务书，完成真实Adapter离线契约、固定验收消息/停止条件和新投影批准入口，再集中处理新增Provider数据用途。不能把local候选Lab直接当远程幂等会话，也不复用已消费旧试聊额度。

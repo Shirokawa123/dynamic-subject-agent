@@ -35,10 +35,10 @@ def model_fixture(tmp_path, monkeypatch):
                  coverage_review={d:dict(assessment="partial", gaps=["Still incomplete."]) for d in DIMENSIONS})
     path = tmp_path / "draft.json"
     opened = []
-    def create():
+    def create(reply_lab=None):
         path.write_text(json.dumps(draft), encoding="utf-8")
         product = open_character_model_preview(tmp_path / "products", draft_path=path, source_root=sources,
-                                               reviewed_digest=sha256(path.read_bytes()).hexdigest())
+                                               reviewed_digest=sha256(path.read_bytes()).hexdigest(), reply_lab=reply_lab)
         opened.append(product)
         return product
     yield draft, create, path, book
@@ -322,3 +322,76 @@ def test_public_opening_is_derived_from_encounter_not_private_character_facts(mo
     assert "助手提出的分支动机" in view.encounter.proposed_motive
     assert "助手提出的时间安放" in view.encounter.proposed_timing
     assert not view.can_chat and not view.provider_ready
+
+
+class CandidateTestAdapter:
+    @staticmethod
+    def make(value=None, fail=False, local=True, wrong_kind=False):
+        from dynamic_subject_agent.model_gateway import ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelResult, ModelTaskKind
+        class Adapter(ProviderAdapter):
+            capabilities = ProviderCapabilities("test", "candidate", local, (StructuredOutputMode.JSON_OBJECT,))
+            def __init__(self): self.calls = []
+            def invoke(self, task):
+                self.calls.append(task)
+                if fail: raise RuntimeError("sensitive adapter detail")
+                return ModelResult(ModelTaskKind.CHARACTER_DIALOGUE_REPLY if wrong_kind else task.kind, value)
+        return Adapter()
+
+
+def test_reply_candidate_uses_exact_projection_through_facade_without_persistence(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+    from dynamic_subject_agent.model_gateway import ModelGateway, ModelTaskKind
+    draft, create, _, _ = model_fixture
+    adapter = CandidateTestAdapter.make({"reply_text":"这是离线替身的候选。", "language":"zh"})
+    product = create(CharacterReplyLab(ModelGateway(adapter)));app=product.application
+    request=CharacterChatContextRequest("self","start","聊聊画画")
+    preview=app.preview_character_reply(request)
+    assert not adapter.calls and preview.status=="previewed"
+    result=app.propose_character_reply(request)
+    assert result.status=="candidate" and result.semantic_review=="required" and not result.persisted
+    assert len(adapter.calls)==1 and adapter.calls[0].kind is ModelTaskKind.CHARACTER_CONTEXT_REPLY
+    assert adapter.calls[0].payload==preview.projection and result.request_digest==preview.request_digest
+    payload=asdict(preview.projection)
+    assert set(payload)=={"self_knowledge","stage_description","encounter","disclosure","current_message","policy"}
+    assert preview.projection.self_knowledge[0].content==draft["assertions"][0]["statement"]
+    assert app.preview_character_reply(request)==preview
+    product.close()
+    assert app.propose_character_reply(request).status=="unavailable" and len(adapter.calls)==1
+
+
+@pytest.mark.parametrize("value", [None, {}, {"reply_text":"x", "language":"en"},
+    {"reply_text":" ", "language":"zh"}, {"reply_text":"x"*1201,"language":"zh"},
+    {"reply_text":"x","language":"zh","memory_update":"bad"}])
+def test_reply_candidate_rejects_bad_or_state_bearing_output(model_fixture, value):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    _,create,_,_=model_fixture;adapter=CandidateTestAdapter.make(value)
+    app=create(CharacterReplyLab(ModelGateway(adapter))).application
+    view=app.propose_character_reply(CharacterChatContextRequest("self","start","hi"))
+    assert view.status=="failed-closed" and not view.reply_text and len(adapter.calls)==1
+
+
+def test_candidate_lab_failure_no_retry_and_source_recheck(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    _,create,path,_=model_fixture
+    for options in ({"fail":True}, {"wrong_kind":True}):
+        adapter=CandidateTestAdapter.make(**options)
+        app=create(CharacterReplyLab(ModelGateway(adapter))).application
+        request=CharacterChatContextRequest("self","start","hi")
+        view=app.propose_character_reply(request)
+        assert view.status=="failed-closed" and "sensitive" not in str(view) and len(adapter.calls)==1
+        path.write_text("changed",encoding="utf-8")
+        assert app.propose_character_reply(request).status=="failed-closed" and len(adapter.calls)==1
+
+
+def test_candidate_lab_is_unavailable_by_default_and_refuses_remote(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    _,create,_,_=model_fixture
+    assert create().application.propose_character_reply(CharacterChatContextRequest("self","start","hi")).status=="unavailable"
+    with pytest.raises(ValueError): CharacterReplyLab(ModelGateway(CandidateTestAdapter.make(local=False)))

@@ -8,6 +8,7 @@ from uuid import uuid4
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
+from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, extraction_plan_digest, extraction_plan_payload
 
@@ -101,6 +102,7 @@ def open_local_product(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
+    _character_reply_lab: CharacterReplyLab | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
@@ -120,6 +122,7 @@ def open_local_product(
         character_dialogue=_character_dialogue,
         basis_preview=_basis_preview,
         character_model=_character_model,
+        character_reply_lab=_character_reply_lab,
         evidence_extraction=_evidence_extraction,
     )
 
@@ -134,6 +137,7 @@ def _open_loaded_local_product(
     character_dialogue: CharacterDialogueSession | None = None,
     basis_preview: ConversationBasisPreview | None = None,
     character_model: CharacterEvidenceModel | None = None,
+    character_reply_lab: CharacterReplyLab | None = None,
     evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
@@ -148,6 +152,7 @@ def _open_loaded_local_product(
         _character_dialogue=character_dialogue,
         _basis_preview=basis_preview,
         _character_model=character_model,
+        _character_reply_lab=character_reply_lab,
         _evidence_extraction=evidence_extraction,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
@@ -326,7 +331,7 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
 
 
 def open_character_model_preview(parent: Path, *, draft_path: Path, source_root: Path,
-                                 reviewed_digest: str) -> OpenedLocalProduct:
+                                 reviewed_digest: str, reply_lab: CharacterReplyLab | None = None) -> OpenedLocalProduct:
     """Read-only authoring preview in a new isolated product; no provider assembly."""
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     if not isinstance(parent, Path) or not parent.is_absolute():
@@ -335,7 +340,7 @@ def open_character_model_preview(parent: Path, *, draft_path: Path, source_root:
     root = parent / ("character-model-" + uuid4().hex)
     root.mkdir(parents=True, exist_ok=False)
     config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
-    return open_local_product(config, cognition=DormantDeepSeekCognition(), _character_model=model)
+    return open_local_product(config, cognition=DormantDeepSeekCognition(), _character_model=model, _character_reply_lab=reply_lab)
 
 
 class _WindowsLabResolver(DeepSeekCredentialResolver):

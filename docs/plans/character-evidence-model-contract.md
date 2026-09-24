@@ -43,3 +43,7 @@ Facade的preview_character_chat_context接受CharacterChatContextRequest(subject
 ## Slice-72明确起点与相识
 
 草稿可提供chat_stage_description（字符串<=500字符，不可全空白）；缺失/空字符串仍兼容作者预览，但聊天上下文unavailable/chat-stage-not-reviewed。该字段与草稿共同校验digest，禁止自动复制作者anchor.description。聊天View显示明确stage_description。Encounter包含助手提出的动机/时间安放，不升级为运行事实；PublicOpening仅由Encounter字段生成且status=proposed-branch，不从本人知识或消息提取私人信息。后续历史依赖和接续要求见[契约草案](character-history-integration-contract.md)，本片未实现历史。
+
+## Slice-73回复候选
+
+preview_character_reply通过已核验上下文生成CharacterReplyProjection六项白名单及请求digest；propose_character_reply需显式local CharacterReplyLab，默认unavailable，remote声明拒绝。单独CHARACTER_CONTEXT_REPLY任务不走旧角色Adapter。候选exact reply_text/language结构校验后仅标candidate/semantic_review=required，不写状态、不自动重试。CLI --reply-request只预览。此Lab无缓存/幂等会话承诺，不支持历史或真实Provider。
