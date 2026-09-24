@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-74：人物知识组织方案复核](slice-74-character-knowledge-design-review.md)已收口。用户明确指出平铺知识无轻重；核对确认S70连贯档案未被S73装配使用，现路径每次全量放入30项命题。
+[Slice-75：全局产品与架构复盘](slice-75-global-product-architecture-review.md)已收口。主入口：[整体目的、功能与目标架构](../plans/global-product-architecture.md)；研究与实际能力审计已完成，必要调研写入AGENTS。
 
-下一片应先建立任务书，按[研究纠偏](../research/2026-09-24-character-knowledge-hierarchy.md)实现可追溯的核心认识/经历脉络/按需细节组织，并与平铺基线比较。暂停原定直接接真实Provider；不新增人物自动重写、Reflection或外发授权，不把变更schema当效果验收。
+下一片先建立P1任务书，按全局方案先解决人物知识层次/经历关联/按需使用，并设计平铺基线对比；之后接人物分支、连续聊天、最小生活分享。暂不直接推进真实Provider，不把规划当重构完成；新数据用途仍须具体审批。

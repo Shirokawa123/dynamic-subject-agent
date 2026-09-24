@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-24：Slice-75完成全局目的/功能/研究/架构复盘与必要调研规则，人物知识组织列为P1正式待办；三闭环、职责/权威/失败和阶段验收已落盘，尚未重构或新增外发，见[方案](plans/global-product-architecture.md)。
+
 - 2026-09-24：Slice-74回应用户对平铺人物知识的质疑，确认连贯档案未进入请求、30项目前全量装配；补针对性论文/项目比较，下一步先修人物组织层，暂停直接接Provider，见[研究](research/2026-09-24-character-knowledge-hierarchy.md)。
 
 - 2026-09-24：Slice-73接通Facade精确回复请求及仅local Gateway候选路径，输出不承载状态；77项测试与两路复核通过。实际v8请求预览成功，真实Provider/历史未接，见[报告](reports/2026-09-24-slice-73/REPORT.md)。
