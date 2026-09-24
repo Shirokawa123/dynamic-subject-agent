@@ -33,3 +33,9 @@ CLI接受显式草稿路径、来源目录、审阅digest、主体与锚点，�
 ## Slice-69连续语境
 
 同一预览入口接受CharacterContextRequest(subject_id, anchor_id, evidence_id, before=5, after=5)。各侧0–20个真实单位，单文档最多6000字符；完整单位超限拒绝，不静默截断。返回引用元数据、带原位置的相邻单位及文档边界。使用来源核验时的解析快照，不另行重读未核验正文。相邻文本的说话者、事件和人物知情仍需审核，窗口不保证覆盖完整场景。CLI以--context选择引用，--before/--after指定范围；本地读取不产生新增外发授权。
+
+## Slice-71离线聊天上下文
+
+Facade的preview_character_chat_context接受CharacterChatContextRequest(subject_id, anchor_id, current_message)，消息为非空字符串且最多1000字符。复用每次完整来源核验与起点判断；只取全部known的摘要、维度、kind、derivation和相对时间，不复制作者审查字段或实体标签。序列化知识超过20,000字符拒绝，不做部分人格回退。错误/损坏/关闭沿用明确结果。
+
+新View附proposed-branch兴趣推荐/跨世界情境、披露和连续性约束，history_status=not-connected、provider_ready=false、can_chat=false；没有模型或canonical写入。CLI --chat-message与--context互斥。角色具体入口动机、私信时刻和可外发起点文字尚未确定，预览不是可直接发送的模型任务。

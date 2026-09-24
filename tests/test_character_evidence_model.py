@@ -215,3 +215,69 @@ def test_context_rejects_oversized_window_instead_of_truncating(model_fixture):
     result=app.preview_character_model(CharacterContextRequest("self","start","r1",0,1))
     assert result.code == "context-window-too-large" and not result.units
     assert app.preview_character_model(CharacterContextRequest("self","start","r1",0,0)).status == "previewed"
+
+
+def test_chat_context_keeps_same_self_knowledge_across_topics_and_user_claims(model_fixture, monkeypatch):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    monkeypatch.setattr(ModelGateway, "execute", lambda *a, **kw: pytest.fail("offline preview called model"))
+    draft, create, _, _ = model_fixture
+    draft["assertions"].append(dict(draft["assertions"][0], id="past", dimension="biography",
+                                    statement="Previously learned an art skill.", kind="belief"))
+    app = create().application
+    first = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "你好，你是谁？"))
+    second = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "我都知道，你昨晚和我出去了。"))
+    assert first.status == second.status == "previewed"
+    assert first.self_knowledge == second.self_knowledge and len(first.self_knowledge) == 2
+    assert second.self_knowledge[1].kind == "belief"
+    assert second.current_message == "我都知道，你昨晚和我出去了。"
+    assert second.encounter == first.encounter and second.encounter.status == "proposed-branch"
+    assert "用户保持现实身份" in second.encounter.world_context
+    assert "不预知用户看过她的故事" in second.encounter.world_context
+    assert second.history_status == "not-connected" and not second.can_chat and not second.provider_ready
+    assert not any("昨晚" in item.content for item in second.self_knowledge)
+
+
+def test_chat_context_does_not_copy_future_identity_or_author_metadata(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    draft["assertions"][0]["time_basis"] = "FUTURE_SECRET_MAPPING appears only in author reasoning."
+    draft["entities"][0]["name"] = "PRIVATE_ENTITY_LABEL"
+    draft["assertions"].append(dict(draft["assertions"][0], id="future", statement="FUTURE_SECRET_MAPPING",
+                                    knowledge_time="after"))
+    view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "聊聊工作"))
+    wire = json.dumps(asdict(view), ensure_ascii=False)
+    assert view.status == "previewed" and len(view.self_knowledge) == 1
+    for forbidden in ("FUTURE_SECRET_MAPPING", "PRIVATE_ENTITY_LABEL", "sample.epub", "ch.html",
+                      "reviewed source", "evidence_ids", "time_basis", "draft_digest"):
+        assert forbidden not in wire
+    assert "真名" in view.encounter.public_identity and "未设定公开" in view.encounter.public_identity
+
+
+def test_chat_context_validates_message_source_anchor_and_lifecycle(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    _, create, path, _ = model_fixture
+    product = create(); app = product.application
+    for request in ({}, CharacterChatContextRequest("self", "start", " "),
+                    CharacterChatContextRequest("self", "start", "x" * 1001),
+                    CharacterChatContextRequest("self", "start", None),
+                    CharacterChatContextRequest("other", "start", "hi")):
+        assert app.preview_character_chat_context(request).status == "rejected"
+    path.write_text("corrupted", encoding="utf-8")
+    invalid = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert invalid.status == "failed-closed" and not invalid.self_knowledge and not invalid.current_message
+    product.close()
+    assert app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi")).status == "unavailable"
+
+
+def test_chat_context_refuses_empty_or_oversized_basis_instead_of_partial_persona(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    draft["assertions"][0]["knowledge_time"] = "unknown"
+    view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert view.status == "unavailable" and view.code == "no-eligible-self-knowledge"
+    draft["assertions"][0]["knowledge_time"] = "before"
+    template = draft["assertions"][0]
+    draft["assertions"] = [dict(template, id=f"a{i}", statement="长" * 1400) for i in range(20)]
+    view = create().application.preview_character_chat_context(CharacterChatContextRequest("self", "start", "hi"))
+    assert view.status == "rejected" and view.code == "self-knowledge-too-large" and not view.self_knowledge

@@ -6,6 +6,10 @@ from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, D
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisPreview
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView, CharacterContextRequest, CharacterContextView
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, EvidenceExtractionView
+from dynamic_subject_agent.character_chat_context import (
+    CharacterChatContextView, prepare_context, valid_request,
+)
+from dynamic_subject_agent.character_evidence_model import CharacterModelRequest
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
@@ -751,6 +755,15 @@ class _ApplicationRouter:
                 return EvidenceExtractionView("unavailable", "evidence-extraction-unavailable")
             return self._evidence_extraction.extract(request)
 
+    def preview_character_chat_context(self, request: object) -> CharacterChatContextView:
+        with self._lock:
+            if self._closed or self._character_model is None:
+                return CharacterChatContextView("unavailable", "character-model-unavailable")
+            if not valid_request(request):
+                return CharacterChatContextView("rejected", "invalid-chat-context-request")
+            model = self._character_model.preview(CharacterModelRequest(request.subject_id, request.anchor_id))
+            return prepare_context(model, request.current_message)
+
     def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         with self._lock:
             if self._closed or self._character_model is None:
@@ -1007,6 +1020,9 @@ class ApplicationFacade:
 
     def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         return self.__router.preview_character_model(request)
+
+    def preview_character_chat_context(self, request: object) -> CharacterChatContextView:
+        return self.__router.preview_character_chat_context(request)
 
     def preview_conversation_basis(self, request: object) -> BasisPreview:
         return self.__router.preview_conversation_basis(request)

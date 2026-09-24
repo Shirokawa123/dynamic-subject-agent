@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from dynamic_subject_agent.character_evidence_model import CharacterModelRequest, CharacterContextRequest
+from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
 from dynamic_subject_agent.local_product import open_character_model_preview
 
 
@@ -15,7 +16,9 @@ def main():
     parser.add_argument("--reviewed-digest", required=True)
     parser.add_argument("--subject", required=True)
     parser.add_argument("--anchor", required=True)
-    parser.add_argument("--context", help="查看该证据的同文档相邻语境，仅本地")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--context", help="查看该证据的同文档相邻语境，仅本地")
+    mode.add_argument("--chat-message", help="仅预览该消息的角色上下文；不生成回复或调用模型")
     parser.add_argument("--before", type=int, default=5)
     parser.add_argument("--after", type=int, default=5)
     args = parser.parse_args()
@@ -25,7 +28,11 @@ def main():
                                       reviewed_digest=args.reviewed_digest) as product:
         request = (CharacterContextRequest(args.subject, args.anchor, args.context, args.before, args.after)
                    if args.context is not None else CharacterModelRequest(args.subject, args.anchor))
-        view = product.application.preview_character_model(request)
+        if args.chat_message is not None:
+            view = product.application.preview_character_chat_context(
+                CharacterChatContextRequest(args.subject, args.anchor, args.chat_message))
+        else:
+            view = product.application.preview_character_model(request)
         print(json.dumps(asdict(view), ensure_ascii=False, indent=2))
 
 
