@@ -46,6 +46,11 @@ class SourceText(HTMLParser):
 
 def verify_source_evidence(source_root: Path, references: list[dict]) -> None:
     """Verify the exact supplied bytes and locators, never semantic truth."""
+    load_verified_source_documents(source_root, references)
+
+
+def load_verified_source_documents(source_root: Path, references: list[dict]):
+    """Return the exact parsed snapshots used for citation verification."""
     books, documents = {}, {}
     root = source_root.resolve(strict=True)
     for ref in references:
@@ -93,3 +98,4 @@ def verify_source_evidence(source_root: Path, references: list[dict]) -> None:
             raise ValueError("unsupported locator")
         if not text or text != ref["quote"] or sha256(text.encode()).hexdigest() != ref["quote_sha256"]:
             raise ValueError("citation mismatch")
+    return {key: parsed for key, (_, parsed) in documents.items()}

@@ -4,7 +4,7 @@ from dataclasses import asdict
 import json
 from pathlib import Path
 
-from dynamic_subject_agent.character_evidence_model import CharacterModelRequest
+from dynamic_subject_agent.character_evidence_model import CharacterModelRequest, CharacterContextRequest
 from dynamic_subject_agent.local_product import open_character_model_preview
 
 
@@ -15,12 +15,17 @@ def main():
     parser.add_argument("--reviewed-digest", required=True)
     parser.add_argument("--subject", required=True)
     parser.add_argument("--anchor", required=True)
+    parser.add_argument("--context", help="查看该证据的同文档相邻语境，仅本地")
+    parser.add_argument("--before", type=int, default=5)
+    parser.add_argument("--after", type=int, default=5)
     args = parser.parse_args()
     parent = Path(__file__).resolve().parents[2] / ".artifacts/character-model-previews"
     with open_character_model_preview(parent, draft_path=args.draft.resolve(),
                                       source_root=args.source_root.resolve(),
                                       reviewed_digest=args.reviewed_digest) as product:
-        view = product.application.preview_character_model(CharacterModelRequest(args.subject, args.anchor))
+        request = (CharacterContextRequest(args.subject, args.anchor, args.context, args.before, args.after)
+                   if args.context is not None else CharacterModelRequest(args.subject, args.anchor))
+        view = product.application.preview_character_model(request)
         print(json.dumps(asdict(view), ensure_ascii=False, indent=2))
 
 

@@ -6,7 +6,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from dynamic_subject_agent.character_evidence_model import DIMENSIONS, CharacterModelRequest
+from dynamic_subject_agent.character_evidence_model import DIMENSIONS, CharacterModelRequest, CharacterContextRequest, CharacterContextView
 from dynamic_subject_agent.local_product import open_character_model_preview
 
 
@@ -160,3 +160,58 @@ def test_subject_anchor_lifecycle_and_canonical_no_write(model_fixture):
     assert app.character_dialogue_status().status == "unavailable"
     product.close()
     assert preview(product).status == "unavailable"
+
+
+def test_context_returns_whole_adjacent_paragraphs_and_document_boundaries(model_fixture):
+    draft, create, _, book = model_fixture
+    content = b"<p>previous context</p><p>reviewed source</p><p>following context</p>"
+    with ZipFile(book, "w") as z:
+        z.writestr("ch.html", content)
+        z.writestr("next.html", b"<p>must not cross documents</p>")
+    draft["evidence"][0].update(paragraph=2, file_sha256=sha256(book.read_bytes()).hexdigest(),
+                                document_sha256=sha256(content).hexdigest())
+    product = create()
+    result = product.application.preview_character_model(CharacterContextRequest("self","start","r1",20,20))
+    assert result.status == "previewed"
+    assert [r.text for r in result.units] == ["previous context","reviewed source","following context"]
+    assert [r.is_cited for r in result.units] == [False,True,False]
+    assert result.document_start and result.document_end
+    assert result.citation.ordinal == 2 and result.citation.href == "ch.html"
+    product.close()
+    closed = product.application.preview_character_model(CharacterContextRequest("self","start","r1"))
+    assert type(closed) is CharacterContextView and closed.status == "unavailable"
+
+
+def test_context_keeps_typed_text_node_positions(model_fixture):
+    draft, create, _, _ = model_fixture
+    ref = draft["evidence"][0]
+    ref.pop("paragraph")
+    ref.update(locator_kind="html_text_node",text_node=2,quote="node evidence",quote_sha256=sha256(b"node evidence").hexdigest())
+    result = create().application.preview_character_model(CharacterContextRequest("self","start","r1",1,0))
+    assert result.citation.locator_kind == "html_text_node"
+    assert [(r.ordinal,r.text) for r in result.units] == [(1,"reviewed source"),(2,"node evidence")]
+
+
+def test_context_invalid_request_and_changed_source_are_not_empty_success(model_fixture):
+    draft, create, _, book = model_fixture
+    product = create();app = product.application
+    for request in (CharacterContextRequest("self","start","r1",-1,0),
+                    CharacterContextRequest("self","start","r1",21,0),
+                    CharacterContextRequest("self","start","r1",True,0),
+                    CharacterContextRequest("other","start","r1"),
+                    CharacterContextRequest("self","start","missing")):
+        assert app.preview_character_model(request).status == "rejected"
+    book.write_bytes(book.read_bytes()+b"changed")
+    result = app.preview_character_model(CharacterContextRequest("self","start","r1"))
+    assert result.status == "failed-closed" and not result.units
+
+
+def test_context_rejects_oversized_window_instead_of_truncating(model_fixture):
+    draft, create, _, book = model_fixture
+    content=("<p>reviewed source</p><p>"+"x"*6000+"</p>").encode()
+    with ZipFile(book,"w") as z:z.writestr("ch.html",content)
+    draft["evidence"][0].update(file_sha256=sha256(book.read_bytes()).hexdigest(),document_sha256=sha256(content).hexdigest())
+    app=create().application
+    result=app.preview_character_model(CharacterContextRequest("self","start","r1",0,1))
+    assert result.code == "context-window-too-large" and not result.units
+    assert app.preview_character_model(CharacterContextRequest("self","start","r1",0,0)).status == "previewed"

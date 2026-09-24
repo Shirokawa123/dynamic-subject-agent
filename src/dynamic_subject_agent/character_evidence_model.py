@@ -8,7 +8,7 @@ from hashlib import sha256
 import json
 from pathlib import Path
 
-from dynamic_subject_agent.source_evidence import verify_source_evidence
+from dynamic_subject_agent.source_evidence import load_verified_source_documents
 
 DIMENSIONS = ("identity", "biography", "relationships", "work", "abilities",
               "values", "concerns", "situation", "world-knowledge")
@@ -18,6 +18,33 @@ DIMENSIONS = ("identity", "biography", "relationships", "work", "abilities",
 class CharacterModelRequest:
     subject_id: str
     anchor_id: str
+
+
+@dataclass(frozen=True)
+class CharacterContextRequest:
+    subject_id: str
+    anchor_id: str
+    evidence_id: str
+    before: int = 5
+    after: int = 5
+
+
+@dataclass(frozen=True)
+class SourceContextUnit:
+    ordinal: int
+    text: str
+    is_cited: bool
+
+
+@dataclass(frozen=True)
+class CharacterContextView:
+    status: str
+    code: str = ""
+    citation: "CharacterEvidenceCitation | None" = None
+    units: tuple[SourceContextUnit, ...] = ()
+    document_start: bool = False
+    document_end: bool = False
+    draft_digest: str = ""
 
 
 @dataclass(frozen=True)
@@ -164,15 +191,52 @@ class CharacterEvidenceModel:
             visited.add(key)
         for key in by_id:
             visit(key)
-        verify_source_evidence(self._sources, refs)
-        return draft, evidence, by_id
+        documents = load_verified_source_documents(self._sources, refs)
+        return draft, evidence, by_id, documents
 
-    def preview(self, request: object) -> CharacterModelView:
+    @staticmethod
+    def _citation(e):
+        return CharacterEvidenceCitation(e["id"], e["file"], e["href"], e.get("locator_kind", "paragraph"),
+            e["text_node"] if e.get("locator_kind") == "html_text_node" else e["paragraph"],
+            e["speaker_id"], e["source_group"], e["file_sha256"], e["document_sha256"], e["quote_sha256"])
+
+    def _context(self, request):
+        if (not isinstance(request.subject_id, str) or not isinstance(request.anchor_id, str)
+                or not isinstance(request.evidence_id, str)
+                or any(type(n) is not int or not 0 <= n <= 20 for n in (request.before, request.after))):
+            return CharacterContextView("rejected", "invalid-context-request")
+        try:
+            draft, evidence, _, documents = self._load()
+            if request.subject_id != draft["subject_id"] or request.anchor_id != draft["anchor"]["id"]:
+                return CharacterContextView("rejected", "subject-anchor-mismatch")
+            if request.evidence_id not in evidence:
+                return CharacterContextView("rejected", "unknown-evidence")
+            ref = evidence[request.evidence_id]
+            citation = self._citation(ref)
+            parsed = documents[((self._sources / ref["file"]).resolve(strict=True), ref["href"])]
+            positions = dict(enumerate(parsed.rows, 1)) if citation.locator_kind == "paragraph" else parsed.nodes
+            last = max(positions)
+            start, end = max(1, citation.ordinal - request.before), min(last, citation.ordinal + request.after)
+            units = tuple(SourceContextUnit(n, positions[n], n == citation.ordinal)
+                          for n in range(start, end + 1) if n in positions)
+            if sum(len(unit.text) for unit in units) > 6000:
+                return CharacterContextView("rejected", "context-window-too-large")
+            return CharacterContextView("previewed", citation=citation, units=units,
+                                        document_start=start == 1, document_end=end == last,
+                                        draft_digest=self._digest)
+        except FileNotFoundError:
+            return CharacterContextView("unavailable", "draft-or-source-missing")
+        except Exception:
+            return CharacterContextView("failed-closed", "evidence-model-invalid")
+
+    def preview(self, request: object) -> CharacterModelView | CharacterContextView:
+        if type(request) is CharacterContextRequest:
+            return self._context(request)
         if (type(request) is not CharacterModelRequest or not isinstance(request.subject_id, str)
                 or not isinstance(request.anchor_id, str)):
             return CharacterModelView("rejected", "typed-subject-anchor-required")
         try:
-            draft, evidence, assertions = self._load()
+            draft, evidence, assertions, _ = self._load()
             if request.subject_id != draft["subject_id"] or request.anchor_id != draft["anchor"]["id"]:
                 return CharacterModelView("rejected", "subject-anchor-mismatch")
             reasons = {}
@@ -214,10 +278,7 @@ class CharacterEvidenceModel:
                 anchor_status=draft["anchor"]["status"], known=tuple(known), excluded=tuple(excluded),
                 coverage=tuple(coverage), entities=tuple(CharacterEntity(e["id"], e["name"], e["kind"])
                     for e in draft["entities"] if e["id"] in known_entities),
-                citations=tuple(CharacterEvidenceCitation(e["id"], e["file"], e["href"],
-                    e.get("locator_kind", "paragraph"), e["text_node"] if e.get("locator_kind") == "html_text_node" else e["paragraph"],
-                    e["speaker_id"], e["source_group"], e["file_sha256"], e["document_sha256"], e["quote_sha256"])
-                    for e in evidence.values()), draft_digest=self._digest)
+                citations=tuple(self._citation(e) for e in evidence.values()), draft_digest=self._digest)
         except FileNotFoundError:
             return CharacterModelView("unavailable", "draft-or-source-missing")
         except Exception:

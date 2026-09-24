@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, DialogueView
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisPreview
-from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView
+from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView, CharacterContextRequest, CharacterContextView
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, EvidenceExtractionView
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
@@ -751,10 +751,11 @@ class _ApplicationRouter:
                 return EvidenceExtractionView("unavailable", "evidence-extraction-unavailable")
             return self._evidence_extraction.extract(request)
 
-    def preview_character_model(self, request: object) -> CharacterModelView:
+    def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         with self._lock:
             if self._closed or self._character_model is None:
-                return CharacterModelView("unavailable", "character-model-unavailable")
+                view_type = CharacterContextView if type(request) is CharacterContextRequest else CharacterModelView
+                return view_type("unavailable", "character-model-unavailable")
             return self._character_model.preview(request)
 
     def preview_conversation_basis(self, request: object) -> BasisPreview:
@@ -1004,7 +1005,7 @@ class ApplicationFacade:
     def extract_character_evidence(self, request: object) -> EvidenceExtractionView:
         return self.__router.extract_character_evidence(request)
 
-    def preview_character_model(self, request: object) -> CharacterModelView:
+    def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         return self.__router.preview_character_model(request)
 
     def preview_conversation_basis(self, request: object) -> BasisPreview:
