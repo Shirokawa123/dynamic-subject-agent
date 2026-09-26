@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-96：完整流程high表达与新措辞验证](slice-96-full-high-new-wording.md)已完成。新措辞24/24有效，无故障/重试；内容仍有边界和自然度风险，不宣布完整MVP。
+[Slice-97：独立角色定义与连续聊天的可审准备](slice-97-character-identity-continuity-preparation.md)已完成，见[报告](../reports/2026-09-26-slice-97/REPORT.md)。旧封存仅支持原创，派生定义只读包禁止旧save/freeze；尚未创建身份或发送真实历史。
 
-按[额度记录](../plans/provider-budget-200.md)累计30/200、剩170。下一片先准备可审独立身份映射与连续聊天方案；新身份冻结、真实对话保存及限定历史外发须具体批准，不创建第二chat store。
+按[额度记录](../plans/provider-budget-200.md)累计30/200、剩170。本片不消耗额度；停在[派生定义与连续聊天用途确认](../plans/character-continuity-consent.md)。批准后建立来源准确的身份与接续实现切片，不再逐批询问同范围次数。

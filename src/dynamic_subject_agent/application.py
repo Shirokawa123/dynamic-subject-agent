@@ -11,6 +11,7 @@ from dynamic_subject_agent.character_chat_context import (
     CharacterChatContextView, prepare_context, valid_request,
 )
 from dynamic_subject_agent.character_evidence_model import CharacterModelRequest
+from dynamic_subject_agent.character_identity_preparation import CharacterIdentityPreparationView, prepare_character_identity
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
 from dataclasses import dataclass, replace
@@ -790,6 +791,10 @@ class _ApplicationRouter:
                 return view_type("unavailable", "character-model-unavailable")
             return self._character_model.preview(request)
 
+    def preview_character_identity_preparation(self, request: object) -> CharacterIdentityPreparationView:
+        with self._lock:
+            return prepare_character_identity(self.preview_character_model(request))
+
     def preview_conversation_basis(self, request: object) -> BasisPreview:
         with self._lock:
             if self._closed or self._basis_preview is None:
@@ -1039,6 +1044,9 @@ class ApplicationFacade:
 
     def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         return self.__router.preview_character_model(request)
+
+    def preview_character_identity_preparation(self, request: object) -> CharacterIdentityPreparationView:
+        return self.__router.preview_character_identity_preparation(request)
 
     def preview_character_reply(self, request: object) -> CharacterReplyCandidateView:
         return self.__router.preview_character_reply(request)

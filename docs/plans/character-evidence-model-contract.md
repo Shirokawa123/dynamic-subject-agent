@@ -110,6 +110,16 @@ S92独立试验装配按[六题方案](communication-plan-generation-trial.md)�
 
 独立ExpressionThinkingTrial从完整合法父试验审计取得原表达投影；当前Facade重建父计划一致，并绑定父plan文件及31份审计指纹。没有手写projection、加引用或重做规划入口，重复表达digest准备即拒绝。
 
-只变表达生成配置为high/4096，无temperature；消息、policy和所选完整资料不变，旧答案只参与本地审计指纹，不发模型。新精确plan绑定六次上限；先claim再鉴权、发送前核对父指纹、故障全停、严格缓存与恢复不重发，最终仍required/persisted=false。普通local-only及两阶段行为不变。新6次和预算未获准，真实效果未知。
+只变表达生成配置为high/4096，无temperature；消息、policy和所选完整资料不变，旧答案只参与本地审计指纹，不发模型。新精确plan绑定六次上限；先claim再鉴权、发送前核对父指纹、故障全停、严格缓存与恢复不重发，最终仍required/persisted=false。普通local-only行为不变。S95获准完成6次配置对照；明确旧错改善，弱泛化和自然度仍有限。S96另完成两批共24次新措辞完整流程，累计30/200、剩170，不以结构通过替代语义验收。
 
-仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制，新的8次配置尚未获准，见[诊断方案](review-thinking-diagnostic.md)。
+仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制；S88/S90真实校准结果见前述记录。
+
+## Slice-96完整流程表达配置
+
+expression_profile默认standard保留原计划/请求字节；显式thinking-high绑定表达high/4096、无temperature，规划维持high/4096。同一冻结配置贯穿计划、Producer、缓存和Adapter；S94对照拒绝high父计划，不能把重复high冒充配置比较。没有新投影字段、历史、状态写入或自动重试；真实新措辞仍有时间/否定歧义与冗余，见[S96报告](../reports/2026-09-26-slice-96/REPORT.md)。
+
+## Slice-97只读身份准备
+
+ApplicationFacade.preview_character_identity_preparation复用已验证CharacterModelView及纯SourceFreezeMapping，保持纳入认识的完整限定，超限失败关闭。Source文档明确是派生整理；原证据、排除项和原始stage只留本地trace。运行资产保留人物/起点、适用认识和chat_organization，独立definition basis绑定资产摘要及reviewed-fiction-derived/private-character-chat来源声明。
+
+旧LocalIdentityAuthority/Studio仅支持project-original，不能直接用于小说派生角色。预览的source/save/freeze请求均None，execution_ready=false，content_mapping_only=true，确认与权利声明false。当前没有新来源Authority、正式身份或生产聊天；批准包不等于执行路径已完成，后续必须实现准确来源并核对同一内容。具体新数据用途见[确认方案](character-continuity-consent.md)。
