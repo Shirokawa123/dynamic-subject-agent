@@ -22,6 +22,10 @@ def main():
     mode.add_argument("--reply-request", help="预览精确回复候选请求；不调用模型")
     parser.add_argument("--before", type=int, default=5)
     parser.add_argument("--after", type=int, default=5)
+    parser.add_argument("--context-mode", choices=("auto", "flat", "organized"), default="auto",
+                        help="auto使用已审组织，缺组织沿旧平铺；flat为全量对照")
+    parser.add_argument("--max-knowledge-chars", type=int, default=20000,
+                        help="实际self_knowledge JSON字符预算，范围1–20000")
     args = parser.parse_args()
     parent = Path(__file__).resolve().parents[2] / ".artifacts/character-model-previews"
     with open_character_model_preview(parent, draft_path=args.draft.resolve(),
@@ -31,10 +35,12 @@ def main():
                    if args.context is not None else CharacterModelRequest(args.subject, args.anchor))
         if args.reply_request is not None:
             view = product.application.preview_character_reply(
-                CharacterChatContextRequest(args.subject, args.anchor, args.reply_request))
+                CharacterChatContextRequest(args.subject, args.anchor, args.reply_request,
+                                            args.context_mode, args.max_knowledge_chars))
         elif args.chat_message is not None:
             view = product.application.preview_character_chat_context(
-                CharacterChatContextRequest(args.subject, args.anchor, args.chat_message))
+                CharacterChatContextRequest(args.subject, args.anchor, args.chat_message,
+                                            args.context_mode, args.max_knowledge_chars))
         else:
             view = product.application.preview_character_model(request)
         print(json.dumps(asdict(view), ensure_ascii=False, indent=2))

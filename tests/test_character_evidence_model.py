@@ -395,3 +395,218 @@ def test_candidate_lab_is_unavailable_by_default_and_refuses_remote(model_fixtur
     _,create,_,_=model_fixture
     assert create().application.propose_character_reply(CharacterChatContextRequest("self","start","hi")).status=="unavailable"
     with pytest.raises(ValueError): CharacterReplyLab(ModelGateway(CandidateTestAdapter.make(local=False)))
+
+
+def organize_fixture(draft):
+    template = draft["assertions"][0]
+    draft["assertions"].extend([
+        dict(template, id="art", dimension="biography", statement="小时候母亲教我画画。"),
+        dict(template, id="work", dimension="work", statement="我做过插画，也会担心期限。", kind="belief"),
+        dict(template, id="future", statement="FUTURE_PRIVATE_SECRET", knowledge_time="after"),
+    ])
+    draft["chat_organization"] = dict(
+        version="character-chat-organization-1", subject_id="self", anchor_id="start",
+        core=[dict(id="core-self", title="自我认识", content="我在意创作，也愿意听取不同看法。", claim_ids=["a"])],
+        episodes=[dict(id="child-art", title="学画的经历", content="小时候母亲教我画画。", claim_ids=["art"],
+                       cues=["画画", "学画", "小时候", "母亲"])],
+        details=[dict(id="work-detail", title="创作的压力", content="我做过插画，也会担心期限。",
+                      claim_ids=["work"], cues=["截止", "交稿", "赶稿"])])
+
+
+def test_organized_core_persists_and_relevant_experiences_change_in_final_reply(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    app = create().application
+    art = app.preview_character_reply(CharacterChatContextRequest("self", "start", "你小时候怎么学画的？"))
+    work = app.preview_character_reply(CharacterChatContextRequest("self", "start", "我今晚得赶稿，压力很大"))
+    unrelated = app.preview_character_reply(CharacterChatContextRequest("self", "start", "今天天气真好"))
+    assert art.status == work.status == unrelated.status == "previewed"
+    assert art.projection.self_knowledge[0] == work.projection.self_knowledge[0] == unrelated.projection.self_knowledge[0]
+    assert [item.dimension for item in art.projection.self_knowledge] == ["core", "episode"]
+    assert [item.dimension for item in work.projection.self_knowledge] == ["core", "detail"]
+    assert work.projection.self_knowledge[1].kind == "belief"
+    assert len(unrelated.projection.self_knowledge) == 1
+    assert "不表示本人不知道" in unrelated.projection.policy
+    assert len({art.request_digest, work.request_digest, unrelated.request_digest}) == 3
+    local = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "今晚得赶稿"))
+    selected = next(row for row in local.selection.units if row.unit_id == "work-detail")
+    assert selected.claim_ids == ("work",) and selected.matched_terms == ("赶稿",) and selected.decision == "included"
+
+
+def test_explicit_flat_baseline_matches_legacy_projection_and_missing_organization_is_distinct(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    organized_app = create().application
+    message = "想聊聊画画"
+    flat = organized_app.preview_character_reply(CharacterChatContextRequest("self", "start", message, "flat"))
+    assert len(flat.projection.self_knowledge) == 3
+    draft.pop("chat_organization")
+    old_app = create().application
+    old = old_app.preview_character_reply(CharacterChatContextRequest("self", "start", message))
+    assert old == flat  # Includes the exact old policy and request fingerprint.
+    missing = old_app.preview_character_chat_context(CharacterChatContextRequest("self", "start", message, "organized"))
+    assert missing.status == "unavailable" and missing.code == "chat-organization-not-reviewed"
+
+
+@pytest.mark.parametrize("basis", ["missing", "future", "other-view", "derived", "core-self"])
+def test_invalid_organization_basis_fails_before_selection_even_for_flat(model_fixture, basis):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    template = draft["assertions"][0]
+    draft["assertions"].extend([
+        dict(template, id="other-view", knower_id="other"),
+        dict(template, id="derived", depends_on=["future"]),
+    ])
+    draft["chat_organization"]["details"][0]["claim_ids"] = [basis]
+    app = create().application
+    for mode in ("auto", "organized", "flat"):
+        result = app.preview_character_reply(CharacterChatContextRequest("self", "start", "无关天气", mode))
+        assert result.status == "failed-closed" and result.code == "chat-organization-invalid" and result.projection is None
+
+
+@pytest.mark.parametrize("invalid", ["null", "anchor", "empty-core", "duplicate-id", "cycle"])
+def test_organization_corruption_and_cyclic_claims_are_not_missing_configuration(model_fixture, invalid):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    org = draft["chat_organization"]
+    if invalid == "null": draft["chat_organization"] = None
+    elif invalid == "anchor": org["anchor_id"] = "later"
+    elif invalid == "empty-core": org["core"] = []
+    elif invalid == "duplicate-id": org["details"][0]["id"] = "core-self"
+    else: draft["assertions"][0]["depends_on"] = ["a"]
+    result = create().application.preview_character_reply(CharacterChatContextRequest("self", "start", "画画"))
+    assert result.status == "failed-closed" and result.projection is None
+
+
+def test_actual_json_budget_keeps_whole_core_and_reports_unselected_material(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    draft["chat_organization"]["core"][0]["content"] = '创作"\\\n' * 20
+    app = create().application
+    core = app.preview_character_reply(CharacterChatContextRequest("self", "start", "天气"))
+    actual = len(json.dumps([asdict(row) for row in core.projection.self_knowledge], ensure_ascii=False,
+                           sort_keys=True, separators=(",", ":")))
+    exact = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "画画", "organized", actual))
+    assert exact.status == "previewed" and exact.selection.knowledge_chars == actual
+    assert exact.self_knowledge == core.projection.self_knowledge
+    assert any(row.decision == "material-budget" for row in exact.selection.units)
+    smaller = app.preview_character_reply(CharacterChatContextRequest("self", "start", "画画", "organized", actual - 1))
+    assert smaller.status == "rejected" and smaller.code == "organized-core-too-large" and smaller.projection is None
+
+
+@pytest.mark.parametrize("mode,budget", [("bad", 20000), (None, 20000), ("auto", True), ("auto", 0),
+                                       ("auto", -1), ("auto", 20001), ("auto", 10.0)])
+def test_facade_rejects_invalid_context_mode_and_budget(model_fixture, mode, budget):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    _, create, _, _ = model_fixture
+    result = create().application.preview_character_reply(CharacterChatContextRequest("self", "start", "你好", mode, budget))
+    assert result.status == "rejected" and result.projection is None
+
+
+def test_text_matching_supports_short_chinese_and_related_limit_without_duplicate_core_detail(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    org = draft["chat_organization"]
+    org["episodes"][0].pop("cues")
+    org["details"] = [dict(id=f"detail-{i}", title="学画小事", content="画画是投入的事情。", claim_ids=["work"])
+                      for i in range(8)]
+    org["details"].append(dict(id="duplicate-core", title="画画", content=org["core"][0]["content"], claim_ids=["a"]))
+    app = create().application
+    result = app.preview_character_chat_context(CharacterChatContextRequest("self", "start", "画画"))
+    assert len(result.self_knowledge) == 7  # All core + six bounded related units.
+    assert sum(row.decision == "included" for row in result.selection.units) == 6
+    assert any(row.matched_terms == ("画画",) for row in result.selection.units)
+    assert next(row for row in result.selection.units if row.unit_id == "duplicate-core").decision == "content-already-in-core"
+    assert any(row.decision == "related-unit-limit" for row in result.selection.units)
+
+
+def test_compressed_core_does_not_hide_more_specific_detail_with_the_same_claim(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    org = draft["chat_organization"]
+    org["core"][0]["claim_ids"] = ["art"]
+    org["core"][0]["content"] = "我的绘画兴趣与童年有关。"
+    org["details"] = [dict(id="specific", title="童年学画", content="小时候母亲教我画画。", claim_ids=["art"], cues=["母亲"])]
+    result = create().application.preview_character_reply(CharacterChatContextRequest("self", "start", "是母亲教你的吗？"))
+    assert result.status == "previewed"
+    assert any(item.dimension == "detail" and "母亲教我" in item.content for item in result.projection.self_knowledge)
+
+
+def test_incidental_single_chinese_bigram_does_not_select_an_unrelated_episode(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    draft["chat_organization"]["episodes"][0].update(title="亲人的关系", content="母亲曾经教我画画。", cues=[])
+    app = create().application
+    weak = app.preview_character_reply(CharacterChatContextRequest("self", "start", "杯子与昨天的关系是什么？"))
+    strong = app.preview_character_reply(CharacterChatContextRequest("self", "start", "母亲曾经教你的是什么？"))
+    assert len(weak.projection.self_knowledge) == 1
+    assert any(row.dimension == "episode" for row in strong.projection.self_knowledge)
+
+
+def test_short_chinese_topic_punctuation_is_equivalent_without_weakening_long_queries(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    draft, create, _, _ = model_fixture
+    organize_fixture(draft)
+    org = draft["chat_organization"]
+    org["episodes"] = []
+    org["details"] = [dict(id="short-topic", title="投入", content="画画让我投入。", claim_ids=["art"])]
+    app = create().application
+    baseline = app.preview_character_reply(CharacterChatContextRequest("self", "start", "画画"))
+    assert len(baseline.projection.self_knowledge) == 2
+    for message in ("画画？", "画画。", "画画！", " 画画? ", "“画画”？"):
+        result = app.preview_character_reply(CharacterChatContextRequest("self", "start", message))
+        assert result.status == "previewed"
+        assert result.projection.self_knowledge == baseline.projection.self_knowledge
+        assert result.projection.current_message == message
+    for message in ("杯子和画画有何联系？", "画？画"):
+        result = app.preview_character_reply(CharacterChatContextRequest("self", "start", message))
+        assert result.status == "previewed" and len(result.projection.self_knowledge) == 1
+
+
+def test_organized_projection_is_exact_local_candidate_input_without_audit_or_excluded_leaks(model_fixture):
+    from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
+    from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    draft, create, path, _ = model_fixture
+    organize_fixture(draft)
+    adapter = CandidateTestAdapter.make({"reply_text": "画画时我也会在意不同的看法。", "language": "zh"})
+    app = create(CharacterReplyLab(ModelGateway(adapter))).application
+    request = CharacterChatContextRequest("self", "start", "画画")
+    previewed = app.preview_character_reply(request)
+    result = app.propose_character_reply(request)
+    assert result.status == "candidate" and result.request_digest == previewed.request_digest
+    assert adapter.calls[0].payload == previewed.projection
+    wire = json.dumps(asdict(adapter.calls[0].payload), ensure_ascii=False)
+    for forbidden in ("claim_ids", "unit_id", "core-self", "child-art", "work-detail", "selection", "reviewed_digest",
+                      "sample.epub", "ch.html", "reviewed source", "FUTURE_PRIVATE_SECRET", "time_basis", "evidence_ids"):
+        assert forbidden not in wire
+    path.write_bytes(path.read_bytes() + b" ")
+    assert app.propose_character_reply(request).status == "failed-closed" and len(adapter.calls) == 1
+
+
+def test_existing_cli_can_preview_organized_reply_and_explicit_flat_comparison(model_fixture):
+    import os
+    import subprocess
+    import sys
+    draft, create, path, book = model_fixture
+    organize_fixture(draft)
+    create()
+    cli = Path(__file__).resolve().parents[1] / "app/desktop/character_model_preview.py"
+    base = [sys.executable, str(cli), "--draft", str(path), "--source-root", str(book.parent),
+            "--reviewed-digest", sha256(path.read_bytes()).hexdigest(), "--subject", "self", "--anchor", "start",
+            "--reply-request", "画画"]
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    organized = subprocess.run([*base, "--context-mode", "organized"], check=True, capture_output=True, encoding="utf-8", env=env)
+    flat = subprocess.run([*base, "--context-mode", "flat"], check=True, capture_output=True, encoding="utf-8", env=env)
+    one, two = json.loads(organized.stdout), json.loads(flat.stdout)
+    assert one["status"] == two["status"] == "previewed"
+    assert one["projection"]["self_knowledge"][0]["dimension"] == "core"
+    assert len(one["projection"]["self_knowledge"]) == 2 and len(two["projection"]["self_knowledge"]) == 3

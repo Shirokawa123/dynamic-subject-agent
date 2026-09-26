@@ -47,3 +47,15 @@ Facade的preview_character_chat_context接受CharacterChatContextRequest(subject
 ## Slice-73回复候选
 
 preview_character_reply通过已核验上下文生成CharacterReplyProjection六项白名单及请求digest；propose_character_reply需显式local CharacterReplyLab，默认unavailable，remote声明拒绝。单独CHARACTER_CONTEXT_REPLY任务不走旧角色Adapter。候选exact reply_text/language结构校验后仅标candidate/semantic_review=required，不写状态、不自动重试。CLI --reply-request只预览。此Lab无缓存/幂等会话承诺，不支持历史或真实Provider。
+
+## Slice-78人物组织与按需装配
+
+同一审核草稿可带`chat_organization`，exact顶层字段为version=`character-chat-organization-1`、subject_id、anchor_id、core、episodes、details。前三者绑定本草稿主体/起点；core非空，各组最多100项。单元包含id/title/content/claim_ids，可选cues；ID全组唯一，只引用本草稿经完整时间/知情/依赖筛选后仍适用的命题，不建立单元之间的第二依赖图。无组织继续旧预览；有组织但非法则明确FailedClosed，不通过flat绕过审核。内容语义正确仍由作者审阅负责，不由ID存在或摘要标签证明。
+
+CharacterChatContextRequest增加context_mode=`auto|flat|organized`与max_knowledge_chars（真整数1–20000）。auto在有合法组织时采用组织，否则兼容平铺；显式organized缺配置返回unavailable。知识预算按最终self_knowledge紧凑JSON字符数计算，不是token数；核心全量常驻，超限拒绝，不截断核心凑预算。
+
+相关经历/细节以明确线索及有门槛的中文二/三字或英文文本重叠排序，最多6个。只有单个偶然二字重叠不足以选入长消息的材料；显式线索和直接短词仍可命中。该算法是本地词法基线，不理解所有转述/否定。detail仅在正文与核心规范化后完全相同时省略，引用同一命题不代表细节内容重复。无匹配只保留核心，不声称不知道或库存为空。
+
+组织内容仍进入原projection.self_knowledge六字段单元，dimension为core/episode/detail，保守保留belief与关联依据标记。组织policy补充选择范围/披露语义；flat保持既有projection和policy。两种请求的policy并不完全相同，后续实验若比较整套策略应说明这一点，若隔离组织因素须使用统一实验policy。
+
+context.selection只供本地查看草稿指纹、知识字符数、单元/命题依据及选用/预算原因；reply projection不包含此诊断、cues、出处或ID。CLI沿原入口加--context-mode及--max-knowledge-chars。仍无远程调用、正式身份写入或历史输入。

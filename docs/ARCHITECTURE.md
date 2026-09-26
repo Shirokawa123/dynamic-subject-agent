@@ -4,6 +4,8 @@
 
 ## 契约适用范围（2026-09-20）
 
+Slice-78将审核草稿内的连贯核心/经历/细节接入现有Facade回复预览，支持auto/flat/organized、可追溯的本地选择与实际JSON字符预算；先按起点知情筛选再核组织依据，坏组织不静默降级。平铺兼容与local-only候选保持，未开放新远程用途。字段及有限词法选择见[人物组织契约](plans/character-evidence-model-contract.md#slice-78人物组织与按需装配)；组织接线不证明模型内容质量。
+
 Slice-68实测后将语义候选提取限定为来源命题：模型不再输出知情者/成立阶段/获知阶段裁决，返回DTO中的这些字段由Python固定unknown，表示待审而非角色不知。按维度的固定策略与来源数据分开；本地审核后才能形成起点模型。响应诊断只可收集内容/结束状态/用量，不含鉴权、reasoning或tools。用户取消原3次跨轮上限仅覆盖同一组已授权原文，不扩大来源或自动重试；自动提取质量尚未通过。
 
 Slice-67新增显式资料候选提取：Facade.extract_character_evidence→ModelGateway独立任务，只接受已审样本包、权利/用途确认和一次尝试；结构/逐字引用通过也固定为candidate，不能自动封存或进入起点认识。默认离线；新DeepSeek用途单独2048输出上限，旧identity路径保持400。实际原文外发仍待[具体试点方案](plans/character-evidence-extraction-trial.md)批准。

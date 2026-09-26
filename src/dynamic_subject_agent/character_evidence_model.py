@@ -95,6 +95,23 @@ class CharacterCoverage:
 
 
 @dataclass(frozen=True)
+class CharacterKnowledgeUnit:
+    unit_id: str
+    title: str
+    content: str
+    claim_ids: tuple[str, ...]
+    cues: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CharacterChatOrganization:
+    version: str
+    core: tuple[CharacterKnowledgeUnit, ...]
+    episodes: tuple[CharacterKnowledgeUnit, ...]
+    details: tuple[CharacterKnowledgeUnit, ...]
+
+
+@dataclass(frozen=True)
 class CharacterModelView:
     status: str
     code: str = ""
@@ -109,6 +126,7 @@ class CharacterModelView:
     draft_digest: str = ""
     sealed_from_draft: bool = False
     chat_stage_description: str = ""
+    chat_organization: CharacterChatOrganization | None = None
 
 
 class CharacterEvidenceModel:
@@ -204,6 +222,50 @@ class CharacterEvidenceModel:
             e["text_node"] if e.get("locator_kind") == "html_text_node" else e["paragraph"],
             e["speaker_id"], e["source_group"], e["file_sha256"], e["document_sha256"], e["quote_sha256"])
 
+    @staticmethod
+    def _organization(draft, known):
+        """Author-reviewed summaries may only reference already eligible claims.
+
+        This checks the basis, not whether summary prose follows semantically.
+        Units cannot cite other units, so no second dependency graph is formed.
+        """
+        if "chat_organization" not in draft:
+            return None
+        value = draft["chat_organization"]
+        if (type(value) is not dict
+                or set(value) != {"version", "subject_id", "anchor_id", "core", "episodes", "details"}
+                or value["version"] != "character-chat-organization-1"
+                or value["subject_id"] != draft["subject_id"]
+                or value["anchor_id"] != draft["anchor"]["id"]):
+            raise ValueError("invalid organization")
+        eligible = {item.item_id for item in known}
+        ids, groups = set(), {}
+        for group in ("core", "episodes", "details"):
+            rows = value[group]
+            if type(rows) is not list or len(rows) > 100 or (group == "core" and not rows):
+                raise ValueError("invalid organization units")
+            units = []
+            for row in rows:
+                if (type(row) is not dict
+                        or not {"id", "title", "content", "claim_ids"}.issubset(row)
+                        or set(row) - {"id", "title", "content", "claim_ids", "cues"}):
+                    raise ValueError("invalid organization unit")
+                for field, limit in (("id", 120), ("title", 120), ("content", 6000)):
+                    if not isinstance(row[field], str) or not row[field].strip() or len(row[field]) > limit:
+                        raise ValueError("invalid organization text")
+                claims, cues = row["claim_ids"], row.get("cues", [])
+                if (row["id"] in ids or type(claims) is not list or not claims or len(claims) > 100
+                        or any(not isinstance(key, str) for key in claims)
+                        or len(set(claims)) != len(claims) or not set(claims).issubset(eligible)
+                        or type(cues) is not list or len(cues) > 20
+                        or any(not isinstance(cue, str) or not 2 <= len(cue.strip()) <= 80 for cue in cues)):
+                    raise ValueError("ineligible organization basis")
+                ids.add(row["id"])
+                units.append(CharacterKnowledgeUnit(row["id"], row["title"], row["content"],
+                                                     tuple(claims), tuple(cues)))
+            groups[group] = tuple(units)
+        return CharacterChatOrganization(value["version"], **groups)
+
     def _context(self, request):
         if (not isinstance(request.subject_id, str) or not isinstance(request.anchor_id, str)
                 or not isinstance(request.evidence_id, str)
@@ -269,6 +331,11 @@ class CharacterEvidenceModel:
                                           a["knower_id"], a["event_time"], a["knowledge_time"], a["time_basis"],
                                           tuple(a["depends_on"]))
                 (excluded if why else known).append(view)
+            # Filtering comes first, including each claim's transitive basis.
+            try:
+                organization = self._organization(draft, known)
+            except (ValueError, KeyError, TypeError):
+                return CharacterModelView("failed-closed", "chat-organization-invalid")
             coverage = []
             for dim in DIMENSIONS:
                 count = sum(item.dimension == dim for item in known)
@@ -283,7 +350,8 @@ class CharacterEvidenceModel:
                 coverage=tuple(coverage), entities=tuple(CharacterEntity(e["id"], e["name"], e["kind"])
                     for e in draft["entities"] if e["id"] in known_entities),
                 citations=tuple(self._citation(e) for e in evidence.values()), draft_digest=self._digest,
-                chat_stage_description=draft.get("chat_stage_description", ""))
+                chat_stage_description=draft.get("chat_stage_description", ""),
+                chat_organization=organization)
         except FileNotFoundError:
             return CharacterModelView("unavailable", "draft-or-source-missing")
         except Exception:

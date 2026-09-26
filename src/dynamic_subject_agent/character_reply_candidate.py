@@ -19,6 +19,13 @@ REPLY_POLICY = (
     "只返回JSON，exact字段reply_text和language；language为zh，reply_text非空且最多1200字符。"
 )
 
+ORGANIZED_REPLY_POLICY = (
+    "self_knowledge中core是常驻的连贯自我认识，episode/detail仅是本轮选中的相关经历和细节。"
+    "未选中或没有匹配不表示本人不知道、没有其他经历或资料全空。"
+    "这些组织摘要由作者审核，basis=linked-evidence表示有审核依据；kind=belief不得当成已证实事实。"
+    "仍按disclosure决定分享，不朗读核心档案，不补出未提供的具体经历。"
+)
+
 
 @dataclass(frozen=True)
 class CharacterReplyProjection:
@@ -54,6 +61,7 @@ def preview_reply(context: CharacterChatContextView) -> CharacterReplyCandidateV
          encounter.public_identity, encounter.relationship, encounter.proposed_motive,
          encounter.proposed_timing, *encounter.unresolved),
         context.disclosure, context.current_message,
+        policy=REPLY_POLICY + ORGANIZED_REPLY_POLICY if context.selection is not None else REPLY_POLICY,
     )
     serialized = json.dumps(asdict(projection), ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return CharacterReplyCandidateView("previewed", projection=projection,

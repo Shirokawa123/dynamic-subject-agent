@@ -777,7 +777,8 @@ class _ApplicationRouter:
             if not valid_request(request):
                 return CharacterChatContextView("rejected", "invalid-chat-context-request")
             model = self._character_model.preview(CharacterModelRequest(request.subject_id, request.anchor_id))
-            return prepare_context(model, request.current_message)
+            return prepare_context(model, request.current_message, context_mode=request.context_mode,
+                                   max_knowledge_chars=request.max_knowledge_chars)
 
     def preview_character_model(self, request: object) -> CharacterModelView | CharacterContextView:
         with self._lock:

@@ -1,10 +1,13 @@
 """Offline chat preparation from a verified stage view, never a model task."""
 from dataclasses import asdict, dataclass
 import json
+import re
+import unicodedata
 
 from dynamic_subject_agent.character_evidence_model import CharacterModelView
 
 MAX_KNOWLEDGE_CHARS = 20_000
+MAX_RELATED_UNITS = 6
 
 
 @dataclass(frozen=True)
@@ -12,6 +15,8 @@ class CharacterChatContextRequest:
     subject_id: str
     anchor_id: str
     current_message: str
+    context_mode: str = "auto"
+    max_knowledge_chars: int = MAX_KNOWLEDGE_CHARS
 
 
 @dataclass(frozen=True)
@@ -22,6 +27,29 @@ class SelfKnowledge:
     basis: str
     event_scope: str
     knowledge_scope: str
+
+
+@dataclass(frozen=True)
+class KnowledgeSelection:
+    unit_id: str
+    group: str
+    claim_ids: tuple[str, ...]
+    matched_terms: tuple[str, ...]
+    decision: str
+
+
+@dataclass(frozen=True)
+class ContextSelection:
+    mode: str
+    reviewed_digest: str
+    knowledge_chars: int
+    max_knowledge_chars: int
+    units: tuple[KnowledgeSelection, ...]
+    limitations: tuple[str, ...] = (
+        "按显式线索及文本片段选择，不是通用语义检索。",
+        "未选中或没有匹配不表示本人不知道或没有其他经历。",
+        "摘要由作者审核；引用合规不证明摘要语义正确。",
+    )
 
 
 @dataclass(frozen=True)
@@ -99,6 +127,7 @@ class CharacterChatContextView:
     can_chat: bool = False
     stage_description: str = ""
     opening: PublicOpening | None = None
+    selection: ContextSelection | None = None
 
 
 def valid_request(request: object) -> bool:
@@ -106,27 +135,124 @@ def valid_request(request: object) -> bool:
             and isinstance(request.subject_id, str) and bool(request.subject_id)
             and isinstance(request.anchor_id, str) and bool(request.anchor_id)
             and isinstance(request.current_message, str)
-            and bool(request.current_message.strip()) and len(request.current_message) <= 1000)
+            and bool(request.current_message.strip()) and len(request.current_message) <= 1000
+            and isinstance(request.context_mode, str) and request.context_mode in ("auto", "flat", "organized")
+            and type(request.max_knowledge_chars) is int
+            and 1 <= request.max_knowledge_chars <= MAX_KNOWLEDGE_CHARS)
 
 
-def prepare_context(model: CharacterModelView, message: str) -> CharacterChatContextView:
-    """Keep the entire eligible basis; never copy author-side audit metadata."""
+def knowledge_chars(knowledge) -> int:
+    """Count the exact self_knowledge array representation used in reply JSON."""
+    return len(json.dumps([asdict(item) for item in knowledge], ensure_ascii=False,
+                          sort_keys=True, separators=(",", ":")))
+
+
+def _text_terms(text):
+    # Short Chinese words cannot depend on whitespace tokenization. This small
+    # lexical baseline deliberately makes no semantic/negation interpretation.
+    terms = set(re.findall(r"[a-z0-9]{3,}", text.casefold()))
+    stop = {"自己", "一个", "没有", "不是", "什么", "可以", "知道", "我们", "你们", "他们", "这个", "那个"}
+    particles = "的了是在也和与"
+    for run in re.findall(r"[\u4e00-\u9fff]+", text):
+        for width in (2, 3):
+            terms.update(run[i:i + width] for i in range(len(run) - width + 1)
+                         if run[i:i + width] not in stop
+                         and run[i] not in particles and run[i + width - 1] not in particles)
+    return terms
+
+
+def _direct_short_term(message):
+    """Ignore only surrounding punctuation/space, preserving the query body."""
+    text = message.casefold()
+    start, end = 0, len(text)
+    while start < end and (text[start].isspace() or unicodedata.category(text[start]).startswith("P")):
+        start += 1
+    while end > start and (text[end - 1].isspace() or unicodedata.category(text[end - 1]).startswith("P")):
+        end -= 1
+    return text[start:end]
+
+
+def _organized_knowledge(model, message, budget):
+    organization = model.chat_organization
+    claims = {item.item_id: item for item in model.known}
+    knowledge, decisions, core_contents = [], [], set()
+
+    def material(unit, group):
+        basis = [claims[key] for key in unit.claim_ids]
+        return SelfKnowledge(group, unit.title + "：" + unit.content,
+            "belief" if any(item.kind == "belief" for item in basis) else "fact",
+            "linked-evidence", "at" if any(item.event_time == "at" for item in basis) else "before",
+            "at" if any(item.knowledge_time == "at" for item in basis) else "before")
+
+    for unit in organization.core:
+        knowledge.append(material(unit, "core"))
+        core_contents.add("".join(unit.content.split()).casefold())
+        decisions.append(KnowledgeSelection(unit.unit_id, "core", unit.claim_ids, (), "always-included"))
+    if knowledge_chars(knowledge) > budget:
+        return (), None, "organized-core-too-large"
+
+    message_terms = _text_terms(message)
+    direct_term = _direct_short_term(message)
+    ranked = []
+    for group, units in (("episode", organization.episodes), ("detail", organization.details)):
+        for unit in units:
+            cues = tuple(sorted({cue for cue in unit.cues if cue.casefold().strip() in message.casefold()}))
+            overlaps = tuple(sorted(message_terms & _text_terms(unit.title + " " + unit.content)))
+            # One incidental bigram in a long question is too weak. Keep exact
+            # short-word requests useful, and let reviewed cues take priority.
+            strong_overlap = (len(overlaps) >= 2 or any(len(term) >= 3 for term in overlaps)
+                              or direct_term in overlaps)
+            terms = cues or (overlaps if strong_overlap else ())
+            if not terms:
+                decisions.append(KnowledgeSelection(unit.unit_id, group, unit.claim_ids, (), "no-lexical-match"))
+            elif group == "detail" and "".join(unit.content.split()).casefold() in core_contents:
+                decisions.append(KnowledgeSelection(unit.unit_id, group, unit.claim_ids, terms, "content-already-in-core"))
+            else:
+                ranked.append((-(100 * len(cues) + len(overlaps)), len(ranked), unit, group, terms))
+    selected = 0
+    for _, _, unit, group, terms in sorted(ranked, key=lambda row: (row[0], row[1])):
+        item = material(unit, group)
+        decision = "included"
+        if selected >= MAX_RELATED_UNITS:
+            decision = "related-unit-limit"
+        elif knowledge_chars([*knowledge, item]) > budget:
+            decision = "material-budget"
+        else:
+            knowledge.append(item)
+            selected += 1
+        decisions.append(KnowledgeSelection(unit.unit_id, group, unit.claim_ids, terms, decision))
+    selection = ContextSelection("organized", model.draft_digest, knowledge_chars(knowledge), budget, tuple(decisions))
+    return tuple(knowledge), selection, ""
+
+
+def prepare_context(model: CharacterModelView, message: str, *, context_mode: str = "auto",
+                    max_knowledge_chars: int = MAX_KNOWLEDGE_CHARS) -> CharacterChatContextView:
+    """Use reviewed organization when present; keep an explicit flat baseline."""
     if model.status != "previewed":
         return CharacterChatContextView(model.status, model.code)
     if not model.chat_stage_description:
         return CharacterChatContextView("unavailable", "chat-stage-not-reviewed")
     if not model.known:
         return CharacterChatContextView("unavailable", "no-eligible-self-knowledge")
-    knowledge = tuple(SelfKnowledge(
-        item.dimension, item.statement, item.kind, item.derivation,
-        item.event_time, item.knowledge_time,
-    ) for item in model.known)
-    # Budget the actual escaped field representation, not only the prose.
-    if len(json.dumps([asdict(item) for item in knowledge], ensure_ascii=False)) > MAX_KNOWLEDGE_CHARS:
-        return CharacterChatContextView("rejected", "self-knowledge-too-large")
+    mode = ("organized" if model.chat_organization is not None else "flat") if context_mode == "auto" else context_mode
+    selection = None
+    if mode == "organized":
+        if model.chat_organization is None:
+            return CharacterChatContextView("unavailable", "chat-organization-not-reviewed")
+        knowledge, selection, code = _organized_knowledge(model, message, max_knowledge_chars)
+        if code:
+            return CharacterChatContextView("rejected", code)
+    else:
+        knowledge = tuple(SelfKnowledge(
+            item.dimension, item.statement, item.kind, item.derivation,
+            item.event_time, item.knowledge_time,
+        ) for item in model.known)
+        if knowledge_chars(knowledge) > max_knowledge_chars:
+            return CharacterChatContextView("rejected", "self-knowledge-too-large")
     encounter = EncounterPreview()
     return CharacterChatContextView(
         "previewed", self_knowledge=knowledge, encounter=encounter,
         disclosure=DISCLOSURE, continuity=CONTINUITY, current_message=message,
         stage_description=model.chat_stage_description, opening=public_opening(encounter),
+        selection=selection,
     )
