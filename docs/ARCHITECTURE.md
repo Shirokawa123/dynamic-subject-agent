@@ -2,7 +2,17 @@
 
 2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
-S98补四条有条件人格解释与常驻core，S99准备独立远程试验。用途获准后S100 high规划截断停止（7次）；S101仅降planner low的24次对照完成，局部接续/表达改善仍有泛化风险，累计61/200余139。S102完整定义及限定连续聊天用途已获准；S103已创建、选择并恢复准确派生身份，连续聊天尚未接入，见[S103报告](reports/2026-09-26-slice-103/REPORT.md)。
+S98补四条有条件人格解释与常驻core；S101真实对照局部改善但仍有泛化风险。S102完整定义/限定连续聊天用途已获准，S103封存身份；S104接正式两阶段与canonical接续，三轮真实合成验收完成，累计67/200余133，人物长篇重复与过去细节扩写风险保留，见[S104报告](reports/2026-09-27-slice-104/REPORT.md)。
+
+### Slice-104：封存人物的连续聊天
+
+独立reviewed-character-private-chat-deepseek-1 authority、准确manifest与固定scope/policy/config承诺，通过后继QRI和首次事件前Host切换沿用S103身份/Timeline。Authority独占activation metadata、registry、预算路径承诺和恢复；发布后、Host切换后registry未更新等窗口可精确重放，错lineage不创建替代聊天。open_reviewed_character_chat_product在production composition中装配Gateway与新Cognition，不启用旧六Domain/effect。
+
+两阶段仅提议整体回复，各持久Domain均NoOp；人格仍为有边界解释，不写原作事实或长程状态。已验证sealed asset构造人物core/相关资料/人格，最小runtime identity及typed同身份冻结历史进入规划low/表达high。每阶段4096 tokens/30秒，无自动重试。最多2完整committed轮/4000字符，不拆半轮或用更旧对象填补最新超限；关闭后只用当前消息/固定资料和有限有无交流前景。未知/损坏/控制不明显式停止，规划后用途或封存authority变化阻止表达。
+
+真实原文仅canonical Timeline，UI读最近20轮；没有真实prompt JSON副本。共享SQLite调用账本只含元数据，同事务claim/count/head校验、跨进程唯一stage、未知投递计次；本项目初始61/总200不随身份重置。只有独占新专用目录可首次初始化，已有目录缺DB/config或尾记录丢失拒绝。已成功请求在余额不足时仍可幂等取回，真正新请求无额度不调用。
+
+Facade新增status/history偏好控制，关闭不删除本地聊天。薄loopback Adapter提供聊天、显示记录、上下文开关和额度；同源Host/token保护，失败保留草稿。正式人物已后台启用且空历史，三个真实验收轮在另一身份；生活/主动分享仍未启用。政策SHA属于固定运行合同，后续升级需明确版本兼容，不能改全局常量后让既有聊天无法重开。
 
 ### Slice-103：准确来源的封存人物
 

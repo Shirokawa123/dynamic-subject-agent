@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
@@ -32,7 +32,7 @@ from dynamic_subject_agent.source_character_authoring import (
     SourceIdentityFreezeStatus,
     SourceIdentityFreezeView,
 )
-from dynamic_subject_agent.host import RuntimeHost, RuntimeHostRootRef
+from dynamic_subject_agent.host import RuntimeHost, RuntimeHostRootRef, _CognitionAssembly
 from dynamic_subject_agent.studio import (
     CapabilityManifest,
     FreezeDecision,
@@ -53,6 +53,10 @@ from dynamic_subject_agent.reviewed_character_definition import (
     prepare_reviewed_definition, reviewed_source_refs, reviewed_profile_id,
 )
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
+
+from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, ReviewedCharacterChatStatus
+from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
+from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 
 _STATE_SCHEMA_VERSION = 1
 _LEGACY_AVERY_PUBLICATION_KEY = "local-product-deepseek-qri-v1"
@@ -290,6 +294,12 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             raise RuntimeError("reviewed-local-identity-authority-mismatch")
     elif any(key in record for key in ("identity_kind", "definition_basis", "runtime_asset_sha")):
         raise RuntimeError("reviewed-local-identity-pointer-invalid")
+    if qri.provider_authority == CHAT_AUTHORITY:
+        metadata = record.get("chat_activation")
+        if (type(metadata) is not dict or set(metadata) != {"contract", "budget_path", "budget_total", "initial_budget_used"}
+            or metadata["contract"] != qri.reviewed_chat_contract or type(record.get("history_enabled")) is not bool):
+            raise RuntimeError("reviewed-chat-activation-metadata-invalid")
+        CharacterChatBudget(Path(metadata["budget_path"]), total=metadata["budget_total"], initial_used=metadata["initial_budget_used"]).counts()
     if record.get("host_location") is not None:
         RuntimeHostRootRef.from_dict(record["host_location"])
     return _ValidatedLocalIdentity(
@@ -725,7 +735,8 @@ def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
-    dormant = ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()
+    dormant = (ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
+        else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition())
     # New identities opt into the task contract; dormant preflight still denies
     # submission. Existing bindings are read by their persisted version.
     if identity.reviewed_definition is None:
@@ -752,7 +763,8 @@ def _validate_host_binding(
     host = RuntimeHost.open(
         host_location,
         studio_location=identity.studio_location,
-        cognition=(ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()),
+        cognition=(ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
+            else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()),
         relationship_enabled=config.relationship_mode == "dynamic",
     )
     try:
@@ -1010,7 +1022,7 @@ class LocalIdentityAuthority:
             else snapshot_entries
         )
         reviewed_definition = None
-        if qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
+        if qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY):
             studio = SubjectStudio.open(studio_location, policy_kernel=PolicyKernel())
             try:
                 reviewed_definition = studio.query_snapshot(qri.genesis_snapshot_id).reviewed_definition
@@ -1027,6 +1039,91 @@ class LocalIdentityAuthority:
             knowledge_entries=knowledge_entries,
             runtime_identity=runtime_identity,
         )
+
+    def activate_reviewed_chat(self, *, definition_basis, scope_digest, review_request_basis,
+                               budget_path, budget_total=200, initial_budget_used=61):
+        state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
+        record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
+        identity = _validate_identity_record(record, expected_parent=self._config.product_parent)
+        if identity.reviewed_definition is None or identity.reviewed_definition["definition_basis"] != definition_basis:
+            raise RuntimeError("reviewed-chat-definition-mismatch")
+        contract = chat_contract(identity.reviewed_definition, scope_digest, review_request_basis)
+        metadata = dict(contract=contract, budget_path=str(budget_path.resolve()), budget_total=budget_total, initial_budget_used=initial_budget_used)
+        existing = record.get("chat_activation") or record.get("pending_chat_activation")
+        if existing is not None and existing != metadata: raise RuntimeError("reviewed-chat-activation-conflict")
+        CharacterChatBudget(budget_path, total=budget_total, initial_used=initial_budget_used, initialize=existing is None)
+        if identity.qri.provider_authority == CHAT_AUTHORITY:
+            if identity.qri.reviewed_chat_contract != contract: raise RuntimeError("reviewed-chat-contract-mismatch")
+            return self.load_active()
+        if identity.qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY:
+            raise RuntimeError("reviewed-chat-predecessor-invalid")
+        # Persist the exact recovery target before publication/swap. A restart
+        # can recover this one successor, never an arbitrary mismatched binding.
+        record["pending_chat_activation"] = metadata
+        record.setdefault("history_enabled", True)
+        _write_state(self._config.state_path, state)
+        predecessor = identity.qri
+        studio = SubjectStudio.open(identity.studio_location, policy_kernel=PolicyKernel())
+        try:
+            key = "reviewed-character-chat-" + definition_basis + "-" + scope_digest
+            try: successor = studio.query_qri(publication_key=key)
+            except Exception as error:
+                if getattr(error, "code", None) != "qri-not-found": raise
+                snapshot = studio.query_snapshot(predecessor.genesis_snapshot_id)
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.reviewed_character_chat(),
+                    validity_us=300_000_000, reviewed_chat_contract=contract)
+                successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id,
+                    publication_key=key, predecessor_qualification_id=predecessor.qualification_id, reviewed_chat_contract=contract)
+            assembly = _CognitionAssembly._reviewed_character_transition(predecessor, successor)
+        finally: studio.close()
+        if record.get("host_location") is None:
+            location, timeline = _create_identity_host(identity)
+            record["host_location"], record["timeline_id"] = location.to_dict(), timeline
+            _write_state(self._config.state_path, state)
+        host = RuntimeHost.open(RuntimeHostRootRef.from_dict(record["host_location"]), studio_location=identity.studio_location,
+            cognition=ReviewedCharacterDormantCognition(), _cognition_assembly=assembly, _runtime_identity=identity.runtime_identity)
+        try: host.open_runtime(successor, timeline_id=record["timeline_id"])
+        finally: host.close()
+        record["publication_key"] = successor.publication_key
+        record["chat_activation"] = metadata
+        record.pop("pending_chat_activation", None)
+        _write_state(self._config.state_path, state)
+        return self.load_active()
+
+    def _active_chat_record(self, expected_identity_id=None):
+        state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
+        record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
+        identity = _validate_identity_record(record, expected_parent=self._config.product_parent)
+        if expected_identity_id is not None and identity.qri.profile_id != expected_identity_id: raise RuntimeError("reviewed-chat-identity-changed")
+        return state, record, identity
+
+    def reviewed_character_chat_status(self, expected_identity_id=None):
+        try:
+            _, record, identity = self._active_chat_record(expected_identity_id)
+            if identity.reviewed_definition is None: return ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-required")
+            if identity.qri.provider_authority != CHAT_AUTHORITY:
+                return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
+            metadata = record["chat_activation"]
+            total, used, remaining = CharacterChatBudget(Path(metadata["budget_path"]), total=metadata["budget_total"], initial_used=metadata["initial_budget_used"]).counts()
+            return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
+        except Exception:
+            return ReviewedCharacterChatStatus("failed-closed", problem_code="reviewed-character-status-unverified")
+
+    def character_history_preference(self, expected_identity_id=None):
+        _, record, identity = self._active_chat_record(expected_identity_id)
+        if identity.qri.provider_authority != CHAT_AUTHORITY: raise RuntimeError("reviewed chat inactive")
+        return record["history_enabled"]
+
+    def set_reviewed_character_history(self, enabled, expected_identity_id=None):
+        if type(enabled) is not bool: return ReviewedCharacterChatStatus("unavailable", problem_code="typed-history-preference-required")
+        try:
+            state, record, identity = self._active_chat_record(expected_identity_id)
+            if identity.qri.provider_authority != CHAT_AUTHORITY: raise RuntimeError("reviewed chat inactive")
+            record["history_enabled"] = enabled
+            _write_state(self._config.state_path, state)
+        except Exception:
+            return ReviewedCharacterChatStatus("failed-closed", problem_code="reviewed-character-history-unverified")
+        return self.reviewed_character_chat_status(expected_identity_id)
 
     def freeze(
         self,

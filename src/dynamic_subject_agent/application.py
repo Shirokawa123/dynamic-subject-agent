@@ -78,6 +78,7 @@ class ApplicationOperationStatus(str, Enum):
     PENDING = "pending"
     TERMINAL = "terminal"
     INTERRUPTED = "interrupted"
+    UNKNOWN = "unknown"
     FAILED_CLOSED = "failed-closed"
     UNAVAILABLE = "unavailable"
     CONFLICT = "conflict"
@@ -341,6 +342,8 @@ class _ApplicationRouter:
         source_studio_location: StudioRootRef | None = None,
         source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
         | None = None,
+        reviewed_chat_status=None,
+        reviewed_history_setter=None,
         local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
         local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
         | None = None,
@@ -393,6 +396,8 @@ class _ApplicationRouter:
             source_identity_freezer
         ):
             raise TypeError("source_identity_freezer must be callable")
+        self._reviewed_chat_status = reviewed_chat_status
+        self._reviewed_history_setter = reviewed_history_setter
         self._source_identity_freezer = source_identity_freezer
         self._local_identity_lister = local_identity_lister
         self._local_identity_selector = local_identity_selector
@@ -886,6 +891,20 @@ class _ApplicationRouter:
                 problem_code="source-identity-freeze-failed-closed",
             )
 
+    def reviewed_character_chat_status(self):
+        from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
+        with self._lock:
+            self._require_open()
+            callback = self._reviewed_chat_status
+        return callback() if callback is not None else ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-chat-unavailable")
+
+    def set_reviewed_character_history(self, enabled):
+        from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
+        with self._lock:
+            self._require_open()
+            callback = self._reviewed_history_setter
+        return callback(enabled) if callback is not None else ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-chat-unavailable")
+
     def local_identities(self) -> LocalIdentityListResponse:
         with self._lock:
             self._require_open()
@@ -1087,6 +1106,12 @@ class ApplicationFacade:
     def freeze_source_identity(self, request: object) -> SourceIdentityFreezeResponse:
         return self.__router.freeze_source_identity(request)
 
+    def reviewed_character_chat_status(self):
+        return self.__router.reviewed_character_chat_status()
+
+    def set_reviewed_character_history(self, enabled):
+        return self.__router.set_reviewed_character_history(enabled)
+
     def local_identities(self) -> LocalIdentityListResponse:
         return self.__router.local_identities()
 
@@ -1112,6 +1137,8 @@ def _create_application_facade(
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
     | None = None,
+    _reviewed_chat_status=None,
+    _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
     | None = None,
@@ -1133,6 +1160,8 @@ def _create_application_facade(
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,
+        reviewed_chat_status=_reviewed_chat_status,
+        reviewed_history_setter=_reviewed_history_setter,
         local_identity_lister=_local_identity_lister,
         local_identity_selector=_local_identity_selector,
         knowledge_entries=_knowledge_entries,
@@ -1236,9 +1265,12 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
         )
     if state is OperationState.FAILED_CLOSED:
         failure = result.failure
+        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable")
+            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable")
+            else ApplicationOperationStatus.FAILED_CLOSED)
         projection = AuthorizedOperationProjection(
             operation_kind=OperationKind.SUBJECT,
-            operation_state=ApplicationOperationStatus.FAILED_CLOSED,
+            operation_state=reported_status,
             timeline_outcome_id=None,
             timeline_head_sequence=result.snapshot.timeline_head_sequence,
             expression_text=None,
@@ -1247,10 +1279,10 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             failure_code=None if failure is None else failure.code,
         )
         return ApplicationOperationResponse(
-            status=ApplicationOperationStatus.FAILED_CLOSED,
+            status=reported_status,
             operation_ref=result.operation_ref,
             projection=projection,
-            problem=ApplicationProblemView("operation-failed-closed"),
+            problem=ApplicationProblemView(failure.code if failure is not None and reported_status in (ApplicationOperationStatus.UNAVAILABLE, ApplicationOperationStatus.UNKNOWN) else "operation-failed-closed"),
             replayed=result.admission_replayed,
         )
     if state is OperationState.INTERRUPTED:

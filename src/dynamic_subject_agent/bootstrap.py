@@ -126,6 +126,8 @@ def compose_application(
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
     | None = None,
+    _reviewed_chat_status=None,
+    _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
     | None = None,
@@ -285,6 +287,8 @@ def compose_application(
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,
+            _reviewed_chat_status=_reviewed_chat_status,
+            _reviewed_history_setter=_reviewed_history_setter,
             _local_identity_lister=_local_identity_lister,
             _local_identity_selector=_local_identity_selector,
             _knowledge_entries=_knowledge_entries,

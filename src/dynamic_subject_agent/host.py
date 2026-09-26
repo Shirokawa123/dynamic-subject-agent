@@ -102,6 +102,8 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACTER_AUTHORITY
+from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
+from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
 
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
@@ -120,6 +122,7 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
     {
         PROVIDER_AUTHORITY,
         REVIEWED_CHARACTER_AUTHORITY,
+        CHAT_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
         _LOCAL_FIRST_TEST_PROVIDER_AUTHORITY,
@@ -182,6 +185,8 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
+    if qri.provider_authority == CHAT_AUTHORITY:
+        return qri.capabilities == CapabilityManifest.reviewed_character_chat() and qri.reviewed_chat_contract is not None
     if qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
         return qri.capabilities == CapabilityManifest.reviewed_character_dormant()
     if qri.provider_authority == PROVIDER_AUTHORITY:
@@ -203,6 +208,8 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
+    if cognition.provider_authority == CHAT_AUTHORITY:
+        return type(cognition) is ReviewedCharacterChatCognition
     if cognition.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
         return type(cognition) is ReviewedCharacterDormantCognition
     if cognition.provider_authority == _DORMANT_ARTIFACT_PROVIDER_AUTHORITY:
@@ -726,6 +733,21 @@ class _CognitionAssembly:
             single_cognition=cognition,
             _authority=_COGNITION_ASSEMBLY_TOKEN,
         )
+
+    @classmethod
+    def _reviewed_character_transition(cls, predecessor, successor):
+        if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY or successor.provider_authority != CHAT_AUTHORITY
+            or successor.predecessor_qualification_id != predecessor.qualification_id
+            or successor.profile_id != predecessor.profile_id
+            or successor.genesis_snapshot_id != predecessor.genesis_snapshot_id
+            or successor.knowledge_snapshot_id != predecessor.knowledge_snapshot_id
+            or successor.isolation_proof != predecessor.isolation_proof):
+            raise RuntimeHostRejected("reviewed-chat-transition-invalid", "exact dormant-to-chat qualification required")
+        instance = cls._prepared_control_only()
+        instance._slots = (
+            _CognitionAssemblySlot._from_qri(predecessor, ReviewedCharacterDormantCognition()),
+            _CognitionAssemblySlot._from_qri(successor, ReviewedCharacterChatCognition()))
+        return instance
 
     @classmethod
     def _prepared_control_only(cls) -> _CognitionAssembly:

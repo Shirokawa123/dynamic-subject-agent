@@ -6949,6 +6949,32 @@ class TimelineEngine:
             blocked.update(descendants)
         return tuple(sorted(m.memory_id for m in current if m.status == 'active' and m.memory_id in blocked))
 
+    def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
+        from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
+        from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
+        if type(enabled) is not bool:
+            raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
+        if enabled:
+            verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
+            if verified is None:
+                return CharacterDialogueBasis("unavailable", problem_code="character-history-unresolved")
+            records, cutoff = verified
+            if is_dialogue_control(self._query_command(operation_ref).utterance):
+                return CharacterDialogueBasis("restricted", bool(expected_head), problem_code="character-history-restricted")
+            selected = select_recent_dialogue(records, after_sequence=cutoff)
+            if records and is_dialogue_control(records[-1].user_text):
+                return CharacterDialogueBasis("restricted", True, problem_code="character-history-restricted")
+            return CharacterDialogueBasis("available", bool(expected_head), selected)
+        # Closing disclosure still verifies the canonical basis and foreground;
+        # it never substitutes an unverified empty history for a failed read.
+        snapshot = self.query(operation_ref)
+        if snapshot.timeline_basis is None or snapshot.timeline_basis.head_sequence != expected_head:
+            raise PublicationFailedClosed("character-history-basis-invalid", "character foreground must match frozen Admission")
+        records = self.list_conversation_turns(limit=2)
+        if (records[-1].head_sequence if records else 0) != expected_head:
+            raise PublicationFailedClosed("character-history-head-invalid", "character foreground is not current")
+        return CharacterDialogueBasis("available", bool(expected_head))
+
     def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
         """Read only the same identity's verified frozen prefix for this reply."""
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue

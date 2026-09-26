@@ -143,7 +143,13 @@ def _open_loaded_local_product(
 ) -> OpenedLocalProduct:
     if loaded.reviewed_definition is not None:
         from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
-        cognition = ReviewedCharacterDormantCognition()
+        from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
+        from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
+        if loaded.qri.provider_authority == CHAT_AUTHORITY:
+            if type(cognition) is not ReviewedCharacterChatCognition:
+                cognition = ReviewedCharacterChatCognition()
+        else:
+            cognition = ReviewedCharacterDormantCognition()
         if any(value is not None for value in (source_authoring, character_dialogue, basis_preview, character_model, character_reply_lab, evidence_extraction)):
             raise RuntimeError("reviewed-character-chat-unavailable")
     composition = compose_application(
@@ -162,6 +168,8 @@ def _open_loaded_local_product(
         _evidence_extraction=evidence_extraction,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
+        _reviewed_chat_status=lambda: authority.reviewed_character_chat_status(loaded.qri.profile_id),
+        _reviewed_history_setter=lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id),
         _local_identity_lister=authority.list,
         _local_identity_selector=lambda request: authority.select(
             request,
@@ -611,3 +619,31 @@ def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan
     root.mkdir(parents=True, exist_ok=False)
     config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(), _evidence_extraction=lab)
+
+
+def open_reviewed_character_chat_product(config, *, definition_basis, scope_digest, review_request_basis,
+                                         budget_total=200, initial_budget_used=61, budget_path=None, _transport=None):
+    """Activate only the approved complete definition/scope, then open production chat.
+
+    No model or credential is accessed until the user submits a bounded message.
+    """
+    from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
+    from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
+    from dynamic_subject_agent.reviewed_character_chat_provider import DeepSeekReviewedCharacterChatAdapter
+    import os
+    if budget_path is None:
+        local_app = os.environ.get("LOCALAPPDATA", "").strip()
+        base = Path(local_app) if local_app else Path.home() / "AppData" / "Local"
+        budget_path = base / "DynamicSubjectAgent/character-chat-v1/provider-budget"
+    if not isinstance(budget_path, Path) or not budget_path.is_absolute(): raise ValueError("explicit absolute shared budget required")
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_reviewed_chat(definition_basis=definition_basis, scope_digest=scope_digest,
+        review_request_basis=review_request_basis, budget_path=budget_path,
+        budget_total=budget_total, initial_budget_used=initial_budget_used)
+    budget = CharacterChatBudget(budget_path, total=budget_total, initial_used=initial_budget_used)
+    transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    gateway = ModelGateway(DeepSeekReviewedCharacterChatAdapter(transport=transport,
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
+    cognition = ReviewedCharacterChatCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
+        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id))
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)

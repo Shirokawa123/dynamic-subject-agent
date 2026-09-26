@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>人物聊天</title>
+<style>
+:root{color-scheme:light;--ink:#313747;--muted:#737b89;--line:#e5e7ee;--accent:#57618f}*{box-sizing:border-box}body{margin:0;background:#f5f5f9;color:var(--ink);font:15px/1.7 system-ui,"Microsoft YaHei",sans-serif}.shell{max-width:860px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;padding:26px 24px 18px}header{display:flex;align-items:center;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line)}.avatar{width:46px;height:46px;border-radius:16px;display:grid;place-items:center;background:#e3e4ef;color:var(--accent);font-size:22px}h1{font-size:20px;margin:0}p{margin:0}.subtitle,.quiet{color:var(--muted);font-size:12px}details{margin-left:auto;max-width:360px}summary{cursor:pointer;color:var(--accent);font-size:13px}.settings{padding:12px;background:white;border:1px solid var(--line);border-radius:12px;position:absolute;right:max(24px,calc((100vw - 812px)/2));z-index:1;max-width:340px;box-shadow:0 12px 28px #3137470a}label{cursor:pointer}.settings p{margin-top:8px}.transcript{flex:1;padding:24px 0}.empty{padding:8vh 20px;text-align:center;color:var(--muted)}.empty strong{display:block;color:var(--ink);font-weight:500;margin-bottom:8px}.turn{margin-bottom:25px}.message{white-space:pre-wrap;overflow-wrap:anywhere;padding:12px 16px;border-radius:16px;max-width:85%;width:fit-content}.user{background:#e9eaf3;margin:0 0 16px auto;border-bottom-right-radius:5px}.assistant{background:white;border:1px solid #ececf2;border-bottom-left-radius:5px}.speaker{font-size:11px;color:var(--muted);margin:0 0 5px 3px}.compose{position:sticky;bottom:0;padding-top:12px;background:#f5f5f9}form{display:flex;gap:10px;background:white;border:1px solid #dfe1eb;border-radius:16px;padding:12px;align-items:flex-end}textarea{font:inherit;line-height:1.5;resize:vertical;min-height:48px;max-height:180px;flex:1;border:0;outline:none;background:transparent;color:var(--ink)}button{font:inherit;font-size:14px;border:0;border-radius:10px;background:var(--accent);color:white;padding:10px 19px;cursor:pointer}button:disabled{opacity:.45;cursor:default}#feedback{min-height:28px;font-size:13px;padding:6px 3px;color:var(--muted)}#feedback.error{color:#9b493d}.footer{display:flex;justify-content:space-between;gap:10px;padding:0 3px;font-size:11px;color:var(--muted)}@media(max-width:550px){.shell{padding:18px 14px 12px}.message{max-width:93%}.subtitle{max-width:210px}.settings{right:14px;left:14px;max-width:none}.footer{flex-wrap:wrap}}
+</style>
+<main class="shell">
+<header><div class="avatar" aria-hidden="true">◌</div><div><h1 id="name">人物聊天</h1><p class="subtitle">从初次相识开始，慢慢聊。</p></div><details><summary>聊天设置</summary><div class="settings"><label><input type="checkbox" id="history" disabled> 使用近期对话接续聊天</label><p class="quiet">开启时，模型可使用最近最多 2 个完整对话轮次，合计不超过 4,000 字。关闭后不发送历史原话；本地聊天记录仍保留。</p><p class="quiet" id="budget"></p></div></details></header>
+<section id="messages" class="transcript" aria-label="聊天记录"><div class="empty"><strong>正在读取聊天记录…</strong></div></section>
+<div class="compose"><form id="composer"><textarea id="draft" maxlength="1000" rows="2" placeholder="说点什么吧…" aria-label="消息" disabled></textarea><button id="send" type="submit" disabled>发送</button></form><div id="feedback" role="status" aria-live="polite"></div><div class="footer"><span>显示最近 20 轮 · 聊天保存在本机 · AI 生成回复</span><span>当前版本尚未推进生活或主动发消息</span></div></div>
+</main>
+<script>
+const TOKEN='__SESSION_TOKEN__';
+const el=id=>document.getElementById(id);
+let busy=false, ready=false, lastTurns='', characterName='对方';
+function feedback(text,error=false){el('feedback').textContent=text;el('feedback').className=error?'error':'';}
+function lock(value){busy=value;el('send').disabled=value||!ready;el('draft').disabled=value||!ready;el('history').disabled=value||!ready;el('send').textContent=value?'回复中…':'发送';}
+async function request(path,payload){const options=payload===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json','X-Chat-Token':TOKEN},body:JSON.stringify(payload)};const response=await fetch(path,{...options,cache:'no-store'});if(!response.ok)throw new Error('request');return await response.json();}
+function render(state){
+ characterName=state.character.subject_name||'对方';el('name').textContent=characterName;document.title=characterName+' · 人物聊天';
+ el('history').checked=state.character.history_enabled;el('budget').textContent=`模型调用额度：已用 ${state.character.budget_used} / ${state.character.budget_total}；本轮通常使用 2 次。`;
+ ready=state.character.status==='active'&&state.history.status==='available'&&state.character.budget_remaining>=2;
+ const turns=JSON.stringify(state.history.turns);
+ if(turns!==lastTurns){lastTurns=turns;el('messages').replaceChildren();
+  if(!state.history.turns.length){const box=document.createElement('div');box.className='empty';const title=document.createElement('strong');title.textContent='从一句招呼开始';box.append(title,document.createTextNode('她有自己的经历、喜好和想法。'));el('messages').append(box);}
+  for(const turn of state.history.turns){const group=document.createElement('div');group.className='turn';const user=document.createElement('div');user.className='message user';user.textContent=turn.user_text;const label=document.createElement('div');label.className='speaker';label.textContent=characterName;const assistant=document.createElement('div');assistant.className='message assistant';assistant.textContent=turn.assistant_text;group.append(user,label,assistant);el('messages').append(group);}
+ }
+ if(state.history.status!=='available')feedback('聊天记录暂时无法安全读取，已暂停发送。',true);
+ else if(state.character.status!=='active')feedback('人物聊天尚未就绪，请查看启动窗口的状态。',true);
+ else if(state.character.budget_remaining<2)feedback('本次模型调用额度已不足一轮，聊天记录仍可查看。',true);
+ lock(busy);
+}
+async function refresh(){const state=await request('/status');render(state);return state;}
+el('composer').addEventListener('submit',async event=>{event.preventDefault();if(busy||!ready)return;const text=el('draft').value.trim();if(!text)return;const requestId=crypto.randomUUID();lock(true);feedback('正在回复…');try{const result=await request('/send',{text,request_id:requestId});if(result.ok){el('draft').value='';feedback('');}else{feedback(result.message||'本轮没有完成，消息草稿已保留。',true);}render(result.state);if(result.ok)window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}catch{ready=false;feedback('连接中断，消息草稿已保留。请刷新后先查看聊天记录，避免重复发送。',true);}finally{lock(false);}});
+el('draft').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();el('composer').requestSubmit();}});
+el('history').addEventListener('change',async()=>{const enabled=el('history').checked;lock(true);try{const result=await request('/history',{enabled});render(result.state);feedback(result.ok?(enabled?'已开启近期对话上下文。':'已关闭近期对话上下文，本地记录保留。'):'设置未保存，请稍后重试。',!result.ok);}catch{ready=false;feedback('设置未能确认，请刷新后检查。',true);}finally{lock(false);}});
+refresh().catch(()=>{feedback('无法读取聊天状态，请确认本地服务仍在运行。',true);lock(false);});
+</script>
+</html>

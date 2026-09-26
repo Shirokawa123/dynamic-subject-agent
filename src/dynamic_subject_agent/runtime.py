@@ -355,6 +355,7 @@ class CognitionRuntimeView:
     runtime_identity: RuntimeIdentityProjection | None = None
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
+    load_character_dialogue: Callable[[bool], object] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
     load_artifact_preview: Callable | None = None
@@ -1072,6 +1073,10 @@ class SubjectRuntime:
             medium_state=medium_state,
             medium_signals=medium_signals,
             subject_time_result=subject_time_result,
+            load_character_dialogue=(
+                (lambda enabled: self._engine.character_dialogue_before(dialogue_operation, expected_head=dialogue_head, enabled=enabled))
+                if dialogue_operation is not None and dialogue_head is not None else None
+            ),
             load_recent_dialogue=(
                 (lambda: self._engine.recent_dialogue_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None

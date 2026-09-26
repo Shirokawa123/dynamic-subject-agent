@@ -12,6 +12,8 @@ from dynamic_subject_agent.reviewed_character_definition import (
     is_reviewed_source, reviewed_source_refs, reviewed_profile_id, validate_reviewed_envelope,
 )
 
+from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, matches_chat_source_contract
+
 import hashlib
 import json
 import re
@@ -710,6 +712,13 @@ class CapabilityManifest:
             included=("host-authoring", "sealed-reviewed-character-definition"),
             certified=("host-authoring", "sealed-reviewed-character-definition"),
             unavailable=("cognition", "provider", "network-access", "legacy-six-domain-cognition", "effect-dispatch"))
+
+    @classmethod
+    def reviewed_character_chat(cls):
+        return cls(manifest_version="reviewed-character-chat-capabilities-1",
+            included=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
+            certified=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
+            unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "life-events", "background-notifications"))
 
     @classmethod
     def _local_first_test_double(cls) -> CapabilityManifest:
@@ -1474,6 +1483,7 @@ class PolicyQuestion:
     isolation_proof: IsolationProof
     profile_source: SourceDeclaration
     genesis_source: SourceDeclaration
+    reviewed_chat_contract: dict | None = None
 
 
 @dataclass(frozen=True, init=False)
@@ -1578,6 +1588,7 @@ class QualifiedRuntimeInput:
     publication_key: str
     published_at_us: int
     integrity_digest: str
+    reviewed_chat_contract: dict | None = None
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         raise TypeError(
@@ -1601,7 +1612,7 @@ class QualifiedRuntimeInput:
         return instance
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        value = {
             "qualification_id": self.qualification_id,
             "qualification_revision": self.qualification_revision,
             "profile_id": self.profile_id,
@@ -1618,6 +1629,9 @@ class QualifiedRuntimeInput:
             "published_at_us": self.published_at_us,
             "integrity_digest": self.integrity_digest,
         }
+        if self.reviewed_chat_contract is not None:
+            value["reviewed_chat_contract"] = self.reviewed_chat_contract
+        return value
 
 
 class PolicyKernel:
@@ -1641,7 +1655,9 @@ class PolicyKernel:
             )
         reasons: list[str] = []
         reviewed = (
-            question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
+            (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
+             or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
+                 and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
             and question.isolation_proof.path_class in ("local-private-experimental", "system-temporary-experimental")
@@ -8738,6 +8754,7 @@ class SubjectStudio:
         self,
         draft_id: str,
         capabilities: CapabilityManifest,
+        reviewed_chat_contract=None,
     ) -> PolicyQuestion:
         if not isinstance(capabilities, CapabilityManifest):
             raise TypeError("policy decision requires a CapabilityManifest")
@@ -8753,7 +8770,16 @@ class SubjectStudio:
             "capability_manifest": capabilities.to_dict(),
             "isolation_proof": isolation.to_dict(),
         }
+        if reviewed_chat_contract is not None:
+            if (capabilities != CapabilityManifest.reviewed_character_chat() or not is_reviewed_source(profile.source)):
+                raise StudioRejected("reviewed-chat-contract-invalid", "chat contract requires exact reviewed source")
+            expected = chat_contract(dict(definition_basis=profile.source.source_asset_refs[0].split(":", 1)[1],
+                runtime_asset_sha=profile.source.source_asset_refs[1].split(":", 1)[1]),
+                reviewed_chat_contract["scope_digest"], reviewed_chat_contract["review_request_basis"])
+            if expected != reviewed_chat_contract: raise StudioRejected("reviewed-chat-contract-invalid", "chat scope or configuration changed")
+            question_basis["reviewed_chat_contract"] = reviewed_chat_contract
         return PolicyQuestion(
+            reviewed_chat_contract=reviewed_chat_contract,
             question_digest=_digest(question_basis),
             profile_digest=profile_digest,
             freeze_basis_digest=preview.freeze_basis_digest,
@@ -8769,9 +8795,10 @@ class SubjectStudio:
         capabilities: CapabilityManifest,
         *,
         validity_us: int = 5_000_000,
+        reviewed_chat_contract=None,
     ) -> PolicyDecision:
         self._require_authority()
-        question = self._policy_question(draft_id, capabilities)
+        question = self._policy_question(draft_id, capabilities, reviewed_chat_contract)
         decision = self._policy_kernel.decide(question, validity_us=validity_us)
         payload = decision.to_dict()
         try:
@@ -9388,6 +9415,7 @@ class SubjectStudio:
             publication_key=str(payload["publication_key"]),
             published_at_us=int(payload["published_at_us"]),
             integrity_digest=str(payload["integrity_digest"]),
+            reviewed_chat_contract=payload.get("reviewed_chat_contract"),
         )
 
     def publish(
@@ -9397,6 +9425,7 @@ class SubjectStudio:
         policy_decision_id: str,
         publication_key: str,
         predecessor_qualification_id: str | None = None,
+        reviewed_chat_contract=None,
     ) -> QualifiedRuntimeInput:
         self._require_authority()
         if not isinstance(publication_key, str) or not _PUBLICATION_KEY.fullmatch(
@@ -9411,6 +9440,7 @@ class SubjectStudio:
         question = self._policy_question(
             snapshot.draft_id,
             decision.capability_manifest,
+            reviewed_chat_contract,
         )
         if (
             snapshot.policy_decision_id != decision.decision_id
@@ -9458,7 +9488,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                REVIEWED_CHARACTER_AUTHORITY
+                CHAT_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.reviewed_character_chat()
+                else REVIEWED_CHARACTER_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.reviewed_character_dormant()
                 else _PROVIDER_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.m0()
@@ -9469,6 +9501,8 @@ class SubjectStudio:
             "publication_key": publication_key,
             "published_at_us": published_at_us,
         }
+        if reviewed_chat_contract is not None:
+            payload_without_integrity["reviewed_chat_contract"] = reviewed_chat_contract
         integrity_digest = _digest(payload_without_integrity)
         payload = {**payload_without_integrity, "integrity_digest": integrity_digest}
         publication_digest = _digest(
@@ -9583,28 +9617,46 @@ class SubjectStudio:
         except (TypeError, ValueError) as error:
             raise StudioFailedClosed("snapshot-corrupt", "published snapshot is unreadable") from error
         reviewed_contract = ("reviewed_definition" in snapshot_hint
-            or qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY
+            or qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
             or qri.publication_key.startswith("reviewed-character-")
             or self.query_profile(qri.profile_id).source.origin_kind == "reviewed-fiction-derived")
         snapshot = self.query_snapshot(qri.genesis_snapshot_id) if reviewed_contract else None
+        active_chat = qri.provider_authority == CHAT_AUTHORITY
+        expected_manifest = CapabilityManifest.reviewed_character_chat() if active_chat else CapabilityManifest.reviewed_character_dormant()
+        if active_chat:
+            try:
+                if type(qri.reviewed_chat_contract) is not dict: raise ValueError("chat contract missing")
+                expected_chat = chat_contract(snapshot.reviewed_definition, qri.reviewed_chat_contract["scope_digest"], qri.reviewed_chat_contract["review_request_basis"])
+                if expected_chat != qri.reviewed_chat_contract: raise ValueError("chat scope changed")
+                predecessor = self.query_qri(publication_key="reviewed-character-" + snapshot.reviewed_definition["definition_basis"])
+                if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
+                    or predecessor.genesis_snapshot_id != snapshot.snapshot_id
+                    or qri.predecessor_qualification_id != predecessor.qualification_id):
+                    raise ValueError("chat lineage changed")
+            except Exception as error:
+                raise StudioFailedClosed("reviewed-chat-contract-invalid", "chat scope or dormant predecessor is invalid") from error
+        expected_key = ("reviewed-character-chat-" + snapshot.reviewed_definition["definition_basis"] + "-" + qri.reviewed_chat_contract["scope_digest"]
+            if active_chat else "reviewed-character-" + snapshot.reviewed_definition["definition_basis"]) if snapshot is not None and snapshot.reviewed_definition is not None else ""
         if reviewed_contract and (
             snapshot.reviewed_definition is None
-            or qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY
-            or qri.capabilities != CapabilityManifest.reviewed_character_dormant()
+            or qri.provider_authority not in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
+            or qri.capabilities != expected_manifest
             or qri.isolation_proof != IsolationProof(self.isolation_proof.root_id, self.isolation_proof.root_kind,
                 self.isolation_proof.path_class, REVIEWED_CHARACTER_PROOF)
             or snapshot.policy_decision_id not in qri.policy_decision_ids
             or qri.genesis_snapshot_id != snapshot.snapshot_id
             or qri.profile_id != snapshot.profile_id or qri.knowledge_snapshot_id != snapshot.knowledge_snapshot_id
             or qri.genesis_branch_id != snapshot.branch_id
-            or qri.publication_key != "reviewed-character-" + snapshot.reviewed_definition["definition_basis"]
+            or qri.publication_key != expected_key
+            or (not active_chat and qri.reviewed_chat_contract is not None)
         ):
             raise StudioFailedClosed("reviewed-qri-integrity-failed", "reviewed QRI does not match sealed definition")
         if snapshot is not None and snapshot.reviewed_definition is not None:
             for decision_id in qri.policy_decision_ids:
                 decision = self._read_policy_decision(decision_id)
-                question = self._policy_question(snapshot.draft_id, decision.capability_manifest)
-                if (decision.capability_manifest != CapabilityManifest.reviewed_character_dormant()
+                sealing = decision_id == snapshot.policy_decision_id
+                question = self._policy_question(snapshot.draft_id, decision.capability_manifest, None if sealing else qri.reviewed_chat_contract)
+                if (decision.capability_manifest != (CapabilityManifest.reviewed_character_dormant() if sealing else expected_manifest)
                     or decision.question_digest != question.question_digest
                     or decision.disposition is not PolicyDisposition.QUALIFIED):
                     raise StudioFailedClosed("reviewed-qri-policy-invalid", "reviewed publication policy does not match source and asset")
