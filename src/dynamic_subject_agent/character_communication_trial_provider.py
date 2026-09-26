@@ -19,17 +19,23 @@ from dynamic_subject_agent.model_gateway import (
 )
 
 
-def communication_protocol():
-    return dict(endpoint=DEEPSEEK_ENDPOINT, model="deepseek-flash", timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
+def communication_protocol(expression_profile="standard"):
+    if expression_profile not in ("standard", "thinking-high"):
+        raise ValueError("unsupported communication expression profile")
+    protocol = dict(endpoint=DEEPSEEK_ENDPOINT, model="deepseek-flash", timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
         accepted_response_models=list(_ACCEPTED_RESPONSE_MODELS),
         planning=dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
                       response_format={"type": "json_object"}, stream=False),
         expression=dict(max_tokens=600, thinking={"type": "disabled"}, temperature=0.3,
                         response_format={"type": "json_object"}, stream=False))
+    if expression_profile == "thinking-high":
+        protocol["expression"] = dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
+                                      response_format={"type": "json_object"}, stream=False)
+    return protocol
 
 
-def _wire(projection, policy, stage):
-    protocol = communication_protocol()
+def _wire(projection, policy, stage, expression_profile="standard"):
+    protocol = communication_protocol(expression_profile)
     body = dict(model=protocol["model"], messages=[dict(role="system", content=policy),
         dict(role="user", content=canonical_json(asdict(projection)))], **protocol[stage])
     wire = canonical_json(body).encode()
@@ -42,7 +48,8 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
     capabilities = ProviderCapabilities(DEEPSEEK_PROVIDER_AUTHORITY_ID, "deepseek-flash", False, (StructuredOutputMode.JSON_OBJECT,))
 
     def __init__(self, plan, *, run_root, transport, credential_ref):
-        if plan.payload["protocol"] != communication_protocol():
+        self._expression_profile = plan.payload.get("expression_profile", "standard")
+        if plan.payload["protocol"] != communication_protocol(self._expression_profile):
             raise ValueError("current communication protocol required")
         self._plan, self._root, self._transport, self._credential_ref = plan, run_root, transport, credential_ref
         self._rows = {row["request_digest"]: row for row in plan.payload["requests"]}
@@ -54,10 +61,13 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
         return _wire(projection, PLAN_POLICY, "planning")
 
     @staticmethod
-    def expression_wire(projection):
+    def expression_wire(projection, *, expression_profile="standard"):
         if type(projection) is not CommunicationExpressionProjection or projection.policy != EXPRESSION_POLICY:
             raise ValueError("typed communication expression required")
-        return _wire(projection, EXPRESSION_POLICY, "expression")
+        return _wire(projection, EXPRESSION_POLICY, "expression", expression_profile)
+
+    def _bound_expression_wire(self, projection):
+        return self.expression_wire(projection, expression_profile=self._expression_profile)
 
     def invoke(self, task):
         if task.kind is ModelTaskKind.CHARACTER_COMMUNICATION_PLAN and type(task.payload) is CommunicationPlanProjection:
@@ -73,8 +83,8 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
             row = self._rows.get(task.payload.context_digest)
             if row is None:
                 raise ValueError("unknown expression binding")
-            projection, request = load_expression_request(self._root, self._plan, row, self.expression_wire)
-            wire = self.expression_wire(projection)
+            projection, request = load_expression_request(self._root, self._plan, row, self._bound_expression_wire)
+            wire = self._bound_expression_wire(projection)
             if sha256(wire).hexdigest() != request["outbound_digest"]:
                 raise ValueError("expression wire not derived")
         else:
@@ -86,8 +96,8 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
         self._sent.add(attempt_digest)  # No retry even if the transport raises.
         try:
             value = _post_json_reply_content(self._transport, self._credential_ref, wire,
-                max_output_tokens=4096 if stage == "planning" else 600, require_complete=True,
-                discard_reasoning=stage == "planning", safe_diagnostics=True)
+                max_output_tokens=4096 if stage == "planning" or self._expression_profile == "thinking-high" else 600, require_complete=True,
+                discard_reasoning=stage == "planning" or self._expression_profile == "thinking-high", safe_diagnostics=True)
         except CharacterCredentialUnavailable:
             raise ModelGatewayFailure("character-credential-unavailable") from None
         except DeepSeekResponseDiagnosticFailure as failure:

@@ -30,6 +30,11 @@ def read_parent_plan(root, digest):
     plan = CommunicationTrialPlan(canonical_json(stored["plan"]))
     if plan.digest != digest or plan.payload.get("version") != "character-communication-trial-1" or len(plan.payload.get("requests", [])) != 6:
         raise ValueError("complete parent communication plan required")
+    protocol = plan.payload.get("protocol")
+    if (plan.payload.get("expression_profile", "standard") != "standard" or type(protocol) is not dict
+            or protocol.get("expression") != dict(max_tokens=600, thinking={"type": "disabled"},
+                temperature=0.3, response_format={"type": "json_object"}, stream=False)):
+        raise ValueError("only original non-thinking expression parent is supported")
     return plan, sha256(path.read_bytes()).hexdigest()
 
 

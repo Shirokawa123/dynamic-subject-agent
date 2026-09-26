@@ -55,7 +55,7 @@ def _validate_cases(cases):
 
 
 def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id,
-                                    cases, max_knowledge_chars, protocol, planning_wire):
+                                    cases, max_knowledge_chars, protocol, planning_wire, expression_profile="standard"):
     """Composition supplies pure protocol metadata and serialization, never a key."""
     _validate_cases(cases)
     rows, seen = [], set()
@@ -78,6 +78,8 @@ def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id
         scope="Reviewed current stage-one facts and foreground; expression derives only current qualified references/action and same foreground/message; no source text, internal IDs, history, old candidate or scoring labels in model input",
         retention="Independent local plan, stage attempts, validated action/refs, derived expression request and candidate or closed failure code; no reasoning, raw response, headers, exceptions or key",
         approval="New user approval for both semantic tasks and at most twelve calls must exist; exact digest is only the operator assertion")
+    if expression_profile != "standard":
+        payload["expression_profile"] = expression_profile
     return CommunicationTrialPlan(canonical_json(payload))
 
 
