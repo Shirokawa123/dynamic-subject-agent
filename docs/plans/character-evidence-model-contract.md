@@ -129,3 +129,9 @@ ApplicationFacade.preview_character_identity_preparation复用已验证Character
 独立sidecar绑定base_reviewed_digest、subject/anchor，1–8项候选只引用当前known。每项title/interpretation/when/choice/expression/limits原样保留，claim_ids不外投；固定author-interpretation并标支持是否含belief。sidecar有界读取，缺失unavailable、摘要或内容不合格FailedClosed；不裁半份人格。语义解释由作者复核，引用存在不等于解释被证明。
 
 新local-only Producer复用Facade preview/propose；两个新envelope将原conversation投影与character_core/personality分开，core取同一已核组织core（无组织则identity），不受当轮至多4项fact_refs裁剪。旧默认DTO/policy/wire不变，远程Adapter拒新envelope。预览不调用Gateway，显式local替身仍使用原两种任务并保留required/persisted=false；并未实现人格语义裁决、持久心理变化或真实聊天。
+
+## Slice-99人格对照的独立执行路径
+
+新增character-personality-communication-trial-1计划与personality-derive-1派生契约；绑定v9、sidecar、主体/起点、全部精确规划投影、core/personality及policy/high配置。原通信试验仅加封闭的解包裁决/重包表达分支，共用原attempt/result/派生请求校验与恢复；旧计划字节和默认路径保持。
+
+专用DeepSeekPersonalityTrialAdapter只接受新人格计划与相应envelope；原Adapter不接受新版本，新Adapter不接受旧版本。新composition默认prepare，approved_plan必须等于重建当前digest才装配transport；sidecar每次出站前核摘要。表达从已记录的合法规划和同一冻结核心/人格派生；没有直接手写投影的执行入口。失败即停、unknown保留、重启只读完整结果不补发，候选仍required。此代码准备不构成外发许可；实际用途/两条件24次对照见[方案](personality-behavior-trial.md)，S99未调用真实Provider。

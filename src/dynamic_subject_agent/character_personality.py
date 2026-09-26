@@ -7,7 +7,7 @@ from pathlib import Path
 from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest, SelfKnowledge, prepare_context
 from dynamic_subject_agent.character_evidence_model import CharacterModelRequest, CharacterEvidenceModel
 from dynamic_subject_agent.character_communication_plan import (
-    CommunicationPlanProjection, CommunicationExpressionProjection,
+    CommunicationFact, CommunicationPlanProjection, CommunicationExpressionProjection, _validate_projection,
     _plan_projection, _projection_digest, _qualify_plan, _expression_projection, _validated_expression,
 )
 from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer, CharacterReplyCandidateView, preview_reply
@@ -56,6 +56,28 @@ def _bounded_envelope(value):
     if len(canonical_json(asdict(value)).encode()) > 65536:
         raise ValueError("personality envelope too large")
     return value
+
+
+def frozen_personality_planning(value):
+    """Decode only the already frozen planning envelope, never author a new one."""
+    conversation = value["conversation"]
+    inner = CommunicationPlanProjection(tuple(CommunicationFact(**item) for item in conversation["self_knowledge"]),
+        conversation["stage_description"], tuple(conversation["encounter"]), tuple(conversation["disclosure"]),
+        conversation["current_message"], conversation["policy"])
+    _validate_projection(inner)
+    envelope = CharacterPlanningEnvelope(inner, tuple(SelfKnowledge(**item) for item in value["character_core"]),
+        tuple(PersonalityInterpretation(**item) for item in value["personality"]), value["policy"])
+    if (canonical_json(asdict(envelope)) != canonical_json(value) or envelope.policy != PERSONALITY_POLICY
+            or not envelope.character_core or not 1 <= len(envelope.personality) <= 8
+            or any(item.basis != "author-interpretation" or type(item.support_includes_belief) is not bool for item in envelope.personality)):
+        raise ValueError("frozen personality envelope invalid")
+    return _bounded_envelope(envelope)
+
+
+def personality_expression(context, value):
+    plan = _qualify_plan(value, context.conversation, _projection_digest(context.conversation))
+    expression = _expression_projection(plan, context.conversation)
+    return _bounded_envelope(CharacterExpressionEnvelope(expression, context.character_core, context.personality))
 
 
 class CharacterPersonalityLab(CharacterReplyProducer):

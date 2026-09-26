@@ -46,8 +46,11 @@ def _wire(projection, policy, stage, expression_profile="standard"):
 
 class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
     capabilities = ProviderCapabilities(DEEPSEEK_PROVIDER_AUTHORITY_ID, "deepseek-flash", False, (StructuredOutputMode.JSON_OBJECT,))
+    _plan_version = "character-communication-trial-1"
+    _planning_type = CommunicationPlanProjection
 
     def __init__(self, plan, *, run_root, transport, credential_ref):
+        if plan.payload["version"] != self._plan_version: raise ValueError("matching communication plan kind required")
         self._expression_profile = plan.payload.get("expression_profile", "standard")
         if plan.payload["protocol"] != communication_protocol(self._expression_profile):
             raise ValueError("current communication protocol required")
@@ -70,7 +73,7 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
         return self.expression_wire(projection, expression_profile=self._expression_profile)
 
     def invoke(self, task):
-        if task.kind is ModelTaskKind.CHARACTER_COMMUNICATION_PLAN and type(task.payload) is CommunicationPlanProjection:
+        if task.kind is ModelTaskKind.CHARACTER_COMMUNICATION_PLAN and type(task.payload) is self._planning_type:
             stage = "planning"
             row = self._rows.get(_projection_digest(task.payload))
             if row is None or task.payload != frozen_context(row):
@@ -103,3 +106,42 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
         except DeepSeekResponseDiagnosticFailure as failure:
             raise ModelGatewayFailure(failure.diagnostic_code) from None
         return ModelResult(task.kind, value)
+
+
+class DeepSeekPersonalityTrialAdapter(DeepSeekCommunicationTrialAdapter):
+    """Explicit new use; the original Adapter never accepts this plan or type."""
+    from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope as _planning_type
+    _plan_version = "character-personality-communication-trial-1"
+
+    def __init__(self, plan, *, sidecar_path, run_root, transport, credential_ref):
+        from dynamic_subject_agent.character_personality import PERSONALITY_POLICY
+        if (plan.payload.get("expression_profile") != "thinking-high" or plan.payload.get("personality_policy") != PERSONALITY_POLICY
+                or plan.payload.get("derivation") != "personality-derive-1"):
+            raise ValueError("exact personality policy and configuration required")
+        self._sidecar_path = sidecar_path
+        super().__init__(plan, run_root=run_root, transport=transport, credential_ref=credential_ref)
+
+    @staticmethod
+    def planning_wire(projection):
+        from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope, frozen_personality_planning, PERSONALITY_POLICY
+        if type(projection) is not CharacterPlanningEnvelope: raise ValueError("typed personality planning required")
+        frozen_personality_planning(asdict(projection))
+        return _wire(projection, PERSONALITY_POLICY + projection.conversation.policy, "planning", "thinking-high")
+
+    @staticmethod
+    def expression_wire(projection, *, expression_profile="thinking-high"):
+        from dynamic_subject_agent.character_personality import CharacterExpressionEnvelope, PERSONALITY_POLICY, _bounded_envelope
+        if (type(projection) is not CharacterExpressionEnvelope or expression_profile != "thinking-high"
+                or projection.policy != PERSONALITY_POLICY or projection.conversation.policy != EXPRESSION_POLICY):
+            raise ValueError("typed personality expression required")
+        _bounded_envelope(projection)
+        return _wire(projection, PERSONALITY_POLICY + projection.conversation.policy, "expression", "thinking-high")
+
+    def invoke(self, task):
+        try:
+            with self._sidecar_path.open("rb") as stream: raw = stream.read(48001)
+            if len(raw) > 48000 or sha256(raw).hexdigest() != self._plan.payload["personality_binding"]["sidecar_digest"]:
+                raise ValueError("personality source changed")
+        except Exception:
+            raise ModelGatewayFailure("communication-task-failed") from None
+        return super().invoke(task)

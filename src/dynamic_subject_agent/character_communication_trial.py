@@ -16,6 +16,8 @@ from dynamic_subject_agent.model_gateway import ModelGatewayFailure, ModelTask, 
 from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
 
 DERIVATION_VERSION = "communication-derive-1"
+PERSONALITY_TRIAL_VERSION = "character-personality-communication-trial-1"
+PERSONALITY_CONTRACT = "personality-envelope-1"
 TECHNICAL_CODES = frozenset(code for code in REVIEW_DIAGNOSTIC_CODES if not code.startswith("review-")) | {"communication-task-failed"}
 AMBIGUOUS_DELIVERY_CODES = frozenset(("transport-timeout", "transport-delivery-ambiguous"))
 
@@ -55,7 +57,7 @@ def _validate_cases(cases):
 
 
 def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id,
-                                    cases, max_knowledge_chars, protocol, planning_wire, expression_profile="standard"):
+                                    cases, max_knowledge_chars, protocol, planning_wire, expression_profile="standard", personality_binding=None):
     """Composition supplies pure protocol metadata and serialization, never a key."""
     _validate_cases(cases)
     rows, seen = [], set()
@@ -63,13 +65,19 @@ def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id
         view = preview_reply(CharacterChatContextRequest(subject_id, anchor_id, case["message"], case["context_mode"], max_knowledge_chars))
         if view.status != "previewed":
             raise ValueError("communication context not available")
-        projection = _plan_projection(view.projection)
+        if personality_binding is None:
+            projection = _plan_projection(view.projection)
+        else:
+            from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope, frozen_personality_planning
+            if type(view.projection) is not CharacterPlanningEnvelope: raise ValueError("personality preview required")
+            projection = frozen_personality_planning(asdict(view.projection))
         digest = _projection_digest(projection)
         if digest in seen:
             raise ValueError("duplicate communication context")
         seen.add(digest)
         rows.append(dict(index=index, case_id=case["id"], message=case["message"], mode=case["context_mode"],
             request_digest=digest, projection=asdict(projection), outbound_digest=sha256(planning_wire(projection)).hexdigest()))
+        if personality_binding is not None: rows[-1]["projection_contract"] = PERSONALITY_CONTRACT
     payload = dict(version="character-communication-trial-1", reviewed_digest=reviewed_digest,
         subject_id=subject_id, anchor_id=anchor_id, max_knowledge_chars=max_knowledge_chars,
         cases=cases["cases"], requests=rows, protocol=protocol, planning_policy=PLAN_POLICY, expression_policy=EXPRESSION_POLICY,
@@ -80,6 +88,11 @@ def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id
         approval="New user approval for both semantic tasks and at most twelve calls must exist; exact digest is only the operator assertion")
     if expression_profile != "standard":
         payload["expression_profile"] = expression_profile
+    if personality_binding is not None:
+        from dynamic_subject_agent.character_personality import PERSONALITY_POLICY
+        payload.update(version=PERSONALITY_TRIAL_VERSION, personality_binding=personality_binding,
+                       personality_policy=PERSONALITY_POLICY, derivation="personality-derive-1",
+                       scope="Current conversation projection plus complete resident character core and author personality interpretations; expression retains the same core/interpretations and only qualified conversation facts; no support IDs, source text, private history, reasoning or runtime updates")
     return CommunicationTrialPlan(canonical_json(payload))
 
 
@@ -97,12 +110,29 @@ def save_communication_trial_plan(root, plan):
 
 def frozen_context(row):
     value = row["projection"]
+    if row.get("projection_contract") == PERSONALITY_CONTRACT:
+        from dynamic_subject_agent.character_personality import frozen_personality_planning
+        projection = frozen_personality_planning(value)
+        if _projection_digest(projection) != row["request_digest"]: raise ValueError("frozen personality digest invalid")
+        return projection
     projection = CommunicationPlanProjection(tuple(CommunicationFact(**item) for item in value["self_knowledge"]),
         value["stage_description"], tuple(value["encounter"]), tuple(value["disclosure"]), value["current_message"], value["policy"])
     _validate_projection(projection)
     if _projection_digest(projection) != row["request_digest"]:
         raise ValueError("frozen context invalid")
     return projection
+
+
+def _qualify_current(value, context):
+    from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope
+    inner = context.conversation if type(context) is CharacterPlanningEnvelope else context
+    return _qualify_plan(value, inner, _projection_digest(inner))
+
+
+def _expression_current(value, context):
+    from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope, personality_expression
+    if type(context) is CharacterPlanningEnvelope: return personality_expression(context, value)
+    return _expression_projection(_qualify_current(value, context), context)
 
 
 def stage_digest(row, stage):
@@ -141,7 +171,7 @@ def load_stage(root, plan, row, stage, outbound_digest):
         if value["code"] != "":
             raise ValueError("completed stage failure invalid")
         if stage == "planning":
-            _qualify_plan(value["value"], frozen_context(row), row["request_digest"])
+            _qualify_current(value["value"], frozen_context(row))
         else:
             _validated_expression(value["value"])
     elif value["status"] == "unavailable":
@@ -164,9 +194,8 @@ def derived_expression_request(plan, row, planning_result, expression_wire):
     context = frozen_context(row)
     if planning_result != _stage_record(plan, row, "planning", row["outbound_digest"], "planned", value=planning_result.get("value")):
         raise ValueError("audited planning required")
-    qualified = _qualify_plan(planning_result["value"], context, row["request_digest"])
-    projection = _expression_projection(qualified, context)
-    return projection, dict(version=DERIVATION_VERSION, plan_digest=plan.digest, case_id=row["case_id"],
+    projection = _expression_current(planning_result["value"], context)
+    return projection, dict(version=plan.payload.get("derivation", DERIVATION_VERSION), plan_digest=plan.digest, case_id=row["case_id"],
         context_digest=row["request_digest"], planning_result_digest=sha256(canonical_json(planning_result).encode()).hexdigest(),
         projection=asdict(projection), outbound_digest=sha256(expression_wire(projection)).hexdigest())
 
@@ -181,12 +210,15 @@ def load_expression_request(root, plan, row, expression_wire):
 
 
 class CharacterCommunicationTrial(CharacterReplyProducer):
-    def __init__(self, plan, *, root, gateway, expression_wire, approved_plan):
+    def __init__(self, plan, *, root, gateway, expression_wire, approved_plan, personality_preview=None):
         if type(plan) is not CommunicationTrialPlan or not isinstance(root, Path) or not root.is_absolute():
             raise ValueError("typed communication plan and absolute root required")
         if approved_plan is not None and approved_plan != plan.digest:
             raise ValueError("current communication approval required")
         self._plan, self._gateway, self._expression_wire = plan, gateway, expression_wire
+        if (plan.payload["version"] == PERSONALITY_TRIAL_VERSION) != (personality_preview is not None):
+            raise ValueError("matching trial preview contract required")
+        self._personality_preview = personality_preview
         self._rows = plan.payload["requests"]
         self._allowed = {row["request_digest"]: row for row in self._rows}
         self._case_index = 0
@@ -199,7 +231,12 @@ class CharacterCommunicationTrial(CharacterReplyProducer):
         if view.status != "previewed":
             return view
         try:
-            projection = _plan_projection(view.projection)
+            if self._personality_preview is not None:
+                checked = self._personality_preview.preview(view, request=request)
+                if checked.status != "previewed": return checked
+                projection = checked.projection
+            else:
+                projection = _plan_projection(view.projection)
             digest = _projection_digest(projection)
             row = self._allowed.get(digest)
             expected = CharacterChatContextRequest(self._plan.payload["subject_id"], self._plan.payload["anchor_id"],
@@ -260,7 +297,7 @@ class CharacterCommunicationTrial(CharacterReplyProducer):
         else:
             try:
                 if stage == "planning":
-                    _qualify_plan(value, payload, row["request_digest"])
+                    _qualify_current(value, payload)
                 else:
                     _validated_expression(value)
             except Exception:

@@ -366,6 +366,46 @@ def open_character_personality_lab(parent: Path, *, draft_path: Path, source_roo
                                         reviewed_digest=reviewed_digest, reply_lab=lab)
 
 
+def prepare_character_personality_trial(parent: Path, *, draft_path: Path, source_root: Path, reviewed_digest: str,
+                                        subject_id: str, anchor_id: str, cases: dict, sidecar_path: Path,
+                                        personality_digest: str, max_knowledge_chars: int = 20000):
+    from dynamic_subject_agent.character_communication_trial import build_communication_trial_plan, save_communication_trial_plan
+    from dynamic_subject_agent.character_communication_trial_provider import DeepSeekPersonalityTrialAdapter, communication_protocol
+    with open_character_personality_lab(parent / "previews", draft_path=draft_path, source_root=source_root, reviewed_digest=reviewed_digest,
+        sidecar_path=sidecar_path, personality_digest=personality_digest) as product:
+        plan = build_communication_trial_plan(product.application.preview_character_reply,
+            reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id, cases=cases,
+            max_knowledge_chars=max_knowledge_chars, protocol=communication_protocol("thinking-high"), expression_profile="thinking-high",
+            planning_wire=DeepSeekPersonalityTrialAdapter.planning_wire,
+            personality_binding=dict(version="character-personality-draft-1", base_reviewed_digest=reviewed_digest,
+                subject_id=subject_id, anchor_id=anchor_id, sidecar_digest=personality_digest))
+    save_communication_trial_plan(parent, plan)
+    return plan
+
+
+def open_character_personality_trial(parent: Path, *, draft_path: Path, source_root: Path, reviewed_digest: str,
+                                     subject_id: str, anchor_id: str, cases: dict, sidecar_path: Path, personality_digest: str,
+                                     max_knowledge_chars: int = 20000, approved_plan: str | None = None, _transport=None) -> OpenedLocalProduct:
+    from dynamic_subject_agent.character_personality import CharacterPersonalityLab
+    from dynamic_subject_agent.character_communication_trial import CharacterCommunicationTrial
+    from dynamic_subject_agent.character_communication_trial_provider import DeepSeekPersonalityTrialAdapter
+    plan = prepare_character_personality_trial(parent, draft_path=draft_path, source_root=source_root, reviewed_digest=reviewed_digest,
+        subject_id=subject_id, anchor_id=anchor_id, cases=cases, sidecar_path=sidecar_path, personality_digest=personality_digest,
+        max_knowledge_chars=max_knowledge_chars)
+    if approved_plan is not None and approved_plan != plan.digest: raise ValueError("current personality trial approval required")
+    gateway = None
+    if approved_plan is not None and not (parent / plan.digest).exists():
+        transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+        gateway = ModelGateway(DeepSeekPersonalityTrialAdapter(plan, sidecar_path=sidecar_path, run_root=parent / plan.digest,
+            transport=transport, credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
+    reader = CharacterPersonalityLab(model=CharacterEvidenceModel(draft_path, source_root, expected_digest=reviewed_digest),
+        sidecar_path=sidecar_path, expected_digest=personality_digest)
+    trial = CharacterCommunicationTrial(plan, root=parent, gateway=gateway, expression_wire=DeepSeekPersonalityTrialAdapter.expression_wire,
+        approved_plan=approved_plan, personality_preview=reader)
+    return open_character_model_preview(parent / "products", draft_path=draft_path, source_root=source_root,
+                                        reviewed_digest=reviewed_digest, reply_lab=trial)
+
+
 def prepare_character_communication_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                            reviewed_digest: str, subject_id: str, anchor_id: str, cases: dict,
                                            max_knowledge_chars: int = 20000, expression_profile: str = "standard"):

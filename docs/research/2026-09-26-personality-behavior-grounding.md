@@ -40,3 +40,11 @@
 沿现有Facade.preview/propose_character_reply使用一个local-only Producer，在原规划/表达投影外加明确的新类型：conversation仍使用原裁决契约，character_core与personality在两个阶段都保留；标签与原文事实分开。core从已验证组织中的core生成，未组织样本至少保留identity；不从当轮fact_refs裁剪。旧默认Producer/DTO/远程Adapter不变，新类型不能传入旧远程wire。复用现有ModelGateway任务种类，但只接受capabilities.local=true的替身；本片不装配远程Adapter。
 
 不选把人格解释塞入self_knowledge：现有knowledge允许fact/belief，且解释由CharacterEvidenceModel明确排除，混入会破坏认识语义。不选新人格状态机/分数或额外模型调用：尚无实际证据表明需要。新本地读取者只核验输入、组装候选，不写Studio/Timeline；无需新增Facade公开步骤或聊天store。
+
+## S99冻结执行的适用性补核
+
+S98本地实现完成后，需要让新增解释的用途确认针对可执行计划。此处纯工程，无新增心理假设；沿用上文人格依据与六项来源结论。已重新读仓库FrozenAttemptRun、CharacterCommunicationTrial、逐阶段request/result联查与Adapter惰性鉴权，旧实现可复用，不能另建一套恢复真值。
+
+定向查持久执行的副作用/重试边界：Context7 resolve-library-id返回fetch failed，依技能转查官方文档：旧durable-execution地址已重定向、raw同名文件404，改读[LangGraph官方Graph API源码文档](https://github.com/langchain-ai/docs/blob/main/src/oss/langgraph/graph-api.mdx)中的恢复与副作用说明。官方说明检查点在节点边界保存，恢复可能重新执行节点及其中副作用；已完成task结果可以复用，任务顺序与幂等仍需保证。适配为每个规划/表达阶段独立claim与结果记录；计划、派生表达与出站指纹互相绑定。模型服务投递不确定时没有可依赖的幂等回执，本项目保留unknown并停止，不照搬自动重试/补跑。
+
+不安装LangGraph、不复制代码/引入依赖，仅核对机制；无需新增许可证或维护成本评估。正式流程继续既有单次DeepSeek transport和已测high/4096/30秒配置，不引入新SDK行为。验证应覆盖未批准零出站、错计划拒绝、发送前claim、故障后不再发、重启只读完整结果、审计缺失unknown及旧默认字节兼容。S99只准备，不调用真实Provider。

@@ -2,6 +2,8 @@
 
 2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
+S98已补四条有条件人格候选及local-only两阶段常驻core/personality，来源与解释分开；结构接线已验，真实人格效果未验。S99准备受限对照执行，不启用生产聊天，见[人格底稿与结果](reports/2026-09-26-slice-98/REPORT.md)。
+
 ## 契约适用范围（2026-09-20）
 
 Slice-83新增独立依据审核seam；S84非思考校准误放8/11，S88/S90完成high配置24项后正向12/12保留、反例9/11拦截，仍漏近期心理活动，不启用日常审核。S86旧技术失败根因未知。S91/92形成受限规划→本地裁决→表达；S93完成12次但3题明确越界。S95完成6次high表达对照，S96完成两批24次high完整流程新措辞验证，明确旧错改善但否定/时间歧义与自然度仍有限，累计30/200、余170。普通入口仍local-only，候选required，不产生生活状态。S97新增Facade只读定义准备，来源声明与运行资产绑定独立definition basis；旧Authority仅支持原创，派生定义不返回save/freeze请求，未创建身份或实现真实连续聊天。完整语义见[契约](plans/character-evidence-model-contract.md)、[S96结果](reports/2026-09-26-slice-96/REPORT.md)和[S97准备](reports/2026-09-26-slice-97/REPORT.md)。
