@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-26：Slice-81针对真实反例修正依据/时间/知情/披露次序，23项专项及实际policy-only对比通过；新计划未运行，等待同资料最多48次有界验证许可，见[方案](plans/character-expression-bounded-iteration.md)。
+
 - 2026-09-26：Slice-80按用户批准改用deepseek-flash（V4.1-Flash），完成24/24真实对照、无重试，35项模型相关测试通过；内容仍有无依据否定/习惯泛化/知情披露混淆，额度已用完，见[报告](reports/2026-09-26-slice-80/REPORT.md)。
 
 - 2026-09-26：Slice-79完成24项冻结对照与一次性执行门槛，141项相关回归、增量后23项专项及独立复核通过；实际计划未启动、真实调用0，当前需批准新人物背景摘要的回复用途，见[方案](plans/character-context-comparison-trial.md)。

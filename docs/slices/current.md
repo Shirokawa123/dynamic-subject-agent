@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-80：V4.1-Flash人物上下文真实对照](slice-80-character-context-live-comparison.md)已收口，见[报告](../reports/2026-09-26-slice-80/REPORT.md)：24/24结构有效，无重试，内容仍未通过。
+[Slice-81：先判断依据再决定披露的表达修正](slice-81-evidence-first-expression.md)离线准备已收口，见[报告](../reports/2026-09-26-slice-81/REPORT.md)。当前停在追加真实次数的用户决策点。
 
-下一步在同一已审核资料上准备表达依据/时间/知情次序修正与有界验证。计划4562144f…b747已消费24次，不重跑；连续MVP工程授权保持，追加真实次数及新历史/生活用途须明确落实。
+S80的24次全部用完，内容未通过；新策略计划6fd6954f…3834未运行。已准备[最多48次/两批有界验证](../plans/character-expression-bounded-iteration.md)，尚未获准；保持V4.1-Flash与原资料范围，不以本地通过冒称内容改善或MVP完成。
