@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-26：Slice-77确定开发协作采用Astra主控、按任务选择Luna medium/high与Sol high、最小团队和短上下文；已核查team-mode的角色/统计与当前接口差异。仅研究与项目规则，未安装Skill或更改全局配置，见[执行策略](plans/agent-execution-strategy.md)。
+
 - 2026-09-24：Slice-76从第一性原理重推全局设计，核对代码并补人物/生活/长期记忆研究；明确有限活动、单一事件权威、交流接续与对照验收，建议先贯通小型完整体验再扩自动建角。仅文档，未实现/新增外发，见[主方案](plans/global-product-architecture.md)。
 
 - 2026-09-24：Slice-75完成全局目的/功能/研究/架构复盘与必要调研规则，人物知识组织列为P1正式待办；三闭环、职责/权威/失败和阶段验收已落盘，尚未重构或新增外发，见[方案](plans/global-product-architecture.md)。
