@@ -9,7 +9,7 @@ import sys
 import pytest
 
 from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
-from dynamic_subject_agent.character_context_trial import canonical_json, TRIAL_POLICY
+from dynamic_subject_agent.character_context_trial import canonical_json, TRIAL_POLICY, TRIAL_MODEL
 from dynamic_subject_agent.deepseek import DeepSeekTransport, DeepSeekHttpResponse, DEEPSEEK_MODEL, DEEPSEEK_ENDPOINT
 from dynamic_subject_agent.local_product import prepare_character_context_trial, open_character_context_trial
 from test_character_evidence_model import model_fixture, organize_fixture
@@ -77,6 +77,7 @@ def test_prepare_and_default_trial_have_zero_gateway_transport_or_credential_cal
 def test_all_24_facade_requests_are_exact_frozen_bytes_and_replays_never_resend(trial_fixture):
     root, plan, options, open_trial, _, _ = trial_fixture
     transport = TrialTransport(model="deepseek-flash", completion=550)
+    assert plan.payload["model"] == TRIAL_MODEL == "deepseek-flash"
     app = open_trial(approved=plan.digest, transport=transport).application
     for index, row in enumerate(plan.payload["requests"]):
         req = request(options, index // 2, row["mode"])
@@ -90,7 +91,7 @@ def test_all_24_facade_requests_are_exact_frozen_bytes_and_replays_never_resend(
         assert call["endpoint"] == DEEPSEEK_ENDPOINT
         assert sha256(call["body"]).hexdigest() == row["outbound_digest"]
         body = json.loads(call["body"])
-        assert body["model"] == DEEPSEEK_MODEL
+        assert body["model"] == "deepseek-flash"
         assert body["max_tokens"] == 600 and body["temperature"] == 0.3 and body["stream"] is False
         assert body["thinking"] == {"type": "disabled"} and body["response_format"] == {"type": "json_object"}
         assert body["messages"][0]["content"] == TRIAL_POLICY

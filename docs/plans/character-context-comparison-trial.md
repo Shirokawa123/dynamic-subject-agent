@@ -1,6 +1,8 @@
 # 人物上下文组织：一次真实对照批准方案
 
-2026-09-26，Slice-79。状态：**待用户批准；真实调用0**。实际资料已生成精确冻结计划，执行路径已通过离线验收及独立复核。此前试聊/原文提取批准不覆盖本次用途。
+2026-09-26，Slice-79准备、Slice-80执行。状态：**用户已明确批准，并要求最新V4.1-Flash**。已将本次模型名改为官方`deepseek-flash`，重新冻结计划；新旧24份projection/policy/消息逐项相同，只有请求模型名及相应出站摘要改变。沿本次批准直接执行，不重复索取确认。
+
+执行结果：新计划24/24已完成，无重试，额度已用完。格式有效不代表人物内容通过，见[Slice-80报告](../reports/2026-09-26-slice-80/REPORT.md)。下面准备阶段的规模与命令保留为记录，不是再次执行或补额许可。
 
 ## 这次要判断什么
 
@@ -10,7 +12,7 @@
 
 ## 申请的确切用途
 
-- **目的地与模型**：`https://api.deepseek.com/chat/completions`，保持项目请求名`deepseek-v4-flash`。官方当前说明旧名由DeepSeek-V4.1-Flash服务，按Flash价格计费；不声称仍是旧模型快照。[官方说明](https://api-docs.deepseek.com/guides/harness)
+- **目的地与模型**：`https://api.deepseek.com/chat/completions`，本次按用户要求使用官方当前名称`deepseek-flash`，对应最新V4.1-Flash。[官方说明](https://api-docs.deepseek.com/news/news260910/)
 - **凭据**：复用Windows Credential Manager中的deepseek/default槽，只做本次HTTPS Bearer鉴权；不回显/复制key，不调用额外验证、余额或模型枚举接口。
 - **内容**：固定v9已审核背景摘要（身份/职业作品、家庭处境、学画与线上反馈经历、专业能力与取舍）、起点说明、明确标为分支假设的初识/兴趣推荐情境、披露条件、统一任务规则和以下固定消息。平铺与组织资料均可在本地精确计划查看。
 - **排除**：小说原文、证据/文件路径、作者审查ID、未来排除项、用户私人历史、之前自由试聊、正式身份/Timeline和其他Domain数据。
@@ -53,7 +55,7 @@ key的读取只有明确启动之后，且当前草稿与所有请求重新核�
 
 - v9草稿SHA-256：`273dcbdd43aede4ba9dbf0a3d896f7a21246f46783fb33f461d5f63b9ac2cf94`。
 - 固定消息文件SHA-256：`76b997e1cd08dac380c53dfe5ace5b6aa5b338c423e1bb3e094859e9beb3ced2`。
-- 精确计划SHA-256：`070f7b7afec6e4302adce3e91789c3bc4da23fb4f1442755f51f5f54fd3dbdd5`。
+- 用户批准后模型替换的新计划SHA-256：`4562144fc9c4d18e8c358b367720f479519c968a9e8b30821136b2c9beb7b747`。旧计划`070f7b7afec6e4302adce3e91789c3bc4da23fb4f1442755f51f5f54fd3dbdd5`留存未执行。
 - [完整冻结计划](../../.artifacts/character-context-trials/070f7b7afec6e4302adce3e91789c3bc4da23fb4f1442755f51f5f54fd3dbdd5.plan.json)与[可读精确外发预览](../../.local_indexes/eromanga-sensei/s79/精确外发范围预览.md)只在本地，不随Git发布。另有frozen-plan-checks.json记录逐项摘要。
 - 实际24份projection为2331–5937字符，出站HTTP body为7124–12082字节，合计234767字节；24份出站digest重算一致，policy逐项一致。byte/字符不等于token。核对尚无启动目录，实际计划仍只准备。
 
@@ -63,4 +65,4 @@ key的读取只有明确启动之后，且当前草稿与所有请求重新核�
 .\.venv\bin\python.exe app/desktop/character_context_trial.py --draft .local_indexes/eromanga-sensei/s78/character-evidence-draft-v9.json --source-root .local_sources/eromanga-sensei --reviewed-digest 273dcbdd43aede4ba9dbf0a3d896f7a21246f46783fb33f461d5f63b9ac2cf94 --subject sagiri --anchor v1-pre-broadcast --cases .local_indexes/eromanga-sensei/s79/cases.json
 ```
 
-只有用户批准本方案后，才在相同命令后追加`--approve-plan 070f7b7afec6e4302adce3e91789c3bc4da23fb4f1442755f51f5f54fd3dbdd5`。资料、消息、policy或参数改变会改变计划，需要重新核对，不沿用旧指纹。
+本次用户批准已收到，执行时在相同命令后追加`--approve-plan 4562144fc9c4d18e8c358b367720f479519c968a9e8b30821136b2c9beb7b747`。资料、消息、policy或其他参数改变仍须重新核对批准范围，不借模型替换扩展数据或次数。

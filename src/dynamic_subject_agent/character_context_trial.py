@@ -9,8 +9,11 @@ from dynamic_subject_agent.character_chat_context import CharacterChatContextReq
 from dynamic_subject_agent.character_reply_candidate import (
     CharacterReplyCandidateView, CharacterReplyProjection, REPLY_POLICY,
 )
-from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT, DEEPSEEK_MODEL, _ACCEPTED_RESPONSE_MODELS
+from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT, _ACCEPTED_RESPONSE_MODELS
 from dynamic_subject_agent.model_gateway import ModelGateway, ModelTask, ModelTaskKind, ModelGatewayFailure
+
+# Explicit V4.1-Flash alias for the user-approved new character route.
+TRIAL_MODEL = "deepseek-flash"
 
 TRIAL_POLICY = REPLY_POLICY + (
     "若self_knowledge含core，它是常驻的连贯自我认识；episode/detail仅是本轮选中的相关经历和细节。"
@@ -81,7 +84,7 @@ def build_trial_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, c
                                  outbound_digest=sha256(wire).hexdigest(), projection=asdict(view.projection)))
     payload = dict(version="character-context-trial-1", reviewed_digest=reviewed_digest,
         subject_id=subject_id, anchor_id=anchor_id, cases=cases["cases"], requests=requests,
-        endpoint=DEEPSEEK_ENDPOINT, model=DEEPSEEK_MODEL, accepted_response_models=list(_ACCEPTED_RESPONSE_MODELS),
+        endpoint=DEEPSEEK_ENDPOINT, model=TRIAL_MODEL, accepted_response_models=list(_ACCEPTED_RESPONSE_MODELS),
         policy=TRIAL_POLICY, max_knowledge_chars=max_knowledge_chars,
         generation=dict(max_tokens=600, temperature=0.3, thinking={"type": "disabled"},
                         response_format={"type": "json_object"}, stream=False),

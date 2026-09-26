@@ -2,15 +2,15 @@
 from dataclasses import asdict
 from hashlib import sha256
 
-from dynamic_subject_agent.character_context_trial import canonical_json, TRIAL_POLICY
+from dynamic_subject_agent.character_context_trial import canonical_json, TRIAL_POLICY, TRIAL_MODEL
 from dynamic_subject_agent.character_reply_candidate import CharacterReplyProjection
 from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
-from dynamic_subject_agent.deepseek import DEEPSEEK_MODEL, DEEPSEEK_PROVIDER_AUTHORITY_ID, _post_json_reply_content, _TRANSPORT_MAX_REQUEST_BYTES
+from dynamic_subject_agent.deepseek import DEEPSEEK_PROVIDER_AUTHORITY_ID, _post_json_reply_content, _TRANSPORT_MAX_REQUEST_BYTES
 from dynamic_subject_agent.model_gateway import ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTaskKind, ModelResult, ModelGatewayFailure
 
 
 class DeepSeekCharacterContextAdapter(ProviderAdapter):
-    capabilities = ProviderCapabilities(DEEPSEEK_PROVIDER_AUTHORITY_ID, DEEPSEEK_MODEL, False,
+    capabilities = ProviderCapabilities(DEEPSEEK_PROVIDER_AUTHORITY_ID, TRIAL_MODEL, False,
                                          (StructuredOutputMode.JSON_OBJECT,))
 
     def __init__(self, *, transport, credential_ref, allowed_outbound_digests):
@@ -21,7 +21,7 @@ class DeepSeekCharacterContextAdapter(ProviderAdapter):
     def outbound_bytes(projection):
         if type(projection) is not CharacterReplyProjection or projection.policy != TRIAL_POLICY:
             raise ValueError("typed exact trial projection required")
-        body = dict(model=DEEPSEEK_MODEL,
+        body = dict(model=TRIAL_MODEL,
             messages=[dict(role="system", content=TRIAL_POLICY), dict(role="user", content=canonical_json(asdict(projection)))],
             thinking={"type": "disabled"}, response_format={"type": "json_object"},
             max_tokens=600, temperature=0.3, stream=False)
