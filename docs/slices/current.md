@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-93：六题真实规划与表达验证](slice-93-communication-generation-live.md)完成12/12调用，无故障/重试。3题仍有明确无依据扩大，独立复核已完成。
+[Slice-94：冻结实际表达输入的算力配置对照准备](slice-94-expression-thinking-preparation.md)已完成。42项相关检查及独立复核通过，实际六份原样输入已冻结且未启动，新增真实调用0。
 
-不启用MVP聊天，不追加同题prompt润色。下一步仅准备复用六份实际表达投影的算力配置对照（无重复规划/无新资料），先补具体任务书；新的次数/预算尚未获准。
+等待[6次表达配置对照](../plans/expression-thinking-comparison.md)批准：复用S93实际表达投影和policy，仅改变high/4096配置；不重做规划、不补资料、不发送旧答案。原失败保留，尚不启用MVP聊天。

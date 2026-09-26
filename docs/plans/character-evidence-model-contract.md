@@ -104,6 +104,12 @@ S92独立试验装配按[六题方案](communication-plan-generation-trial.md)�
 
 每个阶段发送前独占记录attempt，规划先合法裁决并成功审计才构造表达。第二阶段Gateway只持本地绑定，Adapter由同一冻结context及合法规划审计重建实际投影，核对发送前记录的派生请求与body指纹；绑定/账本ID不发模型。规划high/4096、表达非思考600/temp0.3、30秒JSON，无工具/历史。
 
-任一技术/裁决/审计故障停止整个试验，不自动重试。投递不确定保留unknown，安全凭据缺失unavailable，已知校验失败FailedClosed；恢复只读严格完整的阶段与派生请求联查结果，缺失/损坏不重发也不续发表达。新生成用途尚未执行，不由S90的已消费审核许可代替。
+任一技术/裁决/审计故障停止整个试验，不自动重试。投递不确定保留unknown，安全凭据缺失unavailable，已知校验失败FailedClosed；恢复只读严格完整的阶段与派生请求联查结果，缺失/损坏不重发也不续发表达。S93后续获新用途批准并完成12/12调用，但3题仍明确越界，不启用MVP聊天，也不将合法plan或台词写成生活事实。
+
+## Slice-94表达配置对照
+
+独立ExpressionThinkingTrial从完整合法父试验审计取得原表达投影；当前Facade重建父计划一致，并绑定父plan文件及31份审计指纹。没有手写projection、加引用或重做规划入口，重复表达digest准备即拒绝。
+
+只变表达生成配置为high/4096，无temperature；消息、policy和所选完整资料不变，旧答案只参与本地审计指纹，不发模型。新精确plan绑定六次上限；先claim再鉴权、发送前核对父指纹、故障全停、严格缓存与恢复不重发，最终仍required/persisted=false。普通local-only及两阶段行为不变。新6次和预算未获准，真实效果未知。
 
 仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制，新的8次配置尚未获准，见[诊断方案](review-thinking-diagnostic.md)。

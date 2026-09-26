@@ -4,7 +4,7 @@
 
 ## 契约适用范围（2026-09-20）
 
-Slice-83新增独立依据审核seam；S84非思考校准误放8/11，S88/S90获准完成同题high配置24项后正向12/12保留、反例9/11拦截，仍漏近期心理活动，不启用日常审核。S86旧技术失败未重现、根因未知。S91新增local-only交流计划→本地裁决→表达，最终候选仍required、不产生生活状态；S92准备独立六题/最多12次的受限试验，尚未获新用途批准，普通入口仍local-only。完整语义见[审核与生成契约](plans/character-evidence-model-contract.md)、[完整校准结果](reports/2026-09-26-slice-90/REPORT.md)和[新用途方案](plans/communication-plan-generation-trial.md)。
+Slice-83新增独立依据审核seam；S84非思考校准误放8/11，S88/S90完成high配置24项后正向12/12保留、反例9/11拦截，仍漏近期心理活动，不启用日常审核。S86旧技术失败根因未知。S91/92形成受限规划→本地裁决→表达；S93获准完成12/12真实调用，3题仍有明确越界，未启用MVP聊天、不产生生活状态。S94只准备复用六份实际表达输入的high配置对照，新6次/预算未获准；普通入口仍local-only，候选required。完整语义见[审核与生成契约](plans/character-evidence-model-contract.md)、[生成结果](reports/2026-09-26-slice-93/REPORT.md)和[表达对照方案](plans/expression-thinking-comparison.md)。
 
 Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只生成精确请求，原local-only Lab保持。S80和S82后续获准分别完成24及48次，内容仍未过且额度已用完；一次性启动/停止/恢复见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[已执行方案](plans/character-context-comparison-trial.md)。
 

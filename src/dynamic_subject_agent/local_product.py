@@ -391,6 +391,43 @@ def open_character_communication_trial(parent: Path, *, draft_path: Path, source
                                         reviewed_digest=reviewed_digest, reply_lab=trial)
 
 
+def prepare_character_expression_thinking_trial(parent: Path, *, parent_trial_root: Path, parent_plan_digest: str,
+                                                draft_path: Path, source_root: Path):
+    from dynamic_subject_agent.character_expression_trial import read_parent_plan, validated_parent_expressions, build_expression_trial_plan
+    from dynamic_subject_agent.character_communication_trial import save_communication_trial_plan
+    from dynamic_subject_agent.character_communication_trial_provider import DeepSeekCommunicationTrialAdapter
+    from dynamic_subject_agent.character_expression_trial_provider import DeepSeekExpressionThinkingAdapter, expression_thinking_protocol
+    original, parent_file_digest = read_parent_plan(parent_trial_root, parent_plan_digest)
+    payload = original.payload
+    current = prepare_character_communication_trial(parent / "source-preparation", draft_path=draft_path, source_root=source_root,
+        reviewed_digest=payload["reviewed_digest"], subject_id=payload["subject_id"], anchor_id=payload["anchor_id"],
+        cases=dict(version="character-communication-plan-cases-1", cases=payload["cases"]), max_knowledge_chars=payload["max_knowledge_chars"])
+    if current.serialized != original.serialized: raise ValueError("current source does not match parent")
+    audited_rows, fingerprints = validated_parent_expressions(parent_trial_root, original, DeepSeekCommunicationTrialAdapter.expression_wire)
+    plan = build_expression_trial_plan(parent=original, parent_file_digest=parent_file_digest, audited_rows=audited_rows,
+        audit_fingerprints=fingerprints, protocol=expression_thinking_protocol(), expression_wire=DeepSeekExpressionThinkingAdapter.expression_wire)
+    save_communication_trial_plan(parent, plan)
+    return plan
+
+
+def open_character_expression_thinking_trial(parent: Path, *, parent_trial_root: Path, parent_plan_digest: str,
+                                             draft_path: Path, source_root: Path, approved_plan: str | None = None,
+                                             _transport=None) -> OpenedLocalProduct:
+    from dynamic_subject_agent.character_expression_trial import CharacterExpressionThinkingTrial
+    from dynamic_subject_agent.character_expression_trial_provider import DeepSeekExpressionThinkingAdapter
+    plan = prepare_character_expression_thinking_trial(parent, parent_trial_root=parent_trial_root, parent_plan_digest=parent_plan_digest,
+        draft_path=draft_path, source_root=source_root)
+    if approved_plan is not None and approved_plan != plan.digest: raise ValueError("current expression approval required")
+    gateway = None
+    if approved_plan is not None and not (parent / plan.digest).exists():
+        transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+        gateway = ModelGateway(DeepSeekExpressionThinkingAdapter(plan, run_root=parent / plan.digest, parent_root=parent_trial_root,
+            transport=transport, credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
+    trial = CharacterExpressionThinkingTrial(plan, root=parent, parent_root=parent_trial_root, gateway=gateway, approved_plan=approved_plan)
+    return open_character_model_preview(parent / "products", draft_path=draft_path, source_root=source_root,
+        reviewed_digest=plan.payload["reviewed_digest"], reply_lab=trial)
+
+
 def prepare_character_context_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                     reviewed_digest: str, subject_id: str, anchor_id: str,
                                     cases: dict, max_knowledge_chars: int = 20000):
