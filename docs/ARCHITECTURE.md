@@ -4,7 +4,7 @@
 
 ## 契约适用范围（2026-09-20）
 
-Slice-83新增独立依据审核seam，S84获准24项真实校准后明确反例误放8/11，生产不启用日常审核。S85准备8项thinking-high同题配置，S86获准执行但首项技术失败即停止，7项未发、根因未知。S87准备严格1项thinking-diagnostic：与high出站参数相同，仅显式启用闭集安全失败码，旧默认plan/字节/失败契约不变；原批准不自动恢复。完整语义见[审核契约](plans/character-evidence-model-contract.md#slice-83独立依据审核与校准)和[诊断方案](plans/review-failure-diagnostic.md)。
+Slice-83新增独立依据审核seam，S84获准24项真实校准后明确反例误放8/11，生产不启用日常审核。S85准备8项thinking-high，S86首项技术失败即停止、7项未发、根因未知。S87增加严格1项thinking-diagnostic，与high出站参数相同，仅显式启用闭集安全失败码；旧默认plan/字节/失败契约不变。S88获新8次许可后全部有效返回，同题正向保留3/4→4/4、反例拦截1/4→3/4，近期状态仍漏判，旧故障未重现；S89只准备剩余16项，不自动启用审核。完整语义见[审核契约](plans/character-evidence-model-contract.md#slice-83独立依据审核与校准)、[诊断结果](reports/2026-09-26-slice-88/REPORT.md)和[补全方案](plans/review-thinking-completion.md)。
 
 Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只生成精确请求，原local-only Lab保持。S80和S82后续获准分别完成24及48次，内容仍未过且额度已用完；一次性启动/停止/恢复见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[已执行方案](plans/character-context-comparison-trial.md)。
 
