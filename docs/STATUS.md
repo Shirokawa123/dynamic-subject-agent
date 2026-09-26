@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-26：Slice-87完成默认关闭的安全失败分类及严格单项诊断准备，115项唯一用例覆盖与独立复核通过；原请求出站字节不变、新增真实调用0，S86根因仍未知，待[新诊断指示](plans/review-failure-diagnostic.md)。
+
 - 2026-09-26：Slice-86思考审核首项failed-closed，无有效verdict；按约1次尝试后停止、7项未发，无重试。现有通用码不足以定因，不算语义失败，先改进安全诊断，见[报告](reports/2026-09-26-slice-86/REPORT.md)。
 
 - 2026-09-26：Slice-85完成8项thinking-high同题诊断准备，默认旧plan/字节保持，推理正文丢弃；103项检查和独立复核通过，新增真实调用0，待[具体8次许可](plans/review-thinking-diagnostic.md)。

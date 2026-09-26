@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 from dynamic_subject_agent.character_chat_context import SelfKnowledge
 from dynamic_subject_agent.character_reply_candidate import CharacterReplyProjection, CharacterReplyCandidateView
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelGatewayFailure
+from dynamic_subject_agent.reply_review_diagnostics import ReviewValidationFailure, REVIEW_DIAGNOSTIC_CODES
 
 REVIEW_POLICY = (
     "独立核对candidate_text中的人物事实陈述，只以self_knowledge、stage_description及interaction_context为依据。"
@@ -109,32 +110,38 @@ def validated_review(value, projection):
             or type(value["issues"]) is not list or len(value["issues"]) > 6
             or (value["verdict"] == "supported" and value["issues"])
             or (value["verdict"] == "unsupported" and not value["issues"])):
-        raise ValueError("invalid review verdict")
+        raise ReviewValidationFailure("review-schema")
     labels = {item.label for item in projection.self_knowledge} | {"S1"} | {item.label for item in projection.interaction_context}
     issues = []
     for item in value["issues"]:
         if (type(item) is not dict or set(item) != {"quote", "kind", "basis_labels"}
-                or not isinstance(item["quote"], str) or not item["quote"].strip()
-                or len(item["quote"]) > 240 or item["quote"] not in projection.candidate_text
-                or item["kind"] not in ISSUE_KINDS or type(item["basis_labels"]) is not list
-                or len(item["basis_labels"]) > 6
+                or not isinstance(item["kind"], str) or item["kind"] not in ISSUE_KINDS):
+            raise ReviewValidationFailure("review-schema")
+        if (not isinstance(item["quote"], str) or not item["quote"].strip()
+                or len(item["quote"]) > 240 or item["quote"] not in projection.candidate_text):
+            raise ReviewValidationFailure("review-quote")
+        if (type(item["basis_labels"]) is not list or len(item["basis_labels"]) > 6
                 or any(not isinstance(label, str) or label not in labels for label in item["basis_labels"])
                 or len(set(item["basis_labels"])) != len(item["basis_labels"])):
-            raise ValueError("invalid review issue")
+            raise ReviewValidationFailure("review-label")
         issues.append(ReviewIssue(item["quote"], item["kind"], tuple(item["basis_labels"])))
     return value["verdict"], tuple(issues)
 
 
-def review_candidate(gateway, projection, *, request_digest):
+def review_candidate(gateway, projection, *, request_digest, safe_diagnostics=False):
     try:
         validate_projection(projection)
         result = gateway.execute(ModelTask(ModelTaskKind.CHARACTER_REPLY_REVIEW, projection))
         verdict, issues = validated_review(result.value, projection)
     except ModelGatewayFailure as failure:
         unavailable = failure.code == "character-credential-unavailable"
+        code = failure.code if safe_diagnostics is True and isinstance(failure.code, str) and failure.code in REVIEW_DIAGNOSTIC_CODES else "reply-review-failed"
         return CharacterReplyCandidateView("unavailable" if unavailable else "failed-closed",
-            "character-credential-unavailable" if unavailable else "reply-review-failed",
+            "character-credential-unavailable" if unavailable else code,
             request_digest=request_digest)
+    except ReviewValidationFailure as failure:
+        return CharacterReplyCandidateView("failed-closed", failure.diagnostic_code if safe_diagnostics is True else "reply-review-failed",
+                                          request_digest=request_digest)
     except Exception:
         return CharacterReplyCandidateView("failed-closed", "reply-review-failed", request_digest=request_digest)
     return CharacterReplyCandidateView("candidate" if verdict == "supported" else "rejected",

@@ -21,6 +21,9 @@ def review_settings(review_profile):
     if review_profile == "thinking-high":
         return 8, dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
                        response_format={"type": "json_object"}, stream=False)
+    if review_profile == "thinking-diagnostic":
+        return 1, dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
+                       response_format={"type": "json_object"}, stream=False)
     raise ValueError("invalid review profile")
 
 
@@ -83,6 +86,8 @@ def build_review_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, 
         approval="Exact digest is an operator assertion; new user approval for review data use must exist before execution")
     if review_profile != "standard":
         payload["review_profile"] = review_profile
+    if review_profile == "thinking-diagnostic":
+        payload["safe_diagnostics"] = True
     return CharacterContextTrialPlan(canonical_json(payload))
 
 
@@ -97,6 +102,7 @@ class CharacterReplyReviewTrial(CharacterReplyProducer):
         if approved_plan is not None and approved_plan != plan.digest:
             raise ValueError("current review approval required")
         self._plan, self._gateway = plan, gateway
+        self._safe_diagnostics = plan.payload.get("review_profile") == "thinking-diagnostic"
         self._requests = plan.payload["requests"]
         self._cases = {row["case_id"]: row for row in self._requests}
         save_trial_plan(root, plan)
@@ -146,7 +152,10 @@ class CharacterReplyReviewTrial(CharacterReplyProducer):
                     raise ValueError("invalid completed review")
                 return CharacterReplyCandidateView(**{**value, "review_issues": issues})
             expected = {"failed-closed": "reply-review-failed", "unavailable": "character-credential-unavailable"}
-            if (value["status"] not in expected or value["code"] != expected[value["status"]]
+            from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
+            valid_code = (value["status"] in expected and value["code"] == expected[value["status"]]) or (
+                self._safe_diagnostics and value["status"] == "failed-closed" and value["code"] in REVIEW_DIAGNOSTIC_CODES)
+            if (not valid_code
                     or value["reply_text"] != "" or value["semantic_review"] != "not-performed"
                     or verdict != "" or value["review_issues"] != []):
                 raise ValueError("invalid failure review")
@@ -174,7 +183,8 @@ class CharacterReplyReviewTrial(CharacterReplyProducer):
         except Exception:
             self._ledger.stop("review-attempt-record-unavailable")
             return CharacterReplyCandidateView("unknown", "review-attempt-record-unavailable", request_digest=view.request_digest)
-        result = review_candidate(self._gateway, view.projection, request_digest=view.request_digest)
+        result = review_candidate(self._gateway, view.projection, request_digest=view.request_digest,
+                                  safe_diagnostics=self._safe_diagnostics)
         if result.status in ("failed-closed", "unavailable"):
             self._ledger.stop("review-attempt-failed")
         audit = {key: asdict(result)[key] for key in ("status", "code", "request_digest", "reply_text",

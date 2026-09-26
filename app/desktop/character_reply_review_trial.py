@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--anchor", required=True)
     parser.add_argument("--cases", required=True, type=Path)
     parser.add_argument("--max-knowledge-chars", type=int, default=20000)
-    parser.add_argument("--review-profile", choices=("standard", "thinking-high"), default="standard")
+    parser.add_argument("--review-profile", choices=("standard", "thinking-high", "thinking-diagnostic"), default="standard")
     parser.add_argument("--approve-plan", help="操作人声明此精确新审核用途已获用户批准；参数本身不构成批准")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2] / ".artifacts/character-reply-review-trials"

@@ -502,6 +502,69 @@ def _post_identity_reply_content(
                                     max_output_tokens=_IDENTITY_REPLY_MAX_OUTPUT_TOKENS)
 
 
+class DeepSeekResponseDiagnosticFailure(ProviderFailure):
+    """A bounded local category, separate from the provider failure semantics."""
+
+    def __init__(self, code, diagnostic_code):
+        from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
+        if diagnostic_code not in REVIEW_DIAGNOSTIC_CODES:
+            raise ValueError("invalid response failure category")
+        super().__init__(code)
+        self.diagnostic_code = diagnostic_code
+
+
+def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reasoning, require_complete):
+    """Check envelope/finish before content, discard reasoning, return JSON only."""
+    def fail(code):
+        raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.INVALID_OUTPUT, code) from None
+
+    if type(response.body) is not bytes or len(response.body) > 65536:
+        fail("response-size")
+    try:
+        payload = json.loads(response.body.decode("utf-8"))
+    except (ValueError, UnicodeError):
+        fail("response-envelope")
+    if type(payload) is not dict:
+        fail("response-envelope")
+    choices = payload.get("choices")
+    if (type(choices) is not list or len(choices) != 1 or type(choices[0]) is not dict
+            or type(choices[0].get("message")) is not dict):
+        fail("response-envelope")
+    message = choices[0]["message"]
+    if message.get("role") != "assistant":
+        fail("response-envelope")
+    if payload.get("model") not in _ACCEPTED_RESPONSE_MODELS:
+        fail("response-model")
+    if choices[0].get("finish_reason") == "length":
+        fail("response-truncated")
+    if require_complete and choices[0].get("finish_reason") != "stop":
+        fail("response-incomplete")
+    reasoning = message.get("reasoning_content")
+    if ((reasoning is not None and type(reasoning) is not str)
+            or (not discard_reasoning and reasoning not in (None, ""))):
+        fail("response-reasoning")
+    message.pop("reasoning_content", None)
+    reasoning = None
+    if message.get("tool_calls") not in (None, []):
+        fail("response-tools")
+    usage = payload.get("usage")
+    if (type(usage) is not dict or type(usage.get("prompt_tokens")) is not int
+            or type(usage.get("completion_tokens")) is not int
+            or usage["prompt_tokens"] < 0 or usage["completion_tokens"] < 0):
+        fail("response-usage")
+    if usage["completion_tokens"] > max_output_tokens:
+        fail("response-overbudget")
+    if type(message.get("content")) is not str:
+        fail("response-content-json")
+    try:
+        content = json.loads(message["content"])
+    except ValueError:
+        fail("response-content-json")
+    if type(content) is not dict:
+        fail("response-content-json")
+    return content
+
+
 def _post_json_reply_content(
     transport: DeepSeekTransport,
     credential_ref: CredentialRef,
@@ -510,8 +573,9 @@ def _post_json_reply_content(
     max_output_tokens: int,
     require_complete: bool = False,
     discard_reasoning: bool = False,
+    safe_diagnostics: bool = False,
 ) -> dict[str, object]:
-    if (type(discard_reasoning) is not bool or type(max_output_tokens) is not int
+    if (type(safe_diagnostics) is not bool or type(discard_reasoning) is not bool or type(max_output_tokens) is not int
             or not 1 <= max_output_tokens <= (4096 if discard_reasoning else 2048)):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     try:
@@ -521,16 +585,37 @@ def _post_json_reply_content(
             credential_ref=credential_ref,
             timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
         )
-    except ProviderFailure:
+    except ProviderFailure as failure:
+        # Credential-unavailable is a separate subclass and must retain its
+        # typed unavailable path rather than becoming a transport diagnosis.
+        if safe_diagnostics and type(failure) is ProviderFailure:
+            diagnostic = {ProviderFailureCode.TIMEOUT: "transport-timeout",
+                ProviderFailureCode.DELIVERY_AMBIGUOUS: "transport-delivery-ambiguous",
+                ProviderFailureCode.NETWORK_FAILURE: "transport-network"}.get(failure.code, "transport-failure")
+            raise DeepSeekResponseDiagnosticFailure(failure.code, diagnostic) from None
         raise
     except TimeoutError:
+        if safe_diagnostics:
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS, "transport-timeout") from None
         raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
     except Exception:
+        if safe_diagnostics:
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.NETWORK_FAILURE, "transport-network") from None
         raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
     if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
+        if safe_diagnostics:
+            from dynamic_subject_agent.reply_review_diagnostics import HTTP_DIAGNOSTIC_STATUSES
+            status = response.status_code if type(response) is DeepSeekHttpResponse else None
+            diagnostic = ("response-envelope" if type(response) is not DeepSeekHttpResponse else
+                f"http-{status}" if type(status) is int and status in HTTP_DIAGNOSTIC_STATUSES else "http-other")
+            code = ProviderFailureCode.RATE_LIMIT if status == 429 else ProviderFailureCode.UNAVAILABLE
+            raise DeepSeekResponseDiagnosticFailure(code, diagnostic) from None
         if isinstance(response, DeepSeekHttpResponse) and response.status_code == 429:
             raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
         raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+    if safe_diagnostics:
+        return _diagnostic_json_reply_content(response, max_output_tokens=max_output_tokens,
+            discard_reasoning=discard_reasoning, require_complete=require_complete)
     try:
         if discard_reasoning and (type(response.body) is not bytes or len(response.body) > 65536):
             raise ValueError("bounded thinking response required")
@@ -665,7 +750,9 @@ class DeepSeekUrlLibTransport(DeepSeekTransport):
         finally:
             secret = ""
         if not isinstance(response_body, bytes) or len(response_body) > 65_536:
-            raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
+            # Preserve the public failure semantic, while retaining only this
+            # local category for callers explicitly enabling safe diagnostics.
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.UNAVAILABLE, "response-size")
         return DeepSeekHttpResponse(status_code=status_code, body=response_body)
 
 

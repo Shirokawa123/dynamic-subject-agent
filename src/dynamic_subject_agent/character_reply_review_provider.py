@@ -5,7 +5,7 @@ from hashlib import sha256
 from dynamic_subject_agent.character_reply_review import validate_projection, REVIEW_POLICY
 from dynamic_subject_agent.character_reply_review_trial import REVIEW_MODEL, review_settings
 from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
-from dynamic_subject_agent.deepseek import DEEPSEEK_PROVIDER_AUTHORITY_ID, _post_json_reply_content, _TRANSPORT_MAX_REQUEST_BYTES
+from dynamic_subject_agent.deepseek import DEEPSEEK_PROVIDER_AUTHORITY_ID, _post_json_reply_content, _TRANSPORT_MAX_REQUEST_BYTES, DeepSeekResponseDiagnosticFailure
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTaskKind, ModelResult, ModelGatewayFailure
 
@@ -41,7 +41,13 @@ class DeepSeekCharacterReplyReviewAdapter(ProviderAdapter):
         try:
             value = _post_json_reply_content(self._transport, self._credential_ref, wire,
                                             max_output_tokens=self._generation["max_tokens"], require_complete=True,
-                                            discard_reasoning=self._review_profile == "thinking-high")
+                                            discard_reasoning=self._review_profile in ("thinking-high", "thinking-diagnostic"),
+                                            safe_diagnostics=self._review_profile == "thinking-diagnostic")
         except CharacterCredentialUnavailable:
             raise ModelGatewayFailure("character-credential-unavailable") from None
+        except DeepSeekResponseDiagnosticFailure as failure:
+            if self._review_profile == "thinking-diagnostic":
+                raise ModelGatewayFailure(failure.diagnostic_code) from None
+            from dynamic_subject_agent.cognition import ProviderFailure
+            raise ProviderFailure(failure.code) from None
         return ModelResult(task.kind, value)

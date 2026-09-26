@@ -86,4 +86,12 @@ supported保留candidate正文，semantic_review标model-supported；unsupported
 
 S84后续已获准执行standard的24项校准，但明确反例误放8/11，因此不启用日常审核。新review_profile默认standard：继续24项、600输出、temperature0.0、非思考，原plan/字节不变。显式thinking-high只接受8项，绑定thinking enabled、reasoning_effort high、4096总completion预算、无temperature、JSON且不流式；计划增加明确profile，不借旧批准开启。
 
+### Slice-87安全失败诊断
+
+S86首项技术失败而无可用审核，不能解释为语义判断错误。新thinking-diagnostic严格1项，plan另绑定safe_diagnostics=true；生成参数及出站内容与thinking-high相同。诊断默认关闭，旧standard/high计划与公开失败码保持。
+
+诊断只在传输/HTTP、响应信封、长度截断/预算、最终JSON及审核结构/引用阶段给出闭集码，经Adapter/Gateway/Candidate到既有审计。截断先于最终content解析；推理、异常原文、响应正文、headers及凭据不进入诊断结果。缓存只认可对应模式的闭集失败码，正常审核判定仍与技术失败区分；凭据不可用仍是unavailable。每个冻结计划故障即停、重启不重发，CLI不提供自动循环重试。
+
+本地诊断通过不等于原真实故障已修复，也不恢复旧7项。追加诊断及必要修复验证依[新方案](review-failure-diagnostic.md)的单独授权；当前只准备首项，新增真实调用0。
+
 仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制，新的8次配置尚未获准，见[诊断方案](review-thinking-diagnostic.md)。
