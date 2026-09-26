@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-85：审核思考配置的8项同题诊断准备](slice-85-thinking-review-diagnostic.md)已收口，见[报告](../reports/2026-09-26-slice-85/REPORT.md)。当前停在8次新配置/预算的用户批准点。
+[Slice-86：8项思考审核真实诊断](slice-86-thinking-review-live.md)已按故障停止收口，见[报告](../reports/2026-09-26-slice-86/REPORT.md)：首项无有效verdict，1尝试、7未发，无重试。
 
-新计划ff02e220…afec保持原8项候选/依据/规则，thinking-high/4096已离线验证，103项检查通过；待[具体许可](../plans/review-thinking-diagnostic.md)后执行。S84的24次已用完，不能重用或默认启用日常审核。
+下一步先补安全的失败分类与本地复现；当前原因未明，不能按时间猜超时或算语义错。旧计划已停止，不重用未发送7项自动恢复；任何真实诊断重试需新指示。
