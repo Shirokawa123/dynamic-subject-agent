@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-94：冻结实际表达输入的算力配置对照准备](slice-94-expression-thinking-preparation.md)已完成。42项相关检查及独立复核通过，实际六份原样输入已冻结且未启动，新增真实调用0。
+[Slice-95：六份原样表达的high配置实测](slice-95-expression-thinking-live.md)已完成6/6，无故障/重试；两处明确旧错修正，泛化风险/自然度与规划漏选仍保留。
 
-等待[6次表达配置对照](../plans/expression-thinking-comparison.md)批准：复用S93实际表达投影和policy，仅改变high/4096配置；不重做规划、不补资料、不发送旧答案。原失败保留，尚不启用MVP聊天。
+下一片准备完整两阶段high表达的新措辞验证，先冻结任务书/输入/预算。按[额度记录](../plans/provider-budget-200.md)已用6、剩194；同用途常规验证不再逐批询问次数，新历史/生活/私人数据用途不自动扩大。
