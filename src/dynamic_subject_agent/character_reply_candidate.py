@@ -1,10 +1,16 @@
 """A non-persistent, offline-only expression candidate experiment."""
+from __future__ import annotations
 from dataclasses import asdict, dataclass
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 from hashlib import sha256
 import json
 
 from dynamic_subject_agent.character_chat_context import CharacterChatContextView, SelfKnowledge
 from dynamic_subject_agent.model_gateway import ModelGateway, ModelTask, ModelTaskKind
+
+if TYPE_CHECKING:
+    from dynamic_subject_agent.character_reply_review import CharacterReplyReviewProjection, ReviewIssue
 
 REPLY_POLICY = (
     "进行普通、非色情的中文文字聊天，使用人物第一人称和自然短消息，不加动作旁白。"
@@ -41,11 +47,27 @@ class CharacterReplyProjection:
 class CharacterReplyCandidateView:
     status: str
     code: str = ""
-    projection: CharacterReplyProjection | None = None
+    projection: CharacterReplyProjection | CharacterReplyReviewProjection | None = None
     request_digest: str = ""
     reply_text: str = ""
     semantic_review: str = "not-performed"
     persisted: bool = False
+    review_verdict: str = ""
+    review_issues: tuple[ReviewIssue, ...] = ()
+
+
+class CharacterReplyProducer(ABC):
+    """Internal seam for full reply operations; does not publish runtime state."""
+
+    def context_request(self, request):
+        return request
+
+    def preview(self, view, *, request=None):
+        return view
+
+    @abstractmethod
+    def propose(self, preview):
+        raise NotImplementedError
 
 
 def preview_reply(context: CharacterChatContextView) -> CharacterReplyCandidateView:
@@ -68,13 +90,17 @@ def preview_reply(context: CharacterChatContextView) -> CharacterReplyCandidateV
                                        request_digest=sha256(serialized.encode()).hexdigest())
 
 
-class CharacterReplyLab:
+class CharacterReplyLab(CharacterReplyProducer):
     """Only explicitly local adapters can run this unapproved projection."""
 
-    def __init__(self, gateway: ModelGateway):
+    def __init__(self, gateway: ModelGateway, *, review_gateway: ModelGateway | None = None):
         if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
             raise ValueError("local-only-character-reply-gateway-required")
         self._gateway = gateway
+        if review_gateway is not None and (not isinstance(review_gateway, ModelGateway)
+                or review_gateway.capabilities.local is not True):
+            raise ValueError("local-only-character-review-gateway-required")
+        self._review_gateway = review_gateway
 
     def propose(self, preview: CharacterReplyCandidateView) -> CharacterReplyCandidateView:
         if preview.status != "previewed" or preview.projection is None:
@@ -86,8 +112,16 @@ class CharacterReplyLab:
                     or value["language"] != "zh" or not isinstance(value["reply_text"], str)
                     or not value["reply_text"].strip() or len(value["reply_text"]) > 1200):
                 raise ValueError("invalid reply")
-            return CharacterReplyCandidateView("candidate", request_digest=preview.request_digest,
-                                               reply_text=value["reply_text"], semantic_review="required")
+            candidate = CharacterReplyCandidateView("candidate", request_digest=preview.request_digest,
+                                                    reply_text=value["reply_text"], semantic_review="required")
         except Exception:
             return CharacterReplyCandidateView("failed-closed", "reply-candidate-unavailable",
                                                request_digest=preview.request_digest)
+        if self._review_gateway is None:
+            return candidate
+        from dynamic_subject_agent.character_reply_review import review_candidate, review_projection
+        try:
+            projection = review_projection(preview.projection, candidate.reply_text)
+        except Exception:
+            return CharacterReplyCandidateView("failed-closed", "reply-review-failed", request_digest=preview.request_digest)
+        return review_candidate(self._review_gateway, projection, request_digest=preview.request_digest)

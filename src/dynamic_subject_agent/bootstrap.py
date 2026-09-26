@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview
-from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
-from dynamic_subject_agent.character_context_trial import CharacterContextTrial
+from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab
 
@@ -121,7 +120,7 @@ def compose_application(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
-    _character_reply_lab: CharacterReplyLab | CharacterContextTrial | None = None,
+    _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,

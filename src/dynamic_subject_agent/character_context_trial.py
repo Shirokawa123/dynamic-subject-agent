@@ -2,12 +2,12 @@
 from dataclasses import asdict, dataclass, replace
 from hashlib import sha256
 import json
-import os
 from pathlib import Path
 
+from dynamic_subject_agent.frozen_attempt import FrozenAttemptRun, canonical_json, write_once as _write_once
 from dynamic_subject_agent.character_chat_context import CharacterChatContextRequest
 from dynamic_subject_agent.character_reply_candidate import (
-    CharacterReplyCandidateView, CharacterReplyProjection, REPLY_POLICY,
+    CharacterReplyCandidateView, CharacterReplyProjection, CharacterReplyProducer, REPLY_POLICY,
 )
 from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT, _ACCEPTED_RESPONSE_MODELS
 from dynamic_subject_agent.model_gateway import ModelGateway, ModelTask, ModelTaskKind, ModelGatewayFailure
@@ -29,10 +29,6 @@ TRIAL_POLICY = REPLY_POLICY + (
     "当前人物仍只用实际self_knowledge、stage_description与encounter。遇到没有根据的具体往事或频率，回答有把握的部分并自然澄清；提出意见时直接谈取舍。"
     "通常两三句即可，可以自然追问，也可以不追问。保持人物自己的声音，不朗读档案、输入、审核、演示或规则，不输出分析过程。"
 )
-
-
-def canonical_json(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def projection_digest(projection):
@@ -103,13 +99,6 @@ def build_trial_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, c
     return CharacterContextTrialPlan(canonical_json(payload))
 
 
-def _write_once(path, value):
-    with path.open("x", encoding="utf-8", newline="\n") as stream:
-        stream.write(canonical_json(value))
-        stream.flush()
-        os.fsync(stream.fileno())
-
-
 def save_trial_plan(root: Path, plan: CharacterContextTrialPlan):
     root.mkdir(parents=True, exist_ok=True)
     path = root / (plan.digest + ".plan.json")
@@ -121,7 +110,7 @@ def save_trial_plan(root: Path, plan: CharacterContextTrialPlan):
     return path
 
 
-class CharacterContextTrial:
+class CharacterContextTrial(CharacterReplyProducer):
     """A separate Producer whose remote allowance is exactly one frozen plan."""
     def __init__(self, plan: CharacterContextTrialPlan, *, root: Path,
                  gateway: ModelGateway | None, approved_plan: str | None):
@@ -132,35 +121,23 @@ class CharacterContextTrial:
         self._plan, self._root, self._gateway = plan, root, gateway
         self._requests = plan.payload["requests"]
         self._allowed = {row["request_digest"] for row in self._requests}
-        self._next, self._stopped = 0, False
-        self._results = {}
-        self._approved = approved_plan is not None
-        self._resumed = False
         save_trial_plan(root, plan)
-        self._run = root / plan.digest
-        if self._approved:
-            # mkdir is the exclusive startup claim, even if the process crashes
-            # before the start record is complete. Existing runs never resume.
-            try:
-                self._run.mkdir(exist_ok=False)
-            except FileExistsError:
-                self._resumed = True
-                self._gateway = None
-            else:
-                _write_once(self._run / "started.json", dict(plan_digest=plan.digest, status="started"))
+        self._ledger = FrozenAttemptRun(root, plan.digest, approved=approved_plan is not None)
+        if self._ledger.resumed:
+            self._gateway = None
 
-    def preview(self, view: CharacterReplyCandidateView):
+    def preview(self, view: CharacterReplyCandidateView, *, request=None):
         view = trial_preview(view)
         if view.status == "previewed" and view.request_digest not in self._allowed:
             return CharacterReplyCandidateView("rejected", "trial-request-not-in-plan")
         return view
 
     def _cached(self, digest):
-        if digest in self._results:
-            return self._results[digest]
-        if self._resumed:
+        if digest in self._ledger.results:
+            return self._ledger.results[digest]
+        if self._ledger.resumed:
             try:
-                value = json.loads((self._run / (digest + ".result.json")).read_text(encoding="utf-8"))
+                value = self._ledger.read_result(digest)
                 if set(value) != {"status", "code", "request_digest", "reply_text", "semantic_review"}:
                     raise ValueError("invalid result")
                 expected = {"candidate": ("", "required"), "failed-closed": ("trial-attempt-failed", "not-performed"),
@@ -178,36 +155,29 @@ class CharacterContextTrial:
         return None
 
     def _stop(self, reason):
-        self._stopped = True
-        if not self._resumed:
-            try:
-                _write_once(self._run / "stopped.json", dict(plan_digest=self._plan.digest, reason=reason))
-            except OSError:
-                pass  # The exclusive startup/attempt claims still forbid replay.
+        self._ledger.stop(reason)
 
     def propose(self, view: CharacterReplyCandidateView):
         view = self.preview(view)
         if view.status != "previewed":
-            if self._approved and view.status in ("failed-closed", "unavailable"):
+            if self._ledger.approved and view.status in ("failed-closed", "unavailable"):
                 self._stop("trial-context-unavailable")
             return view
-        if not self._approved:
+        if not self._ledger.approved:
             return CharacterReplyCandidateView("unavailable", "trial-not-approved", request_digest=view.request_digest)
         cached = self._cached(view.request_digest)
         if cached is not None:
             return cached
-        if self._stopped or self._gateway is None:
+        if self._ledger.stopped or self._gateway is None:
             return CharacterReplyCandidateView("unavailable", "trial-stopped", request_digest=view.request_digest)
-        if self._next >= len(self._requests) or self._requests[self._next]["request_digest"] != view.request_digest:
+        if self._ledger.next >= len(self._requests) or self._requests[self._ledger.next]["request_digest"] != view.request_digest:
             return CharacterReplyCandidateView("rejected", "trial-request-out-of-order", request_digest=view.request_digest)
         # Claim the attempt durably before a credential can be resolved.
         try:
-            _write_once(self._run / (view.request_digest + ".attempt.json"),
-                        dict(request_digest=view.request_digest, index=self._next, status="attempted"))
+            self._ledger.claim(view.request_digest)
         except Exception:
             self._stop("trial-attempt-record-unavailable")
             return CharacterReplyCandidateView("unknown", "trial-attempt-record-unavailable", request_digest=view.request_digest)
-        self._next += 1
         try:
             value = self._gateway.execute(ModelTask(ModelTaskKind.CHARACTER_CONTEXT_REPLY, view.projection)).value
             if (type(value) is not dict or set(value) != {"reply_text", "language"}
@@ -227,9 +197,9 @@ class CharacterContextTrial:
             result = CharacterReplyCandidateView("failed-closed", "trial-attempt-failed", request_digest=view.request_digest)
         audit = {key: asdict(result)[key] for key in ("status", "code", "request_digest", "reply_text", "semantic_review")}
         try:
-            _write_once(self._run / (view.request_digest + ".result.json"), audit)
+            self._ledger.record(view.request_digest, audit)
         except Exception:
             self._stop("trial-result-record-unavailable")
             result = CharacterReplyCandidateView("unknown", "trial-result-record-unavailable", request_digest=view.request_digest)
-        self._results[view.request_digest] = result
+        self._ledger.results[view.request_digest] = result
         return result

@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, DialogueView
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, BasisPreview
-from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab, CharacterReplyCandidateView, preview_reply
-from dynamic_subject_agent.character_context_trial import CharacterContextTrial
+from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer, CharacterReplyCandidateView, preview_reply
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView, CharacterContextRequest, CharacterContextView
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, EvidenceExtractionView
 from dynamic_subject_agent.character_chat_context import (
@@ -348,7 +347,7 @@ class _ApplicationRouter:
         character_dialogue: CharacterDialogueSession | None = None,
         basis_preview: ConversationBasisPreview | None = None,
         character_model: CharacterEvidenceModel | None = None,
-        character_reply_lab: CharacterReplyLab | CharacterContextTrial | None = None,
+        character_reply_lab: CharacterReplyProducer | None = None,
         evidence_extraction: EvidenceExtractionLab | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
@@ -376,7 +375,7 @@ class _ApplicationRouter:
         if evidence_extraction is not None and not isinstance(evidence_extraction, EvidenceExtractionLab):
             raise TypeError("typed evidence extraction required")
         self._evidence_extraction = evidence_extraction
-        if character_reply_lab is not None and not isinstance(character_reply_lab, (CharacterReplyLab, CharacterContextTrial)):
+        if character_reply_lab is not None and not isinstance(character_reply_lab, CharacterReplyProducer):
             raise TypeError("typed character reply lab required")
         self._character_reply_lab = character_reply_lab
         self._character_model = character_model
@@ -763,8 +762,10 @@ class _ApplicationRouter:
 
     def preview_character_reply(self, request: object) -> CharacterReplyCandidateView:
         with self._lock:
-            view = preview_reply(self.preview_character_chat_context(request))
-            return self._character_reply_lab.preview(view) if isinstance(self._character_reply_lab, CharacterContextTrial) else view
+            producer = self._character_reply_lab
+            context_request = producer.context_request(request) if producer is not None else request
+            view = preview_reply(self.preview_character_chat_context(context_request))
+            return producer.preview(view, request=request) if producer is not None else view
 
     def propose_character_reply(self, request: object) -> CharacterReplyCandidateView:
         with self._lock:
@@ -1094,7 +1095,7 @@ def _create_application_facade(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
-    _character_reply_lab: CharacterReplyLab | CharacterContextTrial | None = None,
+    _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,

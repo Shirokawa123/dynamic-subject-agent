@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-82：有界表达修复真实验证](slice-82-bounded-expression-live.md)已收口，见[报告](../reports/2026-09-26-slice-82/REPORT.md)。两批48次全部用完，结构有效但内容未过。
+[Slice-83：独立依据审核与校准的离线准备](slice-83-reply-review-calibration.md)已收口，见[报告](../reports/2026-09-26-slice-83/REPORT.md)。当前停在独立审核新用途批准点；S82生成48次已用完，不能用于审核。
 
-停止继续仅加提示词。下一片准备候选的独立依据审核与校准，优先复用现有Facade/Gateway/候选路径；仍不发布未经验证的角色内容。新审核用途及调用需在精确准备后批准。
+内部审核已接现有Facade/Gateway候选路径，144项相关检查通过，24项校准计划dbd9e286…faa8b已冻结、未启动。下一步取得[具体审核许可](../plans/character-reply-review-calibration.md)后校准误放/误拒，不追加生成或自动重写，不宣称MVP完成。

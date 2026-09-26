@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from dynamic_subject_agent.character_dialogue import CharacterDialogueSession, plan_digest, plan_payload, grounded_plan_digest
 from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, S59_DIGEST
-from dynamic_subject_agent.character_reply_candidate import CharacterReplyLab
+from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer
 from dynamic_subject_agent.character_context_trial import CharacterContextTrial, build_trial_plan, save_trial_plan
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, extraction_plan_digest, extraction_plan_payload
@@ -103,7 +103,7 @@ def open_local_product(
     _character_dialogue: CharacterDialogueSession | None = None,
     _basis_preview: ConversationBasisPreview | None = None,
     _character_model: CharacterEvidenceModel | None = None,
-    _character_reply_lab: CharacterReplyLab | CharacterContextTrial | None = None,
+    _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
@@ -138,7 +138,7 @@ def _open_loaded_local_product(
     character_dialogue: CharacterDialogueSession | None = None,
     basis_preview: ConversationBasisPreview | None = None,
     character_model: CharacterEvidenceModel | None = None,
-    character_reply_lab: CharacterReplyLab | CharacterContextTrial | None = None,
+    character_reply_lab: CharacterReplyProducer | None = None,
     evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
     composition = compose_application(
@@ -332,7 +332,7 @@ def open_character_dialogue_lab(parent: Path, *, approved_plan: str | None = Non
 
 
 def open_character_model_preview(parent: Path, *, draft_path: Path, source_root: Path,
-                                 reviewed_digest: str, reply_lab: CharacterReplyLab | CharacterContextTrial | None = None) -> OpenedLocalProduct:
+                                 reviewed_digest: str, reply_lab: CharacterReplyProducer | None = None) -> OpenedLocalProduct:
     """Read-only authoring preview in a new isolated product; no provider assembly."""
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     if not isinstance(parent, Path) or not parent.is_absolute():
@@ -380,6 +380,43 @@ def open_character_context_trial(parent: Path, *, draft_path: Path, source_root:
             allowed_outbound_digests=[row["outbound_digest"] for row in plan.payload["requests"]])
         gateway = ModelGateway(adapter)
     trial = CharacterContextTrial(plan, root=parent, gateway=gateway, approved_plan=approved_plan)
+    return open_character_model_preview(parent / "products", draft_path=draft_path, source_root=source_root,
+                                        reviewed_digest=reviewed_digest, reply_lab=trial)
+
+
+def prepare_character_reply_review_trial(parent: Path, *, draft_path: Path, source_root: Path,
+                                         reviewed_digest: str, subject_id: str, anchor_id: str,
+                                         cases: dict, max_knowledge_chars: int = 20000):
+    """Revalidate source through Facade and freeze 24 review requests; no generator/key."""
+    from dynamic_subject_agent.character_reply_review_trial import build_review_plan
+    with open_character_model_preview(parent / "previews", draft_path=draft_path, source_root=source_root,
+                                      reviewed_digest=reviewed_digest) as product:
+        plan = build_review_plan(product.application.preview_character_reply,
+            reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id,
+            cases=cases, max_knowledge_chars=max_knowledge_chars)
+    save_trial_plan(parent, plan)
+    return plan
+
+
+def open_character_reply_review_trial(parent: Path, *, draft_path: Path, source_root: Path,
+                                      reviewed_digest: str, subject_id: str, anchor_id: str, cases: dict,
+                                      max_knowledge_chars: int = 20000, approved_plan: str | None = None,
+                                      _transport=None) -> OpenedLocalProduct:
+    """New exact approval activates review only; old generation approvals cannot apply."""
+    from dynamic_subject_agent.character_reply_review_trial import CharacterReplyReviewTrial
+    from dynamic_subject_agent.character_reply_review_provider import DeepSeekCharacterReplyReviewAdapter
+    plan = prepare_character_reply_review_trial(parent, draft_path=draft_path, source_root=source_root,
+        reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id,
+        cases=cases, max_knowledge_chars=max_knowledge_chars)
+    if approved_plan is not None and approved_plan != plan.digest:
+        raise ValueError("current review approval required")
+    gateway = None
+    if approved_plan is not None and not (parent / plan.digest).exists():
+        transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+        gateway = ModelGateway(DeepSeekCharacterReplyReviewAdapter(transport=transport,
+            credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
+            allowed_outbound_digests=[row["outbound_digest"] for row in plan.payload["requests"]]))
+    trial = CharacterReplyReviewTrial(plan, root=parent, gateway=gateway, approved_plan=approved_plan)
     return open_character_model_preview(parent / "products", draft_path=draft_path, source_root=source_root,
                                         reviewed_digest=reviewed_digest, reply_lab=trial)
 

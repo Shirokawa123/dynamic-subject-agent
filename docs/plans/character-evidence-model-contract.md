@@ -69,3 +69,15 @@ context.selection只供本地查看草稿指纹、知识字符数、单元/命�
 独立Git忽略实验目录按plan digest独占启动，发送前写入attempt并flush/fsync；同进程重复请求读取原结果，已启动计划重启不获得新Gateway，结果缺失/损坏返回unknown且不重发。来源、凭据、网络、输出或记录故障停止本批；预览不消耗远程调用。具体新数据用途以[真实对照批准方案](character-context-comparison-trial.md)为准，此文不是用户批准。
 
 实验计划/结果不是正式聊天或第二角色canonical store，不改Memory/Relationship/生活状态。恢复保证限于此有界实验的“不自动重复请求”，不宣称远程模型调用普遍exactly-once或硬件断电绝不丢失。
+
+## Slice-83独立依据审核与校准
+
+内部CharacterReplyProducer收束不同候选来源，Facade仍使用preview/propose_character_reply，不增加公开步骤。原CharacterReplyLab仅可显式注入local审核Gateway；未配置时仍单次生成且semantic_review=required，remote审核不被借此开启。生成后构成独立CHARACTER_REPLY_REVIEW任务，输入是本人摘要(F标签)、阶段(S1)、原相识分支(I标签)、当前消息、候选正文及固定审核policy，移除生成policy/作者诊断；候选和用户消息均为数据。
+
+审核返回verdict=supported/unsupported/uncertain与最多6项issues，每项exact quote/kind/basis_labels。quote必须是候选精确非空片段且<=240字符；类别闭集，标签只引用本请求可见F/S/I且不得重复。supported必须无issues，unsupported必须有issues；不确定不冒充已证伪。Python验证结构/定位，不能证明语义审核正确。
+
+supported保留candidate正文，semantic_review标model-supported；unsupported/uncertain返回rejected、主reply_text为空，并带审核判定/有限问题片段供诊断。Provider/格式失败为failed-closed，安全凭据不可用保留unavailable；不自动改写/重试，不写canonical状态。
+
+固定校准通过CharacterReplyReviewRequest(context_request,case_id)复用同一Facade：原资料重验后审核该case的冻结候选，不调用生成器。默认prepare；只有独立新用途的精确plan批准可装配审核Adapter。固定24项、deepseek-flash、600输出token、temperature0.0、非思考JSON，完整stop响应及65536字节上限检查。参考标签不作为输入。
+
+生成试验和审核校准共用内部FrozenAttemptRun，旧生成审计字段保持；独占启动/发送前attempt/缓存及故障/重启不重发规则相同。校准中的supported/unsupported/uncertain都是正常完成，会继续剩余样本，只有基础/调用/格式/审计失败停止。新审核用途尚未获准，不能由S82已消费的48次覆盖。精确范围见[校准方案](character-reply-review-calibration.md)。

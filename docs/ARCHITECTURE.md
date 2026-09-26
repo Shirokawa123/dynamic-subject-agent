@@ -4,7 +4,9 @@
 
 ## 契约适用范围（2026-09-20）
 
-Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只在本地生成24个精确请求与plan digest，原local-only Lab保持。当前无新外发批准、真实调用0；一次性启动、失败停止、恢复不重发及数据范围见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[待批准方案](plans/character-context-comparison-trial.md)。
+Slice-83新增独立依据审核的内部seam与24项冻结校准，沿原Facade完整回复操作；原生成试验与校准共用一次性ledger，旧审计字段保持。local-only显式审核可返回或阻断候选，模型判断不是真值；生产默认不加审核调用，新审核用途尚未获准。完整输入/判定/故障语义见[审核契约](plans/character-evidence-model-contract.md#slice-83独立依据审核与校准)。
+
+Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只生成精确请求，原local-only Lab保持。S80和S82后续获准分别完成24及48次，内容仍未过且额度已用完；一次性启动/停止/恢复见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[已执行方案](plans/character-context-comparison-trial.md)。
 
 Slice-78将审核草稿内的连贯核心/经历/细节接入现有Facade回复预览，支持auto/flat/organized、可追溯的本地选择与实际JSON字符预算；先按起点知情筛选再核组织依据，坏组织不静默降级。平铺兼容与local-only候选保持，未开放新远程用途。字段及有限词法选择见[人物组织契约](plans/character-evidence-model-contract.md#slice-78人物组织与按需装配)；组织接线不证明模型内容质量。
 
