@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-84：独立依据审核真实校准](slice-84-reply-review-live-calibration.md)已收口，见[报告](../reports/2026-09-26-slice-84/REPORT.md)。24次用完，明确反例误放8/11，当前配置不启用日常审核。
+[Slice-85：审核思考配置的8项同题诊断准备](slice-85-thinking-review-diagnostic.md)已收口，见[报告](../reports/2026-09-26-slice-85/REPORT.md)。当前停在8次新配置/预算的用户批准点。
 
-下一步准备同题小样本的思考配置诊断，保持原审核规则与资料，只改变推理配置；不追加真实次数或扩大人物数据。不能据非思考模式失败推断模型整体能力。
+新计划ff02e220…afec保持原8项候选/依据/规则，thinking-high/4096已离线验证，103项检查通过；待[具体许可](../plans/review-thinking-diagnostic.md)后执行。S84的24次已用完，不能重用或默认启用日常审核。

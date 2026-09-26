@@ -1,4 +1,4 @@
-"""Prepare 24 frozen candidate reviews; executing them needs new exact approval."""
+"""Prepare frozen candidate reviews; executing them needs exact profile approval."""
 import argparse
 from dataclasses import asdict
 import json
@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--anchor", required=True)
     parser.add_argument("--cases", required=True, type=Path)
     parser.add_argument("--max-knowledge-chars", type=int, default=20000)
+    parser.add_argument("--review-profile", choices=("standard", "thinking-high"), default="standard")
     parser.add_argument("--approve-plan", help="操作人声明此精确新审核用途已获用户批准；参数本身不构成批准")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2] / ".artifacts/character-reply-review-trials"
@@ -26,12 +27,12 @@ def main():
         cases = json.loads(args.cases.read_text(encoding="utf-8"))
         options = dict(draft_path=args.draft.resolve(), source_root=args.source_root.resolve(),
             reviewed_digest=args.reviewed_digest, subject_id=args.subject, anchor_id=args.anchor,
-            cases=cases, max_knowledge_chars=args.max_knowledge_chars)
+            cases=cases, max_knowledge_chars=args.max_knowledge_chars, review_profile=args.review_profile)
         plan = prepare_character_reply_review_trial(root, **options)
         if args.approve_plan is not None and args.approve_plan != plan.digest:
             parser.error("必须批准当前精确审核计划digest")
         path = save_trial_plan(root, plan)
-        print(json.dumps(dict(status="prepared", digest=plan.digest, plan_path=str(path), request_count=24,
+        print(json.dumps(dict(status="prepared", digest=plan.digest, plan_path=str(path), request_count=len(plan.payload["requests"]),
                               plan_chars=len(plan.serialized), max_knowledge_chars=args.max_knowledge_chars), ensure_ascii=False), flush=True)
         if args.approve_plan is None:
             return

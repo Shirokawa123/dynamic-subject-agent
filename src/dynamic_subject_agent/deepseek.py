@@ -509,8 +509,10 @@ def _post_json_reply_content(
     *,
     max_output_tokens: int,
     require_complete: bool = False,
+    discard_reasoning: bool = False,
 ) -> dict[str, object]:
-    if type(max_output_tokens) is not int or not 1 <= max_output_tokens <= 2048:
+    if (type(discard_reasoning) is not bool or type(max_output_tokens) is not int
+            or not 1 <= max_output_tokens <= (4096 if discard_reasoning else 2048)):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     try:
         response = transport.post_json(
@@ -530,6 +532,8 @@ def _post_json_reply_content(
             raise ProviderFailure(ProviderFailureCode.RATE_LIMIT)
         raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
     try:
+        if discard_reasoning and (type(response.body) is not bytes or len(response.body) > 65536):
+            raise ValueError("bounded thinking response required")
         payload = json.loads(response.body.decode("utf-8"))
         choices = payload["choices"]
         message = choices[0]["message"]
@@ -537,6 +541,14 @@ def _post_json_reply_content(
         usage = payload["usage"]
         prompt_tokens = int(usage["prompt_tokens"])
         completion_tokens = int(usage["completion_tokens"])
+        reasoning = message.get("reasoning_content")
+        if discard_reasoning:
+            if (reasoning is not None and type(reasoning) is not str
+                    or type(usage["prompt_tokens"]) is not int or type(usage["completion_tokens"]) is not int):
+                raise ValueError("invalid thinking response fields")
+            # Reasoning is never returned or used as evidence. Completion usage
+            # includes both reasoning and final content and shares one budget.
+            reasoning = None
     except (KeyError, IndexError, TypeError, ValueError, UnicodeError, json.JSONDecodeError):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT) from None
     if (
@@ -545,7 +557,7 @@ def _post_json_reply_content(
         or len(choices) != 1
         or not isinstance(message, dict)
         or message.get("role") != "assistant"
-        or message.get("reasoning_content") not in (None, "")
+        or (not discard_reasoning and reasoning not in (None, ""))
         or message.get("tool_calls") not in (None, [])
         or not isinstance(content, dict)
         or prompt_tokens < 0

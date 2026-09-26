@@ -14,17 +14,28 @@ from dynamic_subject_agent.deepseek import DEEPSEEK_ENDPOINT, _ACCEPTED_RESPONSE
 REVIEW_MODEL = "deepseek-flash"
 
 
+def review_settings(review_profile):
+    if review_profile == "standard":
+        return 24, dict(max_tokens=600, temperature=0.0, thinking={"type": "disabled"},
+                        response_format={"type": "json_object"}, stream=False)
+    if review_profile == "thinking-high":
+        return 8, dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
+                       response_format={"type": "json_object"}, stream=False)
+    raise ValueError("invalid review profile")
+
+
 @dataclass(frozen=True)
 class CharacterReplyReviewRequest:
     context_request: CharacterChatContextRequest
     case_id: str
 
 
-def validate_review_cases(value):
+def validate_review_cases(value, *, review_profile="standard"):
+    count, _ = review_settings(review_profile)
     if (type(value) is not dict or set(value) != {"version", "cases"}
             or value["version"] != "character-reply-review-cases-1"
-            or type(value["cases"]) is not list or len(value["cases"]) != 24):
-        raise ValueError("twenty-four fixed review cases required")
+            or type(value["cases"]) is not list or len(value["cases"]) != count):
+        raise ValueError("fixed review case count does not match profile")
     ids = set()
     for case in value["cases"]:
         if (type(case) is not dict or set(case) != {"id", "message", "context_mode", "candidate_text"}
@@ -41,9 +52,11 @@ def review_digest(projection):
     return sha256(canonical_json(asdict(projection)).encode()).hexdigest()
 
 
-def build_review_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, cases, max_knowledge_chars):
+def build_review_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, cases, max_knowledge_chars,
+                      review_profile="standard"):
     from dynamic_subject_agent.character_reply_review_provider import DeepSeekCharacterReplyReviewAdapter
-    validate_review_cases(cases)
+    count, generation = review_settings(review_profile)
+    validate_review_cases(cases, review_profile=review_profile)
     requests, digests = [], set()
     for case in cases["cases"]:
         request = CharacterChatContextRequest(subject_id, anchor_id, case["message"], case["context_mode"], max_knowledge_chars)
@@ -55,7 +68,7 @@ def build_review_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, 
         if digest in digests:
             raise ValueError("duplicate review request")
         digests.add(digest)
-        wire = DeepSeekCharacterReplyReviewAdapter.outbound_bytes(projection)
+        wire = DeepSeekCharacterReplyReviewAdapter.outbound_bytes(projection, review_profile=review_profile)
         requests.append(dict(case_id=case["id"], mode=case["context_mode"], message=case["message"],
             context_request_digest=view.request_digest, request_digest=digest,
             outbound_digest=sha256(wire).hexdigest(), projection=asdict(projection)))
@@ -63,12 +76,13 @@ def build_review_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id, 
         subject_id=subject_id, anchor_id=anchor_id, cases=cases["cases"], requests=requests,
         endpoint=DEEPSEEK_ENDPOINT, model=REVIEW_MODEL, accepted_response_models=list(_ACCEPTED_RESPONSE_MODELS),
         max_knowledge_chars=max_knowledge_chars,
-        generation=dict(max_tokens=600, temperature=0.0, thinking={"type": "disabled"},
-                        response_format={"type": "json_object"}, stream=False),
-        execution="24 ordered review requests only; one attempt each; stop on source, credential, transport, structure or audit failure; no retry or restart continuation",
+        generation=generation,
+        execution=f"{count} ordered review requests only; one attempt each; stop on source, credential, transport, structure or audit failure; no retry or restart continuation",
         retention="Independent local review audit only: plan, identifiers, sanitized status and validated review; no key, headers, reasoning or raw response",
         scope="Reviewed self knowledge, stage, interaction branch, fixed messages and frozen candidate text only; no source text, author IDs, private history, expected labels or runtime updates; no generator",
         approval="Exact digest is an operator assertion; new user approval for review data use must exist before execution")
+    if review_profile != "standard":
+        payload["review_profile"] = review_profile
     return CharacterContextTrialPlan(canonical_json(payload))
 
 

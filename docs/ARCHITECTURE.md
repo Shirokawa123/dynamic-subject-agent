@@ -4,7 +4,7 @@
 
 ## 契约适用范围（2026-09-20）
 
-Slice-83新增独立依据审核的内部seam与24项冻结校准，沿原Facade完整回复操作；原生成试验与校准共用一次性ledger，旧审计字段保持。local-only显式审核可返回或阻断候选，模型判断不是真值；生产默认不加审核调用，新审核用途尚未获准。完整输入/判定/故障语义见[审核契约](plans/character-evidence-model-contract.md#slice-83独立依据审核与校准)。
+Slice-83新增独立依据审核seam，S84获准24项真实校准后明确反例误放8/11，生产不启用日常审核。S85只准备8项thinking-high同题配置：默认standard旧plan/字节不变，新配置4096总completion，推理字段丢弃且不回传/存储；新增真实调用0，待批准。完整语义见[审核契约](plans/character-evidence-model-contract.md#slice-83独立依据审核与校准)和[思考配置](plans/character-evidence-model-contract.md#slice-85同题思考配置)。
 
 Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只生成精确请求，原local-only Lab保持。S80和S82后续获准分别完成24及48次，内容仍未过且额度已用完；一次性启动/停止/恢复见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[已执行方案](plans/character-context-comparison-trial.md)。
 

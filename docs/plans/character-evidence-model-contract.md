@@ -81,3 +81,9 @@ supported保留candidate正文，semantic_review标model-supported；unsupported
 固定校准通过CharacterReplyReviewRequest(context_request,case_id)复用同一Facade：原资料重验后审核该case的冻结候选，不调用生成器。默认prepare；只有独立新用途的精确plan批准可装配审核Adapter。固定24项、deepseek-flash、600输出token、temperature0.0、非思考JSON，完整stop响应及65536字节上限检查。参考标签不作为输入。
 
 生成试验和审核校准共用内部FrozenAttemptRun，旧生成审计字段保持；独占启动/发送前attempt/缓存及故障/重启不重发规则相同。校准中的supported/unsupported/uncertain都是正常完成，会继续剩余样本，只有基础/调用/格式/审计失败停止。新审核用途尚未获准，不能由S82已消费的48次覆盖。精确范围见[校准方案](character-reply-review-calibration.md)。
+
+## Slice-85同题思考配置
+
+S84后续已获准执行standard的24项校准，但明确反例误放8/11，因此不启用日常审核。新review_profile默认standard：继续24项、600输出、temperature0.0、非思考，原plan/字节不变。显式thinking-high只接受8项，绑定thinking enabled、reasoning_effort high、4096总completion预算、无temperature、JSON且不流式；计划增加明确profile，不借旧批准开启。
+
+仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制，新的8次配置尚未获准，见[诊断方案](review-thinking-diagnostic.md)。
