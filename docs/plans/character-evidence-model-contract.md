@@ -123,3 +123,9 @@ expression_profile默认standard保留原计划/请求字节；显式thinking-hi
 ApplicationFacade.preview_character_identity_preparation复用已验证CharacterModelView及纯SourceFreezeMapping，保持纳入认识的完整限定，超限失败关闭。Source文档明确是派生整理；原证据、排除项和原始stage只留本地trace。运行资产保留人物/起点、适用认识和chat_organization，独立definition basis绑定资产摘要及reviewed-fiction-derived/private-character-chat来源声明。
 
 旧LocalIdentityAuthority/Studio仅支持project-original，不能直接用于小说派生角色。预览的source/save/freeze请求均None，execution_ready=false，content_mapping_only=true，确认与权利声明false。当前没有新来源Authority、正式身份或生产聊天；批准包不等于执行路径已完成，后续必须实现准确来源并核对同一内容。具体新数据用途见[确认方案](character-continuity-consent.md)。
+
+## Slice-98人格解释与常驻核心
+
+独立sidecar绑定base_reviewed_digest、subject/anchor，1–8项候选只引用当前known。每项title/interpretation/when/choice/expression/limits原样保留，claim_ids不外投；固定author-interpretation并标支持是否含belief。sidecar有界读取，缺失unavailable、摘要或内容不合格FailedClosed；不裁半份人格。语义解释由作者复核，引用存在不等于解释被证明。
+
+新local-only Producer复用Facade preview/propose；两个新envelope将原conversation投影与character_core/personality分开，core取同一已核组织core（无组织则identity），不受当轮至多4项fact_refs裁剪。旧默认DTO/policy/wire不变，远程Adapter拒新envelope。预览不调用Gateway，显式local替身仍使用原两种任务并保留required/persisted=false；并未实现人格语义裁决、持久心理变化或真实聊天。

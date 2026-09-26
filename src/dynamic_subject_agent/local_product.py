@@ -354,6 +354,18 @@ def open_character_communication_plan_lab(parent: Path, *, draft_path: Path, sou
                                         reviewed_digest=reviewed_digest, reply_lab=lab)
 
 
+def open_character_personality_lab(parent: Path, *, draft_path: Path, source_root: Path, reviewed_digest: str,
+                                   sidecar_path: Path, personality_digest: str, plan_gateway: ModelGateway | None = None,
+                                   expression_gateway: ModelGateway | None = None) -> OpenedLocalProduct:
+    """Read-only candidate interpretations; preview default, explicit local substitutes only."""
+    from dynamic_subject_agent.character_personality import CharacterPersonalityLab
+    model = CharacterEvidenceModel(draft_path, source_root, expected_digest=reviewed_digest)
+    lab = CharacterPersonalityLab(model=model, sidecar_path=sidecar_path, expected_digest=personality_digest,
+                                 plan_gateway=plan_gateway, expression_gateway=expression_gateway)
+    return open_character_model_preview(parent, draft_path=draft_path, source_root=source_root,
+                                        reviewed_digest=reviewed_digest, reply_lab=lab)
+
+
 def prepare_character_communication_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                            reviewed_digest: str, subject_id: str, anchor_id: str, cases: dict,
                                            max_knowledge_chars: int = 20000, expression_profile: str = "standard"):

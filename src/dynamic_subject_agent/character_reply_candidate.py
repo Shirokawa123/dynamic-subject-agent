@@ -10,6 +10,7 @@ from dynamic_subject_agent.character_chat_context import CharacterChatContextVie
 from dynamic_subject_agent.model_gateway import ModelGateway, ModelTask, ModelTaskKind
 
 if TYPE_CHECKING:
+    from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope, CharacterExpressionEnvelope
     from dynamic_subject_agent.character_communication_plan import CommunicationPlanProjection, CommunicationExpressionProjection
     from dynamic_subject_agent.character_reply_review import CharacterReplyReviewProjection, ReviewIssue
 
@@ -48,7 +49,7 @@ class CharacterReplyProjection:
 class CharacterReplyCandidateView:
     status: str
     code: str = ""
-    projection: CharacterReplyProjection | CharacterReplyReviewProjection | CommunicationPlanProjection | CommunicationExpressionProjection | None = None
+    projection: CharacterReplyProjection | CharacterReplyReviewProjection | CommunicationPlanProjection | CommunicationExpressionProjection | CharacterPlanningEnvelope | CharacterExpressionEnvelope | None = None
     request_digest: str = ""
     reply_text: str = ""
     semantic_review: str = "not-performed"
