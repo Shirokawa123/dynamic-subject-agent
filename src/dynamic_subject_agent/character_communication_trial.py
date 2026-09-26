@@ -57,7 +57,8 @@ def _validate_cases(cases):
 
 
 def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id, anchor_id,
-                                    cases, max_knowledge_chars, protocol, planning_wire, expression_profile="standard", personality_binding=None):
+                                    cases, max_knowledge_chars, protocol, planning_wire, expression_profile="standard", personality_binding=None,
+                                    planning_effort="high"):
     """Composition supplies pure protocol metadata and serialization, never a key."""
     _validate_cases(cases)
     rows, seen = [], set()
@@ -88,6 +89,7 @@ def build_communication_trial_plan(preview_reply, *, reviewed_digest, subject_id
         approval="New user approval for both semantic tasks and at most twelve calls must exist; exact digest is only the operator assertion")
     if expression_profile != "standard":
         payload["expression_profile"] = expression_profile
+    if planning_effort != "high": payload["planning_effort"] = planning_effort
     if personality_binding is not None:
         from dynamic_subject_agent.character_personality import PERSONALITY_POLICY
         payload.update(version=PERSONALITY_TRIAL_VERSION, personality_binding=personality_binding,

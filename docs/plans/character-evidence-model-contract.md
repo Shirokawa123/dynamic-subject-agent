@@ -135,3 +135,5 @@ ApplicationFacade.preview_character_identity_preparation复用已验证Character
 新增character-personality-communication-trial-1计划与personality-derive-1派生契约；绑定v9、sidecar、主体/起点、全部精确规划投影、core/personality及policy/high配置。原通信试验仅加封闭的解包裁决/重包表达分支，共用原attempt/result/派生请求校验与恢复；旧计划字节和默认路径保持。
 
 专用DeepSeekPersonalityTrialAdapter只接受新人格计划与相应envelope；原Adapter不接受新版本，新Adapter不接受旧版本。新composition默认prepare，approved_plan必须等于重建当前digest才装配transport；sidecar每次出站前核摘要。表达从已记录的合法规划和同一冻结核心/人格派生；没有直接手写投影的执行入口。失败即停、unknown保留、重启只读完整结果不补发，候选仍required。此代码准备不构成外发许可；实际用途/两条件24次对照见[方案](personality-behavior-trial.md)，S99未调用真实Provider。
+
+S100用途获准后原high基线在第4规划4096触顶停止（7次）。S101新增planning_effort=low|high，默认high维持原计划/字节，显式low进入plan及实际planning wire；表达配置/字节不随之改变。两个同题low规划/high表达新计划24次完成，但语义仍有泛化风险，不能从此恢复旧计划或宣称完整人格。当前同材料/用途配置验证已获准，具体结果见[S101报告](../reports/2026-09-26-slice-101/REPORT.md)。

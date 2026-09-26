@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--cases", required=True, type=Path)
     parser.add_argument("--max-knowledge-chars", type=int, default=20000)
     parser.add_argument("--expression-profile", choices=("standard", "thinking-high"), default="standard")
+    parser.add_argument("--planning-effort", choices=("low", "high"), default="high")
     parser.add_argument("--approve-plan", help="操作人声明两阶段用途和此精确计划已获用户批准；参数本身不构成批准")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2] / ".artifacts/character-communication-trials"
@@ -26,7 +27,7 @@ def main():
         cases = json.loads(args.cases.read_text(encoding="utf-8"))
         options = dict(draft_path=args.draft.resolve(), source_root=args.source_root.resolve(), reviewed_digest=args.reviewed_digest,
             subject_id=args.subject, anchor_id=args.anchor, cases=cases, max_knowledge_chars=args.max_knowledge_chars,
-            expression_profile=args.expression_profile)
+            expression_profile=args.expression_profile, planning_effort=args.planning_effort)
         plan = prepare_character_communication_trial(root, **options)
         if args.approve_plan is not None and args.approve_plan != plan.digest:
             parser.error("必须批准当前两阶段精确计划digest")

@@ -19,12 +19,13 @@ from dynamic_subject_agent.model_gateway import (
 )
 
 
-def communication_protocol(expression_profile="standard"):
+def communication_protocol(expression_profile="standard", planning_effort="high"):
     if expression_profile not in ("standard", "thinking-high"):
         raise ValueError("unsupported communication expression profile")
+    if planning_effort not in ("low", "high"): raise ValueError("unsupported planning effort")
     protocol = dict(endpoint=DEEPSEEK_ENDPOINT, model="deepseek-flash", timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
         accepted_response_models=list(_ACCEPTED_RESPONSE_MODELS),
-        planning=dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort="high",
+        planning=dict(max_tokens=4096, thinking={"type": "enabled"}, reasoning_effort=planning_effort,
                       response_format={"type": "json_object"}, stream=False),
         expression=dict(max_tokens=600, thinking={"type": "disabled"}, temperature=0.3,
                         response_format={"type": "json_object"}, stream=False))
@@ -34,8 +35,8 @@ def communication_protocol(expression_profile="standard"):
     return protocol
 
 
-def _wire(projection, policy, stage, expression_profile="standard"):
-    protocol = communication_protocol(expression_profile)
+def _wire(projection, policy, stage, expression_profile="standard", planning_effort="high"):
+    protocol = communication_protocol(expression_profile, planning_effort)
     body = dict(model=protocol["model"], messages=[dict(role="system", content=policy),
         dict(role="user", content=canonical_json(asdict(projection)))], **protocol[stage])
     wire = canonical_json(body).encode()
@@ -52,16 +53,17 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
     def __init__(self, plan, *, run_root, transport, credential_ref):
         if plan.payload["version"] != self._plan_version: raise ValueError("matching communication plan kind required")
         self._expression_profile = plan.payload.get("expression_profile", "standard")
-        if plan.payload["protocol"] != communication_protocol(self._expression_profile):
+        self._planning_effort = plan.payload.get("planning_effort", "high")
+        if plan.payload["protocol"] != communication_protocol(self._expression_profile, self._planning_effort):
             raise ValueError("current communication protocol required")
         self._plan, self._root, self._transport, self._credential_ref = plan, run_root, transport, credential_ref
         self._rows = {row["request_digest"]: row for row in plan.payload["requests"]}
         self._sent = set()
 
     @staticmethod
-    def planning_wire(projection):
+    def planning_wire(projection, *, planning_effort="high"):
         _validate_projection(projection)
-        return _wire(projection, PLAN_POLICY, "planning")
+        return _wire(projection, PLAN_POLICY, "planning", planning_effort=planning_effort)
 
     @staticmethod
     def expression_wire(projection, *, expression_profile="standard"):
@@ -78,7 +80,7 @@ class DeepSeekCommunicationTrialAdapter(ProviderAdapter):
             row = self._rows.get(_projection_digest(task.payload))
             if row is None or task.payload != frozen_context(row):
                 raise ValueError("planning request not in frozen plan")
-            wire = self.planning_wire(task.payload)
+            wire = self.planning_wire(task.payload, planning_effort=self._planning_effort)
             if sha256(wire).hexdigest() != row["outbound_digest"]:
                 raise ValueError("planning wire not frozen")
         elif task.kind is ModelTaskKind.CHARACTER_COMMUNICATION_EXPRESSION and type(task.payload) is CommunicationTrialExpressionRequest:
@@ -122,11 +124,11 @@ class DeepSeekPersonalityTrialAdapter(DeepSeekCommunicationTrialAdapter):
         super().__init__(plan, run_root=run_root, transport=transport, credential_ref=credential_ref)
 
     @staticmethod
-    def planning_wire(projection):
+    def planning_wire(projection, *, planning_effort="high"):
         from dynamic_subject_agent.character_personality import CharacterPlanningEnvelope, frozen_personality_planning, PERSONALITY_POLICY
         if type(projection) is not CharacterPlanningEnvelope: raise ValueError("typed personality planning required")
         frozen_personality_planning(asdict(projection))
-        return _wire(projection, PERSONALITY_POLICY + projection.conversation.policy, "planning", "thinking-high")
+        return _wire(projection, PERSONALITY_POLICY + projection.conversation.policy, "planning", "thinking-high", planning_effort)
 
     @staticmethod
     def expression_wire(projection, *, expression_profile="thinking-high"):

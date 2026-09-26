@@ -368,15 +368,16 @@ def open_character_personality_lab(parent: Path, *, draft_path: Path, source_roo
 
 def prepare_character_personality_trial(parent: Path, *, draft_path: Path, source_root: Path, reviewed_digest: str,
                                         subject_id: str, anchor_id: str, cases: dict, sidecar_path: Path,
-                                        personality_digest: str, max_knowledge_chars: int = 20000):
+                                        personality_digest: str, max_knowledge_chars: int = 20000, planning_effort: str = "high"):
     from dynamic_subject_agent.character_communication_trial import build_communication_trial_plan, save_communication_trial_plan
     from dynamic_subject_agent.character_communication_trial_provider import DeepSeekPersonalityTrialAdapter, communication_protocol
     with open_character_personality_lab(parent / "previews", draft_path=draft_path, source_root=source_root, reviewed_digest=reviewed_digest,
         sidecar_path=sidecar_path, personality_digest=personality_digest) as product:
         plan = build_communication_trial_plan(product.application.preview_character_reply,
             reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id, cases=cases,
-            max_knowledge_chars=max_knowledge_chars, protocol=communication_protocol("thinking-high"), expression_profile="thinking-high",
-            planning_wire=DeepSeekPersonalityTrialAdapter.planning_wire,
+            max_knowledge_chars=max_knowledge_chars, protocol=communication_protocol("thinking-high", planning_effort), expression_profile="thinking-high",
+            planning_wire=lambda projection: DeepSeekPersonalityTrialAdapter.planning_wire(projection, planning_effort=planning_effort),
+            planning_effort=planning_effort,
             personality_binding=dict(version="character-personality-draft-1", base_reviewed_digest=reviewed_digest,
                 subject_id=subject_id, anchor_id=anchor_id, sidecar_digest=personality_digest))
     save_communication_trial_plan(parent, plan)
@@ -385,13 +386,13 @@ def prepare_character_personality_trial(parent: Path, *, draft_path: Path, sourc
 
 def open_character_personality_trial(parent: Path, *, draft_path: Path, source_root: Path, reviewed_digest: str,
                                      subject_id: str, anchor_id: str, cases: dict, sidecar_path: Path, personality_digest: str,
-                                     max_knowledge_chars: int = 20000, approved_plan: str | None = None, _transport=None) -> OpenedLocalProduct:
+                                     max_knowledge_chars: int = 20000, approved_plan: str | None = None, planning_effort: str = "high", _transport=None) -> OpenedLocalProduct:
     from dynamic_subject_agent.character_personality import CharacterPersonalityLab
     from dynamic_subject_agent.character_communication_trial import CharacterCommunicationTrial
     from dynamic_subject_agent.character_communication_trial_provider import DeepSeekPersonalityTrialAdapter
     plan = prepare_character_personality_trial(parent, draft_path=draft_path, source_root=source_root, reviewed_digest=reviewed_digest,
         subject_id=subject_id, anchor_id=anchor_id, cases=cases, sidecar_path=sidecar_path, personality_digest=personality_digest,
-        max_knowledge_chars=max_knowledge_chars)
+        max_knowledge_chars=max_knowledge_chars, planning_effort=planning_effort)
     if approved_plan is not None and approved_plan != plan.digest: raise ValueError("current personality trial approval required")
     gateway = None
     if approved_plan is not None and not (parent / plan.digest).exists():
@@ -408,15 +409,16 @@ def open_character_personality_trial(parent: Path, *, draft_path: Path, source_r
 
 def prepare_character_communication_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                            reviewed_digest: str, subject_id: str, anchor_id: str, cases: dict,
-                                           max_knowledge_chars: int = 20000, expression_profile: str = "standard"):
+                                           max_knowledge_chars: int = 20000, expression_profile: str = "standard", planning_effort: str = "high"):
     from dynamic_subject_agent.character_communication_trial import build_communication_trial_plan, save_communication_trial_plan
     from dynamic_subject_agent.character_communication_trial_provider import DeepSeekCommunicationTrialAdapter, communication_protocol
     with open_character_model_preview(parent / "previews", draft_path=draft_path, source_root=source_root,
                                       reviewed_digest=reviewed_digest) as product:
         plan = build_communication_trial_plan(product.application.preview_character_reply,
             reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id, cases=cases,
-            max_knowledge_chars=max_knowledge_chars, protocol=communication_protocol(expression_profile),
-            planning_wire=DeepSeekCommunicationTrialAdapter.planning_wire, expression_profile=expression_profile)
+            max_knowledge_chars=max_knowledge_chars, protocol=communication_protocol(expression_profile, planning_effort),
+            planning_wire=lambda projection: DeepSeekCommunicationTrialAdapter.planning_wire(projection, planning_effort=planning_effort),
+            expression_profile=expression_profile, planning_effort=planning_effort)
     save_communication_trial_plan(parent, plan)
     return plan
 
@@ -424,12 +426,12 @@ def prepare_character_communication_trial(parent: Path, *, draft_path: Path, sou
 def open_character_communication_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                         reviewed_digest: str, subject_id: str, anchor_id: str, cases: dict,
                                         max_knowledge_chars: int = 20000, approved_plan: str | None = None,
-                                        expression_profile: str = "standard", _transport=None) -> OpenedLocalProduct:
+                                        expression_profile: str = "standard", planning_effort: str = "high", _transport=None) -> OpenedLocalProduct:
     from dynamic_subject_agent.character_communication_trial import CharacterCommunicationTrial
     from dynamic_subject_agent.character_communication_trial_provider import DeepSeekCommunicationTrialAdapter
     plan = prepare_character_communication_trial(parent, draft_path=draft_path, source_root=source_root,
         reviewed_digest=reviewed_digest, subject_id=subject_id, anchor_id=anchor_id, cases=cases, max_knowledge_chars=max_knowledge_chars,
-        expression_profile=expression_profile)
+        expression_profile=expression_profile, planning_effort=planning_effort)
     if approved_plan is not None and approved_plan != plan.digest:
         raise ValueError("current communication approval required")
     gateway = None
