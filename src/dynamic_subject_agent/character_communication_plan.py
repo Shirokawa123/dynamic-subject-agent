@@ -139,6 +139,14 @@ def _expression_projection(plan, projection):
     return result
 
 
+def _validated_expression(value):
+    if (type(value) is not dict or set(value) != {"reply_text", "language"}
+            or value["language"] != "zh" or not isinstance(value["reply_text"], str)
+            or not value["reply_text"].strip() or len(value["reply_text"]) > 1200):
+        raise ValueError("invalid communication expression")
+    return value["reply_text"]
+
+
 class CharacterCommunicationPlanLab(CharacterReplyProducer):
     """Two explicit local tasks; Python selects facts, expression remains unverified."""
 
@@ -171,11 +179,8 @@ class CharacterCommunicationPlanLab(CharacterReplyProducer):
             return CharacterReplyCandidateView("failed-closed", "communication-plan-unavailable", request_digest=preview.request_digest)
         try:
             value = self._expression_gateway.execute(ModelTask(ModelTaskKind.CHARACTER_COMMUNICATION_EXPRESSION, expression)).value
-            if (type(value) is not dict or set(value) != {"reply_text", "language"}
-                    or value["language"] != "zh" or not isinstance(value["reply_text"], str)
-                    or not value["reply_text"].strip() or len(value["reply_text"]) > 1200):
-                raise ValueError("invalid communication expression")
+            reply_text = _validated_expression(value)
         except Exception:
             return CharacterReplyCandidateView("failed-closed", "communication-expression-unavailable", request_digest=preview.request_digest)
         return CharacterReplyCandidateView("candidate", request_digest=preview.request_digest,
-                                           reply_text=value["reply_text"], semantic_review="required")
+                                           reply_text=reply_text, semantic_review="required")

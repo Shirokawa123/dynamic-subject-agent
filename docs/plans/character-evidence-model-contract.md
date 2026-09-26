@@ -92,6 +92,18 @@ S86首项技术失败而无可用审核，不能解释为语义判断错误。�
 
 诊断只在传输/HTTP、响应信封、长度截断/预算、最终JSON及审核结构/引用阶段给出闭集码，经Adapter/Gateway/Candidate到既有审计。截断先于最终content解析；推理、异常原文、响应正文、headers及凭据不进入诊断结果。缓存只认可对应模式的闭集失败码，正常审核判定仍与技术失败区分；凭据不可用仍是unavailable。每个冻结计划故障即停、重启不重发，CLI不提供自动循环重试。
 
-本地诊断通过不等于原真实故障已修复，也不恢复旧7项。追加诊断及必要修复验证依[新方案](review-failure-diagnostic.md)的单独授权；当前只准备首项，新增真实调用0。
+本地诊断通过不等于原真实故障已修复，也不恢复旧7项。S88获新8次许可后有效完成，S90又获16次许可补全24项；正向12/12保留、明确反例9/11拦截，近期心理活动仍漏两例，不启用日常审核。旧真实故障未重现，根因仍未知。
+
+## Slice-91/92交流计划与有界生成
+
+S91的CharacterCommunicationPlanLab仍在原Facade.preview/propose_character_reply之后工作，两个ModelTask经Gateway且此入口严格local-only。规划投影重用已审知识加本请求F标签、阶段/相识/披露/消息及固定policy；模型输出exact action/fact_refs，合法动作限answer/offer_topic/conditional_view/withhold/clarify，引用最多4个、唯一且在本投影内。没有自由事实文本或新生活动作。
+
+Python绑定本地request_digest，从当前投影重建完整选中条目与所有限定，再构造表达投影。digest不进模型请求，未选知识不进入表达，也不意味着人物不知道。许可只约束本轮输入，不更新生活/心理/记忆；自由表达即使来自合法计划仍可能失真，候选始终required/persisted=false。不能把Qualified计划当语义事实证明。
+
+S92独立试验装配按[六题方案](communication-plan-generation-trial.md)冻结6个规划请求、两个policy/参数、第二阶段derive规则及12次上限；普通入口不解除local-only。只有新用途批准的精确plan且重新prepare一致才装配远程Adapter，凭据延迟到实际发送。
+
+每个阶段发送前独占记录attempt，规划先合法裁决并成功审计才构造表达。第二阶段Gateway只持本地绑定，Adapter由同一冻结context及合法规划审计重建实际投影，核对发送前记录的派生请求与body指纹；绑定/账本ID不发模型。规划high/4096、表达非思考600/temp0.3、30秒JSON，无工具/历史。
+
+任一技术/裁决/审计故障停止整个试验，不自动重试。投递不确定保留unknown，安全凭据缺失unavailable，已知校验失败FailedClosed；恢复只读严格完整的阶段与派生请求联查结果，缺失/损坏不重发也不续发表达。新生成用途尚未执行，不由S90的已消费审核许可代替。
 
 仅该Adapter调用共享响应helper的discard_reasoning=True；参数必须bool，新分支最大4096，原默认最大2048且继续拒绝非空reasoning。新分支只允许None/字符串推理、原始usage整数；reasoning不返回、不作证据、不写审计或回传。最终content/完整stop/工具为空/模型/usage上限及审核结构仍核验，传输仍为30秒且响应<=65536字节。计划/输入/剩余额度规则沿原一次性机制，新的8次配置尚未获准，见[诊断方案](review-thinking-diagnostic.md)。

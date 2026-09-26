@@ -20,7 +20,11 @@
 
 第二阶段的资料子集取决于第一阶段结果，不能预先伪称其完整请求字节已确定。批准范围是上述固定输入和受限派生规则；运行前冻结第一阶段，第二阶段只按本地裁决构造并记录实际指纹，额外字段或来源不得外发。
 
-六题stage-one精确预览已由Facade导出：`.local_indexes/eromanga-sensei/s91/planning-projections.json`，SHA256 `1c0969bbba68b1f02abc373f19572e3f2ee3bf7cea9b416a283fa7b4350614d8`。本地替身演示证明非法计划表达0调用，并明确展示合法计划后的越界自由台词仍待审核；101项唯一用例及独立复核通过。远程试验装配与执行指纹准备完成后另补，不将替身效果视为模型效果。
+六题stage-one精确预览已由Facade导出：`.local_indexes/eromanga-sensei/s91/planning-projections.json`，SHA256 `1c0969bbba68b1f02abc373f19572e3f2ee3bf7cea9b416a283fa7b4350614d8`。本地替身演示证明非法计划表达0调用，并明确展示合法计划后的越界自由台词仍待审核；101项唯一用例及独立复核通过，不将替身效果视为模型效果。
+
+S92精确执行计划：`47f119a43d2e7be1dc57b5d183e6e9f12cd94b061c13c91921cd72e457c32ea0`。[完整本地计划](../../.artifacts/character-communication-trials/47f119a43d2e7be1dc57b5d183e6e9f12cd94b061c13c91921cd72e457c32ea0.plan.json)绑定六题、两阶段policy/参数、derive-1规则及12次上限。实际prepare通过；六份规划投影与S91相同，规划body为6101–11516字节、合计58524字节，新计划尚未启动。
+
+本地预检在`.local_indexes/eromanga-sensei/s92/preflight.json`；`expression-examples.json`只展示手工选择合法引用后的受限派生，不是模型输出或未来实际第二阶段请求。S92执行/恢复的73项唯一用例和独立复核已完成，投递不确定明确为unknown且不重发；最后重建plan指纹保持一致、未启动，见[准备报告](../reports/2026-09-26-slice-92/REPORT.md)。
 
 ## 申请范围
 
@@ -29,7 +33,15 @@
 - 规划thinking enabled/high、最多4096总completion；表达非思考、最多600 completion、temperature0.3；均JSON、不流式、无工具，沿用30秒传输超时。上限为6×(4096＋600)总completion及对应输入费用，不是实际账单预测。
 - 来源/凭据/网络/格式/本地裁决或审计故障停止整个范围，不重试、不自动恢复。有效结构但语义不好仍保留原样，用于失败分析，不能另生成好答案替换。
 - 保存限定计划、候选及执行审计到本地Git忽略目录，不保存推理正文、raw response、异常正文、headers或凭据。候选不提交为正式聊天/事实，不更新Memory/Relationship/生活/人格，不做后台通知。
-- 真实生活事件、共同历史、长期心理状态和其他Provider都不在许可内。当前local-only原型不能直接使用该许可；执行前需补齐受批准计划约束的远程试验装配和恢复行为测试，不能解除普通入口的local-only保护。
+- 真实生活事件、共同历史、长期心理状态和其他Provider都不在许可内。新试验使用独立受批准plan约束的装配，普通原型的local-only保护继续保持，不通过布尔开关解除。
+
+默认准备命令（没有批准参数时不读取凭据或调用Provider）：
+
+```powershell
+.\.venv\bin\python.exe app/desktop/character_communication_trial.py --draft .local_indexes/eromanga-sensei/s78/character-evidence-draft-v9.json --source-root .local_sources/eromanga-sensei --reviewed-digest 273dcbdd43aede4ba9dbf0a3d896f7a21246f46783fb33f461d5f63b9ac2cf94 --subject sagiri --anchor v1-pre-broadcast --cases .local_indexes/eromanga-sensei/s91/planned-cases.json
+```
+
+只有获得本方案新批准后才可追加`--approve-plan 47f119a43d2e7be1dc57b5d183e6e9f12cd94b061c13c91921cd72e457c32ea0`。CLI实验根固定；所有已启动计划重启只读完整缓存，缺失/损坏结果显示unknown，不续发第二阶段。
 
 ## 结果如何接纳
 
