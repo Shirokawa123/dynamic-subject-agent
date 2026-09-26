@@ -36,6 +36,8 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    CHARACTER_COMMUNICATION_PLAN = "character-communication-plan"
+    CHARACTER_COMMUNICATION_EXPRESSION = "character-communication-expression"
     CHARACTER_REPLY_REVIEW = "character-reply-review"
     CHARACTER_CONTEXT_REPLY = "character-context-reply"
     CHARACTER_EVIDENCE_EXTRACTION = "character-evidence-extraction"

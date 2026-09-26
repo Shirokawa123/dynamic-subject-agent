@@ -344,6 +344,16 @@ def open_character_model_preview(parent: Path, *, draft_path: Path, source_root:
     return open_local_product(config, cognition=DormantDeepSeekCognition(), _character_model=model, _character_reply_lab=reply_lab)
 
 
+def open_character_communication_plan_lab(parent: Path, *, draft_path: Path, source_root: Path,
+                                          reviewed_digest: str, plan_gateway: ModelGateway,
+                                          expression_gateway: ModelGateway) -> OpenedLocalProduct:
+    """Explicit local substitute prototype; no remote composition or state adoption."""
+    from dynamic_subject_agent.character_communication_plan import CharacterCommunicationPlanLab
+    lab = CharacterCommunicationPlanLab(plan_gateway, expression_gateway)
+    return open_character_model_preview(parent, draft_path=draft_path, source_root=source_root,
+                                        reviewed_digest=reviewed_digest, reply_lab=lab)
+
+
 def prepare_character_context_trial(parent: Path, *, draft_path: Path, source_root: Path,
                                     reviewed_digest: str, subject_id: str, anchor_id: str,
                                     cases: dict, max_knowledge_chars: int = 20000):
