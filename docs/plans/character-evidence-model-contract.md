@@ -59,3 +59,13 @@ CharacterChatContextRequest增加context_mode=`auto|flat|organized`与max_knowle
 组织内容仍进入原projection.self_knowledge六字段单元，dimension为core/episode/detail，保守保留belief与关联依据标记。组织policy补充选择范围/披露语义；flat保持既有projection和policy。两种请求的policy并不完全相同，后续实验若比较整套策略应说明这一点，若隔离组织因素须使用统一实验policy。
 
 context.selection只供本地查看草稿指纹、知识字符数、单元/命题依据及选用/预算原因；reply projection不包含此诊断、cues、出处或ID。CLI沿原入口加--context-mode及--max-knowledge-chars。仍无远程调用、正式身份写入或历史输入。
+
+## Slice-79冻结对照的独立执行门槛
+
+新增独立CharacterContextTrial Producer，仍经Facade.preview/propose_character_reply，原CharacterReplyLab保持local-only。local_product准备/装配实验，CLI默认仅prepare。计划由同一Facade对12条固定消息分别flat/organized重建，共24项，使用统一TRIAL_POLICY；plan绑定草稿指纹、消息、请求/出站指纹、参数与保留范围。普通产品默认没有此Producer。
+
+只有显式批准当前精确plan digest且重新准备一致时才装配既有DeepSeek Transport，credential仍延迟到发送。新Adapter仅接受计划白名单中的CHARACTER_CONTEXT_REPLY；max_tokens600、temperature0.3、非思考JSON、不流式，要求完整stop输出、zh和<=1200字符回复，不接状态提议。旧六能力及原试聊/提取授权不因此改变。
+
+独立Git忽略实验目录按plan digest独占启动，发送前写入attempt并flush/fsync；同进程重复请求读取原结果，已启动计划重启不获得新Gateway，结果缺失/损坏返回unknown且不重发。来源、凭据、网络、输出或记录故障停止本批；预览不消耗远程调用。具体新数据用途以[真实对照批准方案](character-context-comparison-trial.md)为准，此文不是用户批准。
+
+实验计划/结果不是正式聊天或第二角色canonical store，不改Memory/Relationship/生活状态。恢复保证限于此有界实验的“不自动重复请求”，不宣称远程模型调用普遍exactly-once或硬件断电绝不丢失。

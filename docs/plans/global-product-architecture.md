@@ -1,6 +1,6 @@
 # 角色聊天产品：从第一性原理到可运行系统
 
-2026-09-24，Slice-76重推。**这是有依据、可检验的设计建议，尚未实施，也不扩大数据用途。** 用户已确认目标以[PRODUCT](../PRODUCT.md)和[方向记录C1–C20](character-chat-direction.md)为准；运行事实以[ARCHITECTURE](../ARCHITECTURE.md)和代码为准。本文取代Slice-75方案的实现细化与阶段安排，保留其有效原则；旧稿可从Git查看。
+2026-09-24，Slice-76重推。**这是有依据、可检验的目标设计，整体尚未完成，也不扩大数据用途。** 2026-09-26起S78已把组织人物资料接入候选路径，S79准备真实对照门槛；持续相处与生活尚未实现。用户已确认目标以[PRODUCT](../PRODUCT.md)和[方向记录C1–C20](character-chat-direction.md)为准；运行事实以[ARCHITECTURE](../ARCHITECTURE.md)和代码为准。本文取代Slice-75方案的实现细化与阶段安排，保留其有效原则；旧稿可从Git查看。
 
 本轮依据：[代码与补充研究](../research/2026-09-24-system-design-evidence.md)、[人物与交流](../research/2026-09-24-character-mechanisms-review.md)、[生活与行动](../research/2026-09-24-life-mechanisms-review.md)。后续专题和任务书从本文链接进入，不另起相互竞争的总路线。
 

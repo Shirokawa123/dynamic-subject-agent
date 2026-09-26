@@ -1,5 +1,5 @@
 # 当前工作
 
-[Slice-78：人物认识真正进入回复路径](slice-78-organized-character-context.md)已收口，见[报告](../reports/2026-09-26-slice-78/REPORT.md)。按用户连续推进MVP授权及[模型路由策略](../plans/agent-execution-strategy.md)继续，产品主线以[整体方案](../plans/global-product-architecture.md)为准。
+[Slice-79：组织人物上下文真实对照的离线准备](slice-79-character-context-trial-preparation.md)已收口，见[报告](../reports/2026-09-26-slice-79/REPORT.md)。Slice-78组织已接线，当前停在用户要求的必要决策点：尚无本次新数据用途批准。
 
-下一片准备固定真实对照的精确投影、单次执行门槛和离线Adapter验证，然后集中请求新数据用途批准；不把离线结果说成已具备自然聊天MVP。
+下一步依据[24次精确对照方案](../plans/character-context-comparison-trial.md)取得批准后建立真实验收任务书；不得使用旧试聊/提取额度。计划070f7b7a…dbdd5已备好，真实调用0。MVP尚未完成，获批后仍按连续授权推进，无需重问产品方向或常规继续。

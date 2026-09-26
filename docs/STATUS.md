@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-09-26：Slice-79完成24项冻结对照与一次性执行门槛，141项相关回归、增量后23项专项及独立复核通过；实际计划未启动、真实调用0，当前需批准新人物背景摘要的回复用途，见[方案](plans/character-context-comparison-trial.md)。
+
 - 2026-09-26：Slice-78把带依据的核心/经历/细节接入Facade回复候选，保留flat；118项相关回归与复核修复后67项专项通过。实际30项资料组织为4核心/4经历/2细节，24份预览及CLI通过；未外发/持久聊天，见[报告](reports/2026-09-26-slice-78/REPORT.md)。
 
 - 2026-09-26：Slice-77确定开发协作采用Astra主控、按任务选择Luna medium/high与Sol high、最小团队和短上下文；已核查team-mode的角色/统计与当前接口差异。仅研究与项目规则，未安装Skill或更改全局配置，见[执行策略](plans/agent-execution-strategy.md)。

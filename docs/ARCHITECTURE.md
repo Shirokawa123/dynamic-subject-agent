@@ -1,8 +1,10 @@
 # 产品架构
 
-2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。该方案尚未实施，未替换本文的已实现契约；下一实现前按其中阶段与本节现状核对，具体契约变化另在切片同步。
+2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
 ## 契约适用范围（2026-09-20）
+
+Slice-79新增独立冻结对照Producer和composition准备/开启入口，复用Facade回复方法；默认prepare只在本地生成24个精确请求与plan digest，原local-only Lab保持。当前无新外发批准、真实调用0；一次性启动、失败停止、恢复不重发及数据范围见[对照契约](plans/character-evidence-model-contract.md#slice-79冻结对照的独立执行门槛)和[待批准方案](plans/character-context-comparison-trial.md)。
 
 Slice-78将审核草稿内的连贯核心/经历/细节接入现有Facade回复预览，支持auto/flat/organized、可追溯的本地选择与实际JSON字符预算；先按起点知情筛选再核组织依据，坏组织不静默降级。平铺兼容与local-only候选保持，未开放新远程用途。字段及有限词法选择见[人物组织契约](plans/character-evidence-model-contract.md#slice-78人物组织与按需装配)；组织接线不证明模型内容质量。
 
