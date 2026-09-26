@@ -141,6 +141,11 @@ def _open_loaded_local_product(
     character_reply_lab: CharacterReplyProducer | None = None,
     evidence_extraction: EvidenceExtractionLab | None = None,
 ) -> OpenedLocalProduct:
+    if loaded.reviewed_definition is not None:
+        from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
+        cognition = ReviewedCharacterDormantCognition()
+        if any(value is not None for value in (source_authoring, character_dialogue, basis_preview, character_model, character_reply_lab, evidence_extraction)):
+            raise RuntimeError("reviewed-character-chat-unavailable")
     composition = compose_application(
         m0_root=loaded.experiment_base,
         studio_location=loaded.studio_location,
@@ -184,6 +189,8 @@ def open_deepseek_local_product(
         raise RuntimeError("DeepSeek API key is required")
     authority = LocalIdentityAuthority(config)
     loaded = authority.load_active()
+    if loaded.reviewed_definition is not None:
+        raise RuntimeError("reviewed-character-legacy-provider-denied")
 
     class _Resolver(DeepSeekCredentialResolver):
         def resolve(self, credential_ref: CredentialRef) -> str:

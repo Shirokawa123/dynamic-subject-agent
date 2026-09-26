@@ -101,6 +101,9 @@ from dynamic_subject_agent.medium_state import MediumSignalRecord, MediumStateRe
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
+from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACTER_AUTHORITY
+from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
+
 CONTRACT_VERSION = "M0-CONTRACT-1.0"
 PERSISTENCE_VERSION = "M0-PERSISTENCE-1.0"
 HOST_SCHEMA_VERSION = 2
@@ -116,6 +119,7 @@ PROVIDER_AUTHORITY = "fake-cognition:m0-a-cycle-1.0"
 _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
     {
         PROVIDER_AUTHORITY,
+        REVIEWED_CHARACTER_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
         _LOCAL_FIRST_TEST_PROVIDER_AUTHORITY,
@@ -178,6 +182,8 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
+    if qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
+        return qri.capabilities == CapabilityManifest.reviewed_character_dormant()
     if qri.provider_authority == PROVIDER_AUTHORITY:
         return qri.capabilities == CapabilityManifest.m0()
     if qri.provider_authority == _DEEPSEEK_PROVIDER_AUTHORITY:
@@ -197,6 +203,8 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
+    if cognition.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
+        return type(cognition) is ReviewedCharacterDormantCognition
     if cognition.provider_authority == _DORMANT_ARTIFACT_PROVIDER_AUTHORITY:
         return type(cognition) is _DormantArtifactCognition
     if cognition.provider_authority == _LOCAL_FIRST_TEST_PROVIDER_AUTHORITY:

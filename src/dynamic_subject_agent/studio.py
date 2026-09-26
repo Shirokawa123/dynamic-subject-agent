@@ -7,6 +7,10 @@ Nothing in this module creates lived history or a timeline head.
 """
 
 from __future__ import annotations
+from dynamic_subject_agent.reviewed_character_definition import (
+    REVIEWED_CHARACTER_AUTHORITY, REVIEWED_CHARACTER_PROOF, REVIEWED_KNOWLEDGE_QUALIFICATION,
+    is_reviewed_source, reviewed_source_refs, reviewed_profile_id, validate_reviewed_envelope,
+)
 
 import hashlib
 import json
@@ -699,6 +703,13 @@ class CapabilityManifest:
                 "legacy-private-fallback",
             ),
         )
+
+    @classmethod
+    def reviewed_character_dormant(cls) -> CapabilityManifest:
+        return cls(manifest_version="reviewed-character-dormant-capabilities-1",
+            included=("host-authoring", "sealed-reviewed-character-definition"),
+            certified=("host-authoring", "sealed-reviewed-character-definition"),
+            unavailable=("cognition", "provider", "network-access", "legacy-six-domain-cognition", "effect-dispatch"))
 
     @classmethod
     def _local_first_test_double(cls) -> CapabilityManifest:
@@ -1547,6 +1558,7 @@ class GenesisSnapshot:
     knowledge_member_count: int
     created_at_us: int
     source_freeze_basis_digest: str | None = None
+    reviewed_definition: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, init=False)
@@ -1628,12 +1640,18 @@ class PolicyKernel:
                 "policy validity must be positive",
             )
         reasons: list[str] = []
+        reviewed = (
+            question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
+            and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
+            and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
+            and question.isolation_proof.path_class in ("local-private-experimental", "system-temporary-experimental")
+        )
         for source in (question.profile_source, question.genesis_source):
-            if source.origin_kind != "project-original":
+            if source.origin_kind != "project-original" and not reviewed:
                 reasons.append("source-origin-denied")
             if not source.rights_confirmed:
                 reasons.append("rights-declaration-missing")
-            if source.source_asset_refs or source.uses_disallowed_inheritance:
+            if (source.source_asset_refs or source.uses_disallowed_inheritance) and not reviewed:
                 reasons.append("source-isolation-denied")
         allowed_isolation = {
             (ROOT_KIND, "process-temporary"),
@@ -1647,6 +1665,9 @@ class PolicyKernel:
             reasons.append("path-isolation-denied")
         if reasons:
             disposition = PolicyDisposition.DENIED
+        elif reviewed:
+            disposition = PolicyDisposition.QUALIFIED
+            reasons.append("private-reviewed-character-dormant-qualified")
         elif question.capability_manifest == CapabilityManifest.m0():
             disposition = PolicyDisposition.QUALIFIED
             reasons.append("m0-original-host-input-qualified")
@@ -1870,7 +1891,7 @@ _PROFILE_DDL = (
         genesis_snapshot_id TEXT NOT NULL UNIQUE REFERENCES genesis_snapshot(snapshot_id),
         member_count INTEGER NOT NULL CHECK (member_count >= 0 AND member_count <= 6),
         qualification TEXT NOT NULL CHECK (
-            qualification IN ('qualified-original-empty', 'qualified-source-freeze')
+            qualification IN ('qualified-original-empty', 'qualified-source-freeze', 'qualified-reviewed-character-asset')
         ),
         snapshot_digest TEXT NOT NULL CHECK (length(snapshot_digest) = 64),
         created_at_us INTEGER NOT NULL
@@ -8723,6 +8744,8 @@ class SubjectStudio:
         row, profile, premise, profile_digest = self._draft_bundle(draft_id)
         preview = self.preview(str(row[0]))
         isolation = self.isolation_proof
+        if is_reviewed_source(profile.source) and profile.source == premise.source:
+            isolation = IsolationProof(isolation.root_id, isolation.root_kind, isolation.path_class, REVIEWED_CHARACTER_PROOF)
         question_basis = {
             "contract_version": CONTRACT_VERSION,
             "profile_digest": profile_digest,
@@ -8849,6 +8872,7 @@ class SubjectStudio:
         policy_decision_id: str,
         knowledge_entries: tuple[KnowledgeEntry, ...] = (),
         source_freeze_basis_digest: str | None = None,
+        reviewed_definition: dict[str, Any] | None = None,
     ) -> GenesisSnapshot:
         self._require_authority()
         if not isinstance(freeze, FreezeDecision):
@@ -8915,6 +8939,13 @@ class SubjectStudio:
                 "PolicyDecision does not authorize seal",
             )
         row, profile, premise, _ = self._draft_bundle(draft_id)
+        self._validate_reviewed_content(profile, premise, reviewed_definition, source_freeze_basis_digest)
+        if reviewed_definition is not None:
+            reviewed_definition = json.loads(_canonical_json(reviewed_definition))
+            if knowledge_entries or decision.capability_manifest != CapabilityManifest.reviewed_character_dormant():
+                raise StudioRejected("reviewed-contract-invalid", "reviewed asset requires its dormant contract and empty legacy Knowledge")
+        qualification = (REVIEWED_KNOWLEDGE_QUALIFICATION if reviewed_definition is not None else
+                         "qualified-source-freeze" if knowledge_entries else "qualified-original-empty")
         snapshot_id = str(
             uuid5(
                 NAMESPACE_URL,
@@ -8964,17 +8995,15 @@ class SubjectStudio:
             "source_freeze_basis_digest": source_freeze_basis_digest,
             "created_at_us": created_at_us,
         }
+        if reviewed_definition is not None:
+            snapshot_payload["reviewed_definition"] = reviewed_definition
         snapshot_digest = _digest(snapshot_payload)
         knowledge_digest = _digest(
             {
                 "knowledge_snapshot_id": knowledge_snapshot_id,
                 "genesis_snapshot_id": snapshot_id,
                 "member_count": len(knowledge_entries),
-                "qualification": (
-                    "qualified-source-freeze"
-                    if knowledge_entries
-                    else "qualified-original-empty"
-                ),
+                "qualification": qualification,
                 "members": knowledge_payload,
                 "source_freeze_basis_digest": source_freeze_basis_digest,
             }
@@ -9008,7 +9037,12 @@ class SubjectStudio:
                         "snapshot-corrupt",
                         "stored GenesisSnapshot is unreadable",
                     ) from error
-                if existing_payload.get("freeze_decision") != freeze.to_dict():
+                if (existing_payload.get("freeze_decision") != freeze.to_dict()
+                    or existing_payload.get("reviewed_definition") != reviewed_definition
+                    or (reviewed_definition is not None and (
+                        existing_payload.get("premise") != premise.to_dict()
+                        or existing_payload.get("source_freeze_basis_digest") != source_freeze_basis_digest
+                        or existing_payload.get("profile_id") != profile.profile_id))):
                     raise StudioConflict(
                         "seal-identity-conflict",
                         "FreezeDecision identity already names different content",
@@ -9077,11 +9111,7 @@ class SubjectStudio:
                     knowledge_snapshot_id,
                     snapshot_id,
                     len(knowledge_entries),
-                    (
-                        "qualified-source-freeze"
-                        if knowledge_entries
-                        else "qualified-original-empty"
-                    ),
+                    qualification,
                     knowledge_digest,
                     created_at_us,
                 ),
@@ -9119,6 +9149,25 @@ class SubjectStudio:
             _rollback_if_needed(self._writer)
             raise
         return self.query_snapshot(snapshot_id)
+
+    @staticmethod
+    def _validate_reviewed_content(profile, premise, envelope, basis):
+        if envelope is None:
+            if profile.source.origin_kind == "reviewed-fiction-derived" or premise.source.origin_kind == "reviewed-fiction-derived":
+                raise StudioFailedClosed("reviewed-definition-missing", "reviewed source requires a sealed complete definition")
+            return
+        try:
+            validate_reviewed_envelope(envelope)
+            pc, gc = envelope["profile_content"], envelope["genesis_content"]
+            if (not is_reviewed_source(profile.source) or profile.source != premise.source
+                or profile.source.source_asset_refs != reviewed_source_refs(envelope["definition_basis"], envelope["runtime_asset_sha"])
+                or basis != envelope["definition_basis"] or profile.profile_id != reviewed_profile_id(basis)
+                or profile.display_name != pc["display_name"] or profile.identity_core != pc["identity_core"]
+                or premise.subject_identity != gc["subject_identity"] or premise.canon_start != gc["canon_start"]
+                or premise.initial_relationship_premise != gc["initial_relationship_premise"]):
+                raise ValueError("reviewed source content mismatch")
+        except Exception as error:
+            raise StudioFailedClosed("reviewed-definition-integrity-failed", "reviewed definition or source binding is invalid") from error
 
     def query_snapshot(self, snapshot_id: str) -> GenesisSnapshot:
         self._require_open()
@@ -9203,6 +9252,25 @@ class SubjectStudio:
                 "snapshot-integrity-failed",
                 "FreezeDecision provenance does not match GenesisSnapshot",
             )
+        reviewed = payload.get("reviewed_definition")
+        profile = self.query_profile(str(payload["profile_id"]))
+        self._validate_reviewed_content(profile, premise, reviewed, payload.get("source_freeze_basis_digest"))
+        if reviewed is not None:
+            current = self.preview(str(payload["draft_id"]))
+            sealed_policy = self._read_policy_decision(str(payload["policy_decision_id"]))
+            question = self._policy_question(str(payload["draft_id"]), sealed_policy.capability_manifest)
+            if (canonical_id != payload["snapshot_id"] or current.profile_id != payload["profile_id"]
+                or current.branch_id != payload["branch_id"]
+                or current.freeze_basis_digest != payload["freeze_basis_digest"]
+                or current.content_fingerprint != payload["content_fingerprint"]
+                or sealed_policy.question_digest != question.question_digest
+                or sealed_policy.capability_manifest != CapabilityManifest.reviewed_character_dormant()
+                or sealed_policy.disposition is not PolicyDisposition.QUALIFIED):
+                raise StudioFailedClosed("reviewed-policy-binding-invalid", "sealed reviewed definition no longer matches its policy basis")
+        if reviewed is not None and (member_count != 0 or str(row[3]) != REVIEWED_KNOWLEDGE_QUALIFICATION):
+            raise StudioFailedClosed("reviewed-knowledge-qualification-invalid", "reviewed knowledge belongs to the sealed asset")
+        if reviewed is None and str(row[3]) == REVIEWED_KNOWLEDGE_QUALIFICATION:
+            raise StudioFailedClosed("reviewed-definition-missing", "reviewed qualification requires its asset")
         return GenesisSnapshot(
             snapshot_id=str(payload["snapshot_id"]),
             knowledge_snapshot_id=str(payload["knowledge_snapshot_id"]),
@@ -9220,6 +9288,7 @@ class SubjectStudio:
             knowledge_member_count=int(payload["knowledge_member_count"]),
             created_at_us=int(payload["created_at_us"]),
             source_freeze_basis_digest=payload.get("source_freeze_basis_digest"),
+            reviewed_definition=reviewed,
         )
 
     def knowledge_entries(
@@ -9387,9 +9456,11 @@ class SubjectStudio:
             "knowledge_snapshot_id": snapshot.knowledge_snapshot_id,
             "policy_decision_ids": publication_policy_decision_ids,
             "capabilities": decision.capability_manifest.to_dict(),
-            "isolation_proof": self.isolation_proof.to_dict(),
+            "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                _PROVIDER_AUTHORITY
+                REVIEWED_CHARACTER_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.reviewed_character_dormant()
+                else _PROVIDER_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.m0()
                 else _DEEPSEEK_PROVIDER_AUTHORITY
             ),
@@ -9505,6 +9576,44 @@ class SubjectStudio:
                 "qri-integrity-failed",
                 "QRI integrity digest is invalid",
             )
+        snapshot_row = self._writer.execute("SELECT snapshot_json FROM genesis_snapshot WHERE snapshot_id = ?",
+            (qri.genesis_snapshot_id,)).fetchone()
+        try:
+            snapshot_hint = json.loads(str(snapshot_row[0])) if snapshot_row is not None else {}
+        except (TypeError, ValueError) as error:
+            raise StudioFailedClosed("snapshot-corrupt", "published snapshot is unreadable") from error
+        reviewed_contract = ("reviewed_definition" in snapshot_hint
+            or qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY
+            or qri.publication_key.startswith("reviewed-character-")
+            or self.query_profile(qri.profile_id).source.origin_kind == "reviewed-fiction-derived")
+        snapshot = self.query_snapshot(qri.genesis_snapshot_id) if reviewed_contract else None
+        if reviewed_contract and (
+            snapshot.reviewed_definition is None
+            or qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY
+            or qri.capabilities != CapabilityManifest.reviewed_character_dormant()
+            or qri.isolation_proof != IsolationProof(self.isolation_proof.root_id, self.isolation_proof.root_kind,
+                self.isolation_proof.path_class, REVIEWED_CHARACTER_PROOF)
+            or snapshot.policy_decision_id not in qri.policy_decision_ids
+            or qri.genesis_snapshot_id != snapshot.snapshot_id
+            or qri.profile_id != snapshot.profile_id or qri.knowledge_snapshot_id != snapshot.knowledge_snapshot_id
+            or qri.genesis_branch_id != snapshot.branch_id
+            or qri.publication_key != "reviewed-character-" + snapshot.reviewed_definition["definition_basis"]
+        ):
+            raise StudioFailedClosed("reviewed-qri-integrity-failed", "reviewed QRI does not match sealed definition")
+        if snapshot is not None and snapshot.reviewed_definition is not None:
+            for decision_id in qri.policy_decision_ids:
+                decision = self._read_policy_decision(decision_id)
+                question = self._policy_question(snapshot.draft_id, decision.capability_manifest)
+                if (decision.capability_manifest != CapabilityManifest.reviewed_character_dormant()
+                    or decision.question_digest != question.question_digest
+                    or decision.disposition is not PolicyDisposition.QUALIFIED):
+                    raise StudioFailedClosed("reviewed-qri-policy-invalid", "reviewed publication policy does not match source and asset")
+            expected_compatibility = _digest(dict(contract_version=CONTRACT_VERSION,
+                profile_id=snapshot.profile_id, genesis_snapshot_id=snapshot.snapshot_id,
+                knowledge_snapshot_id=snapshot.knowledge_snapshot_id,
+                policy_decision_id=qri.policy_decision_ids[-1], capability_manifest=qri.capabilities.to_dict()))
+            if qri.compatibility_proof != expected_compatibility:
+                raise StudioFailedClosed("reviewed-qri-policy-invalid", "reviewed publication compatibility proof is invalid")
         return qri
 
     def query_qri(self, *, publication_key: str) -> QualifiedRuntimeInput:

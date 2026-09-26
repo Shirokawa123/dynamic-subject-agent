@@ -2,7 +2,15 @@
 
 2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
-S98补四条有条件人格解释与常驻core，S99准备独立远程试验。用途获准后S100 high规划截断停止（7次）；S101仅降planner low的24次对照完成，局部接续/表达改善仍有泛化风险，累计61/200余139。S102组合含人格的完整只读定义；准确来源的正式冻结与连续聊天仍未实现，见[实际对照](reports/2026-09-26-slice-101/REPORT.md)。
+S98补四条有条件人格解释与常驻core，S99准备独立远程试验。用途获准后S100 high规划截断停止（7次）；S101仅降planner low的24次对照完成，局部接续/表达改善仍有泛化风险，累计61/200余139。S102完整定义及限定连续聊天用途已获准；S103已创建、选择并恢复准确派生身份，连续聊天尚未接入，见[S103报告](reports/2026-09-26-slice-103/REPORT.md)。
+
+### Slice-103：准确来源的封存人物
+
+Facade复用freeze_source_identity入口接受显式ReviewedCharacterFreezeRequest，Authority写前重算完整definition basis。新private reviewed-fiction-derived合同将30条认识、4条有边界人格解释及来源/用途封入既有Genesis snapshot JSON并纳入digest；旧记录不添字段、不迁移。旧Knowledge载体保持空并准确标记qualified-reviewed-character-asset，完整知识由新封存资产承载，不受旧6条上限截断。
+
+Profile与publication key由完整basis派生；Studio封存、QRI读取和Authority恢复验证资产、来源、映射、政策、registry及当前product parent。原书/草稿不再是运行依赖。跨Studio与registry中断使用确定性重放恢复，不能宣称跨文件原子事务。封存来源记录真实rights确认，原未签准备包不改。
+
+新身份使用reviewed-character-dormant-1 authority及准确dormant manifest，拒绝聊天Admission、不装配旧六Domain Provider、不授予任务/文件effect。后继聊天需另发准确资格并验证binding，不能在此dormant证明下静默启网。S102已批准该后继用途，无需再次请求同一权限。
 
 ## 契约适用范围（2026-09-20）
 

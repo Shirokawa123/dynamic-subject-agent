@@ -48,6 +48,12 @@ from dynamic_subject_agent.studio import (
 from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 
 
+from dynamic_subject_agent.reviewed_character_definition import (
+    ReviewedCharacterFreezeRequest, REVIEWED_CHARACTER_AUTHORITY,
+    prepare_reviewed_definition, reviewed_source_refs, reviewed_profile_id,
+)
+from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
+
 _STATE_SCHEMA_VERSION = 1
 _LEGACY_AVERY_PUBLICATION_KEY = "local-product-deepseek-qri-v1"
 
@@ -220,6 +226,7 @@ class _ValidatedLocalIdentity:
     knowledge_member_count: int
     knowledge_entries: tuple[KnowledgeEntry, ...]
     runtime_identity: RuntimeIdentityProjection
+    reviewed_definition: dict | None = None
 
 
 def _runtime_identity_projection(
@@ -246,7 +253,7 @@ def _runtime_identity_projection(
     )
 
 
-def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
+def _validate_identity_record(record: object, *, expected_parent: Path | None = None) -> _ValidatedLocalIdentity:
     if not isinstance(record, dict):
         raise RuntimeError("local-identity-registry-invalid")
     studio_location = StudioRootRef.from_dict(record["studio_location"])
@@ -274,6 +281,15 @@ def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
         != (record.get("timeline_id") is None)
     ):
         raise RuntimeError("local-identity-authority-mismatch")
+    if snapshot.reviewed_definition is not None:
+        envelope = snapshot.reviewed_definition
+        if (expected_parent is None or experiment_base.resolve().parent != expected_parent.resolve()
+            or record.get("identity_kind") != "reviewed-fiction-derived"
+            or record.get("definition_basis") != envelope["definition_basis"]
+            or record.get("runtime_asset_sha") != envelope["runtime_asset_sha"]):
+            raise RuntimeError("reviewed-local-identity-authority-mismatch")
+    elif any(key in record for key in ("identity_kind", "definition_basis", "runtime_asset_sha")):
+        raise RuntimeError("reviewed-local-identity-pointer-invalid")
     if record.get("host_location") is not None:
         RuntimeHostRootRef.from_dict(record["host_location"])
     return _ValidatedLocalIdentity(
@@ -282,8 +298,8 @@ def _validate_identity_record(record: object) -> _ValidatedLocalIdentity:
         experiment_base=experiment_base,
         display_name=expected_display_name,
         freeze_basis_digest=snapshot.source_freeze_basis_digest,
-        knowledge_member_count=len(entries),
-        knowledge_entries=entries,
+        reviewed_definition=snapshot.reviewed_definition,
+        knowledge_member_count=len(entries),        knowledge_entries=entries,
         runtime_identity=_runtime_identity_projection(
             qri=qri,
             profile=profile,
@@ -595,6 +611,87 @@ def _freeze_mapped_source_identity(
     )
 
 
+def _freeze_reviewed_identity(config, request):
+    # All consent and exact-content checks precede any Studio or registry write.
+    try:
+        envelope = prepare_reviewed_definition(request)
+    except Exception:
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.REJECTED,
+            problem_code="reviewed-character-definition-invalid")
+    if not config.state_path.exists():
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.UNAVAILABLE,
+            problem_code="local-identity-registry-unavailable")
+    try:
+        state = _state_v2(json.loads(config.state_path.read_text(encoding="utf-8")))
+        basis = envelope["definition_basis"]
+        pid = reviewed_profile_id(basis)
+        existing = next((item for item in state["identities"] if item["identity_id"] == pid), None)
+        if existing is not None:
+            validated = _validate_identity_record(existing, expected_parent=config.product_parent)
+            if validated.reviewed_definition != envelope:
+                raise RuntimeError("reviewed-character-replay-conflict")
+            return _reviewed_freeze_response(state, validated.qri, envelope, True)
+        source = SourceDeclaration(
+            source_id=str(uuid5(NAMESPACE_URL, "reviewed-character-source:" + basis)),
+            origin_kind="reviewed-fiction-derived", rights_confirmed=True,
+            source_asset_refs=reviewed_source_refs(basis, envelope["runtime_asset_sha"]),
+            uses_disallowed_inheritance=False)
+        pc, gc = envelope["profile_content"], envelope["genesis_content"]
+        profile = ParticipantProfile(pid, pc["display_name"], pc["identity_core"], source)
+        premise = GenesisPremise(gc["subject_identity"], gc["canon_start"], gc["initial_relationship_premise"], source)
+        target, base = SubjectStudio.open_or_create_source_identity(config.product_parent,
+            freeze_basis_digest=basis, policy_kernel=PolicyKernel())
+        try:
+            key = "reviewed-character-" + basis
+            try:
+                qri = target.query_qri(publication_key=key)
+                replayed = True
+            except Exception as error:
+                if getattr(error, "code", None) != "qri-not-found":
+                    raise
+                draft = target.ensure_source_identity_draft(profile=profile, premise=premise,
+                    source_freeze_basis_digest=basis)
+                preview = target.preview(draft.draft_id)
+                policy = target.decide_policy(draft.draft_id, CapabilityManifest.reviewed_character_dormant(),
+                    validity_us=300_000_000)
+                freeze = FreezeDecision(
+                    decision_id=str(uuid5(NAMESPACE_URL, "reviewed-character-freeze:" + basis)),
+                    draft_id=draft.draft_id, expected_revision=preview.revision,
+                    freeze_basis_digest=preview.freeze_basis_digest,
+                    decided_by="local-user-reviewed-character-freeze",
+                    rationale="Explicitly confirmed private reviewed-fiction-derived complete definition.")
+                snapshot = target.seal(draft.draft_id, freeze, policy_decision_id=policy.decision_id,
+                    source_freeze_basis_digest=basis, reviewed_definition=envelope)
+                qri = target.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key)
+                replayed = False
+            snapshot = target.query_snapshot(qri.genesis_snapshot_id)
+            if snapshot.reviewed_definition != envelope or target.query_profile(qri.profile_id) != profile:
+                raise RuntimeError("reviewed-character-sealed-content-conflict")
+            location = target.location
+        finally:
+            target.close()
+        record = dict(identity_id=pid, display_name=pc["display_name"], freeze_basis_digest=basis,
+            identity_kind="reviewed-fiction-derived", definition_basis=basis, runtime_asset_sha=envelope["runtime_asset_sha"],
+            experiment_base=str(base), studio_location=location.to_dict(), host_location=None,
+            timeline_id=None, publication_key=qri.publication_key)
+        _validate_identity_record(record, expected_parent=config.product_parent)
+        state["identities"].append(record)
+        _write_state(config.state_path, state)
+        return _reviewed_freeze_response(state, qri, envelope, replayed)
+    except Exception:
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.FAILED_CLOSED,
+            problem_code="reviewed-character-freeze-failed-closed")
+
+
+def _reviewed_freeze_response(state, qri, envelope, replayed):
+    return SourceIdentityFreezeResponse(
+        SourceIdentityFreezeStatus.REPLAYED if replayed else SourceIdentityFreezeStatus.CREATED,
+        view=SourceIdentityFreezeView(identity_id=qri.profile_id,
+            display_name=envelope["profile_content"]["display_name"],
+            freeze_basis_digest=envelope["definition_basis"], publication_key=qri.publication_key,
+            knowledge_member_count=0, active=state["active_identity_id"] == qri.profile_id))
+
+
 def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListResponse:
     if not config.state_path.exists():
         return LocalIdentityListResponse(LocalIdentityStatus.UNAVAILABLE)
@@ -605,7 +702,7 @@ def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListRespo
         identities = state["identities"]
         assert isinstance(identities, list)
         validated = tuple(
-            (_validate_identity_record(item), item) for item in identities
+            (_validate_identity_record(item, expected_parent=config.product_parent), item) for item in identities
         )
         views = tuple(
             LocalIdentityView(
@@ -628,11 +725,12 @@ def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
-    dormant = DormantDeepSeekCognition()
+    dormant = ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()
     # New identities opt into the task contract; dormant preflight still denies
     # submission. Existing bindings are read by their persisted version.
-    dormant.supports_subject_tasks = True
-    dormant.supports_text_effects = True
+    if identity.reviewed_definition is None:
+        dormant.supports_subject_tasks = True
+        dormant.supports_text_effects = True
     host = RuntimeHost.create(
         identity.experiment_base,
         studio_location=identity.studio_location,
@@ -654,7 +752,7 @@ def _validate_host_binding(
     host = RuntimeHost.open(
         host_location,
         studio_location=identity.studio_location,
-        cognition=DormantDeepSeekCognition(),
+        cognition=(ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()),
         relationship_enabled=config.relationship_mode == "dynamic",
     )
     try:
@@ -717,7 +815,7 @@ def _select_local_identity(
                 LocalIdentityStatus.NOT_FOUND,
                 problem_code="local-identity-not-found",
             )
-        validated = _validate_identity_record(selected)
+        validated = _validate_identity_record(selected, expected_parent=config.product_parent)
         if selected.get("host_location") is None or selected.get("timeline_id") is None:
             host_location, timeline_id = _create_identity_host(validated)
             selected["host_location"] = host_location.to_dict()
@@ -811,7 +909,7 @@ def _load_or_create_authority(
         )
         if active is None:
             raise RuntimeError("active-local-identity-not-found")
-        validated = _validate_identity_record(active)
+        validated = _validate_identity_record(active, expected_parent=config.product_parent)
         if active.get("host_location") is None:
             host_location, timeline_id = _create_identity_host(validated)
             active["host_location"] = host_location.to_dict()
@@ -884,6 +982,7 @@ class LoadedLocalIdentity:
     authoring_studio_location: StudioRootRef
     knowledge_entries: tuple[KnowledgeEntry, ...]
     runtime_identity: RuntimeIdentityProjection
+    reviewed_definition: dict | None = None
 
 
 class LocalIdentityAuthority:
@@ -910,7 +1009,15 @@ class LocalIdentityAuthority:
             if qri.publication_key == "local-product-deepseek-qri-v1"
             else snapshot_entries
         )
+        reviewed_definition = None
+        if qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
+            studio = SubjectStudio.open(studio_location, policy_kernel=PolicyKernel())
+            try:
+                reviewed_definition = studio.query_snapshot(qri.genesis_snapshot_id).reviewed_definition
+            finally:
+                studio.close()
         return LoadedLocalIdentity(
+            reviewed_definition=reviewed_definition,
             experiment_base=experiment_base,
             studio_location=studio_location,
             host_location=host_location,
@@ -925,6 +1032,8 @@ class LocalIdentityAuthority:
         self,
         request: object,
     ) -> SourceIdentityFreezeResponse:
+        if type(request) is ReviewedCharacterFreezeRequest:
+            return _freeze_reviewed_identity(self._config, request)
         return _freeze_source_identity(
             self._config,
             source_studio_location=_authoring_studio_location(self._config),
