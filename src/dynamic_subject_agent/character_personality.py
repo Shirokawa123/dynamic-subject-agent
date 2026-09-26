@@ -80,6 +80,39 @@ def personality_expression(context, value):
     return _bounded_envelope(CharacterExpressionEnvelope(expression, context.character_core, context.personality))
 
 
+def load_personality_draft(model, sidecar_path, expected_digest):
+    if (not isinstance(sidecar_path, Path) or not sidecar_path.is_absolute() or not isinstance(expected_digest, str)
+            or len(expected_digest) != 64 or any(c not in "0123456789abcdef" for c in expected_digest)):
+        raise ValueError("reviewed personality sidecar required")
+    with sidecar_path.open("rb") as stream:
+        raw = stream.read(48001)
+    if len(raw) > 48000 or sha256(raw).hexdigest() != expected_digest:
+        raise ValueError("personality sidecar changed")
+    value = json.loads(raw.decode("utf-8"))
+    if (type(value) is not dict or set(value) != {"version", "status", "base_reviewed_digest", "subject_id", "anchor_id", "items"}
+            or value["version"] != "character-personality-draft-1" or value["status"] != "local-interpretation-candidates"
+            or value["base_reviewed_digest"] != model.draft_digest or value["subject_id"] != model.subject_id
+            or value["anchor_id"] != model.anchor_id or type(value["items"]) is not list or not 1 <= len(value["items"]) <= 8
+            or len(canonical_json(value)) > 12000):
+        raise ValueError("personality sidecar binding invalid")
+    known = {item.item_id: item for item in model.known}
+    identities, result = set(), []
+    text_fields = ("title", "interpretation", "when", "choice", "expression", "limits")
+    for item in value["items"]:
+        if (type(item) is not dict or set(item) != {"id", *text_fields, "claim_ids"}
+                or not isinstance(item["id"], str) or not item["id"].strip() or len(item["id"]) > 80 or item["id"] in identities
+                or any(not isinstance(item[key], str) or not item[key].strip() or len(item[key]) > (100 if key == "title" else 500)
+                       or "\x00" in item[key] for key in text_fields)
+                or type(item["claim_ids"]) is not list or not 1 <= len(item["claim_ids"]) <= 16
+                or any(not isinstance(key, str) or key not in known for key in item["claim_ids"])
+                or len(set(item["claim_ids"])) != len(item["claim_ids"])):
+            raise ValueError("personality support or fields invalid")
+        identities.add(item["id"])
+        result.append(PersonalityInterpretation(**{key: item[key] for key in text_fields},
+            support_includes_belief=any(known[key].kind == "belief" for key in item["claim_ids"])))
+    return tuple(result), value
+
+
 class CharacterPersonalityLab(CharacterReplyProducer):
     """One read-only source binding and two explicit local semantic tasks."""
 
@@ -96,33 +129,7 @@ class CharacterPersonalityLab(CharacterReplyProducer):
         self._planner, self._expresser = plan_gateway, expression_gateway
 
     def _interpretations(self, model):
-        with self._path.open("rb") as stream:
-            raw = stream.read(48001)
-        if len(raw) > 48000 or sha256(raw).hexdigest() != self._digest:
-            raise ValueError("personality sidecar changed")
-        value = json.loads(raw.decode("utf-8"))
-        if (type(value) is not dict or set(value) != {"version", "status", "base_reviewed_digest", "subject_id", "anchor_id", "items"}
-                or value["version"] != "character-personality-draft-1" or value["status"] != "local-interpretation-candidates"
-                or value["base_reviewed_digest"] != model.draft_digest or value["subject_id"] != model.subject_id
-                or value["anchor_id"] != model.anchor_id or type(value["items"]) is not list or not 1 <= len(value["items"]) <= 8
-                or len(canonical_json(value)) > 12000):
-            raise ValueError("personality sidecar binding invalid")
-        known = {item.item_id: item for item in model.known}
-        identities, result = set(), []
-        text_fields = ("title", "interpretation", "when", "choice", "expression", "limits")
-        for item in value["items"]:
-            if (type(item) is not dict or set(item) != {"id", *text_fields, "claim_ids"}
-                    or not isinstance(item["id"], str) or not item["id"].strip() or len(item["id"]) > 80 or item["id"] in identities
-                    or any(not isinstance(item[key], str) or not item[key].strip() or len(item[key]) > (100 if key == "title" else 500)
-                           or "\x00" in item[key] for key in text_fields)
-                    or type(item["claim_ids"]) is not list or not 1 <= len(item["claim_ids"]) <= 16
-                    or any(not isinstance(key, str) or key not in known for key in item["claim_ids"])
-                    or len(set(item["claim_ids"])) != len(item["claim_ids"])):
-                raise ValueError("personality support or fields invalid")
-            identities.add(item["id"])
-            result.append(PersonalityInterpretation(**{key: item[key] for key in text_fields},
-                support_includes_belief=any(known[key].kind == "belief" for key in item["claim_ids"])))
-        return tuple(result)
+        return load_personality_draft(model, self._path, self._digest)[0]
 
     def preview(self, view, *, request=None):
         if view.status != "previewed": return view

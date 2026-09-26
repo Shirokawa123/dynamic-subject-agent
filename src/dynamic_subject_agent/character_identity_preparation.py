@@ -1,6 +1,7 @@
 """Read-only derived identity proposal; no draft save, freeze or authority writes."""
 from dataclasses import asdict, dataclass
 from hashlib import sha256
+from pathlib import Path
 
 from dynamic_subject_agent.character_evidence_model import CharacterModelView, CharacterModelItem, DIMENSIONS
 from dynamic_subject_agent.frozen_attempt import canonical_json
@@ -16,6 +17,15 @@ _DIMENSION_NAMES = dict(identity="身份", biography="生平", relationships="�
     abilities="能力与局限", values="价值与投入", concerns="关切", situation="起点处境", **{"world-knowledge": "世界知识"})
 _SCOPES = {"before": "起点前", "at": "起点当时"}
 DEFINITION_APPROVAL_VERSION = "character-definition-approval-1"
+COMPLETE_DEFINITION_VERSION = "character-definition-approval-2"
+
+
+@dataclass(frozen=True)
+class CharacterDefinitionPreparationRequest:
+    subject_id: str
+    anchor_id: str
+    sidecar_path: Path
+    personality_digest: str
 
 
 @dataclass(frozen=True)
@@ -42,6 +52,13 @@ def _definition_basis(mapping_basis, declaration, runtime_asset_sha):
         source_declaration=asdict(declaration), runtime_asset_sha=runtime_asset_sha)).encode()).hexdigest()
 
 
+def _complete_definition_basis(mapping_basis, declaration, runtime_asset_sha, persona_digest):
+    content = asdict(declaration)
+    del content["rights_confirmed"]  # Approval state is not the approved object.
+    return sha256(canonical_json(dict(version=COMPLETE_DEFINITION_VERSION, content_mapping_basis=mapping_basis,
+        source_declaration=content, persona_digest=persona_digest, runtime_asset_sha=runtime_asset_sha)).encode()).hexdigest()
+
+
 @dataclass(frozen=True)
 class IdentityCandidateCoverage:
     candidate_index: int
@@ -57,6 +74,8 @@ class IdentityPreparationTrace:
     original_stage_description: str
     eligible_items: tuple[CharacterModelItem, ...]
     coverage: tuple[IdentityCandidateCoverage, ...]
+    persona_digest: str = ""
+    personality_support_json: str = ""
 
 
 @dataclass(frozen=True)
@@ -80,6 +99,7 @@ class CharacterIdentityPreparationView:
     runtime_asset_json: str = ""
     runtime_asset_sha: str = ""
     definition_basis: str = ""
+    definition_version: str = DEFINITION_APPROVAL_VERSION
     confirmation_request: CharacterDefinitionConfirmationRequest | None = None
     trace: IdentityPreparationTrace | None = None
     excluded_diagnostics: tuple[CharacterModelItem, ...] = ()
@@ -113,7 +133,7 @@ def _chunks(items, *, prefix=""):
         yield prefix + "\n\n".join(current), tuple(refs)
 
 
-def prepare_character_identity(model):
+def prepare_character_identity(model, *, personality_request=None):
     if type(model) is not CharacterModelView:
         return CharacterIdentityPreparationView("rejected", "typed-character-model-required")
     if model.status != "previewed":
@@ -182,13 +202,29 @@ def prepare_character_identity(model):
         asset_json = canonical_json(asset)
         asset_sha = sha256(asset_json.encode()).hexdigest()
         definition_basis = _definition_basis(mapping.view.freeze_basis_digest, declaration, asset_sha)
+        definition_version, persona_digest, supports = DEFINITION_APPROVAL_VERSION, "", ""
+        if personality_request is not None:
+            from dynamic_subject_agent.character_personality import load_personality_draft
+            if (type(personality_request) is not CharacterDefinitionPreparationRequest
+                    or personality_request.subject_id != model.subject_id or personality_request.anchor_id != model.anchor_id):
+                raise _PreparationProblem("complete-definition-selection-invalid")
+            interpretations, sidecar = load_personality_draft(model, personality_request.sidecar_path, personality_request.personality_digest)
+            persona_digest = personality_request.personality_digest
+            asset.update(version="character-runtime-definition-2", personality=[asdict(item) for item in interpretations], persona_digest=persona_digest)
+            asset_json = canonical_json(asset)
+            asset_sha = sha256(asset_json.encode()).hexdigest()
+            definition_basis = _complete_definition_basis(mapping.view.freeze_basis_digest, declaration, asset_sha, persona_digest)
+            definition_version = COMPLETE_DEFINITION_VERSION
+            supports = canonical_json([dict(id=item["id"], claim_ids=item["claim_ids"]) for item in sidecar["items"]])
         return CharacterIdentityPreparationView("previewed", source_title=title, source_text=source, proposed_draft=draft,
             mapping=mapping.view, provisional_basis=mapping.view.freeze_basis_digest,
             source_declaration=declaration, runtime_asset_json=asset_json, runtime_asset_sha=asset_sha,
-            definition_basis=definition_basis, confirmation_request=CharacterDefinitionConfirmationRequest(definition_basis),
-            trace=IdentityPreparationTrace(model.draft_digest, model.subject_id, model.anchor_id, model.chat_stage_description, model.known, tuple(coverage)),
+            definition_basis=definition_basis, definition_version=definition_version, confirmation_request=CharacterDefinitionConfirmationRequest(definition_basis),
+            trace=IdentityPreparationTrace(model.draft_digest, model.subject_id, model.anchor_id, model.chat_stage_description, model.known, tuple(coverage), persona_digest, supports),
             excluded_diagnostics=model.excluded)
     except _PreparationProblem as failure:
         return CharacterIdentityPreparationView("failed-closed", str(failure))
+    except FileNotFoundError:
+        return CharacterIdentityPreparationView("unavailable", "definition-personality-source-missing")
     except Exception:
         return CharacterIdentityPreparationView("failed-closed", "identity-preparation-unavailable")

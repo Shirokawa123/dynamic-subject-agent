@@ -137,3 +137,5 @@ ApplicationFacade.preview_character_identity_preparation复用已验证Character
 专用DeepSeekPersonalityTrialAdapter只接受新人格计划与相应envelope；原Adapter不接受新版本，新Adapter不接受旧版本。新composition默认prepare，approved_plan必须等于重建当前digest才装配transport；sidecar每次出站前核摘要。表达从已记录的合法规划和同一冻结核心/人格派生；没有直接手写投影的执行入口。失败即停、unknown保留、重启只读完整结果不补发，候选仍required。此代码准备不构成外发许可；实际用途/两条件24次对照见[方案](personality-behavior-trial.md)，S99未调用真实Provider。
 
 S100用途获准后原high基线在第4规划4096触顶停止（7次）。S101新增planning_effort=low|high，默认high维持原计划/字节，显式low进入plan及实际planning wire；表达配置/字节不随之改变。两个同题low规划/high表达新计划24次完成，但语义仍有泛化风险，不能从此恢复旧计划或宣称完整人格。当前同材料/用途配置验证已获准，具体结果见[S101报告](../reports/2026-09-26-slice-101/REPORT.md)。
+
+S102通过同一身份准备Facade的typed含人格请求，复用sidecar校验后生成runtime-definition-2。原认识/组织与剥离支持ID的人格解释分别保存，persona digest纳入绑定；人格不进Knowledge事实。definition-approval-2仅绑定内容/来源/用途及persona/runtime摘要，不含rights_confirmed状态，独立确认仍false。未提供人格时原v1资产/basis保持。旧save/freeze不可执行，准确派生来源Authority和连续聊天并未因此实现；完整对象与拟历史用途见[整体确认方案](character-continuity-consent.md)。
