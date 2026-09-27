@@ -381,6 +381,7 @@ class CognitiveProposal:
     memory_continuation: ExpressionCandidate | None = None
     knowledge_continuation: ExpressionCandidate | None = None
     life_record: LifeRecord | None = None
+    share_authorization: object | None = None
 
 
 @dataclass(frozen=True)
@@ -832,6 +833,7 @@ class SubjectRuntime:
         self._engine = engine
         self._context = context
         self._cognition = cognition
+        self._engine._life_share_guard = getattr(cognition, "share_guard", None)
         self._interrupt_at = interrupt_at
         self._domain_fault = domain_fault
         self._fault_hook = fault_hook
@@ -1778,6 +1780,7 @@ class SubjectRuntime:
                 reason='exact text save approved' if effect else "real committed-effect dispatch is unavailable in M0-A",
             ),
             life_record=proposal.life_record,
+            share_authorization=proposal.share_authorization,
         )
 
 

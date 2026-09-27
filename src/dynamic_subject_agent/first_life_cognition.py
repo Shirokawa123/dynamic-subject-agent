@@ -13,6 +13,7 @@ from dynamic_subject_agent.first_life import (
     LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, FirstLifeInput, LifeRecord, adjudicate_life, event_summary,
 )
 from dynamic_subject_agent.first_life_projection import life_model_projection, life_chat_planning, life_chat_expression
+from dynamic_subject_agent.first_life_authorization import LEGACY_RUNTIME_POLICY, ShareAuthorizationChanged
 
 
 class FirstLifeDormantCognition(CognitionEngine):
@@ -40,9 +41,13 @@ class FirstLifeCognition(CognitionEngine):
     supports_subject_tasks = False
     supports_text_effects = False
 
-    def __init__(self, *, envelope=None, gateway=None, budget=None, history_preference=None, development_run=False, civil_day=None):
+    def __init__(self, *, envelope=None, gateway=None, budget=None, history_preference=None, development_run=False, civil_day=None,
+                 runtime_policy=LEGACY_RUNTIME_POLICY, share_authorization=None, share_guard=None):
         self.envelope, self.gateway, self.budget = envelope, gateway, budget
         self.history_preference, self.development_run, self.civil_day = history_preference, development_run, civil_day
+        self.runtime_policy, self.share_authorization, self.share_guard = runtime_policy, share_authorization, share_guard
+        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2"):
+            raise ValueError("unknown first-life runtime policy")
 
     def preflight(self, *, context, command):
         if type(command) is FirstLifeInput:
@@ -51,7 +56,22 @@ class FirstLifeCognition(CognitionEngine):
             raise PreAdmissionRejected("first-life-message-invalid", "Chinese chat accepts at most 1000 characters.")
         if self.gateway is None: raise PreAdmissionRejected("first-life-unavailable", "First-life provider is not assembled.")
 
-    def _call(self, plan, *, purpose, projection, civil_day, validator):
+    def _call(self, plan, *, purpose, projection, civil_day, validator, authorization=None):
+        if authorization is None:
+            return self._call_authorized(plan, purpose=purpose, projection=projection, civil_day=civil_day, validator=validator)
+        try:
+            with self.share_guard(authorization):
+                result = self._call_authorized(plan, purpose=purpose, projection=projection, civil_day=civil_day, validator=validator)
+            with self.share_guard(authorization):
+                return result
+        except CognitionFailedClosed:
+            raise
+        except ShareAuthorizationChanged:
+            raise CognitionFailedClosed("history", "first-life-share-history-changed", "Share authorization was revoked after preparation.") from None
+        except Exception:
+            raise CognitionFailedClosed("history", "first-life-share-history-unverified", "Share authorization became unavailable.") from None
+
+    def _call_authorized(self, plan, *, purpose, projection, civil_day, validator):
         stage = "planning" if purpose in ("life-decision", "chat-planning") else "expression"
         identity = sha256(plan.operation_ref.authority_scope_id.encode()).hexdigest()
         operation = sha256((plan.operation_ref.operation_id + ":" + plan.attempt_id).encode()).hexdigest()
@@ -122,14 +142,32 @@ class FirstLifeCognition(CognitionEngine):
         if (event is None or not current.has_dialogue or not before.sharing_enabled or current.unanswered_share
             or event.event_id in current.disclosed_event_ids or event.event_id in current.considered_event_ids):
             raise CognitionFailedClosed("first-life-share", "first-life-share-not-attempted", "This event is not currently eligible for sharing.")
-        projection = life_model_projection(self.envelope, context.runtime_identity, current, share=True, target_event=event)
-        value = self._call(plan, purpose="life-share", projection=projection, civil_day=command.civil_day, validator=self._share_value)
+        authorization = None
+        validator = self._share_value
+        if self.runtime_policy != LEGACY_RUNTIME_POLICY:
+            from dynamic_subject_agent.first_life_relevance import share_model_projection, validate_share_candidate
+            try:
+                authorization = self.share_authorization()
+                dialogue = context.load_character_dialogue(authorization.history_enabled)
+                projection = share_model_projection(self.envelope, context.runtime_identity, current, dialogue,
+                    authorization.history_enabled, target_event=event)
+            except Exception:
+                raise CognitionFailedClosed("history", "first-life-share-history-unverified", "Share history or authorization is unavailable.") from None
+            validator = lambda value: validate_share_candidate(projection, value)
+        else:
+            projection = life_model_projection(self.envelope, context.runtime_identity, current, share=True, target_event=event)
+        value = self._call(plan, purpose="life-share", projection=projection, civil_day=command.civil_day,
+            validator=validator, authorization=authorization)
         base = replace(before, kind="share" if value["share"] else "share-declined", reason_code="", differences=(), event_id="", summary="", simulated=False,
             disclosed_event_id=event.event_id if value["share"] else "", share_id="", share_text="", considered_event_id="" if value["share"] else event.event_id)
         record = replace(base, share_id=str(uuid5(NAMESPACE_URL, "first-life-share:" + plan.operation_ref.operation_id)), share_text=value["reply_text"]) if value["share"] else base
-        return self._proposal(context, basis, record, value["reply_text"] if value["share"] else "系统：本次不分享，该事件已考虑。")
+        return replace(self._proposal(context, basis, record, value["reply_text"] if value["share"] else "系统：本次不分享，该事件已考虑。"),
+            share_authorization=authorization)
 
     def _chat(self, plan, context, command, basis, current):
+        planning_fn, expression_fn = life_chat_planning, life_chat_expression
+        if self.runtime_policy != LEGACY_RUNTIME_POLICY:
+            from dynamic_subject_agent.first_life_relevance import life_chat_planning as planning_fn, life_chat_expression as expression_fn
         try:
             remaining = self.budget.counts()[2]
             development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]
@@ -139,15 +177,15 @@ class FirstLifeCognition(CognitionEngine):
         try:
             enabled = self.history_preference()
             dialogue = context.load_character_dialogue(enabled)
-            planning, event = life_chat_planning(self.envelope, context.runtime_identity, command.utterance, dialogue, enabled, current)
+            planning, event = planning_fn(self.envelope, context.runtime_identity, command.utterance, dialogue, enabled, current)
             day = self.civil_day()
         except Exception:
             raise CognitionFailedClosed("history", "first-life-history-unverified", "History or sealed material is unavailable.") from None
         value = self._call(plan, purpose="chat-planning", projection=planning, civil_day=day,
-            validator=lambda value: life_chat_expression(planning, value))
+            validator=lambda value: expression_fn(planning, value))
         if self.history_preference() != enabled:
             raise CognitionFailedClosed("history", "first-life-history-changed", "History preference changed before expression.")
-        expression, used = life_chat_expression(planning, value)
+        expression, used = expression_fn(planning, value)
         output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=self.civil_day(), validator=_validated_expression)
         record = None
         if used and event is not None:

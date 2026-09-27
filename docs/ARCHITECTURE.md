@@ -4,6 +4,16 @@
 
 S103封存完整人物，S104接持久聊天；S105新增独立schema3有限生活分支，真实三步构图/一次主动分享/重启追问完成，累计75/200余125。仍是单项目文字方案、两轮对话窗口，人物语气与泛化风险未全部解决，见[S105报告](reports/2026-09-27-slice-105/REPORT.md)。
 
+### Slice-107：可回退的交流策略与分享历史用途
+
+用户明确批准分享使用当前身份最近最多2完整committed user/assistant轮、合计4000字符，同DeepSeek且受历史开关控制；life-decision保持S105原wire。`first-life-relevance-2`通过既有identity registry的精确`life_runtime_policy`（版本、digest、definition、原life scope、revision）授权，原Profile/QRI/Timeline及封存定义不变；无显式启用保持v1，启用后重开读取保存版本，新二进制可显式回退v1。回退不改旧聊天，不承诺旧二进制能读v2 prepared数据。
+
+新版规划选择一个交流focus和最多2项实际发言资料，背景core/personality不要求逐条说出；表达内外策略统一。相识保留系统兴趣推荐与用户发私信，移除未确认的助手动机草案，不创造主动加好友事实。分享只选择一个变化/取舍与continuation/self-interest开口方式，可不发；不外发系统版本回执，创作diff完整保留。闭集字段、引用和长度校验不证明自由台词相关/自然或没有事实扩写。
+
+share准备时绑定持久history_revision、policy revision及当前identity；授权值仅在本地proposal/prepared plan内，不进入Provider。registry所有整份状态写入口使用同一进程内registry锁，防select/freeze/activation覆盖已确认的撤回版本。发送与最终COMMIT在同锁下核验，返回后及cold recovery再次复核；已确认revision改变取消旧候选并记considered、不重试同事件、不停独立生活，未知/损坏仍FailedClosed及needs-attention。键缺失、null与真实legacy分开，setter不能把损坏元数据默认成0。
+
+同步模型调用期间历史设置确认可能等待现有请求完成（既有单请求超时30秒）；成功确认生效后旧候选不得发布，不声称能撤回已发送的数据。新增可选ShareAuthorization随原prepared_cycle_plan同事务存储，None省略保证v1指纹；原share已发布回执保持可重放。此保证限新增share用途，普通聊天仍保留既有bool窗口合同，不冒称所有聊天撤回竞态已重写。验收/启用事实见[S107报告](reports/2026-09-27-slice-107/REPORT.md)。
+
 ### Slice-105：有限生活、分享与冷恢复
 
 用户2026-09-27接纳有限生活用途。FirstLifeIdentityRequest从已核验sealed definition创建definition＋life scope绑定的新Profile/独立Timeline schema3；同DeepSeek最小材料与新增current_activity/current_plan/至多一个相关事件，不把用户原话或两轮历史发给生活决策/主动分享。普通聊天仍最多2轮/4000字符，并可选一个有完整diff的相关事件。原S104身份、scope/policy和schema1/2不迁移。

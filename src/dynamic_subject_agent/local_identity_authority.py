@@ -8,9 +8,12 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
+from functools import wraps
 from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid4, uuid5
+from dynamic_subject_agent.first_life_authorization import LEGACY_RUNTIME_POLICY, ShareAuthorization, ShareAuthorizationChanged, registry_lock
 
 from dynamic_subject_agent.knowledge_entries import (
     KnowledgeEntry,
@@ -1075,6 +1078,15 @@ class LoadedLocalIdentity:
     reviewed_definition: dict | None = None
 
 
+def _registry_mutation(method):
+    """Serialize complete registry read/modify/write operations, including recovery."""
+    @wraps(method)
+    def locked(self, *args, **kwargs):
+        with self._history_lock:
+            return method(self, *args, **kwargs)
+    return locked
+
+
 class LocalIdentityAuthority:
     """Small Interface over all persistent local identity authority behaviour."""
 
@@ -1082,7 +1094,9 @@ class LocalIdentityAuthority:
         if not isinstance(config, LocalProductConfig):
             raise TypeError("config must be LocalProductConfig")
         self._config = config
+        self._history_lock = registry_lock(config.state_path)
 
+    @_registry_mutation
     def load_active(self) -> LoadedLocalIdentity:
         (
             experiment_base,
@@ -1118,6 +1132,7 @@ class LocalIdentityAuthority:
             runtime_identity=runtime_identity,
         )
 
+    @_registry_mutation
     def activate_reviewed_chat(self, *, definition_basis, scope_digest, review_request_basis,
                                budget_path, budget_total=200, initial_budget_used=61):
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
@@ -1168,6 +1183,7 @@ class LocalIdentityAuthority:
         _write_state(self._config.state_path, state)
         return self.load_active()
 
+    @_registry_mutation
     def activate_first_life(self, *, definition_basis, life_scope_digest, budget_path, budget_total=200, initial_budget_used=61, development_run=False):
         if type(development_run) is not bool: raise ValueError("trusted development mode required")
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
@@ -1237,17 +1253,85 @@ class LocalIdentityAuthority:
         if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
         return record["history_enabled"]
 
+    def first_life_runtime_policy(self, expected_identity_id, *, runtime_policy=None, runtime_policy_digest=None):
+        """Select a reversible runtime addon without republishing the sealed identity."""
+        from dynamic_subject_agent.first_life_relevance import RELEVANCE_VERSION, first_life_scope_digest
+        with self._history_lock:
+            state, record, identity = self._active_chat_record(expected_identity_id)
+            if identity.qri.provider_authority != LIFE_AUTHORITY:
+                raise RuntimeError("first-life-active-required")
+            definition = identity.reviewed_definition["definition_basis"]
+            expected = first_life_scope_digest(definition)
+            saved = record.get("life_runtime_policy")
+            if "life_runtime_policy" in record:
+                if (type(saved) is not dict or set(saved) != {"version", "digest", "definition_basis", "life_scope_digest", "revision"}
+                    or saved["version"] not in (LEGACY_RUNTIME_POLICY, RELEVANCE_VERSION)
+                    or saved["digest"] != (expected if saved["version"] == RELEVANCE_VERSION else record["life_scope_digest"])
+                    or saved["definition_basis"] != definition or saved["life_scope_digest"] != record["life_scope_digest"]
+                    or type(saved["revision"]) is not int or saved["revision"] < 1
+                    or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
+                    raise RuntimeError("first-life-runtime-policy-invalid")
+            if runtime_policy is None:
+                if runtime_policy_digest is not None: raise ValueError("runtime policy version required")
+                return LEGACY_RUNTIME_POLICY if saved is None else saved["version"]
+            digest = expected if runtime_policy == RELEVANCE_VERSION else record["life_scope_digest"]
+            if runtime_policy not in (LEGACY_RUNTIME_POLICY, RELEVANCE_VERSION) or runtime_policy_digest != digest:
+                raise ValueError("exact approved runtime policy digest required")
+            if saved is None or saved["version"] != runtime_policy:
+                record["life_runtime_policy"] = dict(version=runtime_policy, digest=digest, definition_basis=definition,
+                    life_scope_digest=record["life_scope_digest"], revision=1 if saved is None else saved["revision"] + 1)
+                record.setdefault("history_revision", 0)
+                _write_state(self._config.state_path, state)
+            return runtime_policy
+
+    def first_life_share_authorization(self, expected_identity_id):
+        with self._history_lock:
+            policy = self.first_life_runtime_policy(expected_identity_id)
+            _, record, _ = self._active_chat_record(expected_identity_id)
+            saved = record.get("life_runtime_policy")
+            if saved is None or policy == LEGACY_RUNTIME_POLICY:
+                raise RuntimeError("first-life-share-authorization-unavailable")
+            return ShareAuthorization(expected_identity_id, policy, saved["digest"], saved["revision"],
+                record["history_revision"], record["history_enabled"])
+
+    @contextmanager
+    def first_life_share_guard(self, authorization):
+        """Successful history updates and send/commit are serialized by this lock.
+
+        A history update can wait for an already-started synchronous Provider call.
+        Once the update returns successfully, no prior revision can publish.
+        """
+        with self._history_lock:
+            if type(authorization) is not ShareAuthorization:
+                raise ValueError("invalid share authorization")
+            _, record, _ = self._active_chat_record(authorization.identity_id)
+            if "life_runtime_policy" not in record:
+                raise RuntimeError("first-life-share-authorization-missing")
+            # A valid rollback is known revocation; malformed/unknown authority
+            # remains an integrity failure rather than a normal preference edit.
+            policy = self.first_life_runtime_policy(authorization.identity_id)
+            if policy != authorization.runtime_policy:
+                raise ShareAuthorizationChanged("first-life-share-authorization-changed")
+            if self.first_life_share_authorization(authorization.identity_id) != authorization:
+                raise ShareAuthorizationChanged("first-life-share-authorization-changed")
+            yield
+
     def set_reviewed_character_history(self, enabled, expected_identity_id=None):
         if type(enabled) is not bool: return ReviewedCharacterChatStatus("unavailable", problem_code="typed-history-preference-required")
         try:
-            state, record, identity = self._active_chat_record(expected_identity_id)
-            if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
-            record["history_enabled"] = enabled
-            _write_state(self._config.state_path, state)
+            with self._history_lock:
+                state, record, identity = self._active_chat_record(expected_identity_id)
+                if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
+                revision = record["history_revision"] if "life_runtime_policy" in record else record.get("history_revision", 0)
+                if type(revision) is not int or revision < 0: raise RuntimeError("history revision invalid")
+                record["history_revision"] = revision + (record["history_enabled"] != enabled)
+                record["history_enabled"] = enabled
+                _write_state(self._config.state_path, state)
         except Exception:
             return ReviewedCharacterChatStatus("failed-closed", problem_code="reviewed-character-history-unverified")
         return self.reviewed_character_chat_status(expected_identity_id)
 
+    @_registry_mutation
     def freeze(
         self,
         request: object,
@@ -1265,6 +1349,7 @@ class LocalIdentityAuthority:
     def list(self) -> LocalIdentityListResponse:
         return _list_local_identities(self._config)
 
+    @_registry_mutation
     def select(
         self,
         request: object,

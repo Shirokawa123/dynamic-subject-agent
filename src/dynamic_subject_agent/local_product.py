@@ -663,6 +663,7 @@ def open_reviewed_character_chat_product(config, *, definition_basis, scope_dige
 
 def open_first_life_product(config, *, definition_basis, life_scope_digest, budget_path,
                             budget_total=200, initial_budget_used=61, development_run=False,
+                            runtime_policy=None, runtime_policy_digest=None,
                             _transport=None, _clock=None, _civil_day=None):
     """Open only the confirmed isolated life branch against the shared allowance."""
     from dynamic_subject_agent.first_life import current_civil_day
@@ -674,13 +675,22 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_first_life(definition_basis=definition_basis, life_scope_digest=life_scope_digest,
         budget_path=budget_path, budget_total=budget_total, initial_budget_used=initial_budget_used, development_run=development_run)
+    selected_policy = authority.first_life_runtime_policy(loaded.qri.profile_id,
+        runtime_policy=runtime_policy, runtime_policy_digest=runtime_policy_digest)
+    from dynamic_subject_agent.first_life_authorization import LEGACY_RUNTIME_POLICY
+    adapter_type = DeepSeekFirstLifeAdapter
+    if selected_policy != LEGACY_RUNTIME_POLICY:
+        from dynamic_subject_agent.first_life_relevance_provider import DeepSeekFirstLifeRelevanceAdapter
+        adapter_type = DeepSeekFirstLifeRelevanceAdapter
     day = current_civil_day if _civil_day is None else _civil_day
     budget = FirstLifeBudget(budget_path, total=budget_total, initial_used=initial_budget_used, civil_day=day)
     clock = FirstLifeClock() if _clock is None else FirstLifeClock(_clock)
     transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
-    gateway = ModelGateway(DeepSeekFirstLifeAdapter(transport=transport,
+    gateway = ModelGateway(adapter_type(transport=transport,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
     cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
-        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=development_run, civil_day=day)
+        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=development_run, civil_day=day,
+        runtime_policy=selected_policy, share_authorization=lambda: authority.first_life_share_authorization(loaded.qri.profile_id),
+        share_guard=authority.first_life_share_guard)
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
         first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=development_run)

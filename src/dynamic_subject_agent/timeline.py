@@ -26,6 +26,8 @@ from dynamic_subject_agent.first_life import (
     FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT, decode_life_record,
     initial_life_record, adjudicate_life, event_summary,
 )
+from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization
+from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
     PARTICIPANT_GOAL_FAILURE_CODES,
@@ -195,6 +197,12 @@ class _PreparedShareDayExpired(CommitPlanRejected):
         super().__init__('first-life-share-day-expired', 'The prepared share belongs to a different trusted civil day.')
 
 
+class _PreparedShareAuthorizationChanged(CommitPlanRejected):
+    def __init__(self, *, unverified=False):
+        super().__init__('first-life-share-authorization-unverified' if unverified else 'first-life-share-authorization-changed',
+            'The prepared share no longer has its exact disclosure authorization.')
+
+
 class CommitPlanConflict(PublicationProblem):
     """An immutable plan or attempt identity already names different content."""
 
@@ -290,7 +298,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name != "life_record" or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "share_authorization") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -1441,6 +1449,7 @@ class CycleCommitPlan:
     expression: Expression
     committed_effect_set: CommittedEffectSet
     life_record: LifeRecord | None = None
+    share_authorization: ShareAuthorization | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return _canonical_value(self)
@@ -1558,6 +1567,7 @@ class CycleCommitPlan:
                     reason=str(effects["reason"]),
                 ),
                 life_record=(decode_life_record(source["life_record"]) if source.get("life_record") is not None else None),
+                share_authorization=(decode_share_authorization(source["share_authorization"]) if source.get("share_authorization") is not None else None),
             )
         except (KeyError, TypeError, ValueError) as error:
             raise CommitPlanRejected(
@@ -4097,6 +4107,16 @@ class TimelineEngine:
                 "commit-plan-invalid",
                 "Publication requires a complete CycleCommitPlan",
             )
+        if plan.share_authorization is not None:
+            self._require_life_authority()
+            try:
+                if (type(plan.share_authorization) is not ShareAuthorization
+                    or decode_share_authorization(_canonical_value(plan.share_authorization)) != plan.share_authorization
+                    or plan.share_authorization.identity_id != plan.profile_id
+                    or plan.life_record is None or plan.life_record.kind not in ('share', 'share-declined')):
+                    raise ValueError('authorization must bind exactly this identity share')
+            except (TypeError, ValueError, AttributeError, KeyError) as error:
+                raise CommitPlanRejected('share-authorization-invalid', 'share authorization is outside the typed contract') from error
         if plan.life_record is not None:
             self._require_life_authority()
             try:
@@ -4495,7 +4515,8 @@ class TimelineEngine:
             failure = self.query_failure(ref)
             if failed_input.input_kind == 'share' and failure.code != 'first-life-share-not-attempted':
                 considered.add(failed_input.target_event_id)
-            if admitted_at > last_control_admitted:
+            if admitted_at > last_control_admitted and failure.code not in (
+                'first-life-share-history-changed', 'first-life-share-authorization-changed'):
                 technical_problem = failure.code
         return FirstLifeBasis(current, tuple(events), tuple(versions), tuple(shares), has_dialogue,
             any(not share.answered for share in shares), tuple(sorted(disclosed)), len(publications),
@@ -4780,7 +4801,36 @@ class TimelineEngine:
             raise PublicationFailedClosed('first-life-clock-unverified', 'the trusted civil day is unavailable')
         return command.civil_day != today
 
-    def cancel_prepared_if_stale(self, operation_ref):
+    @contextmanager
+    def _share_publication_guard(self, plan):
+        if plan.share_authorization is None:
+            yield
+            return
+        guard = getattr(self, '_life_share_guard', None)
+        if guard is None:
+            raise _PreparedShareAuthorizationChanged(unverified=True)
+        # Only authorization entry errors are converted; commit errors keep their
+        # existing recovery semantics. The lock remains held through COMMIT.
+        try:
+            scope = guard(plan.share_authorization)
+            scope.__enter__()
+        except ShareAuthorizationChanged:
+            raise _PreparedShareAuthorizationChanged() from None
+        except Exception:
+            raise _PreparedShareAuthorizationChanged(unverified=True) from None
+        try:
+            yield
+        finally:
+            scope.__exit__(None, None, None)
+
+    def _share_authorization_failure(self, plan):
+        try:
+            with self._share_publication_guard(plan):
+                return ''
+        except _PreparedShareAuthorizationChanged as error:
+            return error.code
+
+    def cancel_prepared_if_stale(self, operation_ref, *, _authorization_failure=''):
         """Atomically terminate an obsolete schema-3 preparation, without publication."""
         self._require_life_authority()
         try:
@@ -4792,7 +4842,8 @@ class TimelineEngine:
                 return False
             current = _read_timeline_basis(self._writer)
             expired_share = self._share_day_expired(operation_ref)
-            if current == plan.expected_basis and not expired_share:
+            invalid_authorization = _authorization_failure or self._share_authorization_failure(plan)
+            if current == plan.expected_basis and not expired_share and not invalid_authorization:
                 _commit(self._writer)
                 return False
             # A corrupt/deleted/regressed chain must never count as cancellation evidence.
@@ -4809,8 +4860,9 @@ class TimelineEngine:
                 or self._writer.execute('SELECT 1 FROM timeline_outcome WHERE operation_id=?', (operation_id,)).fetchone()
                 or self._writer.execute('SELECT 1 FROM operation_publication_state WHERE operation_id=?', (operation_id,)).fetchone()):
                 raise PublicationFailedClosed('prepared-terminal-conflict', 'prepared cancellation encountered publication evidence')
-            code = 'first-life-share-day-expired' if expired_share else 'first-life-stale-preparation'
-            detail = ('The prepared share was cancelled because its trusted publication day differs from its claim day.'
+            code = invalid_authorization or ('first-life-share-day-expired' if expired_share else 'first-life-stale-preparation')
+            detail = ('The prepared share was cancelled because its exact disclosure authorization changed or is unavailable.' if invalid_authorization else
+                'The prepared share was cancelled because its trusted publication day differs from its claim day.'
                 if expired_share else 'The prepared operation was cancelled because its verified canonical basis changed.')
             recorded_at = _utc_microseconds()
             self._writer.execute('INSERT INTO operation_failure VALUES (?,?,?,?,?,?)',
@@ -5756,10 +5808,11 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PUBLICATION_COMMIT)
             # The final authorization sample defines the publication accounting
             # day. Nothing that may wait on a fault hook precedes COMMIT after it.
-            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents and self._share_day_expired(plan.operation_ref):
-                raise _PreparedShareDayExpired()
-            commit_started = True
-            _commit(self._writer)
+            with self._share_publication_guard(plan):
+                if LIFE_SYSTEM_INTENT in self._authority.allowed_intents and self._share_day_expired(plan.operation_ref):
+                    raise _PreparedShareDayExpired()
+                commit_started = True
+                _commit(self._writer)
             try:
                 self._hit(FaultPoint.AFTER_PUBLICATION_COMMIT)
             except Exception as error:
@@ -5772,6 +5825,10 @@ class TimelineEngine:
                 outcome=self.query_outcome(plan.operation_ref),
                 replayed=False,
             )
+        except _PreparedShareAuthorizationChanged as error:
+            _rollback_if_needed(self._writer)
+            self.cancel_prepared_if_stale(plan.operation_ref, _authorization_failure=error.code)
+            raise
         except _PreparedShareDayExpired:
             _rollback_if_needed(self._writer)
             self.cancel_prepared_if_stale(plan.operation_ref)
@@ -7451,7 +7508,8 @@ class TimelineEngine:
             if verified is None:
                 return CharacterDialogueBasis("unavailable", problem_code="character-history-unresolved")
             records, cutoff = verified
-            if is_dialogue_control(self._query_command(operation_ref).utterance):
+            command = self._query_command(operation_ref)
+            if type(command) is SubjectCommand and is_dialogue_control(command.utterance):
                 return CharacterDialogueBasis("restricted", bool(records), problem_code="character-history-restricted")
             selected = select_recent_dialogue(records, after_sequence=cutoff)
             if records and is_dialogue_control(records[-1].user_text):
@@ -7685,6 +7743,8 @@ class TimelineEngine:
                 expression=expression,
                 committed_effect_set=effect_set,
                 life_record=life_record,
+                share_authorization=(self.prepared_plan(operation_ref).share_authorization
+                    if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else None),
             )
             self._validate_commit_plan(plan)
             plan_digest = _publication_digest("cycle-commit-plan", plan)
