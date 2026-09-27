@@ -54,6 +54,9 @@ from dynamic_subject_agent.reviewed_character_definition import (
 )
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
 
+from dynamic_subject_agent.first_life import (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, FirstLifeIdentityRequest, first_life_definition, first_life_source_refs, life_profile_id)
+from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
+from dynamic_subject_agent.first_life_budget import FirstLifeBudget
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, ReviewedCharacterChatStatus
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
@@ -294,6 +297,17 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             raise RuntimeError("reviewed-local-identity-authority-mismatch")
     elif any(key in record for key in ("identity_kind", "definition_basis", "runtime_asset_sha")):
         raise RuntimeError("reviewed-local-identity-pointer-invalid")
+    if qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
+        contract = snapshot.first_life_contract
+        if (contract is None or record.get("life_scope_digest") != contract["life_scope_digest"]
+            or record.get("life_identity_basis") != contract["identity_basis"]):
+            raise RuntimeError("first-life-identity-pointer-invalid")
+        if qri.provider_authority == LIFE_AUTHORITY:
+            metadata = record.get("life_activation")
+            if (type(metadata) is not dict or set(metadata) != {"contract", "budget_path", "budget_total", "initial_budget_used", "development_run"}
+                or metadata["contract"] != contract or type(metadata["development_run"]) is not bool
+                or type(record.get("history_enabled")) is not bool): raise RuntimeError("first-life-activation-invalid")
+            FirstLifeBudget(Path(metadata["budget_path"]), total=metadata["budget_total"], initial_used=metadata["initial_budget_used"]).counts()
     if qri.provider_authority == CHAT_AUTHORITY:
         metadata = record.get("chat_activation")
         if (type(metadata) is not dict or set(metadata) != {"contract", "budget_path", "budget_total", "initial_budget_used"}
@@ -702,6 +716,66 @@ def _reviewed_freeze_response(state, qri, envelope, replayed):
             knowledge_member_count=0, active=state["active_identity_id"] == qri.profile_id))
 
 
+def _freeze_first_life_identity(config, request):
+    if type(request) is not FirstLifeIdentityRequest or request.confirmed is not True:
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.REJECTED, problem_code="first-life-confirmation-required")
+    try:
+        state = _state_v2(json.loads(config.state_path.read_text(encoding="utf-8")))
+        active = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
+        source_identity = _validate_identity_record(active, expected_parent=config.product_parent)
+        envelope = source_identity.reviewed_definition
+        if envelope is None or envelope["definition_basis"] != request.definition_basis:
+            raise ValueError("exact sealed definition required")
+        contract = first_life_definition(envelope, request.life_scope_digest)
+        pid = life_profile_id(request.definition_basis, request.life_scope_digest)
+        existing = next((item for item in state["identities"] if item["identity_id"] == pid), None)
+        if existing is not None:
+            validated = _validate_identity_record(existing, expected_parent=config.product_parent)
+            if validated.qri.first_life_contract != contract: raise RuntimeError("life replay conflict")
+            return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.REPLAYED,
+                view=SourceIdentityFreezeView(pid, validated.display_name, contract["identity_basis"], validated.qri.publication_key, 0,
+                    state["active_identity_id"] == pid))
+        source = SourceDeclaration(str(uuid5(NAMESPACE_URL, "first-life-source:" + contract["identity_basis"])),
+            "reviewed-fiction-derived", True, first_life_source_refs(envelope, request.life_scope_digest), False)
+        pc, gc = envelope["profile_content"], envelope["genesis_content"]
+        profile = ParticipantProfile(pid, pc["display_name"], pc["identity_core"], source)
+        premise = GenesisPremise(gc["subject_identity"], gc["canon_start"], gc["initial_relationship_premise"], source)
+        target, base = SubjectStudio.open_or_create_source_identity(config.product_parent,
+            freeze_basis_digest=contract["identity_basis"], policy_kernel=PolicyKernel())
+        try:
+            key = "first-life-dormant-" + contract["identity_basis"]
+            try: qri = target.query_qri(publication_key=key)
+            except Exception as error:
+                if getattr(error, "code", None) != "qri-not-found": raise
+                draft = target.ensure_source_identity_draft(profile=profile, premise=premise, source_freeze_basis_digest=contract["identity_basis"])
+                preview = target.preview(draft.draft_id)
+                policy = target.decide_policy(draft.draft_id, CapabilityManifest.first_life_dormant(), validity_us=300_000_000)
+                freeze = FreezeDecision(str(uuid5(NAMESPACE_URL, "first-life-freeze:" + contract["identity_basis"])),
+                    draft.draft_id, preview.revision, preview.freeze_basis_digest, "local-user-first-life-freeze",
+                    "Create the confirmed isolated finite life branch; preserve the original identity.")
+                snapshot = target.seal(draft.draft_id, freeze, policy_decision_id=policy.decision_id,
+                    source_freeze_basis_digest=contract["identity_basis"], reviewed_definition=envelope, first_life_contract=contract)
+                qri = target.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key)
+            snapshot = target.query_snapshot(qri.genesis_snapshot_id)
+            if snapshot.reviewed_definition != envelope or snapshot.first_life_contract != contract or target.query_profile(pid) != profile:
+                raise RuntimeError("first life sealed source conflict")
+            location = target.location
+        finally: target.close()
+        record = dict(identity_id=pid, display_name=pc["display_name"], freeze_basis_digest=contract["identity_basis"],
+            identity_kind="reviewed-fiction-derived", definition_basis=request.definition_basis, runtime_asset_sha=envelope["runtime_asset_sha"],
+            life_scope_digest=request.life_scope_digest, life_identity_basis=contract["identity_basis"],
+            experiment_base=str(base), studio_location=location.to_dict(), host_location=None, timeline_id=None, publication_key=qri.publication_key)
+        _validate_identity_record(record, expected_parent=config.product_parent)
+        state["identities"].append(record)
+        _write_state(config.state_path, state)
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.CREATED,
+            view=SourceIdentityFreezeView(pid, pc["display_name"], contract["identity_basis"], qri.publication_key, 0, False))
+    except ValueError:
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.REJECTED, problem_code="first-life-definition-invalid")
+    except Exception:
+        return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.FAILED_CLOSED, problem_code="first-life-freeze-unverified")
+
+
 def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListResponse:
     if not config.state_path.exists():
         return LocalIdentityListResponse(LocalIdentityStatus.UNAVAILABLE)
@@ -735,7 +809,9 @@ def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
-    dormant = (ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
+    dormant = (FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
+        FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
+        ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
         else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition())
     # New identities opt into the task contract; dormant preflight still denies
     # submission. Existing bindings are read by their persisted version.
@@ -763,7 +839,9 @@ def _validate_host_binding(
     host = RuntimeHost.open(
         host_location,
         studio_location=identity.studio_location,
-        cognition=(ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
+        cognition=(FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
+            FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
+            ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
             else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()),
         relationship_enabled=config.relationship_mode == "dynamic",
     )
@@ -1022,7 +1100,7 @@ class LocalIdentityAuthority:
             else snapshot_entries
         )
         reviewed_definition = None
-        if qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY):
+        if qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY, LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
             studio = SubjectStudio.open(studio_location, policy_kernel=PolicyKernel())
             try:
                 reviewed_definition = studio.query_snapshot(qri.genesis_snapshot_id).reviewed_definition
@@ -1090,6 +1168,51 @@ class LocalIdentityAuthority:
         _write_state(self._config.state_path, state)
         return self.load_active()
 
+    def activate_first_life(self, *, definition_basis, life_scope_digest, budget_path, budget_total=200, initial_budget_used=61, development_run=False):
+        if type(development_run) is not bool: raise ValueError("trusted development mode required")
+        state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
+        record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
+        identity = _validate_identity_record(record, expected_parent=self._config.product_parent)
+        expected = first_life_definition(identity.reviewed_definition, life_scope_digest)
+        if definition_basis != expected["definition_basis"] or identity.qri.first_life_contract != expected:
+            raise RuntimeError("first-life-definition-mismatch")
+        metadata = dict(contract=expected, budget_path=str(budget_path.resolve()), budget_total=budget_total,
+            initial_budget_used=initial_budget_used, development_run=development_run)
+        existing = record.get("life_activation") or record.get("pending_life_activation")
+        if existing is not None and existing != metadata: raise RuntimeError("first-life-activation-conflict")
+        # The shared 200 ledger must already exist; this new identity cannot
+        # initialize another allowance. Life counters share that same writer.
+        FirstLifeBudget(budget_path, total=budget_total, initial_used=initial_budget_used)
+        if identity.qri.provider_authority == LIFE_AUTHORITY: return self.load_active()
+        if identity.qri.provider_authority != LIFE_DORMANT_AUTHORITY: raise RuntimeError("first-life-predecessor-required")
+        record["pending_life_activation"] = metadata; record.setdefault("history_enabled", True)
+        _write_state(self._config.state_path, state)
+        predecessor = identity.qri
+        studio = SubjectStudio.open(identity.studio_location, policy_kernel=PolicyKernel())
+        try:
+            key = "first-life-active-" + expected["identity_basis"]
+            try: successor = studio.query_qri(publication_key=key)
+            except Exception as error:
+                if getattr(error, "code", None) != "qri-not-found": raise
+                snapshot = studio.query_snapshot(predecessor.genesis_snapshot_id)
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.first_life_active(), validity_us=300_000_000)
+                successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
+                    predecessor_qualification_id=predecessor.qualification_id)
+            assembly = _CognitionAssembly._first_life_transition(predecessor, successor)
+        finally: studio.close()
+        if record.get("host_location") is None:
+            location, timeline = _create_identity_host(identity)
+            record["host_location"], record["timeline_id"] = location.to_dict(), timeline
+            _write_state(self._config.state_path, state)
+        host = RuntimeHost.open(RuntimeHostRootRef.from_dict(record["host_location"]), studio_location=identity.studio_location,
+            cognition=FirstLifeDormantCognition(), _cognition_assembly=assembly, _runtime_identity=identity.runtime_identity)
+        try: host.open_runtime(successor, timeline_id=record["timeline_id"])
+        finally: host.close()
+        record["publication_key"] = successor.publication_key
+        record["life_activation"] = metadata; record.pop("pending_life_activation", None)
+        _write_state(self._config.state_path, state)
+        return self.load_active()
+
     def _active_chat_record(self, expected_identity_id=None):
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
         record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
@@ -1101,9 +1224,9 @@ class LocalIdentityAuthority:
         try:
             _, record, identity = self._active_chat_record(expected_identity_id)
             if identity.reviewed_definition is None: return ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-required")
-            if identity.qri.provider_authority != CHAT_AUTHORITY:
+            if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY):
                 return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
-            metadata = record["chat_activation"]
+            metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]
             total, used, remaining = CharacterChatBudget(Path(metadata["budget_path"]), total=metadata["budget_total"], initial_used=metadata["initial_budget_used"]).counts()
             return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
         except Exception:
@@ -1111,14 +1234,14 @@ class LocalIdentityAuthority:
 
     def character_history_preference(self, expected_identity_id=None):
         _, record, identity = self._active_chat_record(expected_identity_id)
-        if identity.qri.provider_authority != CHAT_AUTHORITY: raise RuntimeError("reviewed chat inactive")
+        if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
         return record["history_enabled"]
 
     def set_reviewed_character_history(self, enabled, expected_identity_id=None):
         if type(enabled) is not bool: return ReviewedCharacterChatStatus("unavailable", problem_code="typed-history-preference-required")
         try:
             state, record, identity = self._active_chat_record(expected_identity_id)
-            if identity.qri.provider_authority != CHAT_AUTHORITY: raise RuntimeError("reviewed chat inactive")
+            if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
             record["history_enabled"] = enabled
             _write_state(self._config.state_path, state)
         except Exception:
@@ -1129,6 +1252,8 @@ class LocalIdentityAuthority:
         self,
         request: object,
     ) -> SourceIdentityFreezeResponse:
+        if type(request) is FirstLifeIdentityRequest:
+            return _freeze_first_life_identity(self._config, request)
         if type(request) is ReviewedCharacterFreezeRequest:
             return _freeze_reviewed_identity(self._config, request)
         return _freeze_source_identity(

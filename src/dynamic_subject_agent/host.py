@@ -102,6 +102,8 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
 
 from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACTER_AUTHORITY
+from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, LIFE_RUNTIME_CONTRACT, LIFE_SYSTEM_INTENT
+from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
@@ -123,6 +125,7 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
         PROVIDER_AUTHORITY,
         REVIEWED_CHARACTER_AUTHORITY,
         CHAT_AUTHORITY,
+        LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
         _LOCAL_FIRST_TEST_PROVIDER_AUTHORITY,
@@ -137,6 +140,8 @@ TEXT_EFFECT_INTENTS = (*SUBJECT_TASK_INTENTS, 'confirmed-text-save-v1')
 
 
 def _intents_for_contract(version: str) -> tuple[str, ...]:
+    if version == LIFE_RUNTIME_CONTRACT:
+        return (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT)
     if version == RUNTIME_CONTRACT_VERSION:
         return ALLOWED_INTENTS
     if version == SUBJECT_TASK_CONTRACT_VERSION:
@@ -147,6 +152,8 @@ def _intents_for_contract(version: str) -> tuple[str, ...]:
 
 
 def _contract_for_intents(intents: tuple[str, ...]) -> str:
+    if intents == (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT):
+        return LIFE_RUNTIME_CONTRACT
     if intents == ALLOWED_INTENTS:
         return RUNTIME_CONTRACT_VERSION
     if intents == SUBJECT_TASK_INTENTS:
@@ -185,6 +192,8 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
+    if qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
+        return qri.capabilities == (CapabilityManifest.first_life_active() if qri.provider_authority == LIFE_AUTHORITY else CapabilityManifest.first_life_dormant()) and qri.first_life_contract is not None
     if qri.provider_authority == CHAT_AUTHORITY:
         return qri.capabilities == CapabilityManifest.reviewed_character_chat() and qri.reviewed_chat_contract is not None
     if qri.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
@@ -208,6 +217,10 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
+    if cognition.provider_authority == LIFE_AUTHORITY:
+        return type(cognition) is FirstLifeCognition
+    if cognition.provider_authority == LIFE_DORMANT_AUTHORITY:
+        return type(cognition) is FirstLifeDormantCognition
     if cognition.provider_authority == CHAT_AUTHORITY:
         return type(cognition) is ReviewedCharacterChatCognition
     if cognition.provider_authority == REVIEWED_CHARACTER_AUTHORITY:
@@ -733,6 +746,19 @@ class _CognitionAssembly:
             single_cognition=cognition,
             _authority=_COGNITION_ASSEMBLY_TOKEN,
         )
+
+    @classmethod
+    def _first_life_transition(cls, predecessor, successor):
+        if (predecessor.provider_authority != LIFE_DORMANT_AUTHORITY or successor.provider_authority != LIFE_AUTHORITY
+            or predecessor.first_life_contract != successor.first_life_contract
+            or successor.predecessor_qualification_id != predecessor.qualification_id
+            or successor.profile_id != predecessor.profile_id or successor.genesis_snapshot_id != predecessor.genesis_snapshot_id
+            or successor.knowledge_snapshot_id != predecessor.knowledge_snapshot_id or successor.isolation_proof != predecessor.isolation_proof):
+            raise RuntimeHostRejected("first-life-transition-invalid", "exact isolated life qualification transition required")
+        instance = cls._prepared_control_only()
+        instance._slots = (_CognitionAssemblySlot._from_qri(predecessor, FirstLifeDormantCognition()),
+                           _CognitionAssemblySlot._from_qri(successor, FirstLifeCognition()))
+        return instance
 
     @classmethod
     def _reviewed_character_transition(cls, predecessor, successor):
@@ -3260,6 +3286,49 @@ class RuntimeLease:
             )
         finally:
             self._host._synchronize_subject_event_seal(self._lane)
+
+    def admit_first_life(self, input, *, idempotency_key):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "this runtime has no system life input permission")
+        try: return self._lane.worker.call("admit_first_life", input, idempotency_key=idempotency_key)
+        finally: self._host._synchronize_subject_event_seal(self._lane)
+
+    def pending_first_life_operations(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "no life cold recovery for this runtime")
+        return self._lane.worker.call("pending_first_life_operations")
+
+    def recover_first_life_pending(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "no life cold recovery for this runtime")
+        return self._lane.worker.call("recover_first_life_pending")
+
+    def replay_first_life_request(self, request_id, request_digest):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "no life request lookup for this runtime")
+        return self._lane.worker.call("replay_first_life_request", request_id, request_digest)
+
+    def list_first_life(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "no life query for this runtime")
+        return self._lane.worker.call("list_first_life")
+
+    def first_life_basis(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected("first-life-unavailable", "no life basis for this runtime")
+        return self._lane.worker.call("first_life_basis")
 
     def resume(self, operation_ref: OperationRef) -> RuntimeResult:
         self._require_active()
@@ -6798,7 +6867,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=timeline_id,
-            allowed_intents=(TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
+            allowed_intents=((*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT) if getattr(cognition, "supports_first_life", False) else TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=1,
@@ -7196,7 +7265,7 @@ class RuntimeHost:
             expected != (str(row[23]), str(row[24]), str(row[25]))
             or binding.runtime_kind != RUNTIME_KIND
             or binding.provider_authority not in _SUPPORTED_PROVIDER_AUTHORITIES
-            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION}
+            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION, LIFE_RUNTIME_CONTRACT}
             or binding.studio_root_id != self._studio_location.root_id
             or binding.studio_store_id != self._studio_location.profile_store_id
             or binding.host_root_id != self._location.root_id

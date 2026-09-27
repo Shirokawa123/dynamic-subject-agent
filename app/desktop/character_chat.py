@@ -77,10 +77,12 @@ class CharacterChatAdapter:
             return dict(ok=ok, message=message, state=self.snapshot())
 
 
-def create_server(product, *, port=0):
-    adapter = CharacterChatAdapter(product)
+def create_server(product, *, port=0, adapter=None, page_name='character_chat.html',
+                  application_id=APPLICATION_ID, post_routes=None):
+    adapter = adapter if adapter is not None else CharacterChatAdapter(product)
+    routes = post_routes if post_routes is not None else {'/send': adapter.send, '/history': adapter.set_history}
     token = secrets.token_urlsafe(32)
-    page = (Path(__file__).parent / 'static/character_chat.html').read_text(encoding='utf-8').replace('__SESSION_TOKEN__', token)
+    page = (Path(__file__).parent / 'static' / page_name).read_text(encoding='utf-8').replace('__SESSION_TOKEN__', token)
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *args):
@@ -106,7 +108,7 @@ def create_server(product, *, port=0):
             if self.path == '/':
                 return self.respond(200, page, 'text/html; charset=utf-8')
             if self.path == '/health':
-                return self.respond(200, dict(application=APPLICATION_ID))
+                return self.respond(200, dict(application=application_id))
             if self.path == '/status':
                 try:
                     return self.respond(200, adapter.snapshot())
@@ -115,7 +117,7 @@ def create_server(product, *, port=0):
             self.respond(404, dict(error='not-found'))
 
         def do_POST(self):
-            if (not self.valid_host() or self.path not in ('/send', '/history')
+            if (not self.valid_host() or self.path not in routes
                     or self.headers.get('X-Chat-Token') != token
                     or self.headers.get('Content-Type') != 'application/json'
                     or self.headers.get('Origin') not in (None, f'http://127.0.0.1:{self.server.server_port}')):
@@ -125,7 +127,7 @@ def create_server(product, *, port=0):
                 if not 0 < length <= 16384 or self.headers.get('Transfer-Encoding'):
                     raise ValueError('invalid-request')
                 payload = json.loads(self.rfile.read(length))
-                result = adapter.send(payload) if self.path == '/send' else adapter.set_history(payload)
+                result = routes[self.path](payload)
             except (ValueError, TypeError, UnicodeError):
                 return self.respond(400, dict(error='invalid-request'))
             except Exception:

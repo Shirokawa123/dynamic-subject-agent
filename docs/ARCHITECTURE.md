@@ -2,7 +2,21 @@
 
 2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
-S98补四条有条件人格解释与常驻core；S101真实对照局部改善但仍有泛化风险。S102完整定义/限定连续聊天用途已获准，S103封存身份；S104接正式两阶段与canonical接续，三轮真实合成验收完成，累计67/200余133，人物长篇重复与过去细节扩写风险保留，见[S104报告](reports/2026-09-27-slice-104/REPORT.md)。
+S103封存完整人物，S104接持久聊天；S105新增独立schema3有限生活分支，真实三步构图/一次主动分享/重启追问完成，累计75/200余125。仍是单项目文字方案、两轮对话窗口，人物语气与泛化风险未全部解决，见[S105报告](reports/2026-09-27-slice-105/REPORT.md)。
+
+### Slice-105：有限生活、分享与冷恢复
+
+用户2026-09-27接纳有限生活用途。FirstLifeIdentityRequest从已核验sealed definition创建definition＋life scope绑定的新Profile/独立Timeline schema3；同DeepSeek最小材料与新增current_activity/current_plan/至多一个相关事件，不把用户原话或两轮历史发给生活决策/主动分享。普通聊天仍最多2轮/4000字符，并可选一个有完整diff的相关事件。原S104身份、scope/policy和schema1/2不迁移。
+
+系统输入独立于SubjectCommand；system_input、life_record、prepared_cycle_plan与原operation/claim/全局head共处同一canonical store。完整已裁决plan与claim同事务，生活版本/事件/披露/assistant-origin分享与receipt/head原子成立。读完整性先核全链，再只选真正用户对话；主动消息不伪造user_text，也不进入两完整轮窗口。
+
+仅schema3：原计划可零Provider重放；无prepared的冷pending明确终止，坏完整性阻新工作。prepared stale/控制变化/过日分享可闭集确定取消，保留计划及已耗额度，Publication终态fence禁止复活；已发布只能重取原receipt。production opening在暴露Facade之前发现并处理SYSTEM/SUBJECT pending；GET、身份校验与只读lookup不启动恢复。新nonce不能跨旧pending重生成。旧schema1/2相应claim后原plan未保存的基线缺口另列后续，不声称本片修了旧库。
+
+项目只支持start/revise/keep/rework/defer，保存非性化日常构图文字、完整版本差异及闭集创作意图。Python生成事件概要；文字构思不等于图片产出、客观技能提升或他人评价。保留/暂缓为本试验终点。单窗口monotonic短租在线累计，失联/重启不补，显式模拟来源可见；分享开关不清空在线计时，暂停只阻新advance。
+
+共享budget沿原planning/expression格式，life_limit_claim与全球stage/head同事务计费，兼容旧S104 reader。日6决策/2分享与trusted development24跨root；开发24含验收聊天两阶段，不施加给正常体验分支。实际claim日及分享最终提交授权日统一UTC+8，跨日未发候选取消；未知投递/取消不退额度。share=false只considered，真实share才等待回复；技术失败停自动推进，控制可显式恢复，未回/已考虑/已披露均抑制同事件重复联系。
+
+新Facade提供查询、控制、heartbeat与模拟一步；应用只作薄HTTP适配，pending轮询释放锁并允许控制，暂停/needs-attention不会锁住恢复或普通聊天。新用户窗口经显式0调用控制初始化为暂停/分享关闭、空聊天；原窗口保留。生活、分享与聊天文本只进canonical store，用量账本不留prompt/历史副本。
 
 ### Slice-104：封存人物的连续聊天
 

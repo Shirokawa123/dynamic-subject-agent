@@ -12,6 +12,7 @@ from dynamic_subject_agent.reviewed_character_definition import (
     is_reviewed_source, reviewed_source_refs, reviewed_profile_id, validate_reviewed_envelope,
 )
 
+from dynamic_subject_agent.first_life import (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, first_life_definition, first_life_source_refs, is_first_life_source, life_profile_id)
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, matches_chat_source_contract
 
 import hashlib
@@ -719,6 +720,20 @@ class CapabilityManifest:
             included=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
             certified=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
             unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "life-events", "background-notifications"))
+
+    @classmethod
+    def first_life_dormant(cls):
+        return cls(manifest_version="first-life-dormant-capabilities-1",
+            included=("host-authoring", "sealed-reviewed-character-definition", "typed-first-life-publication"),
+            certified=("host-authoring", "sealed-reviewed-character-definition", "typed-first-life-publication"),
+            unavailable=("provider", "network-access", "first-life-models", "legacy-six-domain-cognition", "effect-dispatch"))
+
+    @classmethod
+    def first_life_active(cls):
+        return cls(manifest_version="first-life-active-capabilities-1",
+            included=("host-authoring", "sealed-reviewed-character-definition", "typed-first-life-publication", "private-character-life-chat", "bounded-application-sharing"),
+            certified=("host-authoring", "sealed-reviewed-character-definition", "typed-first-life-publication", "private-character-life-chat", "bounded-application-sharing"),
+            unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "background-notifications", "offline-catchup"))
 
     @classmethod
     def _local_first_test_double(cls) -> CapabilityManifest:
@@ -1569,6 +1584,7 @@ class GenesisSnapshot:
     created_at_us: int
     source_freeze_basis_digest: str | None = None
     reviewed_definition: dict[str, Any] | None = None
+    first_life_contract: dict | None = None
 
 
 @dataclass(frozen=True, init=False)
@@ -1589,6 +1605,7 @@ class QualifiedRuntimeInput:
     published_at_us: int
     integrity_digest: str
     reviewed_chat_contract: dict | None = None
+    first_life_contract: dict | None = None
 
     def __init__(self, *args: object, **kwargs: object) -> None:
         raise TypeError(
@@ -1631,6 +1648,8 @@ class QualifiedRuntimeInput:
         }
         if self.reviewed_chat_contract is not None:
             value["reviewed_chat_contract"] = self.reviewed_chat_contract
+        if self.first_life_contract is not None:
+            value["first_life_contract"] = self.first_life_contract
         return value
 
 
@@ -1662,6 +1681,11 @@ class PolicyKernel:
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
             and question.isolation_proof.path_class in ("local-private-experimental", "system-temporary-experimental")
         )
+        first_life = (question.capability_manifest in (CapabilityManifest.first_life_dormant(), CapabilityManifest.first_life_active())
+            and is_first_life_source(question.profile_source) and question.profile_source == question.genesis_source
+            and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
+            and question.isolation_proof.path_class in ("local-private-experimental", "system-temporary-experimental"))
+        reviewed = reviewed or first_life
         for source in (question.profile_source, question.genesis_source):
             if source.origin_kind != "project-original" and not reviewed:
                 reasons.append("source-origin-denied")
@@ -1681,6 +1705,9 @@ class PolicyKernel:
             reasons.append("path-isolation-denied")
         if reasons:
             disposition = PolicyDisposition.DENIED
+        elif first_life:
+            disposition = PolicyDisposition.QUALIFIED
+            reasons.append("first-life-active-qualified" if question.capability_manifest == CapabilityManifest.first_life_active() else "first-life-dormant-qualified")
         elif reviewed:
             disposition = PolicyDisposition.QUALIFIED
             reasons.append("private-reviewed-character-dormant-qualified")
@@ -8761,7 +8788,7 @@ class SubjectStudio:
         row, profile, premise, profile_digest = self._draft_bundle(draft_id)
         preview = self.preview(str(row[0]))
         isolation = self.isolation_proof
-        if is_reviewed_source(profile.source) and profile.source == premise.source:
+        if (is_reviewed_source(profile.source) or is_first_life_source(profile.source)) and profile.source == premise.source:
             isolation = IsolationProof(isolation.root_id, isolation.root_kind, isolation.path_class, REVIEWED_CHARACTER_PROOF)
         question_basis = {
             "contract_version": CONTRACT_VERSION,
@@ -8900,6 +8927,7 @@ class SubjectStudio:
         knowledge_entries: tuple[KnowledgeEntry, ...] = (),
         source_freeze_basis_digest: str | None = None,
         reviewed_definition: dict[str, Any] | None = None,
+        first_life_contract: dict | None = None,
     ) -> GenesisSnapshot:
         self._require_authority()
         if not isinstance(freeze, FreezeDecision):
@@ -8966,10 +8994,10 @@ class SubjectStudio:
                 "PolicyDecision does not authorize seal",
             )
         row, profile, premise, _ = self._draft_bundle(draft_id)
-        self._validate_reviewed_content(profile, premise, reviewed_definition, source_freeze_basis_digest)
+        self._validate_reviewed_content(profile, premise, reviewed_definition, source_freeze_basis_digest, first_life_contract)
         if reviewed_definition is not None:
             reviewed_definition = json.loads(_canonical_json(reviewed_definition))
-            if knowledge_entries or decision.capability_manifest != CapabilityManifest.reviewed_character_dormant():
+            if knowledge_entries or decision.capability_manifest != (CapabilityManifest.first_life_dormant() if first_life_contract is not None else CapabilityManifest.reviewed_character_dormant()):
                 raise StudioRejected("reviewed-contract-invalid", "reviewed asset requires its dormant contract and empty legacy Knowledge")
         qualification = (REVIEWED_KNOWLEDGE_QUALIFICATION if reviewed_definition is not None else
                          "qualified-source-freeze" if knowledge_entries else "qualified-original-empty")
@@ -9024,6 +9052,8 @@ class SubjectStudio:
         }
         if reviewed_definition is not None:
             snapshot_payload["reviewed_definition"] = reviewed_definition
+        if first_life_contract is not None:
+            snapshot_payload["first_life_contract"] = json.loads(_canonical_json(first_life_contract))
         snapshot_digest = _digest(snapshot_payload)
         knowledge_digest = _digest(
             {
@@ -9066,6 +9096,7 @@ class SubjectStudio:
                     ) from error
                 if (existing_payload.get("freeze_decision") != freeze.to_dict()
                     or existing_payload.get("reviewed_definition") != reviewed_definition
+                    or existing_payload.get("first_life_contract") != first_life_contract
                     or (reviewed_definition is not None and (
                         existing_payload.get("premise") != premise.to_dict()
                         or existing_payload.get("source_freeze_basis_digest") != source_freeze_basis_digest
@@ -9178,7 +9209,7 @@ class SubjectStudio:
         return self.query_snapshot(snapshot_id)
 
     @staticmethod
-    def _validate_reviewed_content(profile, premise, envelope, basis):
+    def _validate_reviewed_content(profile, premise, envelope, basis, first_life_contract=None):
         if envelope is None:
             if profile.source.origin_kind == "reviewed-fiction-derived" or premise.source.origin_kind == "reviewed-fiction-derived":
                 raise StudioFailedClosed("reviewed-definition-missing", "reviewed source requires a sealed complete definition")
@@ -9186,9 +9217,17 @@ class SubjectStudio:
         try:
             validate_reviewed_envelope(envelope)
             pc, gc = envelope["profile_content"], envelope["genesis_content"]
-            if (not is_reviewed_source(profile.source) or profile.source != premise.source
-                or profile.source.source_asset_refs != reviewed_source_refs(envelope["definition_basis"], envelope["runtime_asset_sha"])
-                or basis != envelope["definition_basis"] or profile.profile_id != reviewed_profile_id(basis)
+            if first_life_contract is not None:
+                expected = first_life_definition(envelope, first_life_contract["life_scope_digest"])
+                source_ok = (expected == first_life_contract and is_first_life_source(profile.source)
+                    and profile.source.source_asset_refs == first_life_source_refs(envelope, expected["life_scope_digest"])
+                    and basis == expected["identity_basis"]
+                    and profile.profile_id == life_profile_id(envelope["definition_basis"], expected["life_scope_digest"]))
+            else:
+                source_ok = (is_reviewed_source(profile.source)
+                    and profile.source.source_asset_refs == reviewed_source_refs(envelope["definition_basis"], envelope["runtime_asset_sha"])
+                    and basis == envelope["definition_basis"] and profile.profile_id == reviewed_profile_id(basis))
+            if (not source_ok or profile.source != premise.source
                 or profile.display_name != pc["display_name"] or profile.identity_core != pc["identity_core"]
                 or premise.subject_identity != gc["subject_identity"] or premise.canon_start != gc["canon_start"]
                 or premise.initial_relationship_premise != gc["initial_relationship_premise"]):
@@ -9281,7 +9320,7 @@ class SubjectStudio:
             )
         reviewed = payload.get("reviewed_definition")
         profile = self.query_profile(str(payload["profile_id"]))
-        self._validate_reviewed_content(profile, premise, reviewed, payload.get("source_freeze_basis_digest"))
+        self._validate_reviewed_content(profile, premise, reviewed, payload.get("source_freeze_basis_digest"), payload.get("first_life_contract"))
         if reviewed is not None:
             current = self.preview(str(payload["draft_id"]))
             sealed_policy = self._read_policy_decision(str(payload["policy_decision_id"]))
@@ -9291,7 +9330,7 @@ class SubjectStudio:
                 or current.freeze_basis_digest != payload["freeze_basis_digest"]
                 or current.content_fingerprint != payload["content_fingerprint"]
                 or sealed_policy.question_digest != question.question_digest
-                or sealed_policy.capability_manifest != CapabilityManifest.reviewed_character_dormant()
+                or sealed_policy.capability_manifest != (CapabilityManifest.first_life_dormant() if payload.get("first_life_contract") is not None else CapabilityManifest.reviewed_character_dormant())
                 or sealed_policy.disposition is not PolicyDisposition.QUALIFIED):
                 raise StudioFailedClosed("reviewed-policy-binding-invalid", "sealed reviewed definition no longer matches its policy basis")
         if reviewed is not None and (member_count != 0 or str(row[3]) != REVIEWED_KNOWLEDGE_QUALIFICATION):
@@ -9316,6 +9355,7 @@ class SubjectStudio:
             created_at_us=int(payload["created_at_us"]),
             source_freeze_basis_digest=payload.get("source_freeze_basis_digest"),
             reviewed_definition=reviewed,
+            first_life_contract=payload.get("first_life_contract"),
         )
 
     def knowledge_entries(
@@ -9416,6 +9456,7 @@ class SubjectStudio:
             published_at_us=int(payload["published_at_us"]),
             integrity_digest=str(payload["integrity_digest"]),
             reviewed_chat_contract=payload.get("reviewed_chat_contract"),
+            first_life_contract=payload.get("first_life_contract"),
         )
 
     def publish(
@@ -9488,7 +9529,11 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                CHAT_AUTHORITY
+                LIFE_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.first_life_active()
+                else LIFE_DORMANT_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.first_life_dormant()
+                else CHAT_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.reviewed_character_chat()
                 else REVIEWED_CHARACTER_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.reviewed_character_dormant()
@@ -9501,6 +9546,8 @@ class SubjectStudio:
             "publication_key": publication_key,
             "published_at_us": published_at_us,
         }
+        if snapshot.first_life_contract is not None:
+            payload_without_integrity["first_life_contract"] = snapshot.first_life_contract
         if reviewed_chat_contract is not None:
             payload_without_integrity["reviewed_chat_contract"] = reviewed_chat_contract
         integrity_digest = _digest(payload_without_integrity)
@@ -9616,6 +9663,9 @@ class SubjectStudio:
             snapshot_hint = json.loads(str(snapshot_row[0])) if snapshot_row is not None else {}
         except (TypeError, ValueError) as error:
             raise StudioFailedClosed("snapshot-corrupt", "published snapshot is unreadable") from error
+        if ("first_life_contract" in snapshot_hint or qri.first_life_contract is not None
+            or qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY)):
+            return self._verify_first_life_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
         reviewed_contract = ("reviewed_definition" in snapshot_hint
             or qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
             or qri.publication_key.startswith("reviewed-character-")
@@ -9666,6 +9716,37 @@ class SubjectStudio:
                 policy_decision_id=qri.policy_decision_ids[-1], capability_manifest=qri.capabilities.to_dict()))
             if qri.compatibility_proof != expected_compatibility:
                 raise StudioFailedClosed("reviewed-qri-policy-invalid", "reviewed publication compatibility proof is invalid")
+        return qri
+
+    def _verify_first_life_qri(self, qri, snapshot):
+        try:
+            contract = snapshot.first_life_contract
+            if contract is None or qri.first_life_contract != contract: raise ValueError("life definition missing")
+            active = qri.provider_authority == LIFE_AUTHORITY
+            manifest = CapabilityManifest.first_life_active() if active else CapabilityManifest.first_life_dormant()
+            key = ("first-life-active-" if active else "first-life-dormant-") + contract["identity_basis"]
+            if (qri.provider_authority not in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY) or qri.capabilities != manifest
+                or qri.publication_key != key or qri.profile_id != snapshot.profile_id
+                or qri.genesis_snapshot_id != snapshot.snapshot_id or qri.genesis_branch_id != snapshot.branch_id
+                or qri.knowledge_snapshot_id != snapshot.knowledge_snapshot_id or qri.reviewed_chat_contract is not None
+                or qri.isolation_proof != IsolationProof(self.isolation_proof.root_id, self.isolation_proof.root_kind,
+                    self.isolation_proof.path_class, REVIEWED_CHARACTER_PROOF)
+                or snapshot.policy_decision_id not in qri.policy_decision_ids): raise ValueError("life qualification mismatch")
+            if active:
+                predecessor = self.query_qri(publication_key="first-life-dormant-" + contract["identity_basis"])
+                if qri.predecessor_qualification_id != predecessor.qualification_id: raise ValueError("life predecessor mismatch")
+            for decision_id in qri.policy_decision_ids:
+                decision = self._read_policy_decision(decision_id)
+                expected_manifest = CapabilityManifest.first_life_dormant() if decision_id == snapshot.policy_decision_id else manifest
+                question = self._policy_question(snapshot.draft_id, decision.capability_manifest)
+                if (decision.capability_manifest != expected_manifest or decision.question_digest != question.question_digest
+                    or decision.disposition is not PolicyDisposition.QUALIFIED): raise ValueError("life policy mismatch")
+            compatibility = _digest(dict(contract_version=CONTRACT_VERSION, profile_id=snapshot.profile_id,
+                genesis_snapshot_id=snapshot.snapshot_id, knowledge_snapshot_id=snapshot.knowledge_snapshot_id,
+                policy_decision_id=qri.policy_decision_ids[-1], capability_manifest=qri.capabilities.to_dict()))
+            if compatibility != qri.compatibility_proof: raise ValueError("life compatibility mismatch")
+        except Exception as error:
+            raise StudioFailedClosed("first-life-qualification-invalid", "life source, scope or qualification is invalid") from error
         return qri
 
     def query_qri(self, *, publication_key: str) -> QualifiedRuntimeInput:

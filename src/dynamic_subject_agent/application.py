@@ -14,7 +14,7 @@ from dynamic_subject_agent.character_evidence_model import CharacterModelRequest
 from dynamic_subject_agent.character_identity_preparation import CharacterIdentityPreparationView, CharacterDefinitionPreparationRequest, prepare_character_identity
 
 from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, asdict, replace
 from enum import Enum
 from hashlib import sha256
 import json
@@ -342,6 +342,11 @@ class _ApplicationRouter:
         source_studio_location: StudioRootRef | None = None,
         source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
         | None = None,
+        first_life_freezer=None,
+        first_life_budget=None,
+        first_life_clock=None,
+        first_life_day=None,
+        first_life_development=False,
         reviewed_chat_status=None,
         reviewed_history_setter=None,
         local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
@@ -396,6 +401,10 @@ class _ApplicationRouter:
             source_identity_freezer
         ):
             raise TypeError("source_identity_freezer must be callable")
+        self._first_life_freezer = first_life_freezer
+        self._life_budget, self._life_clock, self._life_day, self._life_development = first_life_budget, first_life_clock, first_life_day, first_life_development
+        self._last_life_basis = None
+        self._last_life_query = None
         self._reviewed_chat_status = reviewed_chat_status
         self._reviewed_history_setter = reviewed_history_setter
         self._source_identity_freezer = source_identity_freezer
@@ -891,6 +900,160 @@ class _ApplicationRouter:
                 problem_code="source-identity-freeze-failed-closed",
             )
 
+    def freeze_first_life_identity(self, request):
+        from dynamic_subject_agent.first_life import FirstLifeIdentityRequest
+        if type(request) is not FirstLifeIdentityRequest or self._first_life_freezer is None:
+            return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.UNAVAILABLE, problem_code="first-life-freeze-unavailable")
+        try: return self._first_life_freezer(request)
+        except Exception: return SourceIdentityFreezeResponse(SourceIdentityFreezeStatus.FAILED_CLOSED, problem_code="first-life-freeze-unverified")
+
+    def _life_basis(self):
+        if self._life_clock is not None and self._life_clock.busy() and self._last_life_basis is not None:
+            return self._last_life_basis
+        with self._lease() as lease: value = lease.first_life_basis()
+        self._last_life_basis = value
+        return value
+
+    def first_life_status(self):
+        from dynamic_subject_agent.first_life import FirstLifeStatus
+        self._require_open()
+        if self._life_budget is None: return FirstLifeStatus("unavailable", problem_code="first-life-unavailable")
+        try:
+            basis = self._life_basis()
+            total, used, remaining = self._life_budget.counts()
+            decisions, shares, dev_remaining = self._life_budget.life_counts(self._life_day(), development_run=self._life_development)
+            chat = self.reviewed_character_chat_status()
+            return FirstLifeStatus("needs-attention" if basis.technical_problem else "paused" if basis.record.paused else "active",
+                chat.subject_name, basis.record.paused, basis.record.sharing_enabled, chat.history_enabled,
+                basis.record.phase, basis.record.revision, basis.record.virtual_minutes, basis.unanswered_share,
+                total, used, remaining, decisions, shares, self._life_development, dev_remaining, basis.technical_problem)
+        except Exception: return FirstLifeStatus("failed-closed", problem_code="first-life-status-unverified")
+
+    def query_first_life(self):
+        from dynamic_subject_agent.first_life import FirstLifeQuery
+        self._require_open()
+        if self._life_budget is None: return FirstLifeQuery("unavailable", problem_code="first-life-unavailable")
+        if self._life_clock is not None and self._life_clock.busy() and self._last_life_query is not None:
+            return self._last_life_query
+        try:
+            with self._lease() as lease: value = lease.list_first_life()
+            self._last_life_query = value
+            return value
+        except Exception as error:
+            if getattr(error, "code", None) == "runtime-lease-contended":
+                return FirstLifeQuery("unavailable", problem_code="first-life-query-pending")
+            return FirstLifeQuery("failed-closed", problem_code="first-life-query-unverified")
+
+    @staticmethod
+    def _life_noop(code):
+        return ApplicationOperationResponse(ApplicationOperationStatus.TERMINAL, None, None, ApplicationProblemView(code))
+
+    def _submit_life_input(self, input, request_id):
+        handed_off = False
+        try:
+            digest = sha256(request_id.encode()).hexdigest()
+            with self._lease() as lease: admitted = lease.admit_first_life(input, idempotency_key=request_id)
+            response = _from_runtime_result(admitted)
+            if response.status is ApplicationOperationStatus.PENDING:
+                with self._lock:
+                    active = self._start_resume(admitted.operation_ref, key_digest=digest, payload_fingerprint=admitted.operation_ref.admitted_payload_fingerprint)
+                    active.future.add_done_callback(lambda future: self._life_clock.finished())
+                    handed_off = True
+            return response
+        except PayloadConflict as error: return _conflict(error.existing_operation_ref)
+        except Exception as error: return _map_problem(error)
+        finally:
+            if not handed_off and self._life_clock is not None: self._life_clock.finished()
+
+    @staticmethod
+    def _life_request_digest(request):
+        return sha256(json.dumps(dict(type=type(request).__name__, **asdict(request)), sort_keys=True).encode()).hexdigest()
+
+    def _replay_life_request(self, request):
+        try:
+            digest = self._life_request_digest(request)
+            with self._lease() as lease: result = lease.replay_first_life_request(request.request_id, digest)
+            if result is None: return None
+            response = _from_runtime_result(result)
+            if response.status is ApplicationOperationStatus.PENDING:
+                with self._lock:
+                    self._start_resume(result.operation_ref, key_digest=sha256(request.request_id.encode()).hexdigest(),
+                        payload_fingerprint=result.operation_ref.admitted_payload_fingerprint)
+            return response
+        except PayloadConflict as error: return _conflict(error.existing_operation_ref)
+        except Exception as error: return _map_problem(error)
+
+    def set_first_life_controls(self, request):
+        from dynamic_subject_agent.first_life import FirstLifeControlRequest, FirstLifeInput
+        self._require_open()
+        if (type(request) is not FirstLifeControlRequest or self._life_budget is None
+            or any(value is not None and type(value) is not bool for value in (request.paused, request.sharing_enabled))
+            or request.paused is None and request.sharing_enabled is None): return _unavailable("typed-life-control-required")
+        replayed = self._replay_life_request(request)
+        if replayed is not None: return replayed
+        data = self._life_request_digest(request)
+        input = FirstLifeInput(self._binding.profile_id, self._binding.timeline_id, "control", "control", self._life_day(), data,
+            request.paused, request.sharing_enabled)
+        if request.paused is not None:
+            self._life_clock.reset_pause()
+        return self._submit_life_input(input, request.request_id)
+
+    def simulate_first_life_step(self, request):
+        from dynamic_subject_agent.first_life import FirstLifeSimulationRequest
+        self._require_open()
+        if type(request) is not FirstLifeSimulationRequest or self._life_budget is None: return _unavailable("typed-life-simulation-required")
+        replayed = self._replay_life_request(request)
+        if replayed is not None: return replayed
+        try: basis = self._life_basis()
+        except Exception: return _unavailable("first-life-basis-unverified")
+        if not self._life_clock.simulation(paused=basis.record.paused): return self._life_noop("life-paused-or-pending")
+        return self._schedule_life(request, basis, "advance", "simulation")
+
+    def heartbeat_first_life(self, request):
+        from dynamic_subject_agent.first_life import FirstLifeHeartbeatRequest
+        self._require_open()
+        if (type(request) is not FirstLifeHeartbeatRequest or not isinstance(request.session_id, str)
+            or not 16 <= len(request.session_id) <= 256 or self._life_budget is None): return _unavailable("typed-life-heartbeat-required")
+        with self._lock:
+            pending = any(not active.future.done() for active in self._active_by_operation.values())
+            last_basis = self._last_life_basis
+        if pending:
+            # A renewal is an online presence input, not a new canonical or
+            # model operation. Never contend for the writer behind a future.
+            paused = True if last_basis is None else last_basis.record.paused
+            _, code = self._life_clock.heartbeat(request.session_id, paused=paused, allow_step=False)
+            return self._life_noop(code)
+        replayed = self._replay_life_request(request)
+        if replayed is not None: return replayed
+        try: basis = self._life_basis()
+        except Exception: return _unavailable("first-life-basis-unverified")
+        due, code = self._life_clock.heartbeat(request.session_id, paused=basis.record.paused)
+        if code == "another-life-window": return self._life_noop(code)
+        if due: return self._schedule_life(request, basis, "advance", "online")
+        if (not self._life_clock.busy() and basis.events and basis.has_dialogue and basis.record.sharing_enabled
+            and not basis.unanswered_share and not basis.technical_problem):
+            event = basis.events[-1]
+            if event.event_id not in basis.disclosed_event_ids and event.event_id not in basis.considered_event_ids and self._life_clock.share():
+                return self._schedule_life(request, basis, "share", "online", event.event_id)
+        return self._life_noop(code)
+
+    def _schedule_life(self, request, basis, kind, trigger, target=""):
+        from dynamic_subject_agent.first_life import FirstLifeInput
+        try:
+            decisions, shares, dev = self._life_budget.life_counts(self._life_day(), development_run=self._life_development)
+            if (basis.technical_problem or kind == "advance" and basis.record.phase in ("kept", "deferred")
+                or kind == "advance" and decisions >= 6 or kind == "share" and shares >= 2
+                or dev is not None and dev <= 0 or self._life_budget.counts()[2] <= 0):
+                self._life_clock.finished()
+                return self._life_noop("life-no-permitted-boundary")
+            data = self._life_request_digest(request)
+            input = FirstLifeInput(self._binding.profile_id, self._binding.timeline_id, kind, trigger, self._life_day(), data, target_event_id=target)
+            return self._submit_life_input(input, request.request_id)
+
+        except Exception:
+            self._life_clock.finished()
+            return _unavailable("first-life-scheduling-unverified")
+
     def reviewed_character_chat_status(self):
         from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
         with self._lock:
@@ -1106,6 +1269,24 @@ class ApplicationFacade:
     def freeze_source_identity(self, request: object) -> SourceIdentityFreezeResponse:
         return self.__router.freeze_source_identity(request)
 
+    def freeze_first_life_identity(self, request):
+        return self.__router.freeze_first_life_identity(request)
+
+    def first_life_status(self):
+        return self.__router.first_life_status()
+
+    def query_first_life(self):
+        return self.__router.query_first_life()
+
+    def set_first_life_controls(self, request):
+        return self.__router.set_first_life_controls(request)
+
+    def heartbeat_first_life(self, request):
+        return self.__router.heartbeat_first_life(request)
+
+    def simulate_first_life_step(self, request):
+        return self.__router.simulate_first_life_step(request)
+
     def reviewed_character_chat_status(self):
         return self.__router.reviewed_character_chat_status()
 
@@ -1137,6 +1318,11 @@ def _create_application_facade(
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
     | None = None,
+    _first_life_freezer=None,
+    _first_life_budget=None,
+    _first_life_clock=None,
+    _first_life_day=None,
+    _first_life_development=False,
     _reviewed_chat_status=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
@@ -1160,6 +1346,11 @@ def _create_application_facade(
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,
+        first_life_freezer=_first_life_freezer,
+        first_life_budget=_first_life_budget,
+        first_life_clock=_first_life_clock,
+        first_life_day=_first_life_day,
+        first_life_development=_first_life_development,
         reviewed_chat_status=_reviewed_chat_status,
         reviewed_history_setter=_reviewed_history_setter,
         local_identity_lister=_local_identity_lister,
@@ -1185,7 +1376,7 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
         projection = AuthorizedOperationProjection(
             committed_effect_count=len(result.outcome.committed_effect_set.reference_ids),
             subject_task=_subject_task_record(result.outcome.agency_outcome),
-            operation_kind=OperationKind.SUBJECT,
+            operation_kind=result.operation_ref.operation_kind,
             operation_state=ApplicationOperationStatus.TERMINAL,
             timeline_outcome_id=result.outcome.outcome_id,
             timeline_head_sequence=result.outcome.head_sequence,
@@ -1265,11 +1456,11 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
         )
     if state is OperationState.FAILED_CLOSED:
         failure = result.failure
-        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable")
-            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable")
+        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable", "first-life-character-credential-unavailable", "first-life-share-character-credential-unavailable", "first-life-budget-unavailable", "first-life-share-not-attempted")
+            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable", "first-life-transport-timeout", "first-life-transport-delivery-ambiguous", "first-life-share-transport-timeout", "first-life-share-transport-delivery-ambiguous")
             else ApplicationOperationStatus.FAILED_CLOSED)
         projection = AuthorizedOperationProjection(
-            operation_kind=OperationKind.SUBJECT,
+            operation_kind=result.operation_ref.operation_kind,
             operation_state=reported_status,
             timeline_outcome_id=None,
             timeline_head_sequence=result.snapshot.timeline_head_sequence,
@@ -1290,7 +1481,7 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
             status=ApplicationOperationStatus.INTERRUPTED,
             operation_ref=result.operation_ref,
             projection=AuthorizedOperationProjection(
-                operation_kind=OperationKind.SUBJECT,
+                operation_kind=result.operation_ref.operation_kind,
                 operation_state=ApplicationOperationStatus.INTERRUPTED,
                 timeline_outcome_id=None,
                 timeline_head_sequence=result.snapshot.timeline_head_sequence,

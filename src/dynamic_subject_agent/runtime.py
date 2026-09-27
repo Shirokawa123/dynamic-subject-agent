@@ -16,6 +16,8 @@ from pathlib import Path
 from time import monotonic, sleep, time_ns
 from uuid import NAMESPACE_URL, uuid5
 
+from dynamic_subject_agent.first_life import FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT
+
 from dynamic_subject_agent.domains import (
     AgencyAdjudicationRequest,
     AgencyDomain,
@@ -40,6 +42,7 @@ from dynamic_subject_agent.timeline import (
     AdmissionSnapshot,
     CanonicalRootRef,
     CommittedEffectSet,
+    CommitPlanRejected,
     ConversationTurnRecord,
     CycleCommitPlan,
     DecisionStatus,
@@ -363,6 +366,7 @@ class CognitionRuntimeView:
     memory_control_complete: bool = True
     canonical_memory_history: tuple[LivingMemoryRecord, ...] = ()
     memory_retrieval_unavailable: bool = False
+    load_first_life: Callable[[], object] | None = None
 
 
 @dataclass(frozen=True)
@@ -376,6 +380,7 @@ class CognitiveProposal:
     memory_write_requested: bool = False
     memory_continuation: ExpressionCandidate | None = None
     knowledge_continuation: ExpressionCandidate | None = None
+    life_record: LifeRecord | None = None
 
 
 @dataclass(frozen=True)
@@ -1057,6 +1062,8 @@ class SubjectRuntime:
             )
         else:
             stance_summary = ""
+        life_basis = (self._engine.first_life_basis(expected_head=dialogue_head)
+            if LIFE_SYSTEM_INTENT in self._context.authority.allowed_intents else None)
         return replace(
             self._context.cognition_view(),
             active_memories=active_memories,
@@ -1091,7 +1098,49 @@ class SubjectRuntime:
                 (lambda: self._engine.withheld_memory_ids_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
+            load_first_life=(lambda: life_basis) if life_basis is not None else None,
         )
+
+    def first_life_basis(self):
+        return self._engine.first_life_basis()
+
+    def list_first_life(self):
+        return self._engine.list_first_life()
+
+    def admit_first_life(self, command, *, idempotency_key):
+        self._context.validate_command(command)
+        admitted = self._engine.admit_first_life(command, idempotency_key=idempotency_key)
+        self._hit(RuntimeFaultPoint.AFTER_ADMISSION, admitted.operation_ref)
+        return self._observe(admitted.operation_ref, admission_replayed=admitted.replayed)
+
+    def replay_first_life_request(self, request_id, request_digest):
+        ref = self._engine.replay_first_life_request(request_id, request_digest)
+        return None if ref is None else self._observe(ref, admission_replayed=True)
+
+    def pending_first_life_operations(self):
+        return self._engine.pending_first_life_operations()
+
+    def recover_first_life_pending(self):
+        """Cold-start only: settle prior admissions without invoking Cognition.
+
+        Composition calls this before exposing the new ApplicationFacade. It is
+        never a GET side effect or a way to interrupt an active in-process Future.
+        """
+        pending = self._engine.pending_first_life_operations()
+        results = []
+        for operation_ref in pending:
+            prepared = self._engine.prepared_plan(operation_ref)
+            if prepared is None:
+                self._engine.fail_operation(operation_ref, stage='publication', code='first-life-unprepared-interruption',
+                    detail='Cold recovery found no durable prepared result; automatic model retry is unavailable.')
+            elif not self._engine.cancel_prepared_if_stale(operation_ref):
+                try:
+                    self._engine.publish(prepared)
+                except CommitPlanRejected:
+                    if self._engine.query(operation_ref).operation_state is not OperationState.FAILED_CLOSED:
+                        raise
+            results.append(self._observe(operation_ref, admission_replayed=True))
+        return tuple(results)
 
     def list_living_memories(
         self,
@@ -1241,6 +1290,9 @@ class SubjectRuntime:
             else self._engine._query_command(operation_ref)
         )
         self._context.validate_command(command)
+        if LIFE_SYSTEM_INTENT in self._context.authority.allowed_intents:
+            # Cached Publication and terminal reads must not depend on a live Provider.
+            return self._continue_cycle(operation_ref, command, admission_replayed=True)
         if command.declared_intent == 'subject-task-v1' and not getattr(self._cognition, 'supports_subject_tasks', False):
             raise PreAdmissionRejected('subject-tasks-unavailable', 'explicit task cognition is unavailable')
         self._cognition.preflight(
@@ -1293,6 +1345,29 @@ class SubjectRuntime:
                 publication_replayed=False,
             )
 
+        if LIFE_SYSTEM_INTENT in self._context.authority.allowed_intents:
+            prepared = self._engine.prepared_plan(operation_ref)
+            if prepared is not None:
+                if self._engine.cancel_prepared_if_stale(operation_ref):
+                    return self._observe(operation_ref, admission_replayed=admission_replayed)
+                try:
+                    published = self._engine.publish(prepared)
+                except CommitPlanRejected:
+                    if self._engine.query(operation_ref).operation_state is OperationState.FAILED_CLOSED:
+                        return self._observe(operation_ref, admission_replayed=admission_replayed)
+                    raise
+                return RuntimeResult(operation_ref=operation_ref, snapshot=self._engine.query(operation_ref),
+                    outcome=published.outcome, admission_replayed=admission_replayed, publication_replayed=True)
+            if self._engine.has_frozen_attempt(operation_ref):
+                self._fail_cycle(operation_ref, stage='publication', code='first-life-unprepared-interruption',
+                    detail='A prior attempt ended before durable preparation; automatic model retry is unavailable.')
+            if not (type(command) is FirstLifeInput and command.input_kind == 'control'):
+                unresolved = self._engine.pending_first_life_operations()
+                if unresolved and unresolved[0] != operation_ref:
+                    self._fail_cycle(operation_ref, stage='publication', code='first-life-recovery-required',
+                        detail='Earlier pending operations must be settled before starting new model work.')
+            self._cognition.preflight(context=self._cognition_view(), command=command)
+
         frozen_basis = self._engine.freeze_attempt_basis(operation_ref)
         cycle_plan = self._build_cycle_plan(
             operation_ref,
@@ -1312,7 +1387,7 @@ class SubjectRuntime:
                 plan=cycle_plan,
                 context=self._cognition_view(
                     observed_at_us=experience_basis.observed_at_us,
-                    query_text=command.utterance,
+                    query_text=command.utterance if type(command) is SubjectCommand else None,
                     dialogue_operation=operation_ref,
                     dialogue_head=frozen_basis.head_sequence,
                 ),
@@ -1382,7 +1457,19 @@ class SubjectRuntime:
             expression_candidate,
         )
         self._hit(RuntimeFaultPoint.BEFORE_PUBLICATION, operation_ref)
-        published = self._engine.publish(commit_plan)
+        try:
+            published = self._engine.publish(commit_plan)
+        except CommitPlanRejected:
+            if LIFE_SYSTEM_INTENT not in self._context.authority.allowed_intents:
+                raise
+            if self._engine.query(operation_ref).operation_state is OperationState.FAILED_CLOSED:
+                return self._observe(operation_ref, admission_replayed=admission_replayed)
+            # A validation rejection before any immutable claim is terminal.
+            # Claimed plans retain the strict replay/cancellation recovery path.
+            if self._engine.prepared_plan(operation_ref) is None:
+                self._fail_cycle(operation_ref, stage='publication', code='first-life-prepublication-invalid',
+                    detail='The proposed Publication failed canonical validation before preparation.')
+            raise
         self._hit(RuntimeFaultPoint.AFTER_PUBLICATION, operation_ref)
         self.recover_text_artifacts()
         return RuntimeResult(
@@ -1690,6 +1777,7 @@ class SubjectRuntime:
                 dispatch_state=EffectDispatchState.READY if effect else EffectDispatchState.UNAVAILABLE,
                 reason='exact text save approved' if effect else "real committed-effect dispatch is unavailable in M0-A",
             ),
+            life_record=proposal.life_record,
         )
 
 

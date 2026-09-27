@@ -140,12 +140,19 @@ def _open_loaded_local_product(
     character_model: CharacterEvidenceModel | None = None,
     character_reply_lab: CharacterReplyProducer | None = None,
     evidence_extraction: EvidenceExtractionLab | None = None,
+    first_life_budget=None, first_life_clock=None, first_life_day=None, first_life_development=False,
 ) -> OpenedLocalProduct:
     if loaded.reviewed_definition is not None:
         from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
         from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
         from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
-        if loaded.qri.provider_authority == CHAT_AUTHORITY:
+        from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
+        from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
+        if loaded.qri.provider_authority == LIFE_AUTHORITY:
+            if type(cognition) is not FirstLifeCognition: cognition = FirstLifeCognition()
+        elif loaded.qri.provider_authority == LIFE_DORMANT_AUTHORITY:
+            cognition = FirstLifeDormantCognition()
+        elif loaded.qri.provider_authority == CHAT_AUTHORITY:
             if type(cognition) is not ReviewedCharacterChatCognition:
                 cognition = ReviewedCharacterChatCognition()
         else:
@@ -168,6 +175,11 @@ def _open_loaded_local_product(
         _evidence_extraction=evidence_extraction,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
+        _first_life_freezer=authority.freeze,
+        _first_life_budget=first_life_budget,
+        _first_life_clock=first_life_clock,
+        _first_life_day=first_life_day,
+        _first_life_development=first_life_development,
         _reviewed_chat_status=lambda: authority.reviewed_character_chat_status(loaded.qri.profile_id),
         _reviewed_history_setter=lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id),
         _local_identity_lister=authority.list,
@@ -647,3 +659,28 @@ def open_reviewed_character_chat_product(config, *, definition_basis, scope_dige
     cognition = ReviewedCharacterChatCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
         history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id))
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_first_life_product(config, *, definition_basis, life_scope_digest, budget_path,
+                            budget_total=200, initial_budget_used=61, development_run=False,
+                            _transport=None, _clock=None, _civil_day=None):
+    """Open only the confirmed isolated life branch against the shared allowance."""
+    from dynamic_subject_agent.first_life import current_civil_day
+    from dynamic_subject_agent.first_life_budget import FirstLifeBudget
+    from dynamic_subject_agent.first_life_clock import FirstLifeClock
+    from dynamic_subject_agent.first_life_cognition import FirstLifeCognition
+    from dynamic_subject_agent.first_life_provider import DeepSeekFirstLifeAdapter
+    if not isinstance(budget_path, Path) or not budget_path.is_absolute(): raise ValueError("absolute existing shared budget required")
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_first_life(definition_basis=definition_basis, life_scope_digest=life_scope_digest,
+        budget_path=budget_path, budget_total=budget_total, initial_budget_used=initial_budget_used, development_run=development_run)
+    day = current_civil_day if _civil_day is None else _civil_day
+    budget = FirstLifeBudget(budget_path, total=budget_total, initial_used=initial_budget_used, civil_day=day)
+    clock = FirstLifeClock() if _clock is None else FirstLifeClock(_clock)
+    transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    gateway = ModelGateway(DeepSeekFirstLifeAdapter(transport=transport,
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
+    cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
+        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=development_run, civil_day=day)
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
+        first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=development_run)

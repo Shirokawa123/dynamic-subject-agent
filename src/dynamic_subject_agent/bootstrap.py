@@ -126,6 +126,11 @@ def compose_application(
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
     | None = None,
+    _first_life_freezer=None,
+    _first_life_budget=None,
+    _first_life_clock=None,
+    _first_life_day=None,
+    _first_life_development=False,
     _reviewed_chat_status=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
@@ -236,6 +241,12 @@ def compose_application(
                 "local-interaction-plan-mismatch",
                 "local successor requires its exact single-command authorization",
             )
+        from dynamic_subject_agent.first_life import LIFE_AUTHORITY
+        if qualified_runtime_input.provider_authority == LIFE_AUTHORITY:
+            # Explicit new-application cold recovery precedes the business
+            # Interface and any new user/system work. GET never drives this.
+            with host.lease(profile_id=qualified_runtime_input.profile_id, timeline_id=timeline_id) as recovery:
+                recovery.recover_first_life_pending()
         application, router = _create_application_facade(
             host,
             binding,
@@ -287,6 +298,11 @@ def compose_application(
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,
+            _first_life_freezer=_first_life_freezer,
+            _first_life_budget=_first_life_budget,
+            _first_life_clock=_first_life_clock,
+            _first_life_day=_first_life_day,
+            _first_life_development=_first_life_development,
             _reviewed_chat_status=_reviewed_chat_status,
             _reviewed_history_setter=_reviewed_history_setter,
             _local_identity_lister=_local_identity_lister,

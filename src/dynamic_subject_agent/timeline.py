@@ -22,6 +22,11 @@ from time import time_ns
 from typing import Any
 from uuid import UUID, uuid4
 
+from dynamic_subject_agent.first_life import (
+    FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT, decode_life_record,
+    initial_life_record, adjudicate_life, event_summary,
+)
+
 from dynamic_subject_agent.participant_goals import (
     PARTICIPANT_GOAL_FAILURE_CODES,
     POLICY_HASH as PARTICIPANT_GOAL_POLICY_HASH,
@@ -82,6 +87,7 @@ class OperationState(str, Enum):
 
 class OperationKind(str, Enum):
     SUBJECT = "subject"
+    SYSTEM = "system"
     HOST = "host"
 
 
@@ -114,6 +120,8 @@ class EffectDispatchState(str, Enum):
 
 
 class FaultPoint(str, Enum):
+    BEFORE_PREPARED_CANCEL_COMMIT = 'before-prepared-cancel-commit'
+    AFTER_PREPARED_CANCEL_COMMIT = 'after-prepared-cancel-commit'
     BEFORE_TRANSACTION = "before-transaction"
     AFTER_IDEMPOTENCY_CLAIM = "after-idempotency-claim"
     AFTER_OPERATION = "after-operation"
@@ -180,6 +188,11 @@ class PublicationProblem(Exception):
 
 class CommitPlanRejected(PublicationProblem):
     """A CycleCommitPlan is incomplete or outside its frozen authority."""
+
+
+class _PreparedShareDayExpired(CommitPlanRejected):
+    def __init__(self):
+        super().__init__('first-life-share-day-expired', 'The prepared share belongs to a different trusted civil day.')
 
 
 class CommitPlanConflict(PublicationProblem):
@@ -276,6 +289,8 @@ def _canonical_value(value: Any) -> Any:
         return {
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
+            # The optional schema-3 extension must not change schema-1/2 bytes.
+            if field.name != "life_record" or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -1425,6 +1440,7 @@ class CycleCommitPlan:
     revision_set: RevisionSet
     expression: Expression
     committed_effect_set: CommittedEffectSet
+    life_record: LifeRecord | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return _canonical_value(self)
@@ -1541,6 +1557,7 @@ class CycleCommitPlan:
                     dispatch_state=EffectDispatchState(str(effects["dispatch_state"])),
                     reason=str(effects["reason"]),
                 ),
+                life_record=(decode_life_record(source["life_record"]) if source.get("life_record") is not None else None),
             )
         except (KeyError, TypeError, ValueError) as error:
             raise CommitPlanRejected(
@@ -1568,6 +1585,7 @@ class TimelineOutcome:
     revision_set: RevisionSet
     expression: Expression
     committed_effect_set: CommittedEffectSet
+    life_record: LifeRecord | None = None
 
 
 @dataclass(frozen=True)
@@ -2458,6 +2476,22 @@ _TIMELINE_DDL = (
 
 _CONTROL_TABLES = frozenset({"root_record", "store_manifest", "timeline_registration"})
 _EMPTY_EFFECT_HEAD = hashlib.sha256(b'text-effect-receipts-1').hexdigest()
+_LIFE_DDL = (
+    """CREATE TABLE system_input (
+        operation_id BLOB PRIMARY KEY REFERENCES subject_operation(operation_id),
+        input_json TEXT NOT NULL, payload_fingerprint BLOB NOT NULL
+    ) STRICT""",
+    """CREATE TABLE prepared_cycle_plan (
+        plan_id BLOB PRIMARY KEY REFERENCES commit_plan_identity_claim(plan_id),
+        operation_id BLOB NOT NULL UNIQUE REFERENCES subject_operation(operation_id),
+        plan_json TEXT NOT NULL, plan_digest BLOB NOT NULL
+    ) STRICT""",
+    """CREATE TABLE life_record (
+        plan_id BLOB PRIMARY KEY REFERENCES cycle_commit_plan_receipt(plan_id),
+        record_json TEXT NOT NULL, record_digest BLOB NOT NULL
+    ) STRICT""",
+)
+
 _EFFECT_DDL = (
     '''CREATE TABLE effect_receipt (
         ordinal INTEGER PRIMARY KEY CHECK (ordinal>0), effect_id TEXT NOT NULL UNIQUE,
@@ -2621,8 +2655,13 @@ def _bootstrap_timeline(
     try:
         _begin(connection)
         effects = 'confirmed-text-save-v1' in authority.allowed_intents
-        schema_version = 2 if effects else SCHEMA_VERSION
+        life = LIFE_SYSTEM_INTENT in authority.allowed_intents
+        if life and effects:
+            raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
+        schema_version = 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
+            if life:
+                statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
             if effects:
                 statement=statement.replace('CHECK (committed_effect_eligible = 0)', 'CHECK (committed_effect_eligible IN (0,1))')
                 statement=statement.replace('CHECK (effect_count = 0)', 'CHECK (effect_count IN (0,1))')
@@ -2633,6 +2672,9 @@ def _bootstrap_timeline(
             for statement in _EFFECT_DDL:
                 connection.execute(statement)
             connection.execute('INSERT INTO effect_receipt_head VALUES (1,0,?)', (_EMPTY_EFFECT_HEAD,))
+        if life:
+            for statement in _LIFE_DDL:
+                connection.execute(statement)
         connection.execute(f"PRAGMA user_version = {schema_version}")
         _insert_manifest(
             connection,
@@ -2791,7 +2833,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2823,6 +2865,8 @@ def _verify_store_integrity(
 ) -> None:
     if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==2:
         expected_tables=expected_tables | {'effect_receipt','effect_receipt_head'}
+    elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==3:
+        expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
     try:
         tables = frozenset(
             row[0]
@@ -3320,6 +3364,8 @@ class TimelineEngine:
             authority = gate.authority
             if (writer.execute('PRAGMA user_version').fetchone()[0]==2) != ('confirmed-text-save-v1' in authority.allowed_intents):
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
+            if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
+                raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
             if authority.timeline_id != location.timeline_id:
                 raise AdmissionFailedClosed(
                     "store-identity-mismatch",
@@ -3496,6 +3542,26 @@ class TimelineEngine:
                 "operation-ref-authority-mismatch",
                 "OperationRef does not belong to this Timeline authority",
             )
+        if operation_ref.operation_kind is OperationKind.SYSTEM:
+            self._require_life_authority()
+            row = self._writer.execute(
+                'SELECT input_json, payload_fingerprint FROM system_input WHERE operation_id=?',
+                (UUID(operation_ref.operation_id).bytes,),
+            ).fetchone()
+            try:
+                if row is None:
+                    raise ValueError('missing system input')
+                command = FirstLifeInput(**json.loads(row[0]))
+                self._validate_first_life_input(command)
+                if (_canonical_json(command) != row[0]
+                    or bytes(row[1]).hex() != command.payload_fingerprint
+                    or command.payload_fingerprint != operation_ref.admitted_payload_fingerprint
+                    or self._writer.execute('SELECT 1 FROM subject_command WHERE operation_id=?',
+                        (UUID(operation_ref.operation_id).bytes,)).fetchone() is not None):
+                    raise ValueError('system input fingerprint differs')
+                return command
+            except (TypeError, ValueError, KeyError) as error:
+                raise AdmissionFailedClosed('system-input-integrity-failed', 'canonical system input is invalid') from error
         row = self._writer.execute(
             """
             SELECT
@@ -3538,7 +3604,91 @@ class TimelineEngine:
             )
         return command
 
+    def _require_life_authority(self):
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents:
+            raise PreAdmissionRejected('first-life-unavailable', 'this identity has no life authority')
+
+    def _validate_first_life_input(self, command):
+        from datetime import date
+        self._require_life_authority()
+        if type(command) is not FirstLifeInput:
+            raise PreAdmissionRejected('typed-system-input-required', 'life requires an exact typed system input')
+        if (command.target_profile_id != self._authority.profile_id
+            or command.target_timeline_id != self._authority.timeline_id
+            or command.input_kind not in ('advance', 'share', 'control')
+            or command.trigger not in ('simulation', 'control', 'online')
+            or not isinstance(command.request_digest, str)
+            or re.fullmatch(r'[0-9a-f]{64}', command.request_digest) is None
+            or any(value is not None and type(value) is not bool for value in (command.paused, command.sharing_enabled))
+            or (command.input_kind != 'control' and (command.paused is not None or command.sharing_enabled is not None))
+            or (command.input_kind == 'control' and command.paused is None and command.sharing_enabled is None)):
+            raise PreAdmissionRejected('first-life-input-invalid', 'system input exceeds the closed life contract')
+        try:
+            # Revalidate the frozen dataclass, including target-event semantics.
+            FirstLifeInput(**_canonical_value(command))
+            if date.fromisoformat(command.civil_day).isoformat() != command.civil_day:
+                raise ValueError('noncanonical civil day')
+        except (TypeError, ValueError) as error:
+            raise PreAdmissionRejected('first-life-day-invalid', 'system input needs a canonical civil day') from error
+
+    def admit_first_life(self, command, *, idempotency_key, _reserved_operation_id=None):
+        self._validate_first_life_input(command)
+        key_digest = _validate_idempotency_key(idempotency_key)
+        row = self._writer.execute('SELECT operation_id FROM idempotency_claim WHERE authority_scope_id=? AND key_digest=?',
+            (self._authority.authority_scope_id, key_digest)).fetchone()
+        if row is not None:
+            admitted = self._admitted_for_operation(self._writer, bytes(row[0]), replayed=True)
+            original = self._query_command(admitted.operation_ref)
+            if type(original) is not FirstLifeInput or replace(command, civil_day=original.civil_day) != original:
+                raise PayloadConflict(admitted.operation_ref)
+            command = original
+        return self.admit(command, idempotency_key=idempotency_key, _reserved_operation_id=_reserved_operation_id)
+
+    def replay_first_life_request(self, request_id, request_digest):
+        """Read an exact public-request receipt without Admission or execution."""
+        self._require_open()
+        self._require_life_authority()
+        key_digest = _validate_idempotency_key(request_id)
+        if not isinstance(request_digest, str) or re.fullmatch(r'[0-9a-f]{64}', request_digest) is None:
+            raise PreAdmissionRejected('first-life-request-invalid', 'the public request digest must be exact')
+        row = self._writer.execute('SELECT operation_id FROM idempotency_claim WHERE authority_scope_id=? AND key_digest=?',
+            (self._authority.authority_scope_id, key_digest)).fetchone()
+        if row is None:
+            return None
+        ref = self._admitted_for_operation(self._writer, bytes(row[0]), replayed=True).operation_ref
+        command = self._query_command(ref)
+        if type(command) is not FirstLifeInput or command.request_digest != request_digest:
+            raise PayloadConflict(ref)
+        return ref
+
+    def pending_first_life_operations(self):
+        """Discover this schema-3 binding's pending work without executing it."""
+        self._require_open()
+        self._require_life_authority()
+        self._verified_publications()
+        rows = self._writer.execute('SELECT operation_id FROM subject_operation ORDER BY admitted_at_us, operation_id').fetchall()
+        pending = []
+        for (operation_id,) in rows:
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            snapshot = self.query(ref)
+            self._query_command(ref)
+            self.prepared_plan(ref)
+            if snapshot.operation_state is OperationState.ADMITTED_PENDING:
+                pending.append(ref)
+            elif snapshot.operation_state is OperationState.COMPLETED:
+                self.query_outcome(ref)
+            elif snapshot.operation_state is OperationState.FAILED_CLOSED:
+                self.query_failure(ref)
+            else:
+                raise PublicationFailedClosed('first-life-recovery-unresolved', 'an operation has no supported terminal or pending recovery state')
+        return tuple(pending)
+
     def _validate_authority(self, command: SubjectCommand) -> None:
+        if type(command) is FirstLifeInput:
+            self._validate_first_life_input(command)
+            return
+        if command.declared_intent == LIFE_SYSTEM_INTENT:
+            raise PreAdmissionRejected('typed-system-input-required', 'a user utterance cannot impersonate a life input')
         if (
             command.target_profile_id != self._authority.profile_id
             or command.target_timeline_id != self._authority.timeline_id
@@ -3591,7 +3741,7 @@ class TimelineEngine:
         _reserved_operation_id: str | None = None,
     ) -> Admitted:
         self._require_open()
-        if not isinstance(command, SubjectCommand):
+        if not isinstance(command, SubjectCommand) and type(command) is not FirstLifeInput:
             raise PreAdmissionRejected(
                 "malformed-command",
                 "Admission requires a SubjectCommand",
@@ -3695,16 +3845,20 @@ class TimelineEngine:
                 (
                     operation_id,
                     self._authority.authority_scope_id,
-                    OperationKind.SUBJECT.value,
+                    OperationKind.SYSTEM.value if type(command) is FirstLifeInput else OperationKind.SUBJECT.value,
                     command.contract_version,
                     payload,
                     OperationState.ADMITTED_PENDING.value,
                     recorded_at,
                 ),
             )
-            self._writer.execute(
-                """
-                INSERT INTO subject_command (
+            if type(command) is FirstLifeInput:
+                self._writer.execute('INSERT INTO system_input VALUES (?,?,?)',
+                    (operation_id, _canonical_json(command), payload))
+            else:
+                self._writer.execute(
+                    """
+                    INSERT INTO subject_command (
                     operation_id,
                     command_kind,
                     target_profile_id,
@@ -3728,8 +3882,8 @@ class TimelineEngine:
                     command.provenance,
                     command.normalization_version,
                     payload,
-                ),
-            )
+                    ),
+                )
             self._hit(FaultPoint.AFTER_OPERATION)
             self._writer.execute(
                 """
@@ -3738,9 +3892,9 @@ class TimelineEngine:
                     operation_id,
                     event_kind,
                     recorded_at_us
-                ) VALUES (?, ?, 'command-admitted', ?)
+                ) VALUES (?, ?, ?, ?)
                 """,
-                (event_id, operation_id, recorded_at),
+                (event_id, operation_id, 'system-input-admitted' if type(command) is FirstLifeInput else 'command-admitted', recorded_at),
             )
             self._writer.execute(
                 """
@@ -3943,6 +4097,13 @@ class TimelineEngine:
                 "commit-plan-invalid",
                 "Publication requires a complete CycleCommitPlan",
             )
+        if plan.life_record is not None:
+            self._require_life_authority()
+            try:
+                if type(plan.life_record) is not LifeRecord or decode_life_record(_canonical_value(plan.life_record)) != plan.life_record:
+                    raise ValueError('life record must be typed')
+            except (TypeError, ValueError, AttributeError, KeyError) as error:
+                raise CommitPlanRejected('life-record-invalid', 'life record is outside the typed contract') from error
         expected_types = (
             (plan.operation_ref, OperationRef, "operation_ref"),
             (plan.expected_basis, TimelineBasis, "expected_basis"),
@@ -3979,6 +4140,9 @@ class TimelineEngine:
                     f"{field} must be a typed {expected_type.__name__}",
                 )
 
+        if plan.operation_ref.operation_kind is OperationKind.SYSTEM and plan.life_record is None:
+            raise CommitPlanRejected('life-record-required', 'system Publication requires an adjudicated life record')
+
         if (
             plan.operation_ref.contract_version != CONTRACT_VERSION
             or plan.operation_ref.root_id != self._location.root_id
@@ -3993,7 +4157,10 @@ class TimelineEngine:
         if (
             plan.profile_id != self._authority.profile_id
             or plan.timeline_id != self._authority.timeline_id
-            or plan.operation_ref.operation_kind is not OperationKind.SUBJECT
+            or plan.operation_ref.operation_kind not in (
+                (OperationKind.SUBJECT, OperationKind.SYSTEM)
+                if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else (OperationKind.SUBJECT,)
+            )
         ):
             raise CommitPlanRejected(
                 "commit-plan-authority-mismatch",
@@ -4191,6 +4358,180 @@ class TimelineEngine:
                 "Experience timestamp must be a positive UTC microsecond integer",
             )
 
+    def _verified_publications(self):
+        """Verify the global chain before any origin-specific projection."""
+        rows = self._writer.execute('''SELECT outcome.head_sequence, outcome.published_at_us,
+            operation.operation_id, operation.contract_version, operation.operation_kind,
+            hex(operation.payload_fingerprint) FROM timeline_outcome outcome
+            JOIN subject_operation operation USING(operation_id) ORDER BY outcome.head_sequence''').fetchall()
+        basis = _read_timeline_basis(self._writer)
+        if len(rows) != basis.head_sequence or [row[0] for row in rows] != list(range(1, basis.head_sequence + 1)):
+            raise PublicationFailedClosed('timeline-chain-incomplete', 'global Publication chain is incomplete')
+        previous = None
+        result = []
+        for row in rows:
+            ref = OperationRef(str(row[3]), self._location.root_id, self._location.timeline_store_id,
+                self._authority.authority_scope_id, str(UUID(bytes=bytes(row[2]))), OperationKind(row[4]), str(row[5]).lower())
+            outcome = self.query_outcome(ref)
+            command = self._query_command(ref)
+            if (outcome.head_sequence != row[0] or outcome.previous_outcome_digest != previous
+                or type(row[1]) is not int or row[1] <= 0
+                or (type(command) is FirstLifeInput) != (ref.operation_kind is OperationKind.SYSTEM)):
+                raise PublicationFailedClosed('timeline-chain-invalid', 'global Publication lineage is invalid')
+            result.append((outcome, command, row[1]))
+            previous = outcome.outcome_digest
+        if previous != basis.published_outcome_digest:
+            raise PublicationFailedClosed('timeline-head-invalid', 'global Publication head does not match its chain')
+        return tuple(result)
+
+    def _check_life_change(self, record, command, before, expression):
+        """Python adjudication of the entire delta, also used during replay."""
+        if record is None:
+            if type(command) is FirstLifeInput:
+                raise ValueError('system Publication has no life record')
+            return
+        if decode_life_record(_canonical_value(record)) != record:
+            raise ValueError('invalid typed life record')
+        old = before.record
+        system = type(command) is FirstLifeInput
+        expected_kind = command.input_kind if system else 'disclosure'
+        if record.kind != expected_kind and not (expected_kind == 'share' and record.kind == 'share-declined'):
+            raise ValueError('life record origin mismatch')
+        if record.kind != 'advance':
+            if ((record.phase, record.revision, record.plan, record.virtual_minutes)
+                != (old.phase, old.revision, old.plan, old.virtual_minutes)
+                or record.reason_code or record.differences or record.event_id or record.summary or record.simulated):
+                raise ValueError('non-advance changed the creative state')
+        if record.kind == 'control':
+            if (record.paused != (old.paused if command.paused is None else command.paused)
+                or record.sharing_enabled != (old.sharing_enabled if command.sharing_enabled is None else command.sharing_enabled)):
+                raise ValueError('control result differs from explicit input')
+        elif (record.paused, record.sharing_enabled) != (old.paused, old.sharing_enabled):
+            raise ValueError('ordinary activity cannot modify controls')
+        if record.kind == 'advance':
+            if old.paused or before.technical_problem or record.virtual_minutes != old.virtual_minutes + 1:
+                raise ValueError('life progression is paused or does not represent one step')
+            action = {'drafted': 'start', 'revised': 'revise', 'kept': 'keep', 'rework': 'rework', 'deferred': 'defer'}.get(record.phase)
+            value = dict(action=action, plan=_canonical_value(record.plan) if action in ('start','revise') else None,
+                reason_code=record.reason_code)
+            action, phase, selected, reason, differences = adjudicate_life(value, phase=old.phase, current_plan=old.plan)
+            revision = old.revision + (1 if action in ('start', 'revise') else 0)
+            if ((record.phase, record.plan, record.reason_code, record.differences, record.revision)
+                != (phase, selected, reason, differences, revision)
+                or record.summary != event_summary(action, revision, differences)
+                or record.simulated != (command.trigger == 'simulation')
+                or str(UUID(record.event_id)) != record.event_id
+                or record.event_id in {event.event_id for event in before.events}):
+                raise ValueError('life transition is not the exact adjudicated delta')
+        if record.kind in ('share', 'share-declined'):
+            target = record.disclosed_event_id if record.kind == 'share' else record.considered_event_id
+            if (not before.has_dialogue or before.unanswered_share or not old.sharing_enabled
+                or before.technical_problem or not before.events or target != before.events[-1].event_id
+                or target != command.target_event_id
+                or target in before.disclosed_event_ids or target in before.considered_event_ids):
+                raise ValueError('event is not eligible for a new application share')
+        if record.kind == 'share':
+            if (str(UUID(record.share_id)) != record.share_id or record.share_id in {share.share_id for share in before.shares}
+                or record.share_text != expression.text or expression.language != 'zh'):
+                raise ValueError('share differs from its assistant expression')
+        elif record.share_id or record.share_text:
+            raise ValueError('non-share contains a proactive message')
+        if record.kind == 'disclosure':
+            if record.disclosed_event_id not in {event.event_id for event in before.events}:
+                raise ValueError('chat disclosure is not tied to a committed event')
+        elif record.kind != 'share' and record.disclosed_event_id:
+            raise ValueError('non-disclosure has disclosure evidence')
+        if record.kind != 'share-declined' and record.considered_event_id:
+            raise ValueError('unexpected consideration evidence')
+
+    def first_life_basis(self, *, expected_head=None):
+        from dynamic_subject_agent.first_life import FirstLifeBasis, LifeEvent, LifeVersion, LifeShare
+        self._require_life_authority()
+        publications = self._verified_publications()
+        if expected_head is not None and len(publications) != expected_head:
+            raise PublicationFailedClosed('life-basis-changed', 'life projection is not the frozen global head')
+        current = initial_life_record()
+        events, versions, shares, disclosed, considered = [], [], [], set(), set()
+        has_dialogue = False
+        last_control_admitted = 0
+        for outcome, command, _timestamp in publications:
+            before = FirstLifeBasis(current, tuple(events), tuple(versions), tuple(shares), has_dialogue,
+                any(not share.answered for share in shares), tuple(sorted(disclosed)), outcome.head_sequence - 1,
+                tuple(sorted(considered)))
+            record = outcome.life_record
+            try:
+                self._check_life_change(record, command, before, outcome.expression)
+            except (TypeError, ValueError, KeyError, AttributeError) as error:
+                raise PublicationFailedClosed('life-transition-invalid', 'canonical life delta cannot be verified') from error
+            if type(command) is SubjectCommand:
+                has_dialogue = True
+                shares = [replace(share, answered=True) for share in shares]
+            if record is None:
+                continue
+            current = record
+            if record.kind == 'advance':
+                action = {'drafted': 'start', 'revised': 'revise', 'kept': 'keep', 'rework': 'rework', 'deferred': 'defer'}[record.phase]
+                events.append(LifeEvent(record.event_id, outcome.head_sequence, action,
+                    record.summary, record.revision, record.reason_code, record.simulated))
+                if record.differences:
+                    versions.append(LifeVersion(record.revision, record.plan, record.reason_code,
+                        record.differences, outcome.head_sequence))
+            if record.kind == 'share':
+                shares.append(LifeShare(record.share_id, outcome.head_sequence, record.disclosed_event_id,
+                    record.revision, record.share_text, outcome.expression.language, False))
+            if record.disclosed_event_id:
+                disclosed.add(record.disclosed_event_id)
+            if record.considered_event_id:
+                considered.add(record.considered_event_id)
+            if record.kind == 'control':
+                last_control_admitted = self.query(outcome.operation_ref).admitted_at_us
+        failures = self._writer.execute('''SELECT failure.operation_id, operation.admitted_at_us
+            FROM operation_failure failure JOIN subject_operation operation USING(operation_id)
+            WHERE operation.operation_kind='system' ORDER BY operation.admitted_at_us''').fetchall()
+        technical_problem = ''
+        for operation_id, admitted_at in failures:
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            failed_input = self._query_command(ref)
+            failure = self.query_failure(ref)
+            if failed_input.input_kind == 'share' and failure.code != 'first-life-share-not-attempted':
+                considered.add(failed_input.target_event_id)
+            if admitted_at > last_control_admitted:
+                technical_problem = failure.code
+        return FirstLifeBasis(current, tuple(events), tuple(versions), tuple(shares), has_dialogue,
+            any(not share.answered for share in shares), tuple(sorted(disclosed)), len(publications),
+            tuple(sorted(considered)), technical_problem)
+
+    def list_first_life(self):
+        from dynamic_subject_agent.first_life import FirstLifeQuery, LifeProject
+        basis = self.first_life_basis()
+        return FirstLifeQuery('available', LifeProject(self._authority.timeline_id, '绘画构图文字方案',
+            basis.record.phase, basis.record.revision, basis.record.plan), basis.versions, basis.events, basis.shares,
+            basis.technical_problem)
+
+    def _validate_life_plan(self, plan):
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents:
+            return
+        before = self.first_life_basis(expected_head=plan.expected_basis.head_sequence)
+        try:
+            self._check_life_change(plan.life_record, self._query_command(plan.operation_ref), before, plan.expression)
+        except (TypeError, ValueError, KeyError, AttributeError) as error:
+            raise CommitPlanRejected('life-transition-invalid', 'life plan differs from canonical preconditions') from error
+
+    def _read_life_record(self, plan_id):
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents:
+            return None
+        row = self._writer.execute('SELECT record_json, record_digest FROM life_record WHERE plan_id=?', (plan_id,)).fetchone()
+        if row is None:
+            return None
+        try:
+            record = decode_life_record(json.loads(row[0]))
+            self._assert_record_digest('life-record', record, row[1])
+            if _canonical_json(record) != row[0]:
+                raise ValueError('noncanonical life record')
+            return record
+        except (TypeError, ValueError, KeyError, AttributeError) as error:
+            raise PublicationFailedClosed('life-record-invalid', 'life record is not canonical') from error
+
     def _claim_commit_plan(
         self,
         plan: CycleCommitPlan,
@@ -4211,6 +4552,9 @@ class TimelineEngine:
         try:
             self._hit(FaultPoint.BEFORE_PLAN_CLAIM)
             _begin(self._writer)
+            life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents
+            if life and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
+                raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot be claimed or published')
             existing = self._writer.execute(
                 """
                 SELECT
@@ -4269,6 +4613,10 @@ class TimelineEngine:
                         "commit-plan-identity-conflict",
                         "plan identity already names different immutable content",
                     )
+                if life:
+                    cached = self.prepared_plan(plan.operation_ref)
+                    if cached != plan:
+                        raise CommitPlanConflict('prepared-plan-conflict', 'immutable prepared plan differs from its claim')
                 _commit(self._writer)
                 committed = True
                 self._hit(FaultPoint.AFTER_PLAN_CLAIM)
@@ -4332,6 +4680,11 @@ class TimelineEngine:
                     "a failed-closed cycle cannot enter Publication",
                 )
 
+            if life:
+                if plan.expected_basis != _read_timeline_basis(self._writer):
+                    raise StaleTimelineBasis(plan.expected_basis, _read_timeline_basis(self._writer))
+                self._validate_life_plan(plan)
+
             self._writer.execute(
                 """
                 INSERT INTO commit_plan_identity_claim (
@@ -4351,10 +4704,13 @@ class TimelineEngine:
                 """,
                 (plan_id,) + expected[:-1] + (_utc_microseconds(),),
             )
+            if life:
+                self._writer.execute('INSERT INTO prepared_cycle_plan VALUES (?,?,?,?)',
+                    (plan_id, operation_id, _canonical_json(plan), plan_digest))
             _commit(self._writer)
             committed = True
             self._hit(FaultPoint.AFTER_PLAN_CLAIM)
-        except (CommitPlanRejected, CommitPlanConflict):
+        except (CommitPlanRejected, CommitPlanConflict, StaleTimelineBasis):
             _rollback_if_needed(self._writer)
             raise
         except Exception as error:
@@ -4371,6 +4727,103 @@ class TimelineEngine:
                 "plan-claim-failed",
                 "commit-plan identity claim did not complete",
             ) from error
+
+    def prepared_plan(self, operation_ref):
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents:
+            return None
+        operation_id = _publication_uuid_bytes(operation_ref.operation_id, 'operation_id')
+        row = self._writer.execute('''SELECT prepared.plan_id, prepared.plan_json, prepared.plan_digest,
+            claim.plan_digest, claim.operation_id, claim.attempt_id, claim.subject_event_id,
+            claim.expected_head_sequence, claim.expected_head_outcome_digest,
+            claim.expected_verified_prefix_digest, claim.expected_revision_head_digest
+            FROM prepared_cycle_plan prepared LEFT JOIN commit_plan_identity_claim claim USING(plan_id)
+            WHERE prepared.operation_id=?''', (operation_id,)).fetchone()
+        claim = self._writer.execute('SELECT 1 FROM commit_plan_identity_claim WHERE operation_id=?', (operation_id,)).fetchone()
+        if row is None:
+            if claim is not None:
+                raise PublicationFailedClosed('prepared-plan-missing', 'durable claim has no complete prepared plan')
+            return None
+        try:
+            plan = CycleCommitPlan.from_dict(json.loads(row[1]))
+            self._validate_commit_plan(plan)
+            digest = _publication_digest('cycle-commit-plan', plan)
+            admitted = self._admitted_for_operation(self._writer, operation_id, replayed=True)
+            basis = TimelineBasis(int(row[7]), None if row[8] is None else bytes(row[8]).hex(), bytes(row[9]).hex(), bytes(row[10]).hex())
+            frozen = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
+                verified_prefix_digest, revision_head_digest FROM attempt_cycle_basis WHERE operation_id=?''', (operation_id,)).fetchone()
+            event = self._writer.execute('SELECT event_id FROM subject_event WHERE operation_id=?', (operation_id,)).fetchone()
+            expected_frozen = (UUID(plan.attempt_id).bytes, basis.head_sequence,
+                None if basis.published_outcome_digest is None else bytes.fromhex(basis.published_outcome_digest),
+                bytes.fromhex(basis.verified_prefix_digest), bytes.fromhex(basis.revision_head_digest))
+            if (plan.operation_ref != operation_ref or admitted.operation_ref != operation_ref
+                or plan.attempt_id != admitted.attempt_id or plan.expected_basis != basis
+                or frozen != expected_frozen or event != (UUID(plan.subject_event_id).bytes,)
+                or bytes(row[0]) != UUID(plan.plan_id).bytes or bytes(row[2]) != digest or bytes(row[3]) != digest
+                or bytes(row[4]) != operation_id or bytes(row[5]) != UUID(plan.attempt_id).bytes
+                or bytes(row[6]) != UUID(plan.subject_event_id).bytes or _canonical_json(plan) != row[1]):
+                raise ValueError('prepared plan differs from immutable claim')
+            self._query_command(operation_ref)
+            return plan
+        except (TypeError, ValueError, KeyError, AttributeError, CommitPlanRejected) as error:
+            raise PublicationFailedClosed('prepared-plan-invalid', 'complete prepared plan cannot be verified') from error
+
+    def _share_day_expired(self, operation_ref):
+        if operation_ref.operation_kind is not OperationKind.SYSTEM:
+            return False
+        from dynamic_subject_agent.first_life import current_civil_day
+        from datetime import date
+        command = self._query_command(operation_ref)
+        if command.input_kind != 'share':
+            return False
+        today = current_civil_day()
+        if not isinstance(today, str) or date.fromisoformat(today).isoformat() != today:
+            raise PublicationFailedClosed('first-life-clock-unverified', 'the trusted civil day is unavailable')
+        return command.civil_day != today
+
+    def cancel_prepared_if_stale(self, operation_ref):
+        """Atomically terminate an obsolete schema-3 preparation, without publication."""
+        self._require_life_authority()
+        try:
+            _begin(self._writer)
+            plan = self.prepared_plan(operation_ref)
+            snapshot = self.query(operation_ref)
+            if snapshot.operation_state is not OperationState.ADMITTED_PENDING or plan is None:
+                _commit(self._writer)
+                return False
+            current = _read_timeline_basis(self._writer)
+            expired_share = self._share_day_expired(operation_ref)
+            if current == plan.expected_basis and not expired_share:
+                _commit(self._writer)
+                return False
+            # A corrupt/deleted/regressed chain must never count as cancellation evidence.
+            self._verified_publications()
+            if current != plan.expected_basis and current.head_sequence <= plan.expected_basis.head_sequence:
+                raise PublicationFailedClosed('prepared-basis-invalid', 'changed basis is not a verified successor')
+            prefix = self._writer.execute('SELECT outcome_digest FROM timeline_outcome WHERE head_sequence=?',
+                (plan.expected_basis.head_sequence,)).fetchone()
+            if (None if prefix is None else bytes(prefix[0]).hex()) != plan.expected_basis.published_outcome_digest:
+                raise PublicationFailedClosed('prepared-prefix-invalid', 'preparation does not belong to the current chain')
+            operation_id = UUID(operation_ref.operation_id).bytes
+            if (self._writer.execute('SELECT 1 FROM publication_receipt WHERE plan_id=?', (UUID(plan.plan_id).bytes,)).fetchone()
+                or self._writer.execute('SELECT 1 FROM cycle_commit_plan_receipt WHERE plan_id=?', (UUID(plan.plan_id).bytes,)).fetchone()
+                or self._writer.execute('SELECT 1 FROM timeline_outcome WHERE operation_id=?', (operation_id,)).fetchone()
+                or self._writer.execute('SELECT 1 FROM operation_publication_state WHERE operation_id=?', (operation_id,)).fetchone()):
+                raise PublicationFailedClosed('prepared-terminal-conflict', 'prepared cancellation encountered publication evidence')
+            code = 'first-life-share-day-expired' if expired_share else 'first-life-stale-preparation'
+            detail = ('The prepared share was cancelled because its trusted publication day differs from its claim day.'
+                if expired_share else 'The prepared operation was cancelled because its verified canonical basis changed.')
+            recorded_at = _utc_microseconds()
+            self._writer.execute('INSERT INTO operation_failure VALUES (?,?,?,?,?,?)',
+                (operation_id, UUID(plan.attempt_id).bytes, 'publication', code, detail, recorded_at))
+            self._writer.execute("INSERT INTO cycle_failure_transition VALUES (?,2,'admitted-pending','failed-closed',?)",
+                (operation_id, recorded_at))
+            self._hit(FaultPoint.BEFORE_PREPARED_CANCEL_COMMIT)
+            _commit(self._writer)
+            self._hit(FaultPoint.AFTER_PREPARED_CANCEL_COMMIT)
+            return True
+        except Exception:
+            _rollback_if_needed(self._writer)
+            raise
 
     def _record_stale_conflict(
         self,
@@ -4985,6 +5438,7 @@ class TimelineEngine:
                 "revision_set": plan.revision_set,
                 "expression": plan.expression,
                 "committed_effect_set": plan.committed_effect_set,
+                **({'life_record': plan.life_record} if plan.life_record is not None else {}),
             },
         )
         self._writer.execute(
@@ -5190,6 +5644,9 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PUBLICATION_TRANSACTION)
             _begin(self._writer)
             _require_publication_gate(self._writer, self._authority)
+            if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents
+                and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone()):
+                raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot publish')
             existing = self._writer.execute(
                 """
                 SELECT
@@ -5275,6 +5732,7 @@ class TimelineEngine:
                 )
 
             published_at = _utc_microseconds()
+            self._validate_life_plan(plan)
             self._insert_commit_plan_receipt(
                 plan,
                 plan_digest,
@@ -5286,6 +5744,9 @@ class TimelineEngine:
             self._insert_experience_and_subject_state_outcomes(plan)
             self._insert_agency_relationship_and_domain_set(plan)
             self._insert_revision_expression_and_effect_set(plan)
+            if plan.life_record is not None:
+                self._writer.execute('INSERT INTO life_record VALUES (?,?,?)',
+                    (plan_id, _canonical_json(plan.life_record), _publication_digest('life-record', plan.life_record)))
             self._insert_outcome_and_advance_head(
                 plan,
                 plan_digest,
@@ -5293,6 +5754,10 @@ class TimelineEngine:
                 published_at,
             )
             self._hit(FaultPoint.BEFORE_PUBLICATION_COMMIT)
+            # The final authorization sample defines the publication accounting
+            # day. Nothing that may wait on a fault hook precedes COMMIT after it.
+            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents and self._share_day_expired(plan.operation_ref):
+                raise _PreparedShareDayExpired()
             commit_started = True
             _commit(self._writer)
             try:
@@ -5307,9 +5772,16 @@ class TimelineEngine:
                 outcome=self.query_outcome(plan.operation_ref),
                 replayed=False,
             )
+        except _PreparedShareDayExpired:
+            _rollback_if_needed(self._writer)
+            self.cancel_prepared_if_stale(plan.operation_ref)
+            raise
         except StaleTimelineBasis as error:
             _rollback_if_needed(self._writer)
-            self._record_stale_conflict(plan, error.observed_basis)
+            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+                self.cancel_prepared_if_stale(plan.operation_ref)
+            else:
+                self._record_stale_conflict(plan, error.observed_basis)
             raise
         except (
             CommitPlanRejected,
@@ -5680,6 +6152,14 @@ class TimelineEngine:
             raise PublicationFailedClosed('effect-reference-invalid','effect references differ from authority')
         self._assert_record_digest("committed-effect-set", value, row[4])
         return value
+
+    def has_frozen_attempt(self, operation_ref):
+        snapshot = self.query(operation_ref)
+        row = self._writer.execute('SELECT attempt_id FROM attempt_cycle_basis WHERE operation_id=?',
+            (UUID(operation_ref.operation_id).bytes,)).fetchone()
+        if row is not None and bytes(row[0]) != UUID(snapshot.attempt_id).bytes:
+            raise PublicationFailedClosed('attempt-basis-mismatch', 'frozen attempt differs from Admission')
+        return row is not None
 
     def freeze_attempt_basis(
         self,
@@ -6688,6 +7168,15 @@ class TimelineEngine:
             or not 1 <= limit <= 100
         ):
             raise ValueError("limit must be between 1 and 100")
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+            turns = []
+            for outcome, command, published_at in self._verified_publications():
+                if type(command) is not SubjectCommand:
+                    continue
+                turns.append(ConversationTurnRecord(outcome.head_sequence, command.utterance,
+                    command.language, outcome.expression.text, outcome.expression.language, published_at,
+                    ConversationOutcomeSummary.from_outcome(outcome)))
+            return tuple(turns[-limit:])
         rows = self._writer.execute(
             """
             SELECT
@@ -6934,7 +7423,10 @@ class TimelineEngine:
             ref = OperationRef(str(row[1]), self._location.root_id, self._location.timeline_store_id,
                 self._authority.authority_scope_id, str(UUID(bytes=bytes(row[0]))),
                 OperationKind(str(row[2])), str(row[3]).casefold())
-            message = self._query_command(ref).utterance
+            command = self._query_command(ref)
+            if type(command) is FirstLifeInput:
+                continue
+            message = command.utterance
             prior = self.list_living_memories(limit=100, through_sequence=int(row[4])) if row[4] is not None else current
             selection = select_memory_withdrawal(message, tuple(m for m in prior if m.status == 'active'))
             if selection is None or not selection.restricts_disclosure:
@@ -6960,20 +7452,20 @@ class TimelineEngine:
                 return CharacterDialogueBasis("unavailable", problem_code="character-history-unresolved")
             records, cutoff = verified
             if is_dialogue_control(self._query_command(operation_ref).utterance):
-                return CharacterDialogueBasis("restricted", bool(expected_head), problem_code="character-history-restricted")
+                return CharacterDialogueBasis("restricted", bool(records), problem_code="character-history-restricted")
             selected = select_recent_dialogue(records, after_sequence=cutoff)
             if records and is_dialogue_control(records[-1].user_text):
                 return CharacterDialogueBasis("restricted", True, problem_code="character-history-restricted")
-            return CharacterDialogueBasis("available", bool(expected_head), selected)
+            return CharacterDialogueBasis("available", bool(records), selected)
         # Closing disclosure still verifies the canonical basis and foreground;
         # it never substitutes an unverified empty history for a failed read.
         snapshot = self.query(operation_ref)
         if snapshot.timeline_basis is None or snapshot.timeline_basis.head_sequence != expected_head:
             raise PublicationFailedClosed("character-history-basis-invalid", "character foreground must match frozen Admission")
         records = self.list_conversation_turns(limit=2)
-        if (records[-1].head_sequence if records else 0) != expected_head:
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed("character-history-head-invalid", "character foreground is not current")
-        return CharacterDialogueBasis("available", bool(expected_head))
+        return CharacterDialogueBasis("available", bool(records))
 
     def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
         """Read only the same identity's verified frozen prefix for this reply."""
@@ -6999,7 +7491,7 @@ class TimelineEngine:
             or frozen.head_sequence != expected_head or frozen != snapshot.timeline_basis):
             raise PublicationFailedClosed('dialogue-basis-mismatch', 'dialogue does not match the frozen turn basis')
         records = self.list_conversation_turns(limit=2)
-        if (records[-1].head_sequence if records else 0) != expected_head:
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed('dialogue-head-mismatch', 'dialogue does not end at the frozen head')
         cutoff = 0
         unpublished = self._writer.execute('''
@@ -7012,13 +7504,15 @@ class TimelineEngine:
                 SELECT 1 FROM timeline_outcome outcome WHERE outcome.operation_id=op.operation_id)
         ''', (UUID(operation_ref.operation_id).bytes,)).fetchall()
         for row in unpublished:
-            # Pending/interrupted or unfrozen admissions have unresolved intent.
-            if row[4] is None or row[5] is None:
-                return None
             previous_ref = OperationRef(str(row[1]), self._location.root_id,
                 self._location.timeline_store_id, self._authority.authority_scope_id,
                 str(UUID(bytes=bytes(row[0]))), OperationKind(str(row[2])), str(row[3]).casefold())
             previous_command = self._query_command(previous_ref)
+            if type(previous_command) is FirstLifeInput:
+                continue
+            # Pending/interrupted or unfrozen admissions have unresolved intent.
+            if row[4] is None or row[5] is None:
+                return None
             if is_dialogue_control(previous_command.utterance):
                 return None
             cutoff = max(cutoff, int(row[4]))
@@ -7122,6 +7616,7 @@ class TimelineEngine:
             revision_set = self._read_revision_set(bytes(row[13]))
             expression = self._read_expression(bytes(row[14]))
             effect_set = self._read_effect_set(bytes(row[15]))
+            life_record = self._read_life_record(plan_id)
 
             domain_set = self._writer.execute(
                 """
@@ -7189,6 +7684,7 @@ class TimelineEngine:
                 revision_set=revision_set,
                 expression=expression,
                 committed_effect_set=effect_set,
+                life_record=life_record,
             )
             self._validate_commit_plan(plan)
             plan_digest = _publication_digest("cycle-commit-plan", plan)
@@ -7197,6 +7693,8 @@ class TimelineEngine:
                     "canonical-publication-integrity-mismatch",
                     "CycleCommitPlanReceipt digest does not match composing records",
                 )
+            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents and self.prepared_plan(operation_ref) != plan:
+                raise PublicationFailedClosed('prepared-publication-mismatch', 'published plan differs from durable preparation')
             claim = self._writer.execute(
                 """
                 SELECT plan_digest
@@ -7246,6 +7744,7 @@ class TimelineEngine:
                     "revision_set": revision_set,
                     "expression": expression,
                     "committed_effect_set": effect_set,
+                    **({'life_record': life_record} if life_record is not None else {}),
                 },
             )
             if expected_outcome_digest != bytes(row[6]):
@@ -7271,6 +7770,7 @@ class TimelineEngine:
                 revision_set=revision_set,
                 expression=expression,
                 committed_effect_set=effect_set,
+                life_record=life_record,
             )
         except PublicationProblem:
             raise
@@ -7319,46 +7819,54 @@ def _data_control_export_snapshot(
                 replayed=True,
             )
             snapshot = engine.query(admitted.operation_ref)
-            command = engine._writer.execute(
-                """
-                SELECT
-                    command_kind,
-                    target_profile_id,
-                    target_timeline_id,
-                    declared_intent,
-                    utterance,
-                    language,
-                    provenance,
-                    normalization_version,
-                    payload_fingerprint
-                FROM subject_command
-                WHERE operation_id = ?
-                """,
-                (operation_id,),
-            ).fetchone()
-            if command is None:
-                raise AdmissionFailedClosed(
-                    "data-control-timeline-incomplete",
-                    "canonical Operation has no admitted SubjectCommand",
-                )
-            operations.append(
-                {
+            if admitted.operation_ref.operation_kind is OperationKind.SYSTEM:
+                system_input = engine._query_command(admitted.operation_ref)
+                operations.append({
                     "operation_ref": _canonical_value(admitted.operation_ref),
                     "admission_snapshot": _canonical_value(snapshot),
-                    "command": {
-                        "contract_version": CONTRACT_VERSION,
-                        "kind": str(command[0]),
-                        "target_profile_id": str(command[1]),
-                        "target_timeline_id": str(command[2]),
-                        "declared_intent": str(command[3]),
-                        "utterance": str(command[4]),
-                        "language": str(command[5]),
-                        "provenance": str(command[6]),
-                        "normalization_version": str(command[7]),
-                        "payload_fingerprint": bytes(command[8]).hex(),
-                    },
-                }
-            )
+                    "system_input": _canonical_value(system_input),
+                })
+            else:
+                command = engine._writer.execute(
+                    """
+                    SELECT
+                        command_kind,
+                        target_profile_id,
+                        target_timeline_id,
+                        declared_intent,
+                        utterance,
+                        language,
+                        provenance,
+                        normalization_version,
+                        payload_fingerprint
+                    FROM subject_command
+                    WHERE operation_id = ?
+                    """,
+                    (operation_id,),
+                ).fetchone()
+                if command is None:
+                    raise AdmissionFailedClosed(
+                        "data-control-timeline-incomplete",
+                        "canonical Operation has no admitted SubjectCommand",
+                    )
+                operations.append(
+                    {
+                        "operation_ref": _canonical_value(admitted.operation_ref),
+                        "admission_snapshot": _canonical_value(snapshot),
+                        "command": {
+                            "contract_version": CONTRACT_VERSION,
+                            "kind": str(command[0]),
+                            "target_profile_id": str(command[1]),
+                            "target_timeline_id": str(command[2]),
+                            "declared_intent": str(command[3]),
+                            "utterance": str(command[4]),
+                            "language": str(command[5]),
+                            "provenance": str(command[6]),
+                            "normalization_version": str(command[7]),
+                            "payload_fingerprint": bytes(command[8]).hex(),
+                        },
+                    }
+                )
             if snapshot.operation_state is OperationState.COMPLETED:
                 outcomes.append(
                     _canonical_value(engine.query_outcome(admitted.operation_ref))

@@ -1,0 +1,162 @@
+"""Typed finite life decisions plus ordinary chat, with no legacy effects."""
+from dataclasses import asdict, replace
+from hashlib import sha256
+from uuid import NAMESPACE_URL, uuid5
+
+from dynamic_subject_agent.runtime import CognitionEngine, CognitionFailedClosed, ExpressionCandidate
+from dynamic_subject_agent.timeline import PreAdmissionRejected
+from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelGatewayFailure
+from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
+from dynamic_subject_agent.character_communication_plan import _validated_expression
+from dynamic_subject_agent.frozen_attempt import canonical_json
+from dynamic_subject_agent.first_life import (
+    LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, FirstLifeInput, LifeRecord, adjudicate_life, event_summary,
+)
+from dynamic_subject_agent.first_life_projection import life_model_projection, life_chat_planning, life_chat_expression
+
+
+class FirstLifeDormantCognition(CognitionEngine):
+    adapter_version = "first-life-dormant-cognition-1"
+    provider_authority = LIFE_DORMANT_AUTHORITY
+    experimental = True
+    test_only = False
+    supports_first_life = True
+    supports_subject_tasks = False
+    supports_text_effects = False
+
+    def preflight(self, *, context, command):
+        raise PreAdmissionRejected("first-life-unavailable", "First-life serving is not assembled.")
+
+    def propose(self, *, plan, context, command, basis):
+        raise CognitionFailedClosed("first-life", "first-life-unavailable", "First-life serving is not assembled.")
+
+
+class FirstLifeCognition(CognitionEngine):
+    adapter_version = "first-life-cognition-1"
+    provider_authority = LIFE_AUTHORITY
+    experimental = True
+    test_only = False
+    supports_first_life = True
+    supports_subject_tasks = False
+    supports_text_effects = False
+
+    def __init__(self, *, envelope=None, gateway=None, budget=None, history_preference=None, development_run=False, civil_day=None):
+        self.envelope, self.gateway, self.budget = envelope, gateway, budget
+        self.history_preference, self.development_run, self.civil_day = history_preference, development_run, civil_day
+
+    def preflight(self, *, context, command):
+        if type(command) is FirstLifeInput:
+            if command.input_kind == "control": return
+        elif command.language != "zh" or len(command.utterance) > 1000:
+            raise PreAdmissionRejected("first-life-message-invalid", "Chinese chat accepts at most 1000 characters.")
+        if self.gateway is None: raise PreAdmissionRejected("first-life-unavailable", "First-life provider is not assembled.")
+
+    def _call(self, plan, *, purpose, projection, civil_day, validator):
+        stage = "planning" if purpose in ("life-decision", "chat-planning") else "expression"
+        identity = sha256(plan.operation_ref.authority_scope_id.encode()).hexdigest()
+        operation = sha256((plan.operation_ref.operation_id + ":" + plan.attempt_id).encode()).hexdigest()
+        request = sha256(canonical_json(asdict(projection)).encode()).hexdigest()
+        try:
+            self.budget.claim_life(identity, operation, stage, request, purpose=purpose, civil_day=civil_day, development_run=self.development_run)
+        except Exception:
+            code = "first-life-share-not-attempted" if purpose == "life-share" else "first-life-budget-unavailable"
+            raise CognitionFailedClosed("first-life-budget", code, "No verified quota or new stage claim is available.") from None
+        kinds = {"life-decision": ModelTaskKind.CHARACTER_FIRST_LIFE_DECISION, "life-share": ModelTaskKind.CHARACTER_FIRST_LIFE_SHARE,
+                 "chat-planning": ModelTaskKind.CHARACTER_COMMUNICATION_PLAN, "chat-expression": ModelTaskKind.CHARACTER_COMMUNICATION_EXPRESSION}
+        try:
+            value = self.gateway.execute(ModelTask(kinds[purpose], projection)).value
+            try: validator(value)
+            except Exception: raise ModelGatewayFailure("structured-choice-invalid") from None
+        except Exception as error:
+            allowed = (REVIEW_DIAGNOSTIC_CODES - {"review-schema", "review-quote", "review-label"}) | {"character-credential-unavailable", "structured-choice-invalid"}
+            code = error.code if isinstance(error, ModelGatewayFailure) and error.code in allowed else "provider-failed"
+            status = "unavailable" if code == "character-credential-unavailable" else "unknown" if code in ("transport-timeout", "transport-delivery-ambiguous") else "failed-closed"
+            try: self.budget.record(identity, operation, stage, status=status)
+            except Exception: code = "audit-failed"
+            prefix = "first-life-share-" if purpose == "life-share" else "first-life-"
+            raise CognitionFailedClosed(purpose, prefix + code, "A bounded stage did not complete safely; no story consequence was committed.") from None
+        try: self.budget.record(identity, operation, stage, status="complete", output_digest=sha256(canonical_json(value).encode()).hexdigest())
+        except Exception:
+            raise CognitionFailedClosed(purpose, "first-life-share-audit-failed" if purpose == "life-share" else "first-life-audit-failed", "Delivery could not be audited safely.") from None
+        return value
+
+    @staticmethod
+    def _share_value(value):
+        if (type(value) is not dict or set(value) != {"share", "reply_text", "language"} or type(value["share"]) is not bool
+            or value["language"] != "zh" or not isinstance(value["reply_text"], str)
+            or (value["share"] and (not value["reply_text"].strip() or len(value["reply_text"]) > 400))
+            or (not value["share"] and value["reply_text"] != "")):
+            raise ValueError("exact bounded share choice required")
+        return value
+
+    def propose(self, *, plan, context, command, basis):
+        try:
+            current = context.load_first_life()
+        except Exception:
+            raise CognitionFailedClosed("first-life", "first-life-basis-unverified", "Life state could not be verified.") from None
+        if type(command) is not FirstLifeInput:
+            return self._chat(plan, context, command, basis, current)
+        before = current.record
+        if command.input_kind == "control":
+            record = replace(before, kind="control", reason_code="", differences=(), event_id="", summary="", simulated=False,
+                paused=before.paused if command.paused is None else command.paused,
+                sharing_enabled=before.sharing_enabled if command.sharing_enabled is None else command.sharing_enabled,
+                disclosed_event_id="", share_id="", share_text="", considered_event_id="")
+            return self._proposal(context, basis, record, "系统：生活控制已提交。")
+        if current.technical_problem:
+            raise CognitionFailedClosed("first-life", "first-life-needs-attention", "A prior technical failure requires explicit control/resume.")
+        if command.input_kind == "advance":
+            if before.paused or before.phase in ("kept", "deferred"):
+                raise CognitionFailedClosed("first-life", "first-life-no-boundary", "No new life decision is permitted.")
+            projection = life_model_projection(self.envelope, context.runtime_identity, current)
+            value = self._call(plan, purpose="life-decision", projection=projection, civil_day=command.civil_day,
+                validator=lambda value: adjudicate_life(value, phase=before.phase, current_plan=before.plan))
+            action, phase, creative, reason, differences = adjudicate_life(value, phase=before.phase, current_plan=before.plan)
+            revision = before.revision + (action in ("start", "revise"))
+            event_id = str(uuid5(NAMESPACE_URL, "first-life-event:" + plan.operation_ref.operation_id))
+            record = LifeRecord("advance", phase, revision, creative, reason, differences, event_id,
+                event_summary(action, revision, differences), before.virtual_minutes + 1, before.paused, before.sharing_enabled,
+                command.trigger == "simulation")
+            return self._proposal(context, basis, record, "系统：已提交一项构图文字活动变化。")
+        event = next((event for event in current.events if event.event_id == command.target_event_id), None)
+        if (event is None or not current.has_dialogue or not before.sharing_enabled or current.unanswered_share
+            or event.event_id in current.disclosed_event_ids or event.event_id in current.considered_event_ids):
+            raise CognitionFailedClosed("first-life-share", "first-life-share-not-attempted", "This event is not currently eligible for sharing.")
+        projection = life_model_projection(self.envelope, context.runtime_identity, current, share=True, target_event=event)
+        value = self._call(plan, purpose="life-share", projection=projection, civil_day=command.civil_day, validator=self._share_value)
+        base = replace(before, kind="share" if value["share"] else "share-declined", reason_code="", differences=(), event_id="", summary="", simulated=False,
+            disclosed_event_id=event.event_id if value["share"] else "", share_id="", share_text="", considered_event_id="" if value["share"] else event.event_id)
+        record = replace(base, share_id=str(uuid5(NAMESPACE_URL, "first-life-share:" + plan.operation_ref.operation_id)), share_text=value["reply_text"]) if value["share"] else base
+        return self._proposal(context, basis, record, value["reply_text"] if value["share"] else "系统：本次不分享，该事件已考虑。")
+
+    def _chat(self, plan, context, command, basis, current):
+        try:
+            remaining = self.budget.counts()[2]
+            development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]
+            if remaining < 2 or development is not None and development < 2: raise ValueError("two-stage allowance unavailable")
+        except Exception:
+            raise CognitionFailedClosed("budget", "first-life-budget-unavailable", "No verified two-stage allowance is available for a new chat.") from None
+        try:
+            enabled = self.history_preference()
+            dialogue = context.load_character_dialogue(enabled)
+            planning, event = life_chat_planning(self.envelope, context.runtime_identity, command.utterance, dialogue, enabled, current)
+            day = self.civil_day()
+        except Exception:
+            raise CognitionFailedClosed("history", "first-life-history-unverified", "History or sealed material is unavailable.") from None
+        value = self._call(plan, purpose="chat-planning", projection=planning, civil_day=day,
+            validator=lambda value: life_chat_expression(planning, value))
+        if self.history_preference() != enabled:
+            raise CognitionFailedClosed("history", "first-life-history-changed", "History preference changed before expression.")
+        expression, used = life_chat_expression(planning, value)
+        output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=self.civil_day(), validator=_validated_expression)
+        record = None
+        if used and event is not None:
+            record = replace(current.record, kind="disclosure", reason_code="", differences=(), event_id="", summary="", simulated=False,
+                disclosed_event_id=event.event_id, share_id="", share_text="", considered_event_id="")
+        return self._proposal(context, basis, record, _validated_expression(output))
+
+    def _proposal(self, context, basis, record, text):
+        proposal = self._bounded_noop_proposal(context=context, basis=basis,
+            experience_summary="有限系统活动/交流已提交；创作文字及台词不改起点知识、人格或原作剧情。",
+            expression_candidate=ExpressionCandidate(text, "zh"))
+        return replace(proposal, life_record=record)
