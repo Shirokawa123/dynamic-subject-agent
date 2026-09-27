@@ -6,6 +6,8 @@ S103封存完整人物，S104接持久聊天；S105新增独立schema3有限生�
 
 ### Slice-107：可回退的交流策略与分享历史用途
 
+用户随后批准开发累计24→36，原总200与日6/2不变。FirstLifeBudget在同attempts.sqlite3追加精确唯一grant（固定批准ID、原config、不可变life前缀/摘要），用user_version1作存在见证；未授权仍24，坏grant拒绝读取/claim，同事务裁决额度，不修改旧stage/life记录、hash seed24或DEVELOPMENT_SCOPE。重复批准幂等，不以normal调用或新目录绕开开发计数。旧FirstLifeBudget仅在开发已用≤24时可读，第25条会失败关闭，因此使用追加额度前必须重载旧生活预算读取器；普通CharacterChatBudget仍可读原全局账。真实部署状态见[开发额度方案](plans/relevance-validation-allowance.md)。
+
 S107接续新增`first-life-grounded-3`，保留v2字节及scope：聊天规划从同一完整两轮/4000字符派生本请求U/A来源，选择最多2条，Python按当前请求原样复制speaker/text到表达，表达不重复整窗。F资料引用与对话来源引用分别校验；相识focus不允许使用近期来源解释最初动机。没有明确图片或文字描述的依据不能生成具体画评，创作计划既不证明房间实景也不证明未参考房间。生活和分享仍逐字委托v2，原授权revision/锁/恢复路径保留；这些结构约束不证明自由表达完全忠实。单个真实纠错成立，未提示泛化/真实分享尚未通过；用户窗口尚未启用。
 
 用户明确批准分享使用当前身份最近最多2完整committed user/assistant轮、合计4000字符，同DeepSeek且受历史开关控制；life-decision保持S105原wire。`first-life-relevance-2`通过既有identity registry的精确`life_runtime_policy`（版本、digest、definition、原life scope、revision）授权，原Profile/QRI/Timeline及封存定义不变；无显式启用保持v1，启用后重开读取保存版本，新二进制可显式回退v1。回退不改旧聊天，不承诺旧二进制能读v2 prepared数据。

@@ -62,3 +62,11 @@ Context7 resolve-library-id实际返回fetch failed；按context7-mcp技能转�
 最后重开确认同profile/timeline/活动digest，history恢复关闭、生活暂停/分享关闭，原记录不变。当前109/200余91，开发余0，日6/2未重置。v3运行scope digest为`1e80356c9f05a34f6718bd65caa708ea65a364e976b845f50d00f3831f6dcaae`；仅开发分支启用，用户分支保持原版。
 
 后续实际需要未提示成对聊天及一个独立真实分享情景；已完成可审[开发额度补充方案](../../plans/relevance-validation-allowance.md)，建议累计开发上限24→36，最多另用12次原200额度，不增加总额/数据用途/日限，**尚未批准或修改预算**。不标development_run=False或改目录绕过上限，不在验收尚未通过时替换用户窗口。
+
+## 用户批准开发36后的预算接续
+
+用户明确允许累计开发上限24→36，从原200内新增最多12；授权已落盘且独立复核接纳。FirstLifeBudget同attempts.sqlite3新增唯一grant，绑定固定批准ID、原config及不可变life前缀，用user_version1见证存在；原stage/life rows、hash seed24、DEVELOPMENT_SCOPE、总200、日6/2及封存scope均不改。重复批准幂等，损坏不猜额度或自动补授权。新增16项及相关旧4项通过，含多进程名额竞争、批准中断回滚与旧读取器边界。
+
+root已明确调用批准接口一次，前后总账均109/200、day6/2，开发可用0→12，Provider调用0。旧FirstLifeBudget在已用24时仍能读；第25次开发调用后它会明确失败关闭，因此不能继续与旧reader共存。重载只更新预算读取能力，不因此启用尚未验收通过的v3对话策略。
+
+当前8767的旧服务PID45592。root核对监听/程序及无pending后准备重载，停止/启动命令整条被自动审批审核拒绝，返回blocked by policy、未给详细原因，命令未执行；未改用另一杀进程方式绕过。已请求用户手动关闭该进程，重载前不发新调用。三个固定独立措辞验收脚本已准备并有显式reader-reloaded门槛，但未执行；真实分享仍受当日日限约束。
