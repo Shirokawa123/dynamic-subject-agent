@@ -4,7 +4,7 @@
 
 ## 开发Agent协作
 
-- 2026-09-26用户授权按任务价值分派不同模型并优化思考档位，Sol最高xhigh。需要委派或独立复核时读 `docs/plans/agent-execution-strategy.md`：Astra保留总决策和接纳，按任务选择Luna medium/high与Sol high（必要时xhigh），默认短上下文和最小团队；每个写入目标只有一个所有者。简单工作直接完成。此授权只涉及开发协作，不扩大产品Provider、凭据或私人数据用途。
+- 用户授权按任务价值选择模型和思考档位：Sol最高xhigh；2026-09-27补充难题可委派Astra子代理，档位自主决定。需要委派或独立复核时读 `docs/plans/agent-execution-strategy.md`：主窗口保留总决策与接纳，默认短上下文、最小团队、每个写入目标唯一所有者；简单工作直接完成。此授权仅涉及开发协作，不扩大产品Provider、凭据或私人数据用途。
 
 ## 当前产品方向讨论
 
