@@ -1256,17 +1256,19 @@ class LocalIdentityAuthority:
     def first_life_runtime_policy(self, expected_identity_id, *, runtime_policy=None, runtime_policy_digest=None):
         """Select a reversible runtime addon without republishing the sealed identity."""
         from dynamic_subject_agent.first_life_relevance import RELEVANCE_VERSION, first_life_scope_digest
+        from dynamic_subject_agent.first_life_grounded import GROUNDED_VERSION, first_life_scope_digest as grounded_scope_digest
         with self._history_lock:
             state, record, identity = self._active_chat_record(expected_identity_id)
             if identity.qri.provider_authority != LIFE_AUTHORITY:
                 raise RuntimeError("first-life-active-required")
             definition = identity.reviewed_definition["definition_basis"]
-            expected = first_life_scope_digest(definition)
+            versions = {LEGACY_RUNTIME_POLICY: record["life_scope_digest"],
+                RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition)}
             saved = record.get("life_runtime_policy")
             if "life_runtime_policy" in record:
                 if (type(saved) is not dict or set(saved) != {"version", "digest", "definition_basis", "life_scope_digest", "revision"}
-                    or saved["version"] not in (LEGACY_RUNTIME_POLICY, RELEVANCE_VERSION)
-                    or saved["digest"] != (expected if saved["version"] == RELEVANCE_VERSION else record["life_scope_digest"])
+                    or saved["version"] not in versions
+                    or saved["digest"] != versions[saved["version"]]
                     or saved["definition_basis"] != definition or saved["life_scope_digest"] != record["life_scope_digest"]
                     or type(saved["revision"]) is not int or saved["revision"] < 1
                     or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
@@ -1274,8 +1276,8 @@ class LocalIdentityAuthority:
             if runtime_policy is None:
                 if runtime_policy_digest is not None: raise ValueError("runtime policy version required")
                 return LEGACY_RUNTIME_POLICY if saved is None else saved["version"]
-            digest = expected if runtime_policy == RELEVANCE_VERSION else record["life_scope_digest"]
-            if runtime_policy not in (LEGACY_RUNTIME_POLICY, RELEVANCE_VERSION) or runtime_policy_digest != digest:
+            digest = versions.get(runtime_policy)
+            if runtime_policy not in versions or runtime_policy_digest != digest:
                 raise ValueError("exact approved runtime policy digest required")
             if saved is None or saved["version"] != runtime_policy:
                 record["life_runtime_policy"] = dict(version=runtime_policy, digest=digest, definition_basis=definition,

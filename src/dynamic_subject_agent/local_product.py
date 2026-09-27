@@ -679,9 +679,14 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
         runtime_policy=runtime_policy, runtime_policy_digest=runtime_policy_digest)
     from dynamic_subject_agent.first_life_authorization import LEGACY_RUNTIME_POLICY
     adapter_type = DeepSeekFirstLifeAdapter
-    if selected_policy != LEGACY_RUNTIME_POLICY:
+    if selected_policy == "first-life-relevance-2":
         from dynamic_subject_agent.first_life_relevance_provider import DeepSeekFirstLifeRelevanceAdapter
         adapter_type = DeepSeekFirstLifeRelevanceAdapter
+    elif selected_policy == "first-life-grounded-3":
+        from dynamic_subject_agent.first_life_grounded_provider import DeepSeekFirstLifeGroundedAdapter
+        adapter_type = DeepSeekFirstLifeGroundedAdapter
+    elif selected_policy != LEGACY_RUNTIME_POLICY:
+        raise ValueError("unknown first-life runtime policy")
     day = current_civil_day if _civil_day is None else _civil_day
     budget = FirstLifeBudget(budget_path, total=budget_total, initial_used=initial_budget_used, civil_day=day)
     clock = FirstLifeClock() if _clock is None else FirstLifeClock(_clock)

@@ -6,6 +6,8 @@ S103封存完整人物，S104接持久聊天；S105新增独立schema3有限生�
 
 ### Slice-107：可回退的交流策略与分享历史用途
 
+S107接续新增`first-life-grounded-3`，保留v2字节及scope：聊天规划从同一完整两轮/4000字符派生本请求U/A来源，选择最多2条，Python按当前请求原样复制speaker/text到表达，表达不重复整窗。F资料引用与对话来源引用分别校验；相识focus不允许使用近期来源解释最初动机。没有明确图片或文字描述的依据不能生成具体画评，创作计划既不证明房间实景也不证明未参考房间。生活和分享仍逐字委托v2，原授权revision/锁/恢复路径保留；这些结构约束不证明自由表达完全忠实。单个真实纠错成立，未提示泛化/真实分享尚未通过；用户窗口尚未启用。
+
 用户明确批准分享使用当前身份最近最多2完整committed user/assistant轮、合计4000字符，同DeepSeek且受历史开关控制；life-decision保持S105原wire。`first-life-relevance-2`通过既有identity registry的精确`life_runtime_policy`（版本、digest、definition、原life scope、revision）授权，原Profile/QRI/Timeline及封存定义不变；无显式启用保持v1，启用后重开读取保存版本，新二进制可显式回退v1。回退不改旧聊天，不承诺旧二进制能读v2 prepared数据。
 
 新版规划选择一个交流focus和最多2项实际发言资料，背景core/personality不要求逐条说出；表达内外策略统一。相识保留系统兴趣推荐与用户发私信，移除未确认的助手动机草案，不创造主动加好友事实。分享只选择一个变化/取舍与continuation/self-interest开口方式，可不发；不外发系统版本回执，创作diff完整保留。闭集字段、引用和长度校验不证明自由台词相关/自然或没有事实扩写。

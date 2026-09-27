@@ -46,7 +46,7 @@ class FirstLifeCognition(CognitionEngine):
         self.envelope, self.gateway, self.budget = envelope, gateway, budget
         self.history_preference, self.development_run, self.civil_day = history_preference, development_run, civil_day
         self.runtime_policy, self.share_authorization, self.share_guard = runtime_policy, share_authorization, share_guard
-        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2"):
+        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2", "first-life-grounded-3"):
             raise ValueError("unknown first-life runtime policy")
 
     def preflight(self, *, context, command):
@@ -166,8 +166,10 @@ class FirstLifeCognition(CognitionEngine):
 
     def _chat(self, plan, context, command, basis, current):
         planning_fn, expression_fn = life_chat_planning, life_chat_expression
-        if self.runtime_policy != LEGACY_RUNTIME_POLICY:
+        if self.runtime_policy == "first-life-relevance-2":
             from dynamic_subject_agent.first_life_relevance import life_chat_planning as planning_fn, life_chat_expression as expression_fn
+        elif self.runtime_policy == "first-life-grounded-3":
+            from dynamic_subject_agent.first_life_grounded import life_chat_planning as planning_fn, life_chat_expression as expression_fn
         try:
             remaining = self.budget.counts()[2]
             development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]

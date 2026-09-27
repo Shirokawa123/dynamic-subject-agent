@@ -33,7 +33,7 @@ class ShareAuthorization:
 
     def __post_init__(self):
         if (str(UUID(self.identity_id)) != self.identity_id
-            or self.runtime_policy != "first-life-relevance-2"
+            or self.runtime_policy not in ("first-life-relevance-2", "first-life-grounded-3")
             or re.fullmatch(r"[0-9a-f]{64}", self.runtime_policy_digest) is None
             or type(self.policy_revision) is not int or self.policy_revision < 1
             or type(self.history_revision) is not int or self.history_revision < 0
