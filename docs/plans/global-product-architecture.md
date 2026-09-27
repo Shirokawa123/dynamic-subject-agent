@@ -6,6 +6,8 @@
 
 本轮依据：[代码与补充研究](../research/2026-09-24-system-design-evidence.md)、[人物与交流](../research/2026-09-24-character-mechanisms-review.md)、[生活与行动](../research/2026-09-24-life-mechanisms-review.md)。后续专题和任务书从本文链接进入，不另起相互竞争的总路线。
 
+2026-09-27实聊纠偏：用户否定S105的资料复述、笔名反应和突兀方案播报。P3工程闭环不能当作分享体验通过；下一优先修P1/P2/P3之间的交流选择、渠道解释与分享理由，暂不扩建长期记忆。见[S106诊断](../research/2026-09-27-conversation-relevance-diagnosis.md)和[具体修复/新用途方案](conversation-relevance-repair.md)，本轮尚未实施。
+
 ## 1. 项目到底为了什么
 
 让用户通过聊天，长期认识一个来自作品或原创设定的虚拟人物。她有稳定而不僵硬的自我认识，有自己的关注、能力和生活进展；双方的相处会影响此后的理解与选择。用户回来时，可以延续同一个人的同一段人生。
