@@ -685,6 +685,9 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
     elif selected_policy == "first-life-grounded-3":
         from dynamic_subject_agent.first_life_grounded_provider import DeepSeekFirstLifeGroundedAdapter
         adapter_type = DeepSeekFirstLifeGroundedAdapter
+    elif selected_policy == "first-life-followup-4":
+        from dynamic_subject_agent.first_life_followup_provider import DeepSeekFirstLifeFollowupAdapter
+        adapter_type = DeepSeekFirstLifeFollowupAdapter
     elif selected_policy != LEGACY_RUNTIME_POLICY:
         raise ValueError("unknown first-life runtime policy")
     day = current_civil_day if _civil_day is None else _civil_day
@@ -696,6 +699,8 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
     cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
         history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=development_run, civil_day=day,
         runtime_policy=selected_policy, share_authorization=lambda: authority.first_life_share_authorization(loaded.qri.profile_id),
-        share_guard=authority.first_life_share_guard)
+        share_guard=authority.first_life_share_guard,
+        chat_authorization=lambda: authority.first_life_chat_authorization(loaded.qri.profile_id),
+        chat_guard=authority.first_life_chat_guard)
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
         first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=development_run)

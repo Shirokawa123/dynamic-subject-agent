@@ -359,6 +359,7 @@ class CognitionRuntimeView:
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_character_dialogue: Callable[[bool], object] | None = None
+    load_first_life_followup: Callable[[bool], object] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
     load_artifact_preview: Callable | None = None
@@ -382,6 +383,7 @@ class CognitiveProposal:
     knowledge_continuation: ExpressionCandidate | None = None
     life_record: LifeRecord | None = None
     share_authorization: object | None = None
+    chat_authorization: object | None = None
 
 
 @dataclass(frozen=True)
@@ -834,6 +836,7 @@ class SubjectRuntime:
         self._context = context
         self._cognition = cognition
         self._engine._life_share_guard = getattr(cognition, "share_guard", None)
+        self._engine._life_chat_guard = getattr(cognition, "chat_guard", None)
         self._interrupt_at = interrupt_at
         self._domain_fault = domain_fault
         self._fault_hook = fault_hook
@@ -1082,6 +1085,10 @@ class SubjectRuntime:
             medium_state=medium_state,
             medium_signals=medium_signals,
             subject_time_result=subject_time_result,
+            load_first_life_followup=(
+                (lambda enabled: self._engine.first_life_followup_before(dialogue_operation, expected_head=dialogue_head, enabled=enabled))
+                if life_basis is not None and dialogue_operation is not None and dialogue_head is not None else None
+            ),
             load_character_dialogue=(
                 (lambda enabled: self._engine.character_dialogue_before(dialogue_operation, expected_head=dialogue_head, enabled=enabled))
                 if dialogue_operation is not None and dialogue_head is not None else None
@@ -1781,6 +1788,7 @@ class SubjectRuntime:
             ),
             life_record=proposal.life_record,
             share_authorization=proposal.share_authorization,
+            chat_authorization=proposal.chat_authorization,
         )
 
 

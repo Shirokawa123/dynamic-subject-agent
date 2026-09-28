@@ -935,6 +935,13 @@ def _select_local_identity(
                 host_location,
                 timeline_id,
             )
+        if "chat_identity_revision" in state or any(
+            isinstance(row.get("life_runtime_policy"), dict)
+            and row["life_runtime_policy"].get("version") == "first-life-followup-4" for row in identities):
+            revision = state.get("chat_identity_revision")
+            if type(revision) is not int or revision < 0:
+                raise RuntimeError("chat-identity-revision-invalid")
+            state["chat_identity_revision"] = revision + (state["active_identity_id"] != request.identity_id)
         state["active_identity_id"] = request.identity_id
         _write_state(config.state_path, state)
         view = LocalIdentityView(
@@ -1257,13 +1264,14 @@ class LocalIdentityAuthority:
         """Select a reversible runtime addon without republishing the sealed identity."""
         from dynamic_subject_agent.first_life_relevance import RELEVANCE_VERSION, first_life_scope_digest
         from dynamic_subject_agent.first_life_grounded import GROUNDED_VERSION, first_life_scope_digest as grounded_scope_digest
+        from dynamic_subject_agent.first_life_followup import FOLLOWUP_VERSION, first_life_scope_digest as followup_scope_digest
         with self._history_lock:
             state, record, identity = self._active_chat_record(expected_identity_id)
             if identity.qri.provider_authority != LIFE_AUTHORITY:
                 raise RuntimeError("first-life-active-required")
             definition = identity.reviewed_definition["definition_basis"]
             versions = {LEGACY_RUNTIME_POLICY: record["life_scope_digest"],
-                RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition)}
+                RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition), FOLLOWUP_VERSION: followup_scope_digest(definition)}
             saved = record.get("life_runtime_policy")
             if "life_runtime_policy" in record:
                 if (type(saved) is not dict or set(saved) != {"version", "digest", "definition_basis", "life_scope_digest", "revision"}
@@ -1273,6 +1281,11 @@ class LocalIdentityAuthority:
                     or type(saved["revision"]) is not int or saved["revision"] < 1
                     or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
                     raise RuntimeError("first-life-runtime-policy-invalid")
+            if "chat_identity_revision" in state or any(
+                isinstance(row.get("life_runtime_policy"), dict)
+                and row["life_runtime_policy"].get("version") == FOLLOWUP_VERSION for row in state["identities"]):
+                if type(state.get("chat_identity_revision")) is not int or state["chat_identity_revision"] < 0:
+                    raise RuntimeError("chat-identity-revision-invalid")
             if runtime_policy is None:
                 if runtime_policy_digest is not None: raise ValueError("runtime policy version required")
                 return LEGACY_RUNTIME_POLICY if saved is None else saved["version"]
@@ -1283,6 +1296,11 @@ class LocalIdentityAuthority:
                 record["life_runtime_policy"] = dict(version=runtime_policy, digest=digest, definition_basis=definition,
                     life_scope_digest=record["life_scope_digest"], revision=1 if saved is None else saved["revision"] + 1)
                 record.setdefault("history_revision", 0)
+                if runtime_policy == FOLLOWUP_VERSION:
+                    if "chat_identity_revision" not in state:
+                        state["chat_identity_revision"] = 0
+                    if type(state["chat_identity_revision"]) is not int or state["chat_identity_revision"] < 0:
+                        raise RuntimeError("chat-identity-revision-invalid")
                 _write_state(self._config.state_path, state)
             return runtime_policy
 
@@ -1317,6 +1335,33 @@ class LocalIdentityAuthority:
             if self.first_life_share_authorization(authorization.identity_id) != authorization:
                 raise ShareAuthorizationChanged("first-life-share-authorization-changed")
             yield
+
+    def first_life_chat_authorization(self, expected_identity_id):
+        from dataclasses import asdict
+        from dynamic_subject_agent.first_life_authorization import ChatAuthorization
+        with self._history_lock:
+            token = self.first_life_share_authorization(expected_identity_id)
+            state, _, _ = self._active_chat_record(expected_identity_id)
+            return ChatAuthorization(**asdict(token), identity_revision=state["chat_identity_revision"])
+
+    @contextmanager
+    def first_life_chat_guard(self, authorization):
+        from dataclasses import asdict
+        from dynamic_subject_agent.first_life_authorization import ChatAuthorization
+        if type(authorization) is not ChatAuthorization:
+            raise ValueError("exact chat authorization required")
+        with self._history_lock:
+            state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
+            revision = state.get("chat_identity_revision")
+            if type(revision) is not int or revision < 0:
+                raise RuntimeError("chat-identity-revision-invalid")
+            if (state["active_identity_id"] != authorization.identity_id
+                or revision != authorization.identity_revision):
+                raise ShareAuthorizationChanged("first-life-chat-identity-changed")
+            value = asdict(authorization)
+            value.pop("identity_revision")
+            with self.first_life_share_guard(ShareAuthorization(**value)):
+                yield
 
     def set_reviewed_character_history(self, enabled, expected_identity_id=None):
         if type(enabled) is not bool: return ReviewedCharacterChatStatus("unavailable", problem_code="typed-history-preference-required")

@@ -10,7 +10,9 @@ from dynamic_subject_agent.first_life import DEVELOPMENT_SCOPE, current_civil_da
 
 PURPOSES = ("life-decision", "life-share", "chat-planning", "chat-expression")
 DEVELOPMENT_EXTENSION_ID = "s107-development-24-to-36-2026-09-27"
+FOLLOWUP_DEVELOPMENT_EXTENSION_ID = "s108-development-36-to-44-2026-09-28"
 _DEVELOPMENT_GRANT_TABLE = "life_development_grant"
+_FOLLOWUP_GRANT_TABLE = "life_development_followup_grant"
 
 
 class FirstLifeBudget(CharacterChatBudget):
@@ -64,10 +66,13 @@ class FirstLifeBudget(CharacterChatBudget):
         ledger. Original stage/life rows and both original hash seeds stay intact.
         """
         version = db.execute("PRAGMA user_version").fetchone()[0]
-        present = db.execute("SELECT 1 FROM sqlite_schema WHERE type='table' AND name=?", (_DEVELOPMENT_GRANT_TABLE,)).fetchone()
-        if version == 0 and present is None:
+        present = db.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name IN (?,?)",
+            (_DEVELOPMENT_GRANT_TABLE, _FOLLOWUP_GRANT_TABLE)).fetchall()
+        tables = {row[0] for row in present}
+        if version == 0 and not tables:
             return 24
-        if version != 1 or present is None:
+        if (version not in (1, 2) or _DEVELOPMENT_GRANT_TABLE not in tables
+            or (_FOLLOWUP_GRANT_TABLE in tables) != (version == 2)):
             raise ValueError("development grant schema invalid")
         rows = db.execute("SELECT singleton,body,grant_digest FROM life_development_grant").fetchall()
         if len(rows) != 1 or rows[0][0] != 1:
@@ -86,11 +91,39 @@ class FirstLifeBudget(CharacterChatBudget):
                 raise ValueError("grant binding invalid")
         except (KeyError, TypeError, ValueError) as error:
             raise ValueError("development grant integrity failed") from error
-        return 36
+        if version == 1:
+            return 36
+        followup_rows = db.execute("SELECT singleton,body,grant_digest FROM life_development_followup_grant").fetchall()
+        if len(followup_rows) != 1 or followup_rows[0][0] != 1:
+            raise ValueError("development followup grant missing or ambiguous")
+        try:
+            followup = json.loads(followup_rows[0][1])
+            followup_count = followup["life_prefix_count"]
+            if (type(followup_count) is not int or not prefix_count <= followup_count <= len(life)
+                or type(followup["development_used_at_grant"]) is not int):
+                raise ValueError("followup grant prefix invalid")
+            followup_prefix = life[:followup_count]
+            expected_followup = self._followup_grant_body(followup_prefix, rows[0][2])
+            if (sum(row[3] == DEVELOPMENT_SCOPE for row in followup_prefix) > 36
+                or followup != expected_followup or canonical_json(expected_followup) != followup_rows[0][1]
+                or followup_rows[0][2] != self._hash(expected_followup)):
+                raise ValueError("followup grant binding invalid")
+        except (KeyError, TypeError, ValueError) as error:
+            raise ValueError("development followup grant integrity failed") from error
+        return 44
 
     def _grant_body(self, life):
         return dict(version="first-life-development-grant-1", authorization_id=DEVELOPMENT_EXTENSION_ID,
             development_scope=DEVELOPMENT_SCOPE, previous_limit=24, cumulative_limit=36,
+            budget_config_digest=self._hash(self.config), life_prefix_count=len(life),
+            life_prefix_digest=self._life_chain(life),
+            development_used_at_grant=sum(row[3] == DEVELOPMENT_SCOPE for row in life))
+
+    def _followup_grant_body(self, life, previous_grant_digest):
+        return dict(version="first-life-development-grant-2",
+            authorization_id=FOLLOWUP_DEVELOPMENT_EXTENSION_ID,
+            development_scope=DEVELOPMENT_SCOPE, previous_limit=36, cumulative_limit=44,
+            previous_grant_digest=previous_grant_digest,
             budget_config_digest=self._hash(self.config), life_prefix_count=len(life),
             life_prefix_digest=self._life_chain(life),
             development_used_at_grant=sum(row[3] == DEVELOPMENT_SCOPE for row in life))
@@ -106,12 +139,31 @@ class FirstLifeBudget(CharacterChatBudget):
             raise ValueError("exact development extension approval required")
         with self._transaction() as db:
             life = self._life_verified(db)
-            if self._development_limit(db, life) == 36:
+            if self._development_limit(db, life) >= 36:
                 return 36
             body = self._grant_body(life)
             db.execute("CREATE TABLE life_development_grant (singleton INTEGER PRIMARY KEY CHECK(singleton=1), body TEXT NOT NULL, grant_digest TEXT NOT NULL)")
             db.execute("INSERT INTO life_development_grant VALUES(1,?,?)", (canonical_json(body), self._hash(body)))
             db.execute("PRAGMA user_version=1")
+            return self._development_limit(db, life)
+
+    def approve_development_followup_extension(self, *, authorization_id, limit, confirmed):
+        """Append the approved 36→44 grant without changing the original grant or ledger."""
+        if (authorization_id != FOLLOWUP_DEVELOPMENT_EXTENSION_ID or type(limit) is not int
+            or limit != 44 or confirmed is not True):
+            raise ValueError("exact development followup extension approval required")
+        with self._transaction() as db:
+            life = self._life_verified(db)
+            current_limit = self._development_limit(db, life)
+            if current_limit == 44:
+                return 44
+            if current_limit != 36:
+                raise ValueError("previous development grant required")
+            previous_digest = db.execute("SELECT grant_digest FROM life_development_grant WHERE singleton=1").fetchone()[0]
+            body = self._followup_grant_body(life, previous_digest)
+            db.execute("CREATE TABLE life_development_followup_grant (singleton INTEGER PRIMARY KEY CHECK(singleton=1), body TEXT NOT NULL, grant_digest TEXT NOT NULL)")
+            db.execute("INSERT INTO life_development_followup_grant VALUES(1,?,?)", (canonical_json(body), self._hash(body)))
+            db.execute("PRAGMA user_version=2")
             return self._development_limit(db, life)
 
     def counts(self):

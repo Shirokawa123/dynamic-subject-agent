@@ -33,7 +33,7 @@ class ShareAuthorization:
 
     def __post_init__(self):
         if (str(UUID(self.identity_id)) != self.identity_id
-            or self.runtime_policy not in ("first-life-relevance-2", "first-life-grounded-3")
+            or self.runtime_policy not in ("first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4")
             or re.fullmatch(r"[0-9a-f]{64}", self.runtime_policy_digest) is None
             or type(self.policy_revision) is not int or self.policy_revision < 1
             or type(self.history_revision) is not int or self.history_revision < 0
@@ -45,3 +45,21 @@ def decode_share_authorization(value):
     if type(value) is not dict or set(value) != {field.name for field in fields(ShareAuthorization)}:
         raise ValueError("exact share authorization required")
     return ShareAuthorization(**value)
+
+
+@dataclass(frozen=True)
+class ChatAuthorization(ShareAuthorization):
+    """V4 Subject-only prepared-chat fence, omitted entirely on older plans."""
+    identity_revision: int = 0
+
+    def __post_init__(self):
+        super().__post_init__()
+        if (self.runtime_policy != "first-life-followup-4"
+            or type(self.identity_revision) is not int or self.identity_revision < 0):
+            raise ValueError("followup chat policy required")
+
+
+def decode_chat_authorization(value):
+    if type(value) is not dict or set(value) != {field.name for field in fields(ChatAuthorization)}:
+        raise ValueError("exact chat authorization required")
+    return ChatAuthorization(**value)

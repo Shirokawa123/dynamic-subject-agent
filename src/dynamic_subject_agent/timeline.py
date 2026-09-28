@@ -26,7 +26,7 @@ from dynamic_subject_agent.first_life import (
     FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT, decode_life_record,
     initial_life_record, adjudicate_life, event_summary,
 )
-from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization
+from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -198,9 +198,10 @@ class _PreparedShareDayExpired(CommitPlanRejected):
 
 
 class _PreparedShareAuthorizationChanged(CommitPlanRejected):
-    def __init__(self, *, unverified=False):
-        super().__init__('first-life-share-authorization-unverified' if unverified else 'first-life-share-authorization-changed',
-            'The prepared share no longer has its exact disclosure authorization.')
+    def __init__(self, *, unverified=False, chat=False):
+        prefix = 'first-life-chat-' if chat else 'first-life-share-'
+        super().__init__(prefix + ('authorization-unverified' if unverified else 'authorization-changed'),
+            'The prepared operation no longer has its exact disclosure authorization.')
 
 
 class CommitPlanConflict(PublicationProblem):
@@ -298,7 +299,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name not in ("life_record", "share_authorization") or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "share_authorization", "chat_authorization") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -1450,6 +1451,7 @@ class CycleCommitPlan:
     committed_effect_set: CommittedEffectSet
     life_record: LifeRecord | None = None
     share_authorization: ShareAuthorization | None = None
+    chat_authorization: ChatAuthorization | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return _canonical_value(self)
@@ -1568,6 +1570,7 @@ class CycleCommitPlan:
                 ),
                 life_record=(decode_life_record(source["life_record"]) if source.get("life_record") is not None else None),
                 share_authorization=(decode_share_authorization(source["share_authorization"]) if source.get("share_authorization") is not None else None),
+                chat_authorization=(decode_chat_authorization(source["chat_authorization"]) if "chat_authorization" in source else None),
             )
         except (KeyError, TypeError, ValueError) as error:
             raise CommitPlanRejected(
@@ -4107,6 +4110,18 @@ class TimelineEngine:
                 "commit-plan-invalid",
                 "Publication requires a complete CycleCommitPlan",
             )
+        if plan.chat_authorization is not None:
+            self._require_life_authority()
+            try:
+                if (type(plan.chat_authorization) is not ChatAuthorization
+                    or decode_chat_authorization(_canonical_value(plan.chat_authorization)) != plan.chat_authorization
+                    or plan.chat_authorization.identity_id != plan.profile_id
+                    or plan.operation_ref.operation_kind is not OperationKind.SUBJECT
+                    or plan.share_authorization is not None
+                    or plan.life_record is not None and plan.life_record.kind != 'disclosure'):
+                    raise ValueError('authorization must bind exactly this identity chat')
+            except (TypeError, ValueError, AttributeError, KeyError) as error:
+                raise CommitPlanRejected('chat-authorization-invalid', 'chat authorization is outside the typed contract') from error
         if plan.share_authorization is not None:
             self._require_life_authority()
             try:
@@ -4803,21 +4818,22 @@ class TimelineEngine:
 
     @contextmanager
     def _share_publication_guard(self, plan):
-        if plan.share_authorization is None:
+        authorization = plan.chat_authorization or plan.share_authorization
+        if authorization is None:
             yield
             return
-        guard = getattr(self, '_life_share_guard', None)
+        guard = getattr(self, '_life_chat_guard' if plan.chat_authorization is not None else '_life_share_guard', None)
         if guard is None:
-            raise _PreparedShareAuthorizationChanged(unverified=True)
+            raise _PreparedShareAuthorizationChanged(unverified=True, chat=plan.chat_authorization is not None)
         # Only authorization entry errors are converted; commit errors keep their
         # existing recovery semantics. The lock remains held through COMMIT.
         try:
-            scope = guard(plan.share_authorization)
+            scope = guard(authorization)
             scope.__enter__()
         except ShareAuthorizationChanged:
-            raise _PreparedShareAuthorizationChanged() from None
+            raise _PreparedShareAuthorizationChanged(chat=plan.chat_authorization is not None) from None
         except Exception:
-            raise _PreparedShareAuthorizationChanged(unverified=True) from None
+            raise _PreparedShareAuthorizationChanged(unverified=True, chat=plan.chat_authorization is not None) from None
         try:
             yield
         finally:
@@ -7527,6 +7543,45 @@ class TimelineEngine:
             raise PublicationFailedClosed("character-history-head-invalid", "character foreground is not current")
         return CharacterDialogueBasis("available", bool(records))
 
+    def first_life_followup_before(self, operation_ref, *, expected_head, enabled):
+        """Select and order only this frozen canonical prefix; heads remain local."""
+        from dynamic_subject_agent.first_life_followup import FirstLifeFollowupBasis, DialogueSource, _validate_sources
+        self._require_life_authority()
+        dialogue = self.character_dialogue_before(operation_ref, expected_head=expected_head, enabled=enabled)
+        life = self.first_life_basis(expected_head=expected_head)
+        if not enabled or dialogue.status != 'available':
+            return FirstLifeFollowupBasis(dialogue)
+        verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
+        if verified is None:
+            raise PublicationFailedClosed('first-life-followup-unverified', 'followup prefix is unresolved')
+        records, cutoff = verified
+        # select_recent_dialogue chooses a contiguous suffix, never text-match
+        # a duplicate pair to rediscover its head.
+        chosen = records[-len(dialogue.recent_dialogue):] if dialogue.recent_dialogue else ()
+        if tuple((r.user_text, r.assistant_text) for r in chosen) != tuple(
+                (r.user_text, r.assistant_text) for r in dialogue.recent_dialogue):
+            raise PublicationFailedClosed('first-life-followup-unverified', 'dialogue suffix differs')
+        selected_heads = {r.head_sequence for r in chosen}
+        for record in records:
+            if record.head_sequence not in selected_heads:
+                cutoff = max(cutoff, record.head_sequence)
+        ordered = [(record.head_sequence, (
+            DialogueSource('U' + str(i), 'user', record.user_text, 'dialogue'),
+            DialogueSource('A' + str(i), 'assistant', record.assistant_text, 'dialogue')))
+            for i, record in enumerate(chosen, 1)]
+        if life.shares:
+            share = life.shares[-1]
+            if not share.text.strip() or len(share.text) > 400 or '\x00' in share.text:
+                raise PublicationFailedClosed('first-life-followup-invalid', 'canonical share is outside bounded text contract')
+            # With at most one following Subject publication, all possible
+            # following turns are within the verified latest-two turn records.
+            after = sum(record.head_sequence > share.head_sequence for record in records)
+            if share.head_sequence > cutoff and after < 2:
+                ordered.append((share.head_sequence, (DialogueSource('S1', 'assistant', share.text, 'proactive-share'),)))
+        sources = tuple(source for _, group in sorted(ordered, key=lambda row: row[0]) for source in group)
+        _validate_sources(sources, enabled)
+        return FirstLifeFollowupBasis(dialogue, sources)
+
     def recent_dialogue_before(self, operation_ref: OperationRef, *, expected_head: int):
         """Read only the same identity's verified frozen prefix for this reply."""
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue
@@ -7748,6 +7803,8 @@ class TimelineEngine:
                 committed_effect_set=effect_set,
                 life_record=life_record,
                 share_authorization=(self.prepared_plan(operation_ref).share_authorization
+                    if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else None),
+                chat_authorization=(self.prepared_plan(operation_ref).chat_authorization
                     if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else None),
             )
             self._validate_commit_plan(plan)
