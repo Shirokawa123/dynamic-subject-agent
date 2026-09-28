@@ -116,14 +116,15 @@ def expression_request_text(message: str) -> str:
         if not re.match(r'^(?:我|他|她|朋友)?(?:昨天|前天|之前|上次|曾经)[^，,：:]*(?:说|问|要求)[^，,：:]*[，,：:]', sentence.strip()))
 
 
-def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0) -> tuple[RecentDialogueTurn, ...]:
+def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0,
+                           control_predicate=is_dialogue_control) -> tuple[RecentDialogueTurn, ...]:
     selected = []
     chars = 0
     for record in reversed(records[-MAX_DIALOGUE_TURNS:]):
         if record.head_sequence <= after_sequence:
             break
         summary = record.outcome_summary
-        if (is_dialogue_control(record.user_text) or summary is None
+        if (control_predicate(record.user_text) or summary is None
             or summary.memory_revision is not False
             or summary.living_memory_status not in {'accepted', 'no-op'}):
             break

@@ -7501,6 +7501,8 @@ class TimelineEngine:
     def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
         if enabled:
@@ -7511,7 +7513,7 @@ class TimelineEngine:
             command = self._query_command(operation_ref)
             if type(command) is SubjectCommand and is_dialogue_control(command.utterance):
                 return CharacterDialogueBasis("restricted", bool(records), problem_code="character-history-restricted")
-            selected = select_recent_dialogue(records, after_sequence=cutoff)
+            selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_dialogue_control)
             if records and is_dialogue_control(records[-1].user_text):
                 return CharacterDialogueBasis("restricted", True, problem_code="character-history-restricted")
             return CharacterDialogueBasis("available", bool(records), selected)
@@ -7536,6 +7538,8 @@ class TimelineEngine:
 
     def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.recent_dialogue import is_dialogue_control
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
 
         snapshot = self.query(operation_ref)
         frozen_row = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
