@@ -1,0 +1,500 @@
+{
+  "real_provider_calls": 0,
+  "semantic_quality": "not-evaluated-scripted-output",
+  "request_review_digest": "1a53333b984463f58715a5fb81afe260756d7202fd9e5eafd92a9f313b7fdc6e",
+  "seed_calls": "local-only, excluded from the future real-call proposal",
+  "chains": [
+    {
+      "canonical_turns": 8,
+      "chat_calls": 7,
+      "initial_source_digest": "c1c38f13178a2578053c2e1023248f088e13e61abb88bd88b891e06eada2565a",
+      "real_provider_calls": 0,
+      "route": "first-life-whole-local-1",
+      "scenario": "objects-and-versions",
+      "seed_calls": 4,
+      "semantic_quality": "not-evaluated-scripted-output",
+      "steps": [
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第2轮：随便聊聊，你想从哪儿说起？",
+          "request_digest": "ec0d50963154c1d81cdca04224d5fcd9a482ff76344005d85c1652f3a2d85e40",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "我把花瓶挪到中间，右边什么也没留。"
+          ],
+          "step": 1,
+          "user": "随便聊聊，你想从哪儿说起？",
+          "draft_wire_digests": [
+            "78230fcbd25006ed5d521c8ee7de67368a2f252aa8b0a051c8fe0ccd4bfc1d81"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第3轮：为什么这么安排？",
+          "request_digest": "56e1d4c61833af8eb25555d1656b17b6b98ff4b017f5670beeb10e52395c92a6",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "我把花瓶挪到中间，右边什么也没留。",
+            "随便聊聊，你想从哪儿说起？",
+            "合成本地A第2轮：随便聊聊，你想从哪儿说起？"
+          ],
+          "step": 2,
+          "user": "为什么这么安排？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第4轮：右边那本书还在方案里，和你刚才的话对不上呀？",
+          "request_digest": "fddfca2deb8060dfc2c3a9693770cfe58059d6cefe0eeda35fd53d3d8d2aa676",
+          "source_texts": [
+            "随便聊聊，你想从哪儿说起？",
+            "合成本地A第2轮：随便聊聊，你想从哪儿说起？",
+            "为什么这么安排？",
+            "合成本地A第3轮：为什么这么安排？"
+          ],
+          "step": 3,
+          "user": "右边那本书还在方案里，和你刚才的话对不上呀？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第5轮：如果把书挪到左边，你觉得怎么样？",
+          "request_digest": "a4ed396b69c414aa47c8f4a71a3a475a34c47d52aa240313617194a4367db19c",
+          "source_texts": [
+            "为什么这么安排？",
+            "合成本地A第3轮：为什么这么安排？",
+            "右边那本书还在方案里，和你刚才的话对不上呀？",
+            "合成本地A第4轮：右边那本书还在方案里，和你刚才的话对不上呀？"
+          ],
+          "step": 4,
+          "user": "如果把书挪到左边，你觉得怎么样？"
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第6轮：你平时会给自己定目标吗？",
+          "request_digest": "88adcbb39b99050947dfb263f55496c8eeb804db03cf045fdd1d11f50589697b",
+          "source_texts": [
+            "右边那本书还在方案里，和你刚才的话对不上呀？",
+            "合成本地A第4轮：右边那本书还在方案里，和你刚才的话对不上呀？",
+            "如果把书挪到左边，你觉得怎么样？",
+            "合成本地A第5轮：如果把书挪到左边，你觉得怎么样？"
+          ],
+          "step": 5,
+          "user": "你平时会给自己定目标吗？"
+        },
+        {
+          "kind": "explicit-context-reset",
+          "local_calls": 0,
+          "meaning": "previous dialogue/share excluded; existing character/life use reaffirmed",
+          "step": 6
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第7轮：那我们聊聊蓝色和绿色吧。",
+          "request_digest": "df92beb6dafe724abe14bb53bc6c8216aece9dc92ee17367a8074f39197104dd",
+          "source_texts": [],
+          "step": 7,
+          "user": "那我们聊聊蓝色和绿色吧。",
+          "draft_wire_digests": [
+            "384934614752d14218f6f41bc699edff7732e86d1d72608c7bd05ad4f0404f23"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第8轮：刚才聊到那两种颜色，你想先说哪一种？",
+          "request_digest": "d08fdfccb0e2a79399a8b72a2d20cc0918fc6c29ff06d6134a4fe6cbc252fac2",
+          "source_texts": [
+            "那我们聊聊蓝色和绿色吧。",
+            "合成本地A第7轮：那我们聊聊蓝色和绿色吧。"
+          ],
+          "step": 8,
+          "user": "刚才聊到那两种颜色，你想先说哪一种？"
+        }
+      ]
+    },
+    {
+      "canonical_turns": 8,
+      "chat_calls": 14,
+      "initial_source_digest": "c1c38f13178a2578053c2e1023248f088e13e61abb88bd88b891e06eada2565a",
+      "real_provider_calls": 0,
+      "route": "first-life-planned-local-1",
+      "scenario": "objects-and-versions",
+      "seed_calls": 5,
+      "semantic_quality": "not-evaluated-scripted-output",
+      "steps": [
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第2轮：随便聊聊，你想从哪儿说起？",
+          "request_digest": "1cc7058637c57be9206636b3b8300e182ce026638eaa305dda898acc22b1f5e5",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "我把花瓶挪到中间，右边什么也没留。"
+          ],
+          "step": 1,
+          "user": "随便聊聊，你想从哪儿说起？",
+          "draft_wire_digests": [
+            "b82d94c96b92cbee59a9d0f9eeaeee45ff3ab2b24da9353384d28a5c93ab7a88",
+            "1e539a82fad59d35a26334308c18787be1078ea4502fc1ad9160f0a075c88d0f"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第3轮：为什么这么安排？",
+          "request_digest": "320576134c3744bd8fd0109cb4d81d2e0b17132a797c7b808c65400d3baba8a8",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "我把花瓶挪到中间，右边什么也没留。",
+            "随便聊聊，你想从哪儿说起？",
+            "合成本地B第2轮：随便聊聊，你想从哪儿说起？"
+          ],
+          "step": 2,
+          "user": "为什么这么安排？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第4轮：右边那本书还在方案里，和你刚才的话对不上呀？",
+          "request_digest": "225bd988c61fa4de38415954aa4a83bc826f9ea665104a936de34b64dacc9182",
+          "source_texts": [
+            "随便聊聊，你想从哪儿说起？",
+            "合成本地B第2轮：随便聊聊，你想从哪儿说起？",
+            "为什么这么安排？",
+            "合成本地B第3轮：为什么这么安排？"
+          ],
+          "step": 3,
+          "user": "右边那本书还在方案里，和你刚才的话对不上呀？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第5轮：如果把书挪到左边，你觉得怎么样？",
+          "request_digest": "20da066a6c87e31dde17de5ceb238b242f3586cb567e9c6688cf173a9fbed948",
+          "source_texts": [
+            "为什么这么安排？",
+            "合成本地B第3轮：为什么这么安排？",
+            "右边那本书还在方案里，和你刚才的话对不上呀？",
+            "合成本地B第4轮：右边那本书还在方案里，和你刚才的话对不上呀？"
+          ],
+          "step": 4,
+          "user": "如果把书挪到左边，你觉得怎么样？"
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第6轮：你平时会给自己定目标吗？",
+          "request_digest": "26ad95e38860ae0f90838c4134127159d7481450923a714e69c572004a037a25",
+          "source_texts": [
+            "右边那本书还在方案里，和你刚才的话对不上呀？",
+            "合成本地B第4轮：右边那本书还在方案里，和你刚才的话对不上呀？",
+            "如果把书挪到左边，你觉得怎么样？",
+            "合成本地B第5轮：如果把书挪到左边，你觉得怎么样？"
+          ],
+          "step": 5,
+          "user": "你平时会给自己定目标吗？"
+        },
+        {
+          "kind": "explicit-context-reset",
+          "local_calls": 0,
+          "meaning": "previous dialogue/share excluded; existing character/life use reaffirmed",
+          "step": 6
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第7轮：那我们聊聊蓝色和绿色吧。",
+          "request_digest": "0afded2786ee1f0b0a5a1fb1a14c36853b1e295e65e16c55033490c18fbeaf5c",
+          "source_texts": [],
+          "step": 7,
+          "user": "那我们聊聊蓝色和绿色吧。",
+          "draft_wire_digests": [
+            "558c2107789445ef7b802e569993d1d79feb101d03d6508be30191056e352873",
+            "9f8000077a36131287e83ddea2289321ae837a2c018eebcff7b6e4537fccfe90"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第8轮：刚才聊到那两种颜色，你想先说哪一种？",
+          "request_digest": "16c166c027aadfdef995cd525551150b8292601615db1c3656a2f9a74dbcd080",
+          "source_texts": [
+            "那我们聊聊蓝色和绿色吧。",
+            "合成本地B第7轮：那我们聊聊蓝色和绿色吧。"
+          ],
+          "step": 8,
+          "user": "刚才聊到那两种颜色，你想先说哪一种？"
+        }
+      ]
+    },
+    {
+      "canonical_turns": 8,
+      "chat_calls": 7,
+      "initial_source_digest": "ba7a3bac47aefef7c95063ce3d76e05b94a6d206afb146039546a830fba214c8",
+      "real_provider_calls": 0,
+      "route": "first-life-whole-local-1",
+      "scenario": "plan-versus-completion",
+      "seed_calls": 4,
+      "semantic_quality": "not-evaluated-scripted-output",
+      "steps": [
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第2轮：今天想聊哪一点？",
+          "request_digest": "d6bdaa72bb5ff8e4ccc5c5fe70325e9a789bfdb1b277bd4104579904ff27b7da",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "纸船这张已经画好了，折线很清楚。"
+          ],
+          "step": 1,
+          "user": "今天想聊哪一点？",
+          "draft_wire_digests": [
+            "17d13def63016b2f1dfa25476bc8160071da689988f836c34a3553bd62428d17"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第3轮：你指的是哪一部分？",
+          "request_digest": "a7241d3b41d56e16bc69ac1e58a5763eb653af3cea3b42bcc9e8638cc0493b5d",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "纸船这张已经画好了，折线很清楚。",
+            "今天想聊哪一点？",
+            "合成本地A第2轮：今天想聊哪一点？"
+          ],
+          "step": 2,
+          "user": "你指的是哪一部分？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第4轮：所以这张成图已经给别人看过了？",
+          "request_digest": "3d0633bb801137b1ac639c4809660fa61e81c387510e56dc86c8a7446378019b",
+          "source_texts": [
+            "今天想聊哪一点？",
+            "合成本地A第2轮：今天想聊哪一点？",
+            "你指的是哪一部分？",
+            "合成本地A第3轮：你指的是哪一部分？"
+          ],
+          "step": 3,
+          "user": "所以这张成图已经给别人看过了？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第5轮：也可以把台灯放在后面，你更喜欢哪一种？",
+          "request_digest": "aa35507a83155d97ae1467be2bca083711e31507ad66f91522581938401a4685",
+          "source_texts": [
+            "你指的是哪一部分？",
+            "合成本地A第3轮：你指的是哪一部分？",
+            "所以这张成图已经给别人看过了？",
+            "合成本地A第4轮：所以这张成图已经给别人看过了？"
+          ],
+          "step": 4,
+          "user": "也可以把台灯放在后面，你更喜欢哪一种？"
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第6轮：聊这些的时候，你最在意的目标是什么？",
+          "request_digest": "d72cea73db90a7cee8f7ded0909afbf4e0bdb0c30c8b32f4dbba446241f263b1",
+          "source_texts": [
+            "所以这张成图已经给别人看过了？",
+            "合成本地A第4轮：所以这张成图已经给别人看过了？",
+            "也可以把台灯放在后面，你更喜欢哪一种？",
+            "合成本地A第5轮：也可以把台灯放在后面，你更喜欢哪一种？"
+          ],
+          "step": 5,
+          "user": "聊这些的时候，你最在意的目标是什么？"
+        },
+        {
+          "kind": "explicit-context-reset",
+          "local_calls": 0,
+          "meaning": "previous dialogue/share excluded; existing character/life use reaffirmed",
+          "step": 6
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第7轮：那聊聊圆形和方形给人的感觉吧。",
+          "request_digest": "d4f04869d34a1a4d4434090014468f3864d456b796a09b8b4731782328affff9",
+          "source_texts": [],
+          "step": 7,
+          "user": "那聊聊圆形和方形给人的感觉吧。",
+          "draft_wire_digests": [
+            "fa8a6c5e994cc14a99e9560fc1a76a92ad833af45dbb89cf0ff037327de0a52f"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 1,
+          "reply": "合成本地A第8轮：接着刚才的形状话题，你想先从哪个说？",
+          "request_digest": "996903286e1fb1bf8bd5e912a678432c40f5118e0352d43ff655c0f9a729c235",
+          "source_texts": [
+            "那聊聊圆形和方形给人的感觉吧。",
+            "合成本地A第7轮：那聊聊圆形和方形给人的感觉吧。"
+          ],
+          "step": 8,
+          "user": "接着刚才的形状话题，你想先从哪个说？"
+        }
+      ]
+    },
+    {
+      "canonical_turns": 8,
+      "chat_calls": 14,
+      "initial_source_digest": "ba7a3bac47aefef7c95063ce3d76e05b94a6d206afb146039546a830fba214c8",
+      "real_provider_calls": 0,
+      "route": "first-life-planned-local-1",
+      "scenario": "plan-versus-completion",
+      "seed_calls": 5,
+      "semantic_quality": "not-evaluated-scripted-output",
+      "steps": [
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第2轮：今天想聊哪一点？",
+          "request_digest": "caacb3916fb319a5f588b67c960501def9e31b26cb3dfe6dc6e860249759d33d",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "纸船这张已经画好了，折线很清楚。"
+          ],
+          "step": 1,
+          "user": "今天想聊哪一点？",
+          "draft_wire_digests": [
+            "6b45ab7675ac54569fa3629b2f501f01729de8195dddd2a66c276b343a35c3df",
+            "a90a78660a8e451dbcd3a800da5b71b6eaec8c1d6ecc5355977625f94732ce1b"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第3轮：你指的是哪一部分？",
+          "request_digest": "f113991e80ae450b58a01f8361022043ca0c3f65d24886fdd0c7405e37e04cc2",
+          "source_texts": [
+            "先打个招呼。",
+            "合成共同开场：你好，之后可以聊聊构图。",
+            "纸船这张已经画好了，折线很清楚。",
+            "今天想聊哪一点？",
+            "合成本地B第2轮：今天想聊哪一点？"
+          ],
+          "step": 2,
+          "user": "你指的是哪一部分？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第4轮：所以这张成图已经给别人看过了？",
+          "request_digest": "aad2b9671afe954b590ae1d8d8bd640cdc1e06e0f2fb80dbb7871c14907dda50",
+          "source_texts": [
+            "今天想聊哪一点？",
+            "合成本地B第2轮：今天想聊哪一点？",
+            "你指的是哪一部分？",
+            "合成本地B第3轮：你指的是哪一部分？"
+          ],
+          "step": 3,
+          "user": "所以这张成图已经给别人看过了？"
+        },
+        {
+          "disclosure_proposed": true,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第5轮：也可以把台灯放在后面，你更喜欢哪一种？",
+          "request_digest": "f188f41918d23b07d377ea9ec0e52f661e665ded28ac4cd7d16ab730d804edd0",
+          "source_texts": [
+            "你指的是哪一部分？",
+            "合成本地B第3轮：你指的是哪一部分？",
+            "所以这张成图已经给别人看过了？",
+            "合成本地B第4轮：所以这张成图已经给别人看过了？"
+          ],
+          "step": 4,
+          "user": "也可以把台灯放在后面，你更喜欢哪一种？"
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第6轮：聊这些的时候，你最在意的目标是什么？",
+          "request_digest": "a13aa58f96d546342ed86756eb29bda316a64cc17044c661550b782b06a88620",
+          "source_texts": [
+            "所以这张成图已经给别人看过了？",
+            "合成本地B第4轮：所以这张成图已经给别人看过了？",
+            "也可以把台灯放在后面，你更喜欢哪一种？",
+            "合成本地B第5轮：也可以把台灯放在后面，你更喜欢哪一种？"
+          ],
+          "step": 5,
+          "user": "聊这些的时候，你最在意的目标是什么？"
+        },
+        {
+          "kind": "explicit-context-reset",
+          "local_calls": 0,
+          "meaning": "previous dialogue/share excluded; existing character/life use reaffirmed",
+          "step": 6
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第7轮：那聊聊圆形和方形给人的感觉吧。",
+          "request_digest": "4db4eb5e04fbcb705edd92e49a531ac5f19961eabaec38de543ff301281c91e1",
+          "source_texts": [],
+          "step": 7,
+          "user": "那聊聊圆形和方形给人的感觉吧。",
+          "draft_wire_digests": [
+            "4090ed9518262e1bcd2f07dcfdbe83c8a8c46e1ea103046a0cba65ebb2b6626e",
+            "d5ac6e5d182e17bd84b4a1127f7fe4d1254043522b7b2e19daf310b8e70aea9a"
+          ]
+        },
+        {
+          "disclosure_proposed": false,
+          "has_current_plan": true,
+          "local_calls": 2,
+          "reply": "合成本地B第8轮：接着刚才的形状话题，你想先从哪个说？",
+          "request_digest": "9d719a997348ac381f26209cc9829477cbc942aede41c17ca36601380bb5f3a1",
+          "source_texts": [
+            "那聊聊圆形和方形给人的感觉吧。",
+            "合成本地B第7轮：那聊聊圆形和方形给人的感觉吧。"
+          ],
+          "step": 8,
+          "user": "接着刚才的形状话题，你想先从哪个说？"
+        }
+      ]
+    }
+  ]
+}

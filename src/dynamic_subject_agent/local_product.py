@@ -149,6 +149,12 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
         if loaded.qri.provider_authority == LIFE_AUTHORITY:
+            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+            selected = authority.first_life_runtime_policy(loaded.qri.profile_id)
+            if selected in LOCAL_REPLY_POLICIES and (type(cognition) is not FirstLifeCognition
+                or cognition.runtime_policy != selected
+                or getattr(getattr(cognition.gateway, "capabilities", None), "local", None) is not True):
+                raise ValueError("local-only reply identity requires its exact local composition")
             if type(cognition) is not FirstLifeCognition: cognition = FirstLifeCognition()
         elif loaded.qri.provider_authority == LIFE_DORMANT_AUTHORITY:
             cognition = FirstLifeDormantCognition()
@@ -671,8 +677,12 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
     from dynamic_subject_agent.first_life_clock import FirstLifeClock
     from dynamic_subject_agent.first_life_cognition import FirstLifeCognition
     from dynamic_subject_agent.first_life_provider import DeepSeekFirstLifeAdapter
+    from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+    if runtime_policy in LOCAL_REPLY_POLICIES:
+        raise ValueError("local-only reply policy requires the explicit local lab")
     if not isinstance(budget_path, Path) or not budget_path.is_absolute(): raise ValueError("absolute existing shared budget required")
     authority = LocalIdentityAuthority(config)
+    authority.require_remote_first_life()
     loaded = authority.activate_first_life(definition_basis=definition_basis, life_scope_digest=life_scope_digest,
         budget_path=budget_path, budget_total=budget_total, initial_budget_used=initial_budget_used, development_run=development_run)
     selected_policy = authority.first_life_runtime_policy(loaded.qri.profile_id,
@@ -704,3 +714,49 @@ def open_first_life_product(config, *, definition_basis, life_scope_digest, budg
         chat_guard=authority.first_life_chat_guard)
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
         first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=development_run)
+
+
+def open_first_life_reply_lab(config, *, definition_basis, life_scope_digest, budget_path,
+                              runtime_policy, runtime_policy_digest, gateway,
+                              budget_total=200, initial_budget_used=61, _clock=None, _civil_day=None):
+    """Local-only continuous reply preparation, with no transport or credential path.
+
+    Bind only a fresh dormant identity, then reuse the production composition,
+    canonical history, limits and authorization fences. The bound route cannot
+    be switched or reopened through the remote entrypoint.
+    """
+    from dynamic_subject_agent.first_life import current_civil_day, first_life_scope_digest
+    from dynamic_subject_agent.first_life_budget import FirstLifeBudget
+    from dynamic_subject_agent.first_life_clock import FirstLifeClock
+    from dynamic_subject_agent.first_life_cognition import FirstLifeCognition
+    from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+    from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
+    if (not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True
+        or runtime_policy not in LOCAL_REPLY_POLICIES):
+        raise ValueError("explicit local-only reply gateway and policy required")
+    if not isinstance(budget_path, Path) or not budget_path.is_absolute():
+        raise ValueError("absolute isolated local budget required")
+    if (not isinstance(config, LocalProductConfig) or not budget_path.resolve().is_relative_to(config.state_path.parent.resolve())
+        or runtime_policy_digest != reply_scope_digest(definition_basis, runtime_policy)
+        or life_scope_digest != first_life_scope_digest(definition_basis)):
+        raise ValueError("exact local reply scope and a budget inside the lab directory required")
+    day = current_civil_day if _civil_day is None else _civil_day
+    # Verify the existing isolated allowance before writing the route binding.
+    budget = FirstLifeBudget(budget_path, total=budget_total, initial_used=initial_budget_used, civil_day=day)
+    authority = LocalIdentityAuthority(config)
+    authority.bind_first_life_reply_lab(definition_basis=definition_basis, life_scope_digest=life_scope_digest, runtime_policy=runtime_policy,
+        runtime_policy_digest=runtime_policy_digest)
+    loaded = authority.activate_first_life(definition_basis=definition_basis, life_scope_digest=life_scope_digest,
+        budget_path=budget_path, budget_total=budget_total, initial_budget_used=initial_budget_used, development_run=True,
+        local_reply_policy=runtime_policy)
+    selected = authority.first_life_runtime_policy(loaded.qri.profile_id, runtime_policy=runtime_policy,
+        runtime_policy_digest=runtime_policy_digest)
+    clock = FirstLifeClock() if _clock is None else FirstLifeClock(_clock)
+    cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
+        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=True, civil_day=day,
+        runtime_policy=selected, share_authorization=lambda: authority.first_life_share_authorization(loaded.qri.profile_id),
+        share_guard=authority.first_life_share_guard,
+        chat_authorization=lambda: authority.first_life_chat_authorization(loaded.qri.profile_id),
+        chat_guard=authority.first_life_chat_guard)
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
+        first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=True)

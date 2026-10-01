@@ -36,6 +36,8 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    CHARACTER_FIRST_LIFE_WHOLE_REPLY = "character-first-life-whole-reply"
+    CHARACTER_FIRST_LIFE_FACT_EXPRESSION = "character-first-life-fact-expression"
     CHARACTER_FIRST_LIFE_DECISION = "character-first-life-decision"
     CHARACTER_FIRST_LIFE_SHARE = "character-first-life-share"
     CHARACTER_COMMUNICATION_PLAN = "character-communication-plan"

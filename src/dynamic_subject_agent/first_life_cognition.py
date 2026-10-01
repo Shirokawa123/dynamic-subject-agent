@@ -48,8 +48,11 @@ class FirstLifeCognition(CognitionEngine):
         self.history_preference, self.development_run, self.civil_day = history_preference, development_run, civil_day
         self.runtime_policy, self.share_authorization, self.share_guard = runtime_policy, share_authorization, share_guard
         self.chat_authorization, self.chat_guard = chat_authorization, chat_guard
-        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4"):
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4", *LOCAL_REPLY_POLICIES):
             raise ValueError("unknown first-life runtime policy")
+        if runtime_policy in LOCAL_REPLY_POLICIES and getattr(getattr(gateway, "capabilities", None), "local", None) is not True:
+            raise ValueError("local-only reply policy cannot use a remote gateway")
 
     def preflight(self, *, context, command):
         if type(command) is FirstLifeInput:
@@ -76,6 +79,10 @@ class FirstLifeCognition(CognitionEngine):
             raise CognitionFailedClosed("history", purpose_prefix + "history-unverified", "Disclosure authorization became unavailable.") from None
 
     def _call_authorized(self, plan, *, purpose, projection, civil_day, validator):
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, WHOLE_LOCAL_POLICY, PLANNED_LOCAL_POLICY
+        if (self.runtime_policy in LOCAL_REPLY_POLICIES
+            and getattr(getattr(self.gateway, "capabilities", None), "local", None) is not True):
+            raise CognitionFailedClosed(purpose, "first-life-local-route-required", "This reply route is local-only; no allowance was claimed.")
         stage = "planning" if purpose in ("life-decision", "chat-planning") else "expression"
         identity = sha256(plan.operation_ref.authority_scope_id.encode()).hexdigest()
         operation = sha256((plan.operation_ref.operation_id + ":" + plan.attempt_id).encode()).hexdigest()
@@ -87,6 +94,10 @@ class FirstLifeCognition(CognitionEngine):
             raise CognitionFailedClosed("first-life-budget", code, "No verified quota or new stage claim is available.") from None
         kinds = {"life-decision": ModelTaskKind.CHARACTER_FIRST_LIFE_DECISION, "life-share": ModelTaskKind.CHARACTER_FIRST_LIFE_SHARE,
                  "chat-planning": ModelTaskKind.CHARACTER_COMMUNICATION_PLAN, "chat-expression": ModelTaskKind.CHARACTER_COMMUNICATION_EXPRESSION}
+        if self.runtime_policy == WHOLE_LOCAL_POLICY:
+            kinds["chat-expression"] = ModelTaskKind.CHARACTER_FIRST_LIFE_WHOLE_REPLY
+        elif self.runtime_policy == PLANNED_LOCAL_POLICY:
+            kinds["chat-expression"] = ModelTaskKind.CHARACTER_FIRST_LIFE_FACT_EXPRESSION
         try:
             value = self.gateway.execute(ModelTask(kinds[purpose], projection)).value
             try: validator(value)
@@ -174,6 +185,10 @@ class FirstLifeCognition(CognitionEngine):
 
     def _chat(self, plan, context, command, basis, current):
         from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        from dynamic_subject_agent.first_life_reply_routes import (
+            LOCAL_REPLY_POLICIES, WHOLE_LOCAL_POLICY, PLANNED_LOCAL_POLICY,
+            whole_reply_projection, fact_expression_projection, validate_whole_reply,
+        )
         if is_first_life_dialogue_control(command.utterance):
             raise CognitionFailedClosed("history", "first-life-history-unverified",
                 "A control request needs local resolution before model generation.")
@@ -182,20 +197,23 @@ class FirstLifeCognition(CognitionEngine):
             from dynamic_subject_agent.first_life_relevance import life_chat_planning as planning_fn, life_chat_expression as expression_fn
         elif self.runtime_policy == "first-life-grounded-3":
             from dynamic_subject_agent.first_life_grounded import life_chat_planning as planning_fn, life_chat_expression as expression_fn
-        elif self.runtime_policy == "first-life-followup-4":
+        elif self.runtime_policy in ("first-life-followup-4", *LOCAL_REPLY_POLICIES):
             from dynamic_subject_agent.first_life_followup import life_chat_planning as planning_fn, life_chat_expression as expression_fn
+            if self.runtime_policy == PLANNED_LOCAL_POLICY:
+                expression_fn = fact_expression_projection
         authorization = None
         try:
             remaining = self.budget.counts()[2]
             development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]
-            if remaining < 2 or development is not None and development < 2: raise ValueError("two-stage allowance unavailable")
+            required = 1 if self.runtime_policy == WHOLE_LOCAL_POLICY else 2
+            if remaining < required or development is not None and development < required: raise ValueError("reply allowance unavailable")
         except Exception:
-            raise CognitionFailedClosed("budget", "first-life-budget-unavailable", "No verified two-stage allowance is available for a new chat.") from None
+            raise CognitionFailedClosed("budget", "first-life-budget-unavailable", "No verified allowance is available for this reply route.") from None
         try:
-            if self.runtime_policy == "first-life-followup-4":
+            if self.runtime_policy in ("first-life-followup-4", *LOCAL_REPLY_POLICIES):
                 authorization = self.chat_authorization()
-                if type(authorization) is not ChatAuthorization:
-                    raise ValueError("exact v4 chat authorization required")
+                if type(authorization) is not ChatAuthorization or authorization.runtime_policy != self.runtime_policy:
+                    raise ValueError("exact same-route chat authorization required")
                 enabled = authorization.history_enabled
                 dialogue = context.load_first_life_followup(enabled)
             else:
@@ -205,17 +223,24 @@ class FirstLifeCognition(CognitionEngine):
             day = self.civil_day()
         except Exception:
             raise CognitionFailedClosed("history", "first-life-history-unverified", "History or sealed material is unavailable.") from None
-        value = self._call(plan, purpose="chat-planning", projection=planning, civil_day=day,
-            validator=lambda value: expression_fn(planning, value), authorization=authorization)
-        if self.history_preference() != enabled:
-            raise CognitionFailedClosed("history", "first-life-history-changed", "History preference changed before expression.")
-        expression, used = expression_fn(planning, value)
-        output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=self.civil_day(), validator=_validated_expression, authorization=authorization)
+        if self.runtime_policy == WHOLE_LOCAL_POLICY:
+            expression = whole_reply_projection(planning)
+            output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=day,
+                validator=lambda value: validate_whole_reply(expression, value), authorization=authorization)
+            text, used = validate_whole_reply(expression, output)
+        else:
+            value = self._call(plan, purpose="chat-planning", projection=planning, civil_day=day,
+                validator=lambda value: expression_fn(planning, value), authorization=authorization)
+            if self.history_preference() != enabled:
+                raise CognitionFailedClosed("history", "first-life-history-changed", "History preference changed before expression.")
+            expression, used = expression_fn(planning, value)
+            output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=self.civil_day(), validator=_validated_expression, authorization=authorization)
+            text = _validated_expression(output)
         record = None
         if used and event is not None:
             record = replace(current.record, kind="disclosure", reason_code="", differences=(), event_id="", summary="", simulated=False,
                 disclosed_event_id=event.event_id, share_id="", share_text="", considered_event_id="")
-        return replace(self._proposal(context, basis, record, _validated_expression(output)), chat_authorization=authorization)
+        return replace(self._proposal(context, basis, record, text), chat_authorization=authorization)
 
     def _proposal(self, context, basis, record, text):
         proposal = self._bounded_noop_proposal(context=context, basis=basis,

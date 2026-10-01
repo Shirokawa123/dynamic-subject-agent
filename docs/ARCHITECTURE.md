@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-111：仅本地的整体回复与事实保留表达
+
+新`first-life-whole-local-1`一次生成exact `{reply_text,language,use_life}`；`first-life-planned-local-1`复用v4规划、使用独立typed表达。两路线的活动/方案/事件始终是判断依据，披露bool不再控制事实可见性；False不记disclosure，True只允许本请求已有事件。Python验证结构/来源资格，不据此宣称正文事实正确。旧v4 wire/scope保持。
+
+`open_first_life_reply_lab`只接受显式local ModelGateway和新dormant生活身份，复用Facade/Timeline/S110边界及prepared恢复；local策略固定且另有activation见证，缺任一标记失败。远程入口和通用composition不能把local身份当远程，Cognition在claim前再次检查local能力。策略与history/identity revision共用既有授权快照及最终guard；没有第二聊天store、新真实grant或用户数据迁移。新metadata变体旧reader拒读，已有身份不自动增加字段。
+
+纯DTO/裁决在`first_life_reply_routes`，Provider草案与完整digest在独立`first_life_reply_drafts`，后者无发送/凭据入口。A按1阶段、B按2阶段检查合成账本；路径包含检查不证明任意账本专用，本轮只使用明确创建的隔离合成账本。四条连续链、同源摘要与限制见[S111报告](reports/2026-10-01-slice-111/REPORT.md)；真实生成、新用途及42次额度仍未批准。
+
 ### Slice-110：明确的新聊天上下文边界
 
 first-life历史判定不再把旧v1的目标/承诺等话题名词单独当作控制，明确操作、来源使用撤回仍按有限本地语法处理；旧六能力默认predicate不变。当前控制在历史开/关均先于模型预算处理；关闭历史不能消解未决控制。有限语法不是通用中文意图识别，默认资料/事实投影及现有模型请求policy、scope和额度未扩大。
