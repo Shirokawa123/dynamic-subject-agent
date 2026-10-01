@@ -48,4 +48,3 @@ def main(root):
  print(json.dumps(samples))
  if stats:stats.strip_dirs().sort_stats('cumulative').print_stats(35)
 if __name__=='__main__':main(sys.argv[1])
-
