@@ -280,6 +280,8 @@ def test_old_v1_manifest_reopens_byte_exact_and_same_run_cannot_change_study(tmp
     assert trial.open_protocol_run(root, PACKAGE, live=False, study="json-example").digest == plan.digest
     with pytest.raises(ValueError):
         trial.open_protocol_run(root, PACKAGE, live=False, study="response-format")
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(root, PACKAGE, live=False, study="instruction-scope")
     assert (root / "manifest.json").read_bytes() == original_bytes
     new = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="response-format")
     new_bytes = (new.root / "manifest.json").read_bytes()
@@ -307,3 +309,69 @@ def test_text_response_mode_keeps_the_original_strict_json_output_requirement(tm
     else:
         assert view.status == "failed-closed" and view.diagnostic_code == "response-content-json" and view.value is None
     assert len(transport.calls) == 1 and audit.counts() == (None, 1, None)
+
+
+def test_instruction_scope_replaces_exactly_one_sentence_and_nothing_else(tmp_path):
+    plan = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="instruction-scope")
+    assert plan.study == "instruction-scope" and plan.variants == ("global-style", "reply-text-style")
+    manifest = plan.read()
+    assert manifest["version"] == "reply-protocol-run-3" and manifest["study_spec"]["scope"]
+    expected_sentence = (
+        "本接口需要JSON数据，外层字段供程序读取。reply_text的值才是给用户看的正文："
+        "使用第一人称自然中文短消息，通常两三句；这段正文不写动作旁白、档案、字段标签、规则说明、分析或思考过程。"
+    )
+    assert manifest["study_spec"]["replacement_sentence"] == expected_sentence
+    mapped = {"baseline": "global-style", "json-example": "reply-text-style"}
+    assert [(row["case_id"], row["variant"]) for row in plan.sequence] == [
+        (row["case_id"], mapped[row["variant"]]) for row in plan.package["sequence"]]
+    hashes = {(row["case_id"], row["variant"]): row["wire_sha256"] for row in manifest["study_spec"]["sequence"]}
+    for case in plan.package["cases"]:
+        old_wire = plan.wire_for(plan.request_for(case["case_id"], "global-style"))
+        new_wire = plan.wire_for(plan.request_for(case["case_id"], "reply-text-style"))
+        assert old_wire == case["candidate_wire_utf8"].encode("utf-8")
+        before, after = json.loads(old_wire), json.loads(new_wire)
+        assert before["messages"][0]["content"].count(trial.GLOBAL_STYLE_SENTENCE) == 1
+        assert after["messages"][0]["content"].count(expected_sentence) == 1
+        assert trial.GLOBAL_STYLE_SENTENCE not in after["messages"][0]["content"]
+        after["messages"][0]["content"] = after["messages"][0]["content"].replace(expected_sentence, trial.GLOBAL_STYLE_SENTENCE, 1)
+        assert after == before and before["response_format"] == {"type": "json_object"}
+        assert hashes[case["case_id"], "global-style"] == sha256(old_wire).hexdigest()
+        assert hashes[case["case_id"], "reply-text-style"] == sha256(new_wire).hexdigest()
+    original_bytes = (plan.root / "manifest.json").read_bytes()
+    assert trial.open_protocol_run(plan.root, PACKAGE, live=False, study="instruction-scope").digest == plan.digest
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(plan.root, PACKAGE, live=False, study="response-format")
+    assert (plan.root / "manifest.json").read_bytes() == original_bytes
+
+
+def test_preexisting_v2_response_format_manifest_and_wires_remain_exact(tmp_path):
+    root = tmp_path / str(uuid4())
+    root.mkdir()
+    package = json.loads(PACKAGE.read_text(encoding="utf-8"))
+    cases = {row["case_id"]: row for row in package["cases"]}
+    names = {"baseline": "json-object", "json-example": "text-json"}
+    sequence, original_wires = [], {}
+    for entry in package["sequence"]:
+        variant = names[entry["variant"]]
+        wire = cases[entry["case_id"]]["candidate_wire_utf8"].encode("utf-8")
+        if variant == "text-json":
+            body = json.loads(wire)
+            body["response_format"] = {"type": "text"}
+            wire = canonical_json(body).encode("utf-8")
+        original_wires[entry["case_id"], variant] = wire
+        sequence.append(dict(case_id=entry["case_id"], variant=variant, wire_sha256=sha256(wire).hexdigest()))
+    old = dict(version="reply-protocol-run-2", authorization=trial.AUTHORIZATION, purpose=trial.PURPOSE,
+        call_limit=None, automatic_retries=0, live=False, run_id=root.name, root=str(root.resolve()),
+        package_digest=trial.PACKAGE_DIGEST, package=package, study="response-format",
+        study_spec=dict(version="reply-response-format-study-1", source_variant="json-example",
+            changed_field="response_format.type", variants=["json-object", "text-json"],
+            output_validation="unchanged-strict-json-and-original-reply-schema", sequence=sequence))
+    original_bytes = canonical_json(old).encode("utf-8")
+    (root / "manifest.json").write_bytes(original_bytes)
+    plan = trial.open_protocol_run(root, PACKAGE, live=False, study="response-format")
+    assert plan.digest == sha256(original_bytes).hexdigest()
+    for pair, wire in original_wires.items():
+        assert plan.wire_for(plan.request_for(*pair)) == wire
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(root, PACKAGE, live=False, study="instruction-scope")
+    assert (root / "manifest.json").read_bytes() == original_bytes

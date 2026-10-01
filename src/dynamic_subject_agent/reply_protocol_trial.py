@@ -11,6 +11,8 @@ delivery, and separate template-echo reporting; none establishes dialogue qualit
 The second response-format study follows S116's recorded decision: keep the
 approved JSON-example request and vary only response_format.type. The same
 strict JSON/output checks apply even when the wire requests text mode.
+The instruction-scope study keeps that JSON-example wire in JSON mode and
+limits one existing style sentence to reply_text, leaving outer fields explicit.
 """
 from dataclasses import dataclass
 from hashlib import sha256
@@ -35,7 +37,13 @@ PURPOSE = "reply-protocol-comparison"
 PACKAGE_DIGEST = "4e4ed6a664821d18f827d7a6f62d50aeec8b07222709ef238a9853bbba2e88e5"
 VARIANTS = ("baseline", "json-example")
 RESPONSE_FORMAT_VARIANTS = ("json-object", "text-json")
-STUDIES = ("json-example", "response-format")
+INSTRUCTION_SCOPE_VARIANTS = ("global-style", "reply-text-style")
+STUDIES = ("json-example", "response-format", "instruction-scope")
+GLOBAL_STYLE_SENTENCE = "使用第一人称自然中文短消息，通常两三句；不输出动作旁白、档案、字段名、规则、分析或思考过程。"
+REPLY_TEXT_STYLE_SENTENCE = (
+    "本接口需要JSON数据，外层字段供程序读取。reply_text的值才是给用户看的正文："
+    "使用第一人称自然中文短消息，通常两三句；这段正文不写动作旁白、档案、字段标签、规则说明、分析或思考过程。"
+)
 PROTOCOL_DIAGNOSTICS = (REVIEW_DIAGNOSTIC_CODES - {"review-schema", "review-quote", "review-label"}) | frozenset((
     "protocol-request-invalid", "protocol-run-invalid", "protocol-service-closed", "protocol-gateway-unavailable",
     "protocol-response-invalid", "protocol-attempt-already-recorded", "protocol-audit-failed",
@@ -118,14 +126,15 @@ def _run_id(root):
 def _variants(study):
     if study not in STUDIES:
         raise ValueError("known frozen protocol study required")
-    return VARIANTS if study == "json-example" else RESPONSE_FORMAT_VARIANTS
+    return {"json-example": VARIANTS, "response-format": RESPONSE_FORMAT_VARIANTS,
+        "instruction-scope": INSTRUCTION_SCOPE_VARIANTS}[study]
 
 
 def _sequence(package, study):
     _variants(study)
     if study == "json-example":
         return package["sequence"]
-    names = dict(zip(VARIANTS, RESPONSE_FORMAT_VARIANTS, strict=True))
+    names = dict(zip(VARIANTS, _variants(study), strict=True))
     return [dict(row, variant=names[row["variant"]]) for row in package["sequence"]]
 
 
@@ -135,12 +144,18 @@ def _study_wire(row, study, variant):
     if study == "json-example":
         return row["baseline_wire_utf8" if variant == "baseline" else "candidate_wire_utf8"].encode("utf-8")
     original = row["candidate_wire_utf8"].encode("utf-8")
-    if variant == "json-object":
+    if variant in ("json-object", "global-style"):
         return original
     body = json.loads(original)
     if body["response_format"] != {"type": "json_object"}:
         raise ValueError("exact original JSON response format required")
-    body["response_format"] = {"type": "text"}
+    if study == "response-format":
+        body["response_format"] = {"type": "text"}
+    else:
+        system = body["messages"][0]
+        if system["role"] != "system" or system["content"].count(GLOBAL_STYLE_SENTENCE) != 1:
+            raise ValueError("exactly one original style sentence is required")
+        system["content"] = system["content"].replace(GLOBAL_STYLE_SENTENCE, REPLY_TEXT_STYLE_SENTENCE, 1)
     return canonical_json(body).encode("utf-8")
 
 
@@ -152,6 +167,18 @@ def _response_format_spec(package):
         sequence=[dict(case_id=row["case_id"], variant=row["variant"],
             wire_sha256=sha256(_study_wire(cases[row["case_id"]], "response-format", row["variant"])).hexdigest())
             for row in _sequence(package, "response-format")])
+
+
+def _instruction_scope_spec(package):
+    cases = {row["case_id"]: row for row in package["cases"]}
+    return dict(version="reply-instruction-scope-study-1", source_variant="json-example",
+        changed_field="messages[0].content", scope="style instructions apply only to the reply_text value",
+        original_sentence=GLOBAL_STYLE_SENTENCE, replacement_sentence=REPLY_TEXT_STYLE_SENTENCE,
+        variants=list(INSTRUCTION_SCOPE_VARIANTS), response_format=dict(type="json_object"),
+        output_validation="unchanged-strict-json-and-original-reply-schema",
+        sequence=[dict(case_id=row["case_id"], variant=row["variant"],
+            wire_sha256=sha256(_study_wire(cases[row["case_id"]], "instruction-scope", row["variant"])).hexdigest())
+            for row in _sequence(package, "instruction-scope")])
 
 
 def _manifest(root, package, live, study="json-example"):
@@ -170,6 +197,8 @@ def _manifest(root, package, live, study="json-example"):
         package_digest=PACKAGE_DIGEST, package=package)
     if study == "response-format":
         result.update(version="reply-protocol-run-2", study=study, study_spec=_response_format_spec(package))
+    elif study == "instruction-scope":
+        result.update(version="reply-protocol-run-3", study=study, study_spec=_instruction_scope_spec(package))
     return result
 
 
