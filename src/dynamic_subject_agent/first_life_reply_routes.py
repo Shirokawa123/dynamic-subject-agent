@@ -23,6 +23,12 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 WHOLE_LOCAL_POLICY = "first-life-whole-local-1"
 PLANNED_LOCAL_POLICY = "first-life-planned-local-1"
 LOCAL_REPLY_POLICIES = (WHOLE_LOCAL_POLICY, PLANNED_LOCAL_POLICY)
+WHOLE_LIVE_POLICY = "first-life-whole-live-s112-1"
+PLANNED_LIVE_POLICY = "first-life-planned-live-s112-1"
+LIVE_REPLY_POLICIES = (WHOLE_LIVE_POLICY, PLANNED_LIVE_POLICY)
+REPLY_POLICIES = LOCAL_REPLY_POLICIES + LIVE_REPLY_POLICIES
+WHOLE_REPLY_POLICIES = (WHOLE_LOCAL_POLICY, WHOLE_LIVE_POLICY)
+PLANNED_REPLY_POLICIES = (PLANNED_LOCAL_POLICY, PLANNED_LIVE_POLICY)
 FACT_GROUNDING_POLICY = (
     "current_activity/current_plan/related_event是当前已核验的有限构图文字依据，可用于判断而不必朗读。"
     "dialogue_sources/selected_dialogue只证明对应说话者曾这样说；旧回复、主动分享和用户前提不覆盖当前依据。"

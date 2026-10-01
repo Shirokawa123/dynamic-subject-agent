@@ -32,9 +32,9 @@ class ShareAuthorization:
     history_enabled: bool
 
     def __post_init__(self):
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import REPLY_POLICIES
         if (str(UUID(self.identity_id)) != self.identity_id
-            or self.runtime_policy not in ("first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4", *LOCAL_REPLY_POLICIES)
+            or self.runtime_policy not in ("first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4", *REPLY_POLICIES)
             or re.fullmatch(r"[0-9a-f]{64}", self.runtime_policy_digest) is None
             or type(self.policy_revision) is not int or self.policy_revision < 1
             or type(self.history_revision) is not int or self.history_revision < 0
@@ -54,9 +54,9 @@ class ChatAuthorization(ShareAuthorization):
     identity_revision: int = 0
 
     def __post_init__(self):
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import REPLY_POLICIES
         super().__post_init__()
-        if (self.runtime_policy not in ("first-life-followup-4", *LOCAL_REPLY_POLICIES)
+        if (self.runtime_policy not in ("first-life-followup-4", *REPLY_POLICIES)
             or type(self.identity_revision) is not int or self.identity_revision < 0):
             raise ValueError("followup chat policy required")
 

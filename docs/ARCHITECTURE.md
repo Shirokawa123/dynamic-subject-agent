@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-112：已批准的隔离真实对照
+
+用户已对S111合同明确批准原创小林/两组冻结场景、现有DeepSeek凭据用途和最多42次/0重试。`open_first_life_reply_trial`只装配四个独立root/authority/Timeline分支；同源封存定义的profile ID可相同，隔离不靠改写人物内容。独立LIVE策略与activation见证绑定批准manifest、分支与固定本机实验根，LOCAL身份保持本地限定，旧入口不能替换资格。
+
+纯程序seed与真实Gateway分别构造；种子输出严格匹配批准开场/两版方案/分享，首次live校验canonical完整种子，registry记live_started后不可重回seed。真实sender持有typed批准并在发送前核固定根、唯一42共享账、分支阶段账及冻结人物/用户/share材料；离线检查使用生产transport拒绝的凭据引用。正文仍只由canonical Timeline续接，不建第二聊天store。
+
+真实次数由独立42/0 CharacterChatBudget计；每分支FirstLifeBudget仅审计阶段（含程序seed），不借旧200或开发44额度。一次性进程内claim票据绑定请求及阶段，重启不从claimed补票。双账不宣称跨库事务，半完成保守耗额并停止；prepared回复仍经原恢复机制0模型提交。观察日志只保留最终正文/JSON、投影及安全用量/耗时，不含密钥或隐藏推理。运行器一次执行，技术失败停对应链，语义错误原样保留；真实结论见S112报告，工程通过不等于人物体验通过。
+
 ### Slice-111：仅本地的整体回复与事实保留表达
 
 新`first-life-whole-local-1`一次生成exact `{reply_text,language,use_life}`；`first-life-planned-local-1`复用v4规划、使用独立typed表达。两路线的活动/方案/事件始终是判断依据，披露bool不再控制事实可见性；False不记disclosure，True只允许本请求已有事件。Python验证结构/来源资格，不据此宣称正文事实正确。旧v4 wire/scope保持。

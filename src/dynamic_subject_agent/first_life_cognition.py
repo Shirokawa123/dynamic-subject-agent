@@ -48,8 +48,8 @@ class FirstLifeCognition(CognitionEngine):
         self.history_preference, self.development_run, self.civil_day = history_preference, development_run, civil_day
         self.runtime_policy, self.share_authorization, self.share_guard = runtime_policy, share_authorization, share_guard
         self.chat_authorization, self.chat_guard = chat_authorization, chat_guard
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
-        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4", *LOCAL_REPLY_POLICIES):
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REPLY_POLICIES
+        if runtime_policy not in (LEGACY_RUNTIME_POLICY, "first-life-relevance-2", "first-life-grounded-3", "first-life-followup-4", *REPLY_POLICIES):
             raise ValueError("unknown first-life runtime policy")
         if runtime_policy in LOCAL_REPLY_POLICIES and getattr(getattr(gateway, "capabilities", None), "local", None) is not True:
             raise ValueError("local-only reply policy cannot use a remote gateway")
@@ -79,7 +79,7 @@ class FirstLifeCognition(CognitionEngine):
             raise CognitionFailedClosed("history", purpose_prefix + "history-unverified", "Disclosure authorization became unavailable.") from None
 
     def _call_authorized(self, plan, *, purpose, projection, civil_day, validator):
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, WHOLE_LOCAL_POLICY, PLANNED_LOCAL_POLICY
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REPLY_POLICIES, WHOLE_REPLY_POLICIES, PLANNED_REPLY_POLICIES
         if (self.runtime_policy in LOCAL_REPLY_POLICIES
             and getattr(getattr(self.gateway, "capabilities", None), "local", None) is not True):
             raise CognitionFailedClosed(purpose, "first-life-local-route-required", "This reply route is local-only; no allowance was claimed.")
@@ -94,9 +94,9 @@ class FirstLifeCognition(CognitionEngine):
             raise CognitionFailedClosed("first-life-budget", code, "No verified quota or new stage claim is available.") from None
         kinds = {"life-decision": ModelTaskKind.CHARACTER_FIRST_LIFE_DECISION, "life-share": ModelTaskKind.CHARACTER_FIRST_LIFE_SHARE,
                  "chat-planning": ModelTaskKind.CHARACTER_COMMUNICATION_PLAN, "chat-expression": ModelTaskKind.CHARACTER_COMMUNICATION_EXPRESSION}
-        if self.runtime_policy == WHOLE_LOCAL_POLICY:
+        if self.runtime_policy in WHOLE_REPLY_POLICIES:
             kinds["chat-expression"] = ModelTaskKind.CHARACTER_FIRST_LIFE_WHOLE_REPLY
-        elif self.runtime_policy == PLANNED_LOCAL_POLICY:
+        elif self.runtime_policy in PLANNED_REPLY_POLICIES:
             kinds["chat-expression"] = ModelTaskKind.CHARACTER_FIRST_LIFE_FACT_EXPRESSION
         try:
             value = self.gateway.execute(ModelTask(kinds[purpose], projection)).value
@@ -186,7 +186,7 @@ class FirstLifeCognition(CognitionEngine):
     def _chat(self, plan, context, command, basis, current):
         from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
         from dynamic_subject_agent.first_life_reply_routes import (
-            LOCAL_REPLY_POLICIES, WHOLE_LOCAL_POLICY, PLANNED_LOCAL_POLICY,
+            LOCAL_REPLY_POLICIES, REPLY_POLICIES, WHOLE_REPLY_POLICIES, PLANNED_REPLY_POLICIES,
             whole_reply_projection, fact_expression_projection, validate_whole_reply,
         )
         if is_first_life_dialogue_control(command.utterance):
@@ -197,20 +197,20 @@ class FirstLifeCognition(CognitionEngine):
             from dynamic_subject_agent.first_life_relevance import life_chat_planning as planning_fn, life_chat_expression as expression_fn
         elif self.runtime_policy == "first-life-grounded-3":
             from dynamic_subject_agent.first_life_grounded import life_chat_planning as planning_fn, life_chat_expression as expression_fn
-        elif self.runtime_policy in ("first-life-followup-4", *LOCAL_REPLY_POLICIES):
+        elif self.runtime_policy in ("first-life-followup-4", *REPLY_POLICIES):
             from dynamic_subject_agent.first_life_followup import life_chat_planning as planning_fn, life_chat_expression as expression_fn
-            if self.runtime_policy == PLANNED_LOCAL_POLICY:
+            if self.runtime_policy in PLANNED_REPLY_POLICIES:
                 expression_fn = fact_expression_projection
         authorization = None
         try:
             remaining = self.budget.counts()[2]
             development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]
-            required = 1 if self.runtime_policy == WHOLE_LOCAL_POLICY else 2
+            required = 1 if self.runtime_policy in WHOLE_REPLY_POLICIES else 2
             if remaining < required or development is not None and development < required: raise ValueError("reply allowance unavailable")
         except Exception:
             raise CognitionFailedClosed("budget", "first-life-budget-unavailable", "No verified allowance is available for this reply route.") from None
         try:
-            if self.runtime_policy in ("first-life-followup-4", *LOCAL_REPLY_POLICIES):
+            if self.runtime_policy in ("first-life-followup-4", *REPLY_POLICIES):
                 authorization = self.chat_authorization()
                 if type(authorization) is not ChatAuthorization or authorization.runtime_policy != self.runtime_policy:
                     raise ValueError("exact same-route chat authorization required")
@@ -223,7 +223,7 @@ class FirstLifeCognition(CognitionEngine):
             day = self.civil_day()
         except Exception:
             raise CognitionFailedClosed("history", "first-life-history-unverified", "History or sealed material is unavailable.") from None
-        if self.runtime_policy == WHOLE_LOCAL_POLICY:
+        if self.runtime_policy in WHOLE_REPLY_POLICIES:
             expression = whole_reply_projection(planning)
             output = self._call(plan, purpose="chat-expression", projection=expression, civil_day=day,
                 validator=lambda value: validate_whole_reply(expression, value), authorization=authorization)

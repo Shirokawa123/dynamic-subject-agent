@@ -149,12 +149,18 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
         if loaded.qri.provider_authority == LIFE_AUTHORITY:
-            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES
+            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES
             selected = authority.first_life_runtime_policy(loaded.qri.profile_id)
             if selected in LOCAL_REPLY_POLICIES and (type(cognition) is not FirstLifeCognition
                 or cognition.runtime_policy != selected
                 or getattr(getattr(cognition.gateway, "capabilities", None), "local", None) is not True):
                 raise ValueError("local-only reply identity requires its exact local composition")
+            if selected in LIVE_REPLY_POLICIES:
+                _, record, _ = authority._active_chat_record(loaded.qri.profile_id)
+                expected = record["life_activation"]["live_reply_route"]["approval"]
+                if (type(cognition) is not FirstLifeCognition or cognition.runtime_policy != selected
+                    or getattr(cognition, "_reply_trial_witness", None) != expected):
+                    raise ValueError("S112 reply identity requires its approved trial composition")
             if type(cognition) is not FirstLifeCognition: cognition = FirstLifeCognition()
         elif loaded.qri.provider_authority == LIFE_DORMANT_AUTHORITY:
             cognition = FirstLifeDormantCognition()
@@ -760,3 +766,76 @@ def open_first_life_reply_lab(config, *, definition_basis, life_scope_digest, bu
         chat_guard=authority.first_life_chat_guard)
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
         first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=True)
+
+
+def open_first_life_reply_trial(config, *, definition_basis, life_scope_digest, approval, branch_id,
+                                seed_gateway=None, _transport=None, _clock=None, _civil_day=None):
+    """Open one separately qualified S112 branch in fixed seed or live mode.
+
+    Seed assembly never constructs credentials or a sender. Live assembly can
+    only spend the one shared approval ledger, through one-use claim tickets.
+    """
+    from dynamic_subject_agent.first_life import current_civil_day, first_life_scope_digest
+    from dynamic_subject_agent.first_life_budget import FirstLifeBudget
+    from dynamic_subject_agent.first_life_clock import FirstLifeClock
+    from dynamic_subject_agent.first_life_cognition import FirstLifeCognition
+    from dynamic_subject_agent.first_life_reply_live import ApprovedReplyTrial, ApprovedSeedAdapter, live_reply_scope_digest, verify_trial_seed
+    from dynamic_subject_agent.first_life_reply_live_provider import LiveReplyBudget, LiveReplyAdapter
+    from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
+    if type(approval) is not ApprovedReplyTrial:
+        raise ValueError("verified S112 approval required")
+    manifest = approval.read()
+    _, policy = approval.branch(branch_id)
+    root = approval.root / branch_id
+    if (config.state_path.resolve() != (root / "state.json").resolve()
+        or config.product_parent.resolve() != (root / "DynamicSubjectAgent" / "m0" / "experiments").resolve()
+        or life_scope_digest != first_life_scope_digest(definition_basis)):
+        raise ValueError("exact isolated S112 branch required")
+    if seed_gateway is not None:
+        if not isinstance(seed_gateway, ModelGateway) or seed_gateway.capabilities.local is not True or _transport is not None:
+            raise ValueError("seed requires a local gateway and no transport")
+    elif not manifest["live"] and _transport is None:
+        raise ValueError("offline trial requires an explicit synthetic transport")
+    day = current_civil_day if _civil_day is None else _civil_day
+    budget_path = root / "local-stage-budget"
+    if seed_gateway is not None and not budget_path.exists():
+        CharacterChatBudget(budget_path, initialize=True)
+    budget = FirstLifeBudget(budget_path, civil_day=day)
+    witness = approval.witness(branch_id)
+    digest = live_reply_scope_digest(definition_basis, policy)
+    authority = LocalIdentityAuthority(config)
+    authority.bind_first_life_reply_trial(approval_witness=witness, definition_basis=definition_basis,
+        life_scope_digest=life_scope_digest, runtime_policy=policy, runtime_policy_digest=digest)
+    loaded = authority.activate_first_life(definition_basis=definition_basis, life_scope_digest=life_scope_digest,
+        budget_path=budget_path, development_run=True, live_reply_witness=witness)
+    authority.first_life_runtime_policy(loaded.qri.profile_id, runtime_policy=policy, runtime_policy_digest=digest)
+    was_live = authority.first_life_reply_trial_mode(seed=seed_gateway is not None)
+    if seed_gateway is not None:
+        gateway = ModelGateway(ApprovedSeedAdapter(seed_gateway, approval, branch_id))
+    else:
+        budget = LiveReplyBudget(budget, approval.shared_budget(), policy=policy)
+        transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+        credential_ref = (CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)
+            if manifest["live"] else CredentialRef.reference(backend_id="s112-offline", key_id="no-credential"))
+        adapter = LiveReplyAdapter(transport, credential_ref, budget, approval=approval, branch_id=branch_id,
+            request_guard=lambda task: approval.validate_task(branch_id, task))
+        adapter.rows = approval.observations
+        gateway = ModelGateway(adapter)
+    cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
+        history_preference=lambda: authority.character_history_preference(loaded.qri.profile_id), development_run=True, civil_day=day,
+        runtime_policy=policy, share_authorization=lambda: authority.first_life_share_authorization(loaded.qri.profile_id),
+        share_guard=authority.first_life_share_guard,
+        chat_authorization=lambda: authority.first_life_chat_authorization(loaded.qri.profile_id),
+        chat_guard=authority.first_life_chat_guard)
+    cognition._reply_trial_witness = witness
+    clock = FirstLifeClock() if _clock is None else FirstLifeClock(_clock)
+    opened = _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None,
+        first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=True)
+    if seed_gateway is None and not was_live:
+        try:
+            verify_trial_seed(opened, approval, branch_id)
+            authority.first_life_reply_trial_mode(seed=False, begin=True)
+        except Exception:
+            opened.close()
+            raise
+    return opened
