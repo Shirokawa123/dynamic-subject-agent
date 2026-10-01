@@ -340,6 +340,8 @@ Slice-51混合验收修复明确清单入口：“列出/请列出我的目标/�
 
 ## Credential seam
 
+S117新增独立`first-life-whole-scoped-s117-1`/`first-life-planned-scoped-s117-1`策略及`DevelopmentReplyTrial`，只允许S112已批准完整合成场景；新composition复用原canonical seed验证、history/policy守卫、严格裁决及Timeline。表达wire为S116已测JSON例＋正文限定/high，规划保持v4/low。`DevelopmentReplyBudget`的真实次数无上限，stage先claim、一次性ticket不从审计恢复；新分支本地有限账仅审计程序seed，旧真实42/18/200账不变。生活计数前两项仍是本支当天seed行为，开发余量None。真实A两条连续链完成，B来源选择损失及空白仍在，故先沿A作开发候选；人物习惯编造/重复修复未解决，用户运行窗口未变。见[S117完整原文与证据](reports/2026-10-01-slice-117/REPORT.md)。
+
 S116在原有已授权合成材料/DeepSeek/slot用途内新增隔离`ApplicationFacade.evaluate_reply_protocol`诊断入口，经`ModelGateway`及严格JSON/schema返回技术结果，不创建人物Publication。用户取消后续开发调用次数限制；独立`DevelopmentCallAudit`以`limit=null`记录实际claim/terminal/unknown，目录外初始化见证防缺失账本被重置，同逻辑attempt不恢复重发。原42/18账保留历史，不迁移或重置。固定研究manifest绑定wire；JSON例、作用域和参数候选的历史版本均保持可重建。真实提示作用域对照有改善但空白仍在，详细边界与结果见[S116报告](reports/2026-10-01-slice-116/REPORT.md)，不能当人物体验或用户服务升级。
 
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
