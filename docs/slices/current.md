@@ -4,6 +4,8 @@
 
 2026-10-01：按用户指定会话补入[会话总结与改进行动方案](../plans/product-reset-cloud-assessment.md#会话总结与改进行动方案)，明确指令适用范围、完整体验验收、简化清单与两路线对照草案。仍属S109研究/方案；48次是待审实验上限，未获新调用授权，不恢复旧局部修复顺序。
 
+2026-10-01开发协作重构已完成：按用户要求，基于[一手调研](../research/2026-10-01-agent-collaboration-redesign.md)更新[协作策略](../plans/agent-execution-strategy.md)与AGENTS入口，取消固定模型岗位/项目级思考档上限，按任务依赖、风险与收益选团队。下一步仍接续S109整体路线与实验合同；未启动产品实现、模型验收或云端部署。
+
 2026-09-28：[Slice-108：主动分享后的两次接话](slice-108-share-followup-context.md)以**有明确限制的v4试用交付**收口。原用户窗口实际运行first-life-followup-4，完整MVP/事实忠实度仍未通过。实现、检查、失败与部署证据见[S108报告](../reports/2026-09-28-slice-108/REPORT.md)。
 
 ## 当前事实
