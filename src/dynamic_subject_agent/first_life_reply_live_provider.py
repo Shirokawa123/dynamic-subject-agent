@@ -19,7 +19,10 @@ from dynamic_subject_agent.deepseek import (
 )
 from dynamic_subject_agent.first_life_budget import FirstLifeBudget
 from dynamic_subject_agent.first_life_reply_drafts import draft_wire
-from dynamic_subject_agent.first_life_reply_routes import WHOLE_LIVE_POLICY, PLANNED_LIVE_POLICY
+from dynamic_subject_agent.first_life_reply_routes import (
+    WHOLE_LIVE_POLICY, PLANNED_LIVE_POLICY, REMOTE_REPLY_POLICIES,
+    WHOLE_REPLY_POLICIES, CANDIDATE_REPLY_POLICIES,
+)
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import (
     ModelTask, ModelTaskKind, ModelResult, ModelGatewayFailure,
@@ -41,8 +44,10 @@ class LiveReplyBudget:
     """Bridge one branch audit to the fixed, shared 42-attempt experiment cap."""
 
     def __init__(self, local_budget: FirstLifeBudget, shared_budget: CharacterChatBudget, *, policy: str):
-        if (not isinstance(local_budget, FirstLifeBudget) or type(shared_budget) is not CharacterChatBudget
-            or policy not in (WHOLE_LIVE_POLICY, PLANNED_LIVE_POLICY)
+        from dynamic_subject_agent.first_life_candidate_budget import CandidateTrialBudget
+        expected_budget = CandidateTrialBudget if policy in CANDIDATE_REPLY_POLICIES else CharacterChatBudget
+        if (not isinstance(local_budget, FirstLifeBudget) or type(shared_budget) is not expected_budget
+            or policy not in REMOTE_REPLY_POLICIES
             or shared_budget.config["total"] != 42 or shared_budget.config["initial_used"] != 0
             or local_budget.path.resolve() == shared_budget.path.resolve()):
             raise ValueError("separate branch audit and exact shared S112 allowance required")
@@ -78,7 +83,7 @@ class LiveReplyBudget:
             if (self._pending is not None or development_run is not True
                 or purpose not in ("chat-planning", "chat-expression")
                 or stage != ("planning" if purpose == "chat-planning" else "expression")
-                or self.policy == WHOLE_LIVE_POLICY and purpose != "chat-expression"):
+                or self.policy in WHOLE_REPLY_POLICIES and purpose != "chat-expression"):
                 raise ValueError("one new stage on the exact live reply route required")
             try:
                 self._local.claim_life(identity_digest, operation_digest, stage, request_digest,
@@ -100,7 +105,7 @@ class LiveReplyBudget:
             self._available()
             ticket, self._ticket = self._ticket, None
             allowed = ({ModelTaskKind.CHARACTER_FIRST_LIFE_WHOLE_REPLY: "expression"}
-                if self.policy == WHOLE_LIVE_POLICY else {
+                if self.policy in WHOLE_REPLY_POLICIES else {
                     ModelTaskKind.CHARACTER_COMMUNICATION_PLAN: "planning",
                     ModelTaskKind.CHARACTER_FIRST_LIFE_FACT_EXPRESSION: "expression"})
             if (ticket is None or type(task) is not ModelTask or task.kind not in allowed
@@ -187,12 +192,17 @@ class LiveReplyAdapter(ProviderAdapter):
 
     def _verify_real_authority(self):
         from dynamic_subject_agent.first_life_reply_live import ApprovedReplyTrial
-        if type(self._approval) is not ApprovedReplyTrial or self._approval.read()["live"] is not True:
+        from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
+        candidate = self._budget.policy in CANDIDATE_REPLY_POLICIES
+        expected_type = ApprovedCandidateTrial if candidate else ApprovedReplyTrial
+        if type(self._approval) is not expected_type or self._approval.read()["live"] is not True:
             raise ValueError("real credential requires the one approved live experiment")
         _, policy = self._approval.branch(self._branch_id)
+        expected_path = self._approval.parent_budget_path if candidate else self._approval.root / "real-budget"
         if (self._budget.policy != policy
-            or self._budget._shared.path.resolve() != (self._approval.root / "real-budget").resolve()
-            or self._budget._local.path.resolve() != (self._approval.root / self._branch_id / "local-stage-budget").resolve()):
+            or self._budget._shared.path.resolve() != expected_path.resolve()
+            or self._budget._local.path.resolve() != (self._approval.root / self._branch_id / "local-stage-budget").resolve()
+            or candidate and self._budget._shared.grant_digest != self._approval.manifest_digest):
             raise ValueError("real sender requires the approved shared cap and branch audit")
 
     def invoke(self, task):
@@ -212,11 +222,18 @@ class LiveReplyAdapter(ProviderAdapter):
                     pass
                 raise ModelGatewayFailure("structured-choice-invalid") from None
         self._budget.consume(task)
-        wire = draft_wire(task)
+        if (self._budget.policy in CANDIDATE_REPLY_POLICIES
+            and task.kind is not ModelTaskKind.CHARACTER_COMMUNICATION_PLAN):
+            from dynamic_subject_agent.first_life_reply_candidate import preview_reply_candidate
+            wire = preview_reply_candidate(task).wire
+        else:
+            wire = draft_wire(task)
         observed = _ObservedTransport(self._transport)
         row = dict(task_kind=task.kind.value, payload=asdict(task.payload),
             request_digest=sha256(canonical_json(asdict(task.payload)).encode()).hexdigest(),
             wire_sha256=sha256(wire).hexdigest(), value=None, error_code=None)
+        if self._budget.policy in CANDIDATE_REPLY_POLICIES:
+            row["request_body"] = json.loads(wire)
         started = perf_counter()
         try:
             value = _post_json_reply_content(observed, self._credential_ref, wire, max_output_tokens=4096,

@@ -149,7 +149,7 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
         if loaded.qri.provider_authority == LIFE_AUTHORITY:
-            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES
+            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES
             selected = authority.first_life_runtime_policy(loaded.qri.profile_id)
             if selected in LOCAL_REPLY_POLICIES and (type(cognition) is not FirstLifeCognition
                 or cognition.runtime_policy != selected
@@ -768,9 +768,9 @@ def open_first_life_reply_lab(config, *, definition_basis, life_scope_digest, bu
         first_life_budget=budget, first_life_clock=clock, first_life_day=day, first_life_development=True)
 
 
-def open_first_life_reply_trial(config, *, definition_basis, life_scope_digest, approval, branch_id,
+def _open_first_life_reply_trial(config, *, definition_basis, life_scope_digest, approval, branch_id,
                                 seed_gateway=None, _transport=None, _clock=None, _civil_day=None):
-    """Open one separately qualified S112 branch in fixed seed or live mode.
+    """Open one separately qualified approved branch in fixed seed or live mode.
 
     Seed assembly never constructs credentials or a sender. Live assembly can
     only spend the one shared approval ledger, through one-use claim tickets.
@@ -779,18 +779,19 @@ def open_first_life_reply_trial(config, *, definition_basis, life_scope_digest, 
     from dynamic_subject_agent.first_life_budget import FirstLifeBudget
     from dynamic_subject_agent.first_life_clock import FirstLifeClock
     from dynamic_subject_agent.first_life_cognition import FirstLifeCognition
-    from dynamic_subject_agent.first_life_reply_live import ApprovedReplyTrial, ApprovedSeedAdapter, live_reply_scope_digest, verify_trial_seed
+    from dynamic_subject_agent.first_life_reply_live import ApprovedReplyTrial, ApprovedSeedAdapter, approved_reply_scope_digest as live_reply_scope_digest, verify_trial_seed
     from dynamic_subject_agent.first_life_reply_live_provider import LiveReplyBudget, LiveReplyAdapter
     from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
-    if type(approval) is not ApprovedReplyTrial:
-        raise ValueError("verified S112 approval required")
+    from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
+    if type(approval) not in (ApprovedReplyTrial, ApprovedCandidateTrial):
+        raise ValueError("verified reply trial approval required")
     manifest = approval.read()
     _, policy = approval.branch(branch_id)
     root = approval.root / branch_id
     if (config.state_path.resolve() != (root / "state.json").resolve()
         or config.product_parent.resolve() != (root / "DynamicSubjectAgent" / "m0" / "experiments").resolve()
         or life_scope_digest != first_life_scope_digest(definition_basis)):
-        raise ValueError("exact isolated S112 branch required")
+        raise ValueError("exact isolated reply trial branch required")
     if seed_gateway is not None:
         if not isinstance(seed_gateway, ModelGateway) or seed_gateway.capabilities.local is not True or _transport is not None:
             raise ValueError("seed requires a local gateway and no transport")
@@ -839,3 +840,19 @@ def open_first_life_reply_trial(config, *, definition_basis, life_scope_digest, 
             opened.close()
             raise
     return opened
+
+
+def open_first_life_reply_trial(config, *, approval, **kwargs):
+    """S112 entrypoint retains its original exact approval type and strategy."""
+    from dynamic_subject_agent.first_life_reply_live import ApprovedReplyTrial
+    if type(approval) is not ApprovedReplyTrial:
+        raise ValueError("verified S112 approval required")
+    return _open_first_life_reply_trial(config, approval=approval, **kwargs)
+
+
+def open_first_life_candidate_trial(config, *, approval, **kwargs):
+    """S114 candidate entrypoint requires its separately approved 18-call grant."""
+    from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
+    if type(approval) is not ApprovedCandidateTrial:
+        raise ValueError("verified S114 candidate approval required")
+    return _open_first_life_reply_trial(config, approval=approval, **kwargs)

@@ -306,7 +306,7 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             or record.get("life_identity_basis") != contract["identity_basis"]):
             raise RuntimeError("first-life-identity-pointer-invalid")
         if qri.provider_authority == LIFE_AUTHORITY:
-            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
+            from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES, REPLY_POLICIES
             from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
             metadata = record.get("life_activation")
             keys = {"contract", "budget_path", "budget_total", "initial_budget_used", "development_run"}
@@ -322,7 +322,7 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
                 keys = keys | {"local_reply_route"}
             live_policy = isinstance(saved_policy, dict) and saved_policy.get("version") in LIVE_REPLY_POLICIES
             if type(metadata) is dict and "live_reply_route" in metadata or live_policy:
-                from dynamic_subject_agent.first_life_reply_live import approved_trial_from_witness, live_reply_scope_digest
+                from dynamic_subject_agent.first_life_reply_live import resolve_reply_trial as approved_trial_from_witness, approved_reply_scope_digest as live_reply_scope_digest
                 if (not live_policy or type(metadata) is not dict or set(metadata) != keys | {"live_reply_route"}
                     or metadata["development_run"] is not True or type(record.get("reply_live_started")) is not bool):
                     raise RuntimeError("live-reply-activation-invalid")
@@ -971,7 +971,8 @@ def _select_local_identity(
             isinstance(row.get("life_runtime_policy"), dict)
             and row["life_runtime_policy"].get("version") in (
                 "first-life-followup-4", "first-life-whole-local-1", "first-life-planned-local-1",
-                "first-life-whole-live-s112-1", "first-life-planned-live-s112-1") for row in identities):
+                "first-life-whole-live-s112-1", "first-life-planned-live-s112-1",
+                "first-life-whole-candidate-s114-1", "first-life-planned-candidate-s114-1") for row in identities):
             revision = state.get("chat_identity_revision")
             if type(revision) is not int or revision < 0:
                 raise RuntimeError("chat-identity-revision-invalid")
@@ -1236,7 +1237,7 @@ class LocalIdentityAuthority:
             raise RuntimeError("first-life-definition-mismatch")
         metadata = dict(contract=expected, budget_path=str(budget_path.resolve()), budget_total=budget_total,
             initial_budget_used=initial_budget_used, development_run=development_run)
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES, REPLY_POLICIES
         from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
         saved_policy = record.get("life_runtime_policy")
         if local_reply_policy is not None:
@@ -1246,13 +1247,13 @@ class LocalIdentityAuthority:
                 raise ValueError("exact bound local reply activation required")
             metadata["local_reply_route"] = dict(version=local_reply_policy, digest=saved_policy["digest"])
         elif live_reply_witness is not None:
-            from dynamic_subject_agent.first_life_reply_live import approved_trial_from_witness, live_reply_scope_digest
+            from dynamic_subject_agent.first_life_reply_live import resolve_reply_trial as approved_trial_from_witness, approved_reply_scope_digest as live_reply_scope_digest
             approval = approved_trial_from_witness(live_reply_witness)
             _, live_policy = approval.branch(live_reply_witness["branch_id"])
             if (development_run is not True or not isinstance(saved_policy, dict)
                 or saved_policy.get("version") != live_policy
                 or saved_policy.get("digest") != live_reply_scope_digest(definition_basis, live_policy)):
-                raise ValueError("exact S112 bound activation required")
+                raise ValueError("exact approved reply trial activation required")
             metadata["live_reply_route"] = dict(version=live_policy, digest=saved_policy["digest"], approval=live_reply_witness)
         elif isinstance(saved_policy, dict) and saved_policy.get("version") in REPLY_POLICIES:
             raise ValueError("local-only or trial reply activation requires its isolated entrypoint")
@@ -1306,7 +1307,7 @@ class LocalIdentityAuthority:
                 return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]
             if "live_reply_route" in metadata:
-                from dynamic_subject_agent.first_life_reply_live import approved_trial_from_witness
+                from dynamic_subject_agent.first_life_reply_live import resolve_reply_trial as approved_trial_from_witness
                 trial = approved_trial_from_witness(metadata["live_reply_route"]["approval"])
                 total, used, remaining = trial.shared_budget().counts()
             else:
@@ -1332,7 +1333,7 @@ class LocalIdentityAuthority:
         from dynamic_subject_agent.first_life_relevance import RELEVANCE_VERSION, first_life_scope_digest
         from dynamic_subject_agent.first_life_grounded import GROUNDED_VERSION, first_life_scope_digest as grounded_scope_digest
         from dynamic_subject_agent.first_life_followup import FOLLOWUP_VERSION, first_life_scope_digest as followup_scope_digest
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES, REPLY_POLICIES
         from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
         if identity.qri.provider_authority != LIFE_AUTHORITY:
             raise RuntimeError("first-life-active-required")
@@ -1340,7 +1341,7 @@ class LocalIdentityAuthority:
         versions = {LEGACY_RUNTIME_POLICY: record["life_scope_digest"],
             RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition), FOLLOWUP_VERSION: followup_scope_digest(definition)}
         versions.update({version: reply_scope_digest(definition, version) for version in LOCAL_REPLY_POLICIES})
-        from dynamic_subject_agent.first_life_reply_live import live_reply_scope_digest
+        from dynamic_subject_agent.first_life_reply_live import approved_reply_scope_digest as live_reply_scope_digest
         versions.update({version: live_reply_scope_digest(definition, version) for version in LIVE_REPLY_POLICIES})
         saved = record.get("life_runtime_policy")
         if "life_runtime_policy" in record:
@@ -1381,7 +1382,7 @@ class LocalIdentityAuthority:
         return self._bind_first_life_reply_route(**kwargs)
 
     def bind_first_life_reply_trial(self, *, approval_witness, **kwargs):
-        from dynamic_subject_agent.first_life_reply_live import approved_trial_from_witness, live_reply_scope_digest
+        from dynamic_subject_agent.first_life_reply_live import resolve_reply_trial as approved_trial_from_witness, approved_reply_scope_digest as live_reply_scope_digest
         approval = approved_trial_from_witness(approval_witness)
         branch = approval_witness["branch_id"]
         _, policy = approval.branch(branch)
@@ -1389,14 +1390,14 @@ class LocalIdentityAuthority:
             or self._config.product_parent.resolve() != (approval.root / branch / "DynamicSubjectAgent" / "m0" / "experiments").resolve()
             or kwargs["runtime_policy"] != policy
             or kwargs["runtime_policy_digest"] != live_reply_scope_digest(kwargs["definition_basis"], policy)):
-            raise ValueError("exact S112 branch scope required")
+            raise ValueError("exact approved reply trial branch scope required")
         return self._bind_first_life_reply_route(**kwargs, _live=True)
 
     @_registry_mutation
     def first_life_reply_trial_mode(self, *, seed, begin=False):
         state, record, _ = self._active_chat_record()
         if "live_reply_route" not in record.get("life_activation", {}):
-            raise ValueError("S112 activated branch required")
+            raise ValueError("approved reply trial activation required")
         if seed and record["reply_live_started"]:
             raise ValueError("live trial cannot return to synthetic seeding")
         started = record["reply_live_started"]
@@ -1412,9 +1413,9 @@ class LocalIdentityAuthority:
         The existing version field makes older and remote readers reject it;
         no optional marker can be silently ignored to enable remote generation.
         """
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES, REPLY_POLICIES
         from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
-        from dynamic_subject_agent.first_life_reply_live import live_reply_scope_digest
+        from dynamic_subject_agent.first_life_reply_live import approved_reply_scope_digest as live_reply_scope_digest
         allowed, digest_fn = (LIVE_REPLY_POLICIES, live_reply_scope_digest) if _live else (LOCAL_REPLY_POLICIES, reply_scope_digest)
         if runtime_policy not in allowed or runtime_policy_digest != digest_fn(definition_basis, runtime_policy):
             raise ValueError("exact isolated reply route required")
@@ -1455,7 +1456,7 @@ class LocalIdentityAuthority:
         _write_state(self._config.state_path, state)
 
     def require_remote_first_life(self):
-        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
+        from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES, REPLY_POLICIES
         _, record, _ = self._active_chat_record()
         saved = record.get("life_runtime_policy")
         if type(saved) is dict and saved.get("version") in REPLY_POLICIES:

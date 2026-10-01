@@ -120,6 +120,22 @@ def approved_trial_from_witness(witness):
     return result
 
 
+def resolve_reply_trial(witness):
+    """Exact dispatch for independently approved trial witnesses, no fallback."""
+    if type(witness) is dict and witness.get("kind") == "s114-candidate":
+        from dynamic_subject_agent.first_life_candidate_trial import candidate_trial_from_witness
+        return candidate_trial_from_witness(witness)
+    return approved_trial_from_witness(witness)
+
+
+def approved_reply_scope_digest(definition_basis, policy):
+    from dynamic_subject_agent.first_life_reply_routes import CANDIDATE_REPLY_POLICIES
+    if policy in CANDIDATE_REPLY_POLICIES:
+        from dynamic_subject_agent.first_life_candidate_trial import candidate_reply_scope_digest
+        return candidate_reply_scope_digest(definition_basis, policy)
+    return live_reply_scope_digest(definition_basis, policy)
+
+
 class ApprovedSeedAdapter(ProviderAdapter):
     """A local seed gateway cannot introduce arbitrary prior dialogue or life."""
     capabilities = ProviderCapabilities("s112-fixed-seed", "program", True, (StructuredOutputMode.JSON_OBJECT,))
