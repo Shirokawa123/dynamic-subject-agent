@@ -233,3 +233,77 @@ def test_live_mode_requires_canonical_run_directory_and_single_fixed_audit(tmp_p
     transport.value = valid_value(plan, request)
     assert trial.ReplyProtocolTrial(ModelGateway(adapter), plan).evaluate(request).status == "structured"
     assert audit.counts() == (None, 1, None)
+
+
+def test_response_format_study_changes_only_the_one_field_and_preserves_counterbalance(tmp_path):
+    plan = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="response-format")
+    assert plan.study == "response-format" and plan.variants == ("json-object", "text-json")
+    manifest = plan.read()
+    assert manifest["version"] == "reply-protocol-run-2" and manifest["call_limit"] is None
+    package = plan.package
+    mapped = {"baseline": "json-object", "json-example": "text-json"}
+    assert [(row["case_id"], row["variant"]) for row in plan.sequence] == [
+        (row["case_id"], mapped[row["variant"]]) for row in package["sequence"]]
+    frozen = {(row["case_id"], row["variant"]): row["wire_sha256"] for row in manifest["study_spec"]["sequence"]}
+    for case in package["cases"]:
+        baseline = plan.wire_for(plan.request_for(case["case_id"], "json-object"))
+        text = plan.wire_for(plan.request_for(case["case_id"], "text-json"))
+        assert baseline == case["candidate_wire_utf8"].encode("utf-8")
+        before, after = json.loads(baseline), json.loads(text)
+        assert before["response_format"] == {"type": "json_object"}
+        assert after["response_format"] == {"type": "text"}
+        after["response_format"] = before["response_format"]
+        assert after == before
+        assert frozen[case["case_id"], "json-object"] == sha256(baseline).hexdigest()
+        assert frozen[case["case_id"], "text-json"] == sha256(text).hexdigest()
+    with pytest.raises(ValueError):
+        plan.request_for(package["cases"][0]["case_id"], "baseline")
+    manifest["study_spec"]["sequence"][0]["wire_sha256"] = "0" * 64
+    (plan.root / "manifest.json").write_text(canonical_json(manifest), encoding="utf-8")
+    with pytest.raises(ValueError):
+        plan.read()
+
+
+def test_old_v1_manifest_reopens_byte_exact_and_same_run_cannot_change_study(tmp_path):
+    root = tmp_path / str(uuid4())
+    root.mkdir()
+    package = json.loads(PACKAGE.read_text(encoding="utf-8"))
+    old = dict(version="reply-protocol-run-1", authorization=trial.AUTHORIZATION, purpose=trial.PURPOSE,
+        call_limit=None, automatic_retries=0, live=False, run_id=root.name, root=str(root.resolve()),
+        package_digest=trial.PACKAGE_DIGEST, package=package)
+    original_bytes = canonical_json(old).encode("utf-8")
+    (root / "manifest.json").write_bytes(original_bytes)
+    plan = trial.open_protocol_run(root, PACKAGE, live=False)
+    assert plan.digest == sha256(original_bytes).hexdigest()
+    assert plan.study == "json-example" and plan.variants == trial.VARIANTS
+    assert "study" not in plan.read() and (root / "manifest.json").read_bytes() == original_bytes
+    assert trial.open_protocol_run(root, PACKAGE, live=False, study="json-example").digest == plan.digest
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(root, PACKAGE, live=False, study="response-format")
+    assert (root / "manifest.json").read_bytes() == original_bytes
+    new = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="response-format")
+    new_bytes = (new.root / "manifest.json").read_bytes()
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(new.root, PACKAGE, live=False)
+    assert (new.root / "manifest.json").read_bytes() == new_bytes
+
+
+@pytest.mark.parametrize("valid_json", [False, True])
+def test_text_response_mode_keeps_the_original_strict_json_output_requirement(tmp_path, valid_json):
+    plan = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="response-format")
+    request = plan.request_for(plan.package["cases"][0]["case_id"], "text-json")
+    audit = DevelopmentCallAudit(plan.root / "offline-audit", initialize=True)
+    transport = SyntheticTransport(value=valid_value(plan, request), content=None if valid_json else "只有自然语言正文。")
+    ref = CredentialRef.reference(backend_id=OFFLINE_CREDENTIAL_BACKEND, key_id=OFFLINE_CREDENTIAL_KEY)
+    adapter = ProtocolTrialAdapter(transport, ref, plan, audit)
+    service = trial.ReplyProtocolTrial(ModelGateway(adapter), plan)
+    try:
+        view = service.evaluate(request)
+    finally:
+        service.close()
+    assert json.loads(transport.calls[0])["response_format"] == {"type": "text"}
+    if valid_json:
+        assert view.status == "structured" and view.value == transport.value
+    else:
+        assert view.status == "failed-closed" and view.diagnostic_code == "response-content-json" and view.value is None
+    assert len(transport.calls) == 1 and audit.counts() == (None, 1, None)

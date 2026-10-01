@@ -57,20 +57,23 @@ def test_facade_records_once_without_chat_publication_and_reopen_cannot_resend(t
     assert "DO_NOT_PERSIST_REASONING" not in canonical_json(observed)
 
 
-def test_eight_planned_arms_keep_blank_failures_without_hidden_retries(tmp_path):
+@pytest.mark.parametrize("study", ["json-example", "response-format"])
+def test_eight_planned_arms_keep_blank_failures_without_hidden_retries(tmp_path, study):
     spec = importlib.util.spec_from_file_location("s116_runner", ROOT / "scripts/run_s116_protocol_comparison.py")
     runner = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(runner)
     root = tmp_path / str(uuid4())
     transport = LocalProtocolTransport(blank=True)
-    result = runner.run_once(root, live=False, transport=transport)
+    result = runner.run_once(root, live=False, transport=transport, study=study)
     assert result["status"] == "completed" and len(transport.calls) == 8
     assert result["call_limit"] is None and result["remaining"] is None
     assert result["character_history_empty"] is True
     assert all(r["status"] == "failed-closed" and r["diagnostic_code"] == "response-content-empty" for r in result["results"])
-    assert result["variants"]["baseline"]["structured"] == result["variants"]["json-example"]["structured"] == 0
+    assert all(variant["structured"] == 0 for variant in result["variants"].values())
+    if study == "response-format":
+        assert {json.loads(body)["response_format"]["type"] for body in transport.calls} == {"json_object", "text"}
     with pytest.raises(FileExistsError):
-        runner.run_once(root, live=False, transport=transport)
+        runner.run_once(root, live=False, transport=transport, study=study)
     assert len(transport.calls) == 8
 
 

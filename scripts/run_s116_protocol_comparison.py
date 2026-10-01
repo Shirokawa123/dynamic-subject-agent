@@ -25,8 +25,8 @@ OUTPUT_FAILURES = frozenset(("response-content-empty", "response-content-json", 
     "response-truncated", "response-overbudget", "format-example-copied"))
 
 
-def run_once(run_root, *, live, transport=None, label="initial-format-comparison"):
-    plan = open_protocol_run(run_root, PACKAGE, live=live)
+def run_once(run_root, *, live, transport=None, label="initial-format-comparison", study="json-example"):
+    plan = open_protocol_run(run_root, PACKAGE, live=live, study=study)
     observations, results = [], []
     with (plan.root / "results.jsonl").open("x", encoding="utf-8") as journal:
         def append(row):
@@ -37,10 +37,10 @@ def run_once(run_root, *, live, transport=None, label="initial-format-comparison
             append(dict(event="model-attempt", **row))
             observations.append(row)
         append(dict(event="run-started", version="s116-protocol-comparison-1", label=label,
-            run_digest=plan.digest, live=live, call_limit=None,
+            run_digest=plan.digest, live=live, study=study, call_limit=None,
             planned_requests=len(plan.sequence), automatic_retries=0))
         stop_reason = None
-        with open_reply_protocol_lab(plan.root, PACKAGE, live=live, _transport=transport,
+        with open_reply_protocol_lab(plan.root, PACKAGE, live=live, study=study, _transport=transport,
                 response_audit=observed) as product:
             for number, row in enumerate(plan.sequence, 1):
                 request = plan.request_for(row["case_id"], row["variant"])
@@ -61,13 +61,13 @@ def run_once(run_root, *, live, transport=None, label="initial-format-comparison
         audit_path = fixed_development_audit_path() if live else plan.root / "offline-audit"
         limit, used, remaining = DevelopmentCallAudit(audit_path).counts()
         variants = {}
-        for variant in ("baseline", "json-example"):
+        for variant in plan.variants:
             selected = [r for r in results if r["variant"] == variant]
             variants[variant] = dict(attempts=len(selected), structured=sum(r["status"] == "structured" for r in selected),
                 format_example_copied=sum(r["format_example_copied"] for r in selected),
                 failures=dict(Counter(r["diagnostic_code"] for r in selected if r["diagnostic_code"])))
         summary = dict(version="s116-protocol-comparison-1", label=label, run_id=plan.root.name,
-            run_digest=plan.digest, package_sha256=plan.package["package_sha256"], live=live,
+            run_digest=plan.digest, package_sha256=plan.package["package_sha256"], live=live, study=study,
             status="completed" if stop_reason is None else "stopped-infrastructure-failure", stop_reason=stop_reason,
             automatic_retries=0, call_limit=limit, development_attempts_total=used, remaining=remaining,
             character_history_empty=bool(empty_history), results=results, observations=observations, variants=variants)
@@ -84,12 +84,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--label", default="initial-format-comparison")
+    parser.add_argument("--study", choices=("json-example", "response-format"), default="json-example")
     args = parser.parse_args()
     if not args.live:
         parser.error("use --live for the authorized actual run; tests inject a local transport")
     run_root = fixed_protocol_runs_root() / str(uuid4())
-    print(canonical_json(dict(started_run=str(run_root), label=args.label, call_limit=None)), flush=True)
-    result = run_once(run_root, live=True, label=args.label)
+    print(canonical_json(dict(started_run=str(run_root), label=args.label, study=args.study, call_limit=None)), flush=True)
+    result = run_once(run_root, live=True, label=args.label, study=args.study)
     print(canonical_json(dict(root=str(run_root), status=result["status"], variants=result["variants"],
         development_attempts_total=result["development_attempts_total"], call_limit=None)))
     return 0 if result["status"] == "completed" else 1

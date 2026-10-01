@@ -862,7 +862,7 @@ def open_first_life_candidate_trial(config, *, approval, **kwargs):
     return _open_first_life_reply_trial(config, approval=approval, **kwargs)
 
 
-def open_reply_protocol_lab(run_root, package_path, *, live=False, _transport=None, response_audit=None):
+def open_reply_protocol_lab(run_root, package_path, *, live=False, study="json-example", _transport=None, response_audit=None):
     """Compose the approved protocol study without a character publication path.
 
     The current user's quantity authorization is represented by an unbounded
@@ -880,7 +880,7 @@ def open_reply_protocol_lab(run_root, package_path, *, live=False, _transport=No
         raise TypeError("protocol observation callback must be callable")
     if type(live) is not bool or not live and _transport is None:
         raise ValueError("offline protocol lab requires an explicit local transport")
-    plan = open_protocol_run(run_root, package_path, live=live)
+    plan = open_protocol_run(run_root, package_path, live=live, study=study)
     audit_path = fixed_development_audit_path() if live else plan.root / "offline-audit"
     # Keep a witness outside the audit directory. Losing that directory must
     # not turn an existing run's stable attempts into fresh send permissions.
