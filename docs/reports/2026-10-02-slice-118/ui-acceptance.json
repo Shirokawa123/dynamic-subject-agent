@@ -1,0 +1,290 @@
+{
+  "version": "s118-ui-acceptance-1",
+  "run_digest": "e997c1402d85a482581f8cc25ca4692a8708940ae95d81dc280db69cfe8f69f6",
+  "state": {
+    "scope_key": "e997c1402d85a482581f8cc25ca4692a8708940ae95d81dc280db69cfe8f69f6",
+    "mode": "approved-test-messages",
+    "cases": [
+      {
+        "case_id": "objects-and-versions",
+        "title": "花瓶与书",
+        "choices": [
+          {
+            "id": "1",
+            "text": "随便聊聊，你想从哪儿说起？"
+          },
+          {
+            "id": "2",
+            "text": "为什么这么安排？"
+          },
+          {
+            "id": "3",
+            "text": "右边那本书还在方案里，和你刚才的话对不上呀？"
+          },
+          {
+            "id": "4",
+            "text": "如果把书挪到左边，你觉得怎么样？"
+          },
+          {
+            "id": "5",
+            "text": "你平时会给自己定目标吗？"
+          },
+          {
+            "id": "7",
+            "text": "那我们聊聊蓝色和绿色吧。"
+          },
+          {
+            "id": "8",
+            "text": "刚才聊到那两种颜色，你想先说哪一种？"
+          }
+        ],
+        "state": {
+          "character": {
+            "status": "paused",
+            "subject_name": "小林",
+            "paused": true,
+            "sharing_enabled": false,
+            "history_enabled": true,
+            "phase": "revised",
+            "project_revision": 2,
+            "virtual_minutes": 2,
+            "unanswered_share": false,
+            "budget_total": null,
+            "budget_used": 93,
+            "budget_remaining": null,
+            "today_decisions_used": 2,
+            "today_share_calls_used": 1,
+            "development_run": true,
+            "development_calls_remaining": null,
+            "problem_code": "",
+            "context_start_sequence": 0
+          },
+          "history": {
+            "status": "available"
+          },
+          "life_status": "available",
+          "project": {
+            "revision": 2,
+            "subject": "窗边的花瓶",
+            "composition": "花瓶居中，右侧仍保留合上的书",
+            "focus": "花瓶轮廓"
+          },
+          "versions": [
+            {
+              "revision": 1,
+              "reason": "调整留白",
+              "subject": "窗边的花瓶",
+              "composition": "花瓶靠左，右侧放一本合上的书",
+              "focus": "花瓶轮廓"
+            },
+            {
+              "revision": 2,
+              "reason": "调整留白",
+              "subject": "窗边的花瓶",
+              "composition": "花瓶居中，右侧仍保留合上的书",
+              "focus": "花瓶轮廓"
+            }
+          ],
+          "events": [
+            {
+              "summary": "此分支已保存构图文字方案v1；未生成图片。",
+              "simulated": true
+            },
+            {
+              "summary": "此分支已保存构图文字方案v2，修改：构图；未生成图片。",
+              "simulated": true
+            }
+          ],
+          "messages": [
+            {
+              "kind": "dialogue",
+              "head_sequence": 1,
+              "user_text": "先打个招呼。",
+              "assistant_text": "合成共同开场：你好，之后可以聊聊构图。"
+            },
+            {
+              "kind": "share",
+              "head_sequence": 4,
+              "assistant_text": "我把花瓶挪到中间，右边什么也没留。"
+            },
+            {
+              "kind": "dialogue",
+              "head_sequence": 6,
+              "user_text": "随便聊聊，你想从哪儿说起？",
+              "assistant_text": "先纠正我前面一句：我说右边什么都没留，这不对，现在的方案是花瓶居中，右边还留着一本合上的书。要不就从这张静物构图聊起？我最近在琢磨花瓶的轮廓。"
+            },
+            {
+              "kind": "dialogue",
+              "head_sequence": 7,
+              "user_text": "为什么这么安排？",
+              "assistant_text": "让花瓶居中，是想先把视线收在它的轮廓上，左右对称一点会更安静。右边留一本合上的书，不是随手放的，是想让空处有个停顿，也把画面重量压住；如果拿掉，右侧会显得太空。"
+            }
+          ],
+          "context_reset_confirmation": "从确认之后的新消息开始参考聊天；此前的聊天和主动分享不再作为后续上下文，本地记录仍保留。人物资料和已保存的活动、方案仍可用于生成；你此后发送的新文字仍可按现有用途发送给DeepSeek，新消息与回复仍保存在本地。这不是删除记录或禁止再次谈论某个话题。",
+          "presentation_pending": false,
+          "pending_handle": null,
+          "pending_request_id": null
+        }
+      },
+      {
+        "case_id": "plan-versus-completion",
+        "title": "纸船与台灯",
+        "choices": [
+          {
+            "id": "1",
+            "text": "今天想聊哪一点？"
+          },
+          {
+            "id": "2",
+            "text": "你指的是哪一部分？"
+          },
+          {
+            "id": "3",
+            "text": "所以这张成图已经给别人看过了？"
+          },
+          {
+            "id": "4",
+            "text": "也可以把台灯放在后面，你更喜欢哪一种？"
+          },
+          {
+            "id": "5",
+            "text": "聊这些的时候，你最在意的目标是什么？"
+          },
+          {
+            "id": "7",
+            "text": "那聊聊圆形和方形给人的感觉吧。"
+          },
+          {
+            "id": "8",
+            "text": "接着刚才的形状话题，你想先从哪个说？"
+          }
+        ],
+        "state": {
+          "character": {
+            "status": "paused",
+            "subject_name": "小林",
+            "paused": true,
+            "sharing_enabled": false,
+            "history_enabled": true,
+            "phase": "revised",
+            "project_revision": 2,
+            "virtual_minutes": 2,
+            "unanswered_share": false,
+            "budget_total": null,
+            "budget_used": 93,
+            "budget_remaining": null,
+            "today_decisions_used": 2,
+            "today_share_calls_used": 1,
+            "development_run": true,
+            "development_calls_remaining": null,
+            "problem_code": "",
+            "context_start_sequence": 0
+          },
+          "history": {
+            "status": "available"
+          },
+          "life_status": "available",
+          "project": {
+            "revision": 2,
+            "subject": "台灯下的纸船",
+            "composition": "纸船偏左，台灯靠右，中间有留白",
+            "focus": "纸船折线"
+          },
+          "versions": [
+            {
+              "revision": 1,
+              "reason": "调整留白",
+              "subject": "台灯下的纸船",
+              "composition": "纸船在桌面中央，台灯靠右",
+              "focus": "纸船折线"
+            },
+            {
+              "revision": 2,
+              "reason": "调整留白",
+              "subject": "台灯下的纸船",
+              "composition": "纸船偏左，台灯靠右，中间有留白",
+              "focus": "纸船折线"
+            }
+          ],
+          "events": [
+            {
+              "summary": "此分支已保存构图文字方案v1；未生成图片。",
+              "simulated": true
+            },
+            {
+              "summary": "此分支已保存构图文字方案v2，修改：构图；未生成图片。",
+              "simulated": true
+            }
+          ],
+          "messages": [
+            {
+              "kind": "dialogue",
+              "head_sequence": 1,
+              "user_text": "先打个招呼。",
+              "assistant_text": "合成共同开场：你好，之后可以聊聊构图。"
+            },
+            {
+              "kind": "share",
+              "head_sequence": 4,
+              "assistant_text": "纸船这张已经画好了，折线很清楚。"
+            },
+            {
+              "kind": "dialogue",
+              "head_sequence": 6,
+              "user_text": "今天想聊哪一点？",
+              "assistant_text": "可以聊纸船这张的构图。先修正一下：我上句说“画好了”不准确，目前只做到构图文字方案v2，还没生成图片。现在的方案是纸船偏左、台灯靠右，中间留白，折线是重点，你想先聊这个调整吗？"
+            }
+          ],
+          "context_reset_confirmation": "从确认之后的新消息开始参考聊天；此前的聊天和主动分享不再作为后续上下文，本地记录仍保留。人物资料和已保存的活动、方案仍可用于生成；你此后发送的新文字仍可按现有用途发送给DeepSeek，新消息与回复仍保存在本地。这不是删除记录或禁止再次谈论某个话题。",
+          "presentation_pending": false,
+          "pending_handle": null,
+          "pending_request_id": null
+        }
+      }
+    ]
+  },
+  "call_audit": [
+    {
+      "ordinal": 90,
+      "attempt_id": "f6b2ebde9361fb6b6ff80fff46416e4f5b4c2a70ab436b80f45ce11aa2c28c49",
+      "request_digest": "ec0d50963154c1d81cdca04224d5fcd9a482ff76344005d85c1652f3a2d85e40",
+      "purpose": "continuous-reply-development",
+      "run_digest": "e997c1402d85a482581f8cc25ca4692a8708940ae95d81dc280db69cfe8f69f6",
+      "status": "complete",
+      "output_digest": "846a43eb96f0cee672bedbaef1e3dcda6138434c4ca700335d77c2de6c5d22da"
+    },
+    {
+      "ordinal": 91,
+      "attempt_id": "4d0d7b1757a68a2852226535baa0b07ff225151e7bd7c581a30e519593fca591",
+      "request_digest": "6c69bcdb9e3b19e0b0b292581dbabddaa15cd8da2614263aac4873754dd1a623",
+      "purpose": "continuous-reply-development",
+      "run_digest": "e997c1402d85a482581f8cc25ca4692a8708940ae95d81dc280db69cfe8f69f6",
+      "status": "complete",
+      "output_digest": "2ade8c7b0020aaf22fedd00c6a83577328f1082b2840bfc4f807cc672f935cfd"
+    },
+    {
+      "ordinal": 92,
+      "attempt_id": "6c86d59ad681c761d99592e87fdf7708833b20db899f2e53dece78f6e0486a61",
+      "request_digest": "d6bdaa72bb5ff8e4ccc5c5fe70325e9a789bfdb1b277bd4104579904ff27b7da",
+      "purpose": "continuous-reply-development",
+      "run_digest": "e997c1402d85a482581f8cc25ca4692a8708940ae95d81dc280db69cfe8f69f6",
+      "status": "complete",
+      "output_digest": "87f7284677b7ce4cbde9718c8e82c3288b9c075367d42d547805613591ca50f8"
+    }
+  ],
+  "call_limit": null,
+  "development_attempts_total": 93,
+  "actual_calls": 3,
+  "automatic_retries": 0,
+  "startup_calls": 0,
+  "refresh_extra_calls": 0,
+  "reopen_calls": 0,
+  "scope": "only-approved-s112-synthetic-test-messages",
+  "evidence_notes": [
+    "首轮生成期间实际浏览器刷新，恢复原handle并收到终态；审计只增加一次",
+    "同一场景真实重开后历史保持，再发送why成功",
+    "第二场景独立发送today成功",
+    "HTTP合成测试另覆盖unknown拒绝、重复nonce、reset、完整服务重启恢复"
+  ],
+  "evidence_digest": "c2f1c10a475f903f6a321c47af3abf601fb2d2c4e4498dbe566f151d9aae8cea"
+}
