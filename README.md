@@ -37,6 +37,8 @@
 
 ## 安装与测试
 
+Linux/云端离线开发的安装、全量测试、打包和HTTP联调见[云端开发指南](docs/cloud/start.md)。
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python -m pip install -e ".[dev,desktop]"
