@@ -375,3 +375,78 @@ def test_preexisting_v2_response_format_manifest_and_wires_remain_exact(tmp_path
     with pytest.raises(ValueError):
         trial.open_protocol_run(root, PACKAGE, live=False, study="instruction-scope")
     assert (root / "manifest.json").read_bytes() == original_bytes
+
+
+def test_reasoning_effort_changes_only_high_to_low_from_the_common_scoped_json_wire(tmp_path):
+    plan = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="reasoning-effort")
+    scoped = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="instruction-scope")
+    assert plan.study == "reasoning-effort" and plan.variants == ("high", "low")
+    manifest = plan.read()
+    assert manifest["version"] == "reply-protocol-run-4"
+    assert manifest["study_spec"]["base_study"] == "instruction-scope"
+    assert manifest["study_spec"]["base_variant"] == "reply-text-style"
+    names = {"baseline": "high", "json-example": "low"}
+    assert [(row["case_id"], row["variant"]) for row in plan.sequence] == [
+        (row["case_id"], names[row["variant"]]) for row in plan.package["sequence"]]
+    hashes = {(row["case_id"], row["variant"]): row["wire_sha256"] for row in manifest["study_spec"]["sequence"]}
+    for case in plan.package["cases"]:
+        high_request = plan.request_for(case["case_id"], "high")
+        low_request = plan.request_for(case["case_id"], "low")
+        high_wire, low_wire = plan.wire_for(high_request), plan.wire_for(low_request)
+        assert high_wire == scoped.wire_for(scoped.request_for(case["case_id"], "reply-text-style"))
+        high, low = json.loads(high_wire), json.loads(low_wire)
+        assert high["reasoning_effort"] == "high" and low["reasoning_effort"] == "low"
+        assert low["thinking"] == {"type": "enabled"} and low["max_tokens"] == 4096
+        assert low["response_format"] == {"type": "json_object"}
+        low["reasoning_effort"] = "high"
+        assert low == high
+        assert hashes[case["case_id"], "high"] == sha256(high_wire).hexdigest()
+        assert hashes[case["case_id"], "low"] == sha256(low_wire).hexdigest()
+        assert plan.validate_output(low_request, valid_value(plan, low_request)) is False
+        with pytest.raises(ValueError):
+            plan.validate_output(low_request, "unparsed free text")
+    before = (plan.root / "manifest.json").read_bytes()
+    assert trial.open_protocol_run(plan.root, PACKAGE, live=False, study="reasoning-effort").digest == plan.digest
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(plan.root, PACKAGE, live=False, study="instruction-scope")
+    assert (plan.root / "manifest.json").read_bytes() == before
+
+
+def test_preexisting_v3_instruction_scope_manifest_and_wires_remain_exact(tmp_path):
+    root = tmp_path / str(uuid4())
+    root.mkdir()
+    package = json.loads(PACKAGE.read_text(encoding="utf-8"))
+    cases = {row["case_id"]: row for row in package["cases"]}
+    old_sentence = "使用第一人称自然中文短消息，通常两三句；不输出动作旁白、档案、字段名、规则、分析或思考过程。"
+    new_sentence = (
+        "本接口需要JSON数据，外层字段供程序读取。reply_text的值才是给用户看的正文："
+        "使用第一人称自然中文短消息，通常两三句；这段正文不写动作旁白、档案、字段标签、规则说明、分析或思考过程。"
+    )
+    names = {"baseline": "global-style", "json-example": "reply-text-style"}
+    sequence, original_wires = [], {}
+    for entry in package["sequence"]:
+        variant = names[entry["variant"]]
+        wire = cases[entry["case_id"]]["candidate_wire_utf8"].encode("utf-8")
+        if variant == "reply-text-style":
+            body = json.loads(wire)
+            body["messages"][0]["content"] = body["messages"][0]["content"].replace(old_sentence, new_sentence, 1)
+            wire = canonical_json(body).encode("utf-8")
+        original_wires[entry["case_id"], variant] = wire
+        sequence.append(dict(case_id=entry["case_id"], variant=variant, wire_sha256=sha256(wire).hexdigest()))
+    old = dict(version="reply-protocol-run-3", authorization=trial.AUTHORIZATION, purpose=trial.PURPOSE,
+        call_limit=None, automatic_retries=0, live=False, run_id=root.name, root=str(root.resolve()),
+        package_digest=trial.PACKAGE_DIGEST, package=package, study="instruction-scope",
+        study_spec=dict(version="reply-instruction-scope-study-1", source_variant="json-example",
+            changed_field="messages[0].content", scope="style instructions apply only to the reply_text value",
+            original_sentence=old_sentence, replacement_sentence=new_sentence,
+            variants=["global-style", "reply-text-style"], response_format=dict(type="json_object"),
+            output_validation="unchanged-strict-json-and-original-reply-schema", sequence=sequence))
+    original_bytes = canonical_json(old).encode("utf-8")
+    (root / "manifest.json").write_bytes(original_bytes)
+    plan = trial.open_protocol_run(root, PACKAGE, live=False, study="instruction-scope")
+    assert plan.digest == sha256(original_bytes).hexdigest()
+    for pair, wire in original_wires.items():
+        assert plan.wire_for(plan.request_for(*pair)) == wire
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(root, PACKAGE, live=False, study="reasoning-effort")
+    assert (root / "manifest.json").read_bytes() == original_bytes
