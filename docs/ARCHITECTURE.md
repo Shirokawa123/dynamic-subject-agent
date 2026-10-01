@@ -1,5 +1,15 @@
 # 产品架构
 
+### Slice-110：明确的新聊天上下文边界
+
+first-life历史判定不再把旧v1的目标/承诺等话题名词单独当作控制，明确操作、来源使用撤回仍按有限本地语法处理；旧六能力默认predicate不变。当前控制在历史开/关均先于模型预算处理；关闭历史不能消解未决控制。有限语法不是通用中文意图识别，默认资料/事实投影及现有模型请求policy、scope和额度未扩大。
+
+`ApplicationFacade.reset_first_life_context(FirstLifeContextResetRequest)`仅在confirmed严格为True时追加`chat-context-reset`系统Publication。它不改人物、生活、暂停、分享或历史开关，不清除生活技术故障、不调用模型；确认明确重新允许既有人物/活动数据和随后新输入用途，同时旧聊天/share退出后续上下文，原文与失败记录保留。该操作不是物理删除或任意话题禁用。薄桌面入口先展示准确含义、再确认；取消/查询零写入，成功/失败/pending不发送或清空草稿。
+
+上下文cutoff从同一canonical已验证Publication重建，同时裁决对话与S1。仅越过边界前有完整可信冻结依据的终态失败；核验attempt lineage及该历史前缀下一Publication的prepared expected_basis，不能只信head数值。未知/pending/无冻结依据/损坏及边界后的新控制继续关闭。重复请求重放同一receipt，旧prepared聊天受expected-head fence约束；原子prepared中断可零模型恢复。
+
+新kind使用原FirstLifeInput/LifeRecord字段与schema3表，旧JSON/指纹不变，无原地数据迁移；旧二进制遇新kind拒读，使用新入口前须确保读取进程已加载新版。本轮不替换用户正在运行的服务。验证、有限语法与剩余人物问题见[S110报告](reports/2026-10-01-slice-110/REPORT.md)。
+
 2026-09-24 Slice-76进一步重推[目标方案](plans/global-product-architecture.md)：具体定义角色创作、持续相处、生活分享的权威、运行流程、有限活动与验收。整体方案尚未完成；S78–79已落实的组织/对照准备见下述契约，不能据此宣称持续相处与生活已实现。
 
 S103封存完整人物，S104接持久聊天；S105新增独立schema3有限生活分支，真实三步构图/一次主动分享/重启追问完成，累计75/200余125。仍是单项目文字方案、两轮对话窗口，人物语气与泛化风险未全部解决，见[S105报告](reports/2026-09-27-slice-105/REPORT.md)。

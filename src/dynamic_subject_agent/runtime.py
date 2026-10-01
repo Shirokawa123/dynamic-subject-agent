@@ -1370,7 +1370,7 @@ class SubjectRuntime:
             if self._engine.has_frozen_attempt(operation_ref):
                 self._fail_cycle(operation_ref, stage='publication', code='first-life-unprepared-interruption',
                     detail='A prior attempt ended before durable preparation; automatic model retry is unavailable.')
-            if not (type(command) is FirstLifeInput and command.input_kind == 'control'):
+            if not (type(command) is FirstLifeInput and command.input_kind in ('control', 'chat-context-reset')):
                 unresolved = self._engine.pending_first_life_operations()
                 if unresolved and unresolved[0] != operation_ref:
                     self._fail_cycle(operation_ref, stage='publication', code='first-life-recovery-required',

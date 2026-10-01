@@ -49,8 +49,8 @@ def test_continuous_tape_caps_share_expiry_and_blocked_counterfactuals_are_visib
             assert len([row for row in sources if row["kind"] == "dialogue"]) == min(index, 2) * 2
             if index:
                 assert sources[-1]["text"] == turns[index - 1]["scripted_reply"]
-            assert turn["draft_only_after_block"] is (index >= 4)
-        assert turns[4]["blocked_since"] == 5 and turns[-1]["blocked_since"] == 5
+            assert turn["draft_only_after_block"] is (index >= 5)
+        assert turns[4]["blocked_since"] is None and turns[-1]["blocked_since"] == 6
         assert turns[-1]["restart_fixture_roundtrip"] is True
 
 

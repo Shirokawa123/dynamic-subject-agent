@@ -19,7 +19,7 @@ class RecentDialogueTurn:
     assistant_text: str
 
 
-def is_dialogue_control(message: str) -> bool:
+def is_dialogue_control(message: str, *, legacy_topic_markers: bool = True) -> bool:
     """Conservative boundary for the added history use, not a state classifier."""
     text = re.sub(r'\s+', '', unicodedata.normalize('NFKC', message)).casefold()
     if re.search(r'(?:不要|不再|不用|不能|不许|不准|禁止|停止|别|勿)[^。！？!?]*(?:记|提|说|留|存|保留|使用|分享|发送)', text):
@@ -33,10 +33,9 @@ def is_dialogue_control(message: str) -> bool:
     return any(marker in text for marker in (
         '忘记', '忘掉', '遗忘', '别再提', '不要再提', '别记', '不要记',
         '删除', '删掉', '清除', '移除', '不要保留', '更正', '纠正', '修正', '记错', '说错',
-        '记住', '记下', '记录下来', '保存', '目标', '承诺',
-        '一开始', '最初', '错误', '更正前', '改之前',
+        '记住', '记下', '记录下来', '保存',
         'forget', 'delete', 'erase', 'remove', 'correct',
-    ))
+    ) + (('目标', '承诺', '一开始', '最初', '错误', '更正前', '改之前') if legacy_topic_markers else ()))
 
 
 def is_dialogue_continuation(message: str) -> bool:

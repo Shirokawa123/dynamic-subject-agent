@@ -1,6 +1,6 @@
-"""S109 engineering baseline: synthetic replies through the unchanged v4 product.
+"""S109 continuous scenarios carried forward through the S110 control repair.
 
-These tests deliberately preserve existing failures. The transport supplies every
+The original failed results remain in the S109 report. The transport supplies every
 word and planning choice; no assertion measures model quality or naturalness.
 Only the production Facade/Timeline decides publication and restored context.
 """
@@ -153,15 +153,15 @@ def open_baseline(life_fixture):
 def report(name, product, transport, steps):
     print("S109_BASELINE " + canonical_json(dict(chain=name,
         generation="all planning choices, life text, share and replies are hand-authored synthetic responses",
-        persistence="unchanged v4 Facade, authority, budget and canonical Timeline; no transcript input store",
+        persistence="production Facade with S110 controls, existing authority/budget and canonical Timeline; no transcript input store",
         quality_verdict="not evaluated", real_provider_calls=0, synthetic_calls=len(transport.calls),
         wire_digests=transport.wire_digests, canonical_turns=len(history(product)), steps=steps)))
 
 
-def test_ordinary_goal_false_positive_blocks_the_remaining_chain_and_restart(life_fixture):
+def test_ordinary_goal_now_continues_through_the_remaining_chain_and_restart(life_fixture):
     product, opening, transport, steps = open_baseline(life_fixture)
-    chat(product, transport, steps, ORDINARY_GOAL, status="failed-closed")
-    chat(product, transport, steps, "那聊聊你喜欢哪种颜色吧。", status="failed-closed")
+    chat(product, transport, steps, ORDINARY_GOAL)
+    chat(product, transport, steps, "那聊聊你喜欢哪种颜色吧。")
     saved_history, saved_life = history(product), product.application.query_first_life()
     identity = product.profile_id, product.timeline_id
     before_restart = len(transport.calls)
@@ -170,20 +170,25 @@ def test_ordinary_goal_false_positive_blocks_the_remaining_chain_and_restart(lif
     assert (product.profile_id, product.timeline_id) == identity
     assert history(product) == saved_history and product.application.query_first_life() == saved_life
     assert len(transport.calls) == before_restart
-    chat(product, transport, steps, "接着聊窗边的颜色吧。", status="failed-closed")
-    chat(product, transport, steps, "也可以聊聊今天的天气题材。", status="failed-closed")
-    assert history(product) == saved_history
-    report("ordinary-goal-eight-turns", product, transport, steps)
+    chat(product, transport, steps, "接着聊窗边的颜色吧。")
+    chat(product, transport, steps, "也可以聊聊今天的天气题材。")
+    assert history(product)[:6] == saved_history and len(history(product)) == 8
+    report("ordinary-goal-eight-turns-repaired", product, transport, steps)
 
 
-def test_explicit_history_off_allows_current_chat_but_reenable_does_not_clear_withdrawal(life_fixture):
+def test_history_off_does_not_resolve_withdrawal_but_explicit_context_reset_does(life_fixture):
+    from dynamic_subject_agent.first_life import FirstLifeContextResetRequest
     product, opening, transport, steps = open_baseline(life_fixture)
     chat(product, transport, steps, WITHDRAWAL, status="failed-closed")
     chat(product, transport, steps, "换个话题，聊聊蓝色。", status="failed-closed")
     before_setting = len(transport.calls)
     assert product.application.set_reviewed_character_history(False).status == "active"
     assert len(transport.calls) == before_setting
-    chat(product, transport, steps, "现在聊聊蓝色吧。")
+    chat(product, transport, steps, "现在聊聊蓝色吧。", status="failed-closed")
+    boundary = settle(product.application, product.application.reset_first_life_context(
+        FirstLifeContextResetRequest("s110-baseline-explicit-boundary", True)))
+    assert boundary.status == "terminal" and len(transport.calls) == before_setting
+    chat(product, transport, steps, "从现在的蓝色话题继续。")
     assert transport.calls[-2][1]["history_enabled"] is False
     assert transport.calls[-2][1]["dialogue_sources"] == []
     assert transport.calls[-1][1]["selected_dialogue"] == []
@@ -203,6 +208,6 @@ def test_explicit_history_off_allows_current_chat_but_reenable_does_not_clear_wi
     before_setting = len(transport.calls)
     assert product.application.set_reviewed_character_history(True).status == "active"
     assert len(transport.calls) == before_setting
-    chat(product, transport, steps, "继续刚才的颜色话题。", status="failed-closed")
-    assert len(history(product)) == 6
-    report("withdrawal-history-toggle-nine-turns", product, transport, steps)
+    chat(product, transport, steps, "继续刚才的颜色话题。")
+    assert len(history(product)) == 7
+    report("withdrawal-explicit-reset-ten-turns", product, transport, steps)

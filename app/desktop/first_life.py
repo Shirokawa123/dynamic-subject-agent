@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 from character_chat import CharacterChatAdapter, create_server, DEFINITION_BASIS
 from dynamic_subject_agent.application import ApplicationQuery, ApplicationQueryKind
+from dynamic_subject_agent.first_life import CONTEXT_RESET_CONFIRMATION, FirstLifeContextResetRequest
 from dynamic_subject_agent.local_product import LocalProductConfig
 from dynamic_subject_agent.timeline import SubjectCommand
 
@@ -58,6 +59,7 @@ class FirstLifeAdapter(CharacterChatAdapter):
             events = [dict(summary=e['summary'], simulated=e.get('simulated', False)) for e in data.get('events', [])]
             result = dict(character=asdict(c), history=dict(status=history.status.value), life_status=q.status,
                 project=current, versions=versions, events=events, messages=messages,
+                context_reset_confirmation=CONTEXT_RESET_CONFIRMATION,
                 presentation_pending=False, pending_handle=None)
             if c.status in ('active', 'paused', 'needs-attention') and history.status.value == q.status == 'available':
                 self._last_snapshot = result
@@ -93,7 +95,16 @@ class FirstLifeAdapter(CharacterChatAdapter):
             self.inflight.discard(handle)
         projection = response.projection
         ok = response.status.value == 'terminal' and (projection is None or not projection.failure_code)
-        return dict(ok=ok, pending=None, message='' if ok else '本次处理未完成，没有据此生成新的生活结果。',
+        code = (projection.failure_code if projection is not None else None) or (
+            response.problem.code if response.problem is not None else None)
+        messages = {
+            'first-life-history-unverified': '聊天上下文的使用范围或资料完整性尚未确认，已停止本轮生成。可查看“从新消息继续”的说明，确认后尝试恢复；若记录仍无法安全核验，会继续停止。草稿保留。',
+            'first-life-share-history-unverified': '主动分享的历史使用范围或资料完整性尚未确认。可查看“从新消息继续”的说明，确认新的交流范围；若记录仍无法安全核验，会继续停止。',
+            'first-life-history-changed': '聊天上下文设置已变化，本轮未继续生成。请确认当前设置后再发送，草稿保留。',
+            'confirmed-chat-context-reset-required': '尚未确认新的聊天上下文范围。请先阅读“从新消息继续”的说明，再明确确认。',
+            'first-life-basis-unverified': '当前记录的完整性尚未确认，暂时无法恢复。现有记录和草稿保留。',
+        }
+        return dict(ok=ok, pending=None, message='' if ok else messages.get(code, '本次处理未完成，现有记录和草稿保留。'),
             state=self.snapshot())
 
     def poll(self, payload):
@@ -126,6 +137,14 @@ class FirstLifeAdapter(CharacterChatAdapter):
         with self.lock:
             return self._result(self.product.application.set_first_life_controls(FirstLifeControlRequest(**payload)))
 
+    def reset_context(self, payload):
+        if (type(payload) is not dict or set(payload) != {'request_id', 'confirmed'}
+                or type(payload['confirmed']) is not bool):
+            raise ValueError('invalid-request')
+        self._request_id(payload)
+        with self.lock:
+            return self._result(self.product.application.reset_first_life_context(FirstLifeContextResetRequest(**payload)))
+
     def heartbeat(self, payload):
         from dynamic_subject_agent.first_life import FirstLifeHeartbeatRequest
         if type(payload) is not dict or set(payload) != {'session_id','request_id'}: raise ValueError('invalid-request')
@@ -147,7 +166,8 @@ def life_server(product, *, port=0):
     adapter = FirstLifeAdapter(product)
     return create_server(product, port=port, adapter=adapter, page_name='first_life.html', application_id=APPLICATION_ID,
         post_routes={'/send':adapter.send, '/history':adapter.set_history, '/controls':adapter.controls,
-            '/heartbeat':adapter.heartbeat, '/simulate':adapter.simulate, '/operation':adapter.poll})
+            '/heartbeat':adapter.heartbeat, '/simulate':adapter.simulate, '/operation':adapter.poll,
+            '/context-reset':adapter.reset_context})
 
 
 def main():

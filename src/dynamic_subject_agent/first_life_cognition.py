@@ -11,6 +11,7 @@ from dynamic_subject_agent.character_communication_plan import _validated_expres
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.first_life import (
     LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, FirstLifeInput, LifeRecord, adjudicate_life, event_summary,
+    CONTEXT_RESET_KIND, CONTEXT_RESET_RECEIPT,
 )
 from dynamic_subject_agent.first_life_projection import life_model_projection, life_chat_planning, life_chat_expression
 from dynamic_subject_agent.first_life_authorization import LEGACY_RUNTIME_POLICY, ShareAuthorizationChanged, ChatAuthorization
@@ -52,7 +53,7 @@ class FirstLifeCognition(CognitionEngine):
 
     def preflight(self, *, context, command):
         if type(command) is FirstLifeInput:
-            if command.input_kind == "control": return
+            if command.input_kind in ("control", CONTEXT_RESET_KIND): return
         elif command.language != "zh" or len(command.utterance) > 1000:
             raise PreAdmissionRejected("first-life-message-invalid", "Chinese chat accepts at most 1000 characters.")
         if self.gateway is None: raise PreAdmissionRejected("first-life-unavailable", "First-life provider is not assembled.")
@@ -120,6 +121,10 @@ class FirstLifeCognition(CognitionEngine):
         if type(command) is not FirstLifeInput:
             return self._chat(plan, context, command, basis, current)
         before = current.record
+        if command.input_kind == CONTEXT_RESET_KIND:
+            record = replace(before, kind=CONTEXT_RESET_KIND, reason_code="", differences=(), event_id="", summary="", simulated=False,
+                disclosed_event_id="", share_id="", share_text="", considered_event_id="")
+            return self._proposal(context, basis, record, CONTEXT_RESET_RECEIPT)
         if command.input_kind == "control":
             record = replace(before, kind="control", reason_code="", differences=(), event_id="", summary="", simulated=False,
                 paused=before.paused if command.paused is None else command.paused,
@@ -168,6 +173,10 @@ class FirstLifeCognition(CognitionEngine):
             share_authorization=authorization)
 
     def _chat(self, plan, context, command, basis, current):
+        from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        if is_first_life_dialogue_control(command.utterance):
+            raise CognitionFailedClosed("history", "first-life-history-unverified",
+                "A control request needs local resolution before model generation.")
         planning_fn, expression_fn = life_chat_planning, life_chat_expression
         if self.runtime_policy == "first-life-relevance-2":
             from dynamic_subject_agent.first_life_relevance import life_chat_planning as planning_fn, life_chat_expression as expression_fn

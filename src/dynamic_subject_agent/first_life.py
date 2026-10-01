@@ -72,6 +72,21 @@ class FirstLifeControlRequest:
     sharing_enabled: bool | None = None
 
 
+CONTEXT_RESET_KIND = "chat-context-reset"
+CONTEXT_RESET_CONFIRMATION = (
+    "从确认之后的新消息开始参考聊天；此前的聊天和主动分享不再作为后续上下文，本地记录仍保留。"
+    "人物资料和已保存的活动、方案仍可用于生成；你此后发送的新文字仍可按现有用途发送给DeepSeek，"
+    "新消息与回复仍保存在本地。这不是删除记录或禁止再次谈论某个话题。"
+)
+CONTEXT_RESET_RECEIPT = "系统：已从新消息开始使用聊天上下文；此前记录保留，人物资料与当前活动仍可使用。"
+
+
+@dataclass(frozen=True)
+class FirstLifeContextResetRequest:
+    request_id: str
+    confirmed: bool = False
+
+
 @dataclass(frozen=True)
 class FirstLifeHeartbeatRequest:
     session_id: str
@@ -166,6 +181,7 @@ class FirstLifeStatus:
     development_run: bool = False
     development_calls_remaining: int | None = None
     problem_code: str = ""
+    context_start_sequence: int = 0
 
 
 def first_life_scope(definition_basis):
@@ -272,13 +288,15 @@ class FirstLifeInput:
 
     def __post_init__(self):
         if (any(str(UUID(value)) != value for value in (self.target_profile_id, self.target_timeline_id))
-            or self.input_kind not in ("advance", "share", "control")
+            or self.input_kind not in ("advance", "share", "control", CONTEXT_RESET_KIND)
             or self.trigger not in ("online", "simulation", "control")
             or date.fromisoformat(self.civil_day).isoformat() != self.civil_day
             or not isinstance(self.request_digest, str) or re.fullmatch(r"[0-9a-f]{64}", self.request_digest) is None
             or any(flag is not None and type(flag) is not bool for flag in (self.paused, self.sharing_enabled))
             or (self.input_kind == "control" and (self.trigger != "control" or self.paused is None and self.sharing_enabled is None))
-            or (self.input_kind != "control" and (self.trigger == "control" or self.paused is not None or self.sharing_enabled is not None))
+            or (self.input_kind == CONTEXT_RESET_KIND and self.trigger != "control")
+            or (self.input_kind not in ("control", CONTEXT_RESET_KIND) and self.trigger == "control")
+            or (self.input_kind != "control" and (self.paused is not None or self.sharing_enabled is not None))
             or (self.input_kind == "share" and (self.trigger != "online" or str(UUID(self.target_event_id)) != self.target_event_id))
             or (self.input_kind != "share" and self.target_event_id != "")):
 
@@ -323,7 +341,7 @@ def decode_life_record(value):
     plan = None if value["plan"] is None else validate_plan(value["plan"])
     diffs = tuple(LifeFieldDiff(**row) for row in value["differences"])
     record = LifeRecord(**{**value, "plan": plan, "differences": diffs})
-    if (record.kind not in ("control", "advance", "share", "share-declined", "disclosure") or record.phase not in LIFE_PHASES
+    if (record.kind not in ("control", "advance", "share", "share-declined", "disclosure", CONTEXT_RESET_KIND) or record.phase not in LIFE_PHASES
         or any(type(flag) is not bool for flag in (record.paused, record.sharing_enabled, record.simulated))
         or any(type(number) is not int or number < 0 for number in (record.revision, record.virtual_minutes))
         or (record.reason_code and record.reason_code not in LIFE_REASONS)
@@ -355,6 +373,7 @@ class FirstLifeBasis:
     head_sequence: int
     considered_event_ids: tuple[str, ...] = ()
     technical_problem: str = ""
+    context_start_sequence: int = 0
 
 
 def current_civil_day():

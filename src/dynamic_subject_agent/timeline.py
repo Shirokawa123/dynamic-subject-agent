@@ -23,7 +23,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from dynamic_subject_agent.first_life import (
-    FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT, decode_life_record,
+    FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT, decode_life_record, CONTEXT_RESET_KIND, CONTEXT_RESET_RECEIPT,
     initial_life_record, adjudicate_life, event_summary,
 )
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
@@ -3628,7 +3628,7 @@ class TimelineEngine:
             raise PreAdmissionRejected('typed-system-input-required', 'life requires an exact typed system input')
         if (command.target_profile_id != self._authority.profile_id
             or command.target_timeline_id != self._authority.timeline_id
-            or command.input_kind not in ('advance', 'share', 'control')
+            or command.input_kind not in ('advance', 'share', 'control', CONTEXT_RESET_KIND)
             or command.trigger not in ('simulation', 'control', 'online')
             or not isinstance(command.request_digest, str)
             or re.fullmatch(r'[0-9a-f]{64}', command.request_digest) is None
@@ -4443,6 +4443,8 @@ class TimelineEngine:
                 raise ValueError('control result differs from explicit input')
         elif (record.paused, record.sharing_enabled) != (old.paused, old.sharing_enabled):
             raise ValueError('ordinary activity cannot modify controls')
+        if record.kind == CONTEXT_RESET_KIND and (expression.text != CONTEXT_RESET_RECEIPT or expression.language != 'zh'):
+            raise ValueError('context reset requires its exact local receipt')
         if record.kind == 'advance':
             if old.paused or before.technical_problem or record.virtual_minutes != old.virtual_minutes + 1:
                 raise ValueError('life progression is paused or does not represent one step')
@@ -4489,6 +4491,7 @@ class TimelineEngine:
         events, versions, shares, disclosed, considered = [], [], [], set(), set()
         has_dialogue = False
         last_control_admitted = 0
+        context_start_sequence = 0
         for outcome, command, _timestamp in publications:
             before = FirstLifeBasis(current, tuple(events), tuple(versions), tuple(shares), has_dialogue,
                 any(not share.answered for share in shares), tuple(sorted(disclosed)), outcome.head_sequence - 1,
@@ -4520,6 +4523,8 @@ class TimelineEngine:
                 considered.add(record.considered_event_id)
             if record.kind == 'control':
                 last_control_admitted = self.query(outcome.operation_ref).admitted_at_us
+            if record.kind == CONTEXT_RESET_KIND:
+                context_start_sequence = outcome.head_sequence
         failures = self._writer.execute('''SELECT failure.operation_id, operation.admitted_at_us
             FROM operation_failure failure JOIN subject_operation operation USING(operation_id)
             WHERE operation.operation_kind='system' ORDER BY operation.admitted_at_us''').fetchall()
@@ -4535,7 +4540,7 @@ class TimelineEngine:
                 technical_problem = failure.code
         return FirstLifeBasis(current, tuple(events), tuple(versions), tuple(shares), has_dialogue,
             any(not share.answered for share in shares), tuple(sorted(disclosed)), len(publications),
-            tuple(sorted(considered)), technical_problem)
+            tuple(sorted(considered)), technical_problem, context_start_sequence)
 
     def list_first_life(self):
         from dynamic_subject_agent.first_life import FirstLifeQuery, LifeProject
@@ -7521,7 +7526,7 @@ class TimelineEngine:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
-        if enabled:
+        if enabled or LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
             verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
             if verified is None:
                 return CharacterDialogueBasis("unavailable", problem_code="character-history-unresolved")
@@ -7529,9 +7534,11 @@ class TimelineEngine:
             command = self._query_command(operation_ref)
             if type(command) is SubjectCommand and is_dialogue_control(command.utterance):
                 return CharacterDialogueBasis("restricted", bool(records), problem_code="character-history-restricted")
-            selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_dialogue_control)
-            if records and is_dialogue_control(records[-1].user_text):
+            if records and records[-1].head_sequence > cutoff and is_dialogue_control(records[-1].user_text):
                 return CharacterDialogueBasis("restricted", True, problem_code="character-history-restricted")
+            if not enabled:
+                return CharacterDialogueBasis("available", bool(records))
+            selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_dialogue_control)
             return CharacterDialogueBasis("available", bool(records), selected)
         # Closing disclosure still verifies the canonical basis and foreground;
         # it never substitutes an unverified empty history for a failed read.
@@ -7591,6 +7598,31 @@ class TimelineEngine:
         records, cutoff = verified
         return select_recent_dialogue(records, after_sequence=cutoff)
 
+    def _verify_failed_context_prefix(self, operation_ref, head_sequence):
+        """Prove a skipped failure's complete frozen basis against a Publication.
+
+        A claimed head number alone is not evidence that an attempt predates a
+        reset. The next committed plan binds all four fields of that old prefix.
+        """
+        snapshot = self.query(operation_ref)
+        self.query_failure(operation_ref)
+        frozen = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
+            verified_prefix_digest, revision_head_digest FROM attempt_cycle_basis WHERE operation_id=?''',
+            (UUID(operation_ref.operation_id).bytes,)).fetchone()
+        following = self._writer.execute('SELECT operation_id FROM timeline_outcome WHERE head_sequence=?',
+            (head_sequence + 1,)).fetchone()
+        if (frozen is None or following is None or bytes(frozen[0]) != UUID(snapshot.attempt_id).bytes
+            or int(frozen[1]) != head_sequence):
+            raise PublicationFailedClosed('dialogue-reset-prefix-unverified', 'old failed attempt has no verified prefix lineage')
+        ref = self._admitted_for_operation(self._writer, bytes(following[0]), replayed=True).operation_ref
+        publication = self.query_outcome(ref)
+        prepared = self.prepared_plan(ref)
+        frozen_basis = TimelineBasis(int(frozen[1]), None if frozen[2] is None else bytes(frozen[2]).hex(),
+            bytes(frozen[3]).hex(), bytes(frozen[4]).hex())
+        if (prepared is None or publication.plan_id != prepared.plan_id or publication.head_sequence != head_sequence + 1
+            or prepared.expected_basis != frozen_basis):
+            raise PublicationFailedClosed('dialogue-reset-prefix-unverified', 'old failed basis differs from the canonical prefix')
+
     def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.recent_dialogue import is_dialogue_control
         if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
@@ -7610,7 +7642,9 @@ class TimelineEngine:
         records = self.list_conversation_turns(limit=2)
         if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed('dialogue-head-mismatch', 'dialogue does not end at the frozen head')
-        cutoff = 0
+        reset_cutoff = (self.first_life_basis(expected_head=expected_head).context_start_sequence
+            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else 0)
+        cutoff = reset_cutoff
         unpublished = self._writer.execute('''
             SELECT op.operation_id, op.contract_version, op.operation_kind,
                    hex(op.payload_fingerprint), basis.head_sequence, failure.operation_id
@@ -7630,6 +7664,13 @@ class TimelineEngine:
             # Pending/interrupted or unfrozen admissions have unresolved intent.
             if row[4] is None or row[5] is None:
                 return None
+            if int(row[4]) < reset_cutoff:
+                # The explicit published boundary covers only verified terminal
+                # old attempts. Pending/unfrozen intent is never guessed away.
+                if self.query(previous_ref).operation_state is not OperationState.FAILED_CLOSED:
+                    return None
+                self._verify_failed_context_prefix(previous_ref, int(row[4]))
+                continue
             if is_dialogue_control(previous_command.utterance):
                 return None
             cutoff = max(cutoff, int(row[4]))

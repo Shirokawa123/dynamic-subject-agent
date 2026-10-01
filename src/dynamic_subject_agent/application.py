@@ -926,7 +926,8 @@ class _ApplicationRouter:
             return FirstLifeStatus("needs-attention" if basis.technical_problem else "paused" if basis.record.paused else "active",
                 chat.subject_name, basis.record.paused, basis.record.sharing_enabled, chat.history_enabled,
                 basis.record.phase, basis.record.revision, basis.record.virtual_minutes, basis.unanswered_share,
-                total, used, remaining, decisions, shares, self._life_development, dev_remaining, basis.technical_problem)
+                total, used, remaining, decisions, shares, self._life_development, dev_remaining, basis.technical_problem,
+                basis.context_start_sequence)
         except Exception: return FirstLifeStatus("failed-closed", problem_code="first-life-status-unverified")
 
     def query_first_life(self):
@@ -996,6 +997,20 @@ class _ApplicationRouter:
             request.paused, request.sharing_enabled)
         if request.paused is not None:
             self._life_clock.reset_pause()
+        return self._submit_life_input(input, request.request_id)
+
+    def reset_first_life_context(self, request):
+        from dynamic_subject_agent.first_life import FirstLifeContextResetRequest, FirstLifeInput, CONTEXT_RESET_KIND
+        self._require_open()
+        if (type(request) is not FirstLifeContextResetRequest or request.confirmed is not True
+            or not isinstance(request.request_id, str) or not 1 <= len(request.request_id) <= 256
+            or self._life_budget is None):
+            return _unavailable("confirmed-chat-context-reset-required")
+        replayed = self._replay_life_request(request)
+        if replayed is not None:
+            return replayed
+        input = FirstLifeInput(self._binding.profile_id, self._binding.timeline_id,
+            CONTEXT_RESET_KIND, "control", self._life_day(), self._life_request_digest(request))
         return self._submit_life_input(input, request.request_id)
 
     def simulate_first_life_step(self, request):
@@ -1280,6 +1295,9 @@ class ApplicationFacade:
 
     def set_first_life_controls(self, request):
         return self.__router.set_first_life_controls(request)
+
+    def reset_first_life_context(self, request):
+        return self.__router.reset_first_life_context(request)
 
     def heartbeat_first_life(self, request):
         return self.__router.heartbeat_first_life(request)
