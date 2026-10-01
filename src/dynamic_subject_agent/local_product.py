@@ -788,8 +788,9 @@ def _open_first_life_reply_trial(config, *, definition_basis, life_scope_digest,
     from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
     from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
     from dynamic_subject_agent.first_life_development_trial import DevelopmentReplyTrial, DevelopmentReplyBudget, DevelopmentReplyAdapter, OFFLINE_BACKEND, OFFLINE_KEY
-    development_trial = type(approval) is DevelopmentReplyTrial
-    if type(approval) not in (ApprovedReplyTrial, ApprovedCandidateTrial, DevelopmentReplyTrial):
+    from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial
+    development_trial = type(approval) in (DevelopmentReplyTrial, FreeInputReplyTrial)
+    if type(approval) not in (ApprovedReplyTrial, ApprovedCandidateTrial, DevelopmentReplyTrial, FreeInputReplyTrial):
         raise ValueError("verified reply trial approval required")
     manifest = approval.read()
     _, policy = approval.branch(branch_id)
@@ -872,6 +873,14 @@ def open_first_life_development_trial(config, *, approval, **kwargs):
     from dynamic_subject_agent.first_life_development_trial import DevelopmentReplyTrial
     if type(approval) is not DevelopmentReplyTrial:
         raise ValueError("verified development trial required")
+    return _open_first_life_reply_trial(config, approval=approval, **kwargs)
+
+
+def open_first_life_free_input_trial(config, *, approval, **kwargs):
+    """Exact S119 purpose; old trial entrypoints cannot enable new user text."""
+    from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial
+    if type(approval) is not FreeInputReplyTrial:
+        raise ValueError("confirmed free input approval required")
     return _open_first_life_reply_trial(config, approval=approval, **kwargs)
 
 

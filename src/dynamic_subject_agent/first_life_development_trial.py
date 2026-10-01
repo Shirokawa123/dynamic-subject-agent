@@ -171,13 +171,15 @@ class DevelopmentReplyBudget(LiveReplyBudget):
     """Reuse one-shot tickets; all live claims use the unlimited metadata audit."""
 
     def __init__(self, local, trial, branch_id):
-        if type(local) is not FirstLifeBudget or type(trial) is not DevelopmentReplyTrial:
+        from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial
+        if type(local) is not FirstLifeBudget or type(trial) not in (DevelopmentReplyTrial, FreeInputReplyTrial):
             raise ValueError("typed development audit and trial required")
         _, policy = trial.branch(branch_id)
         if local.path.resolve() != (trial.root / branch_id / "local-stage-budget").resolve():
             raise ValueError("exact seed-only local audit required")
         self._local, self._shared, self._policy = local, trial.shared_budget(), policy
         self._run_digest, self._branch_id = trial.manifest_digest, branch_id
+        self._purpose = trial.read()["call_purpose"] if type(trial) is FreeInputReplyTrial else PURPOSE
         self._lock, self._ticket, self._pending, self._poisoned = RLock(), None, None, False
         self.counts()
 
@@ -209,7 +211,7 @@ class DevelopmentReplyBudget(LiveReplyBudget):
                 raise ValueError("one approved new development chat stage required")
             try:
                 self._shared.claim(self._attempt(identity_digest, operation_digest, stage), request_digest,
-                    purpose=PURPOSE, run_digest=self._run_digest)
+                    purpose=self._purpose, run_digest=self._run_digest)
             except Exception:
                 self._poisoned = True
                 raise ValueError("development claim unavailable; no resend") from None
@@ -236,8 +238,9 @@ class DevelopmentReplyAdapter(LiveReplyAdapter):
     _development_wire = True
 
     def __init__(self, transport, credential_ref, budget, *, approval, branch_id):
+        from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial
         if (not isinstance(transport, DeepSeekTransport) or type(credential_ref) is not CredentialRef
-            or type(budget) is not DevelopmentReplyBudget or type(approval) is not DevelopmentReplyTrial
+            or type(budget) is not DevelopmentReplyBudget or type(approval) not in (DevelopmentReplyTrial, FreeInputReplyTrial)
             or DEEPSEEK_ENDPOINT != "https://api.deepseek.com/chat/completions" or DEEPSEEK_TIMEOUT_SECONDS != 30):
             raise ValueError("typed development transport and authority required")
         self._transport, self._credential_ref, self._budget = transport, credential_ref, budget
@@ -250,10 +253,13 @@ class DevelopmentReplyAdapter(LiveReplyAdapter):
     def _verify_real_authority(self):
         manifest = self._approval.read()
         expected_ref = (DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID) if manifest["live"] else (OFFLINE_BACKEND, OFFLINE_KEY)
-        expected_path = fixed_development_audit_path() if manifest["live"] else self._approval.root / "offline-audit"
+        from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial, fixed_free_input_audit_path
+        live_audit = fixed_free_input_audit_path() if type(self._approval) is FreeInputReplyTrial else fixed_development_audit_path()
+        expected_path = live_audit if manifest["live"] else self._approval.root / "offline-audit"
         _, policy = self._approval.branch(self._branch_id)
         if (self._budget.policy != policy or self._budget._run_digest != self._approval.manifest_digest
             or self._budget._branch_id != self._branch_id
+            or self._budget._purpose != manifest.get("call_purpose", PURPOSE)
             or self._budget._shared.path.resolve() != expected_path.resolve()
             or (self._credential_ref.backend_id, self._credential_ref.key_id) != expected_ref
             or not manifest["live"] and isinstance(self._transport, DeepSeekUrlLibTransport)):

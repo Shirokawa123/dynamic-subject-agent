@@ -25,9 +25,22 @@ TITLES = {"objects-and-versions":"花瓶与书", "plan-versus-completion":"纸�
 
 
 class TrialEntry:
+    entry_version = ENTRY_VERSION
+    trial_type = DevelopmentReplyTrial
+    open_product = staticmethod(open_first_life_development_trial)
+    runs_root = staticmethod(fixed_continuous_runs_root)
+
+    @staticmethod
+    def entry_path():
+        return fixed_development_root()/"whole-reply-entry"
+
+    @staticmethod
+    def open_trial(root, *, live):
+        return open_development_reply_trial(root, SCENARIOS_PATH, live=live)
+
     def __init__(self, entry_root: Path, *, live, transport=None):
         entry_root = entry_root.resolve()
-        if (type(live) is not bool or live and entry_root != (fixed_development_root()/"whole-reply-entry").resolve()
+        if (type(live) is not bool or live and entry_root != self.entry_path().resolve()
             or not live and entry_root.is_relative_to(fixed_development_root().resolve())):
             raise ValueError("exact isolated trial entry directory required")
         self.entry_root, self.live, self.transport, self.products = entry_root, live, transport, {}
@@ -35,20 +48,20 @@ class TrialEntry:
         if not entry_root.exists():
             entry_root.mkdir(parents=True, exist_ok=False)
             (entry_root / "initialized").mkdir(exist_ok=False)
-            root = (fixed_continuous_runs_root() if live else entry_root/"runs") / str(uuid4())
-            trial = open_development_reply_trial(root, SCENARIOS_PATH, live=live)
+            root = (self.runs_root() if live else entry_root/"runs") / str(uuid4())
+            trial = self.open_trial(root, live=live)
             branches = {}
             for scenario in trial.scenarios["scenarios"]:
                 branch_id = scenario["id"] + "-A"
                 branch = prepare_branch(root / branch_id, trial.scenarios)
                 seed = SeedAdapter(trial.scenarios, scenario)
-                with open_first_life_development_trial(branch.config, approval=trial, branch_id=branch_id,
+                with self.open_product(branch.config, approval=trial, branch_id=branch_id,
                         definition_basis=branch.definition_basis, life_scope_digest=branch.life_scope_digest,
                         seed_gateway=ModelGateway(seed)) as product:
                     seed_branch(product, seed)
                 branches[scenario["id"]] = dict(definition_basis=branch.definition_basis,
                     life_scope_digest=branch.life_scope_digest)
-            value = dict(version=ENTRY_VERSION, live=live, root=str(root),
+            value = dict(version=self.entry_version, live=live, root=str(root),
                 manifest_digest=trial.manifest_digest, branches=branches)
             with pointer.open("x", encoding="utf-8") as output:
                 output.write(canonical_json(value))
@@ -58,14 +71,14 @@ class TrialEntry:
             raise ValueError("trial initialization incomplete; existing data preserved")
         value = json.loads(pointer.read_text(encoding="utf-8"))
         if (set(value) != {"version","live","root","manifest_digest","branches"}
-            or value["version"] != ENTRY_VERSION or value["live"] is not live
+            or value["version"] != self.entry_version or value["live"] is not live
             or set(value["branches"]) != set(TITLES)):
             raise ValueError("trial entry pointer changed")
         root = Path(value["root"])
-        expected_parent = fixed_continuous_runs_root() if live else entry_root/"runs"
+        expected_parent = self.runs_root() if live else entry_root/"runs"
         if not root.is_absolute() or root.parent.resolve() != expected_parent.resolve():
             raise ValueError("trial root changed")
-        self.trial = DevelopmentReplyTrial(root, value["manifest_digest"])
+        self.trial = self.trial_type(root, value["manifest_digest"])
         self.trial.read()
         self.branches = value["branches"]
         self.choices = {}
@@ -84,7 +97,7 @@ class TrialEntry:
         if set(binding) != {"definition_basis", "life_scope_digest"}:
             raise ValueError("trial branch pointer changed")
         root = self.trial.root / (case + "-A")
-        return open_first_life_development_trial(LocalProductConfig(root/"DynamicSubjectAgent/m0/experiments", root/"state.json"),
+        return self.open_product(LocalProductConfig(root/"DynamicSubjectAgent/m0/experiments", root/"state.json"),
             approval=self.trial, branch_id=case+"-A", definition_basis=binding["definition_basis"],
             life_scope_digest=binding["life_scope_digest"], _transport=self.transport)
 
