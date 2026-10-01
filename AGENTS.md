@@ -2,72 +2,24 @@
 
 默认使用中文与用户沟通。
 
-## 开发Agent协作
+## 开工、权威与阶段
 
-- 2026-10-01用户取消开发模型的固定岗位与项目级思考档上限，授权按任务自主选择工具实际支持的模型和档位。组织子代理、并行工作或独立复核前读 `docs/plans/agent-execution-strategy.md`，按任务依赖与收益选择直接完成或委派；主窗口负责整体接纳，每个写入目标唯一所有者。此授权仅涉及开发协作，不扩大产品Provider、凭据或私人数据用途。
+- 开工先读 `docs/slices/current.md`，同一时刻只有一个执行切片。按完整用户结果收口；任务书外发现记入收尾，不扩权处理。
+- 权威顺序：`docs/PRODUCT.md`（目标与非目标）→ `docs/ARCHITECTURE.md`（实际合同）→ `docs/DECISIONS.md`（决定）→ `docs/STATUS.md`（当前事实）→ `docs/slices/current.md`（唯一执行工作）。明确后续决定只替代其对象和阶段；无法据此消解的冲突，停止实现并向用户报告。
+- 继续需求访谈、规划、跨职责设计或选择下一方向前，读 `docs/plans/character-chat-direction.md` 的用户决定，以及 `docs/plans/global-product-architecture.md` 的目的、闭环、缺口与阶段门槛，专题研究与待办由该文导航进入。已答决定不重问；每轮明确答复落盘，用户答复、助手建议与未决项分开。目标设计和历史阶段说明不等于当前能力或新授权，执行阶段以 current 承接的最新决定为准。
+- 2026-09-26用户授权沿角色聊天方向连续推进到可体验MVP：常规设计、实现、验证、提交和下一片建立自主完成，不逐片询问继续。需要用户决定时先完成独立准备与具体可审方案。旧v1路线仅在当前任务明确涉及时读 `docs/plans/v1-completion.md`；旧救援仓库仅按明确迁移任务查具体文件，不作默认上下文或运行依赖。
+- 组织子代理、并行工作、独立复核或校准指令适用性前，读 `docs/plans/agent-execution-strategy.md`。2026-10-01已取消固定开发模型岗位与项目级思考档上限；按任务和工具实际支持选择，主窗口整体接纳，每个写入目标唯一所有者。开发协作授权不扩大产品数据或凭据用途。
+- 每个工作会话以 git commit 结束；每片收口 push 已配置远端。无 remote 时保留提交并请求地址，不擅自创建远端。`docs/STATUS.md` 每次只追加或更新不超过5行当前事实。
+- 删除、不可逆数据迁移、新 credential 用途、新 Provider 数据用途必须先获用户批准；后台运行/通知按具体已批准合同执行。自动人格重写、Reflection仍未授权；此边界不取消共同经历和后续选择变化的产品目标。
+- 验收默认走后台服务接口，不抢占输入法或页面焦点；有焦点的UI自动化先与用户约定，未提交草稿不得发送或覆盖。
 
-## 当前产品方向讨论
+## 功能实施前的必要调研
 
-- 继续需求访谈、规划或提出下一实现方向前，先读 `docs/plans/character-chat-direction.md`。Q1–Q17已确认并同步PRODUCT与D-028；完整运行机制和新数据用途尚未定。按当前唯一任务书推进独立原型，每轮明确答复落盘，助手建议与未决项分开，不沿旧v1/迁移路线自动扩建。
+- 新增或实质改进功能前，写清用户结果、已证实缺口和可观察验收，再定向搜索相关论文、成熟项目的一手论文/官方文档/源码；先比较仓库能力，再决定复用、适配或自建，不能凭印象列项目代替搜索。
+- 判断哲学/心理学知识的解释力：人物认识、记忆、动机、情绪、关系和交流查一手研究或权威学术资料；纯工程可说明不适用。区分研究发现、设计类比和待验证假设，不以理论证明AI具有心理或意识。
+- 实施前形成开工证据：来源、具体机制、解决什么、如何接入、未采用方案及原因、效果验证。复用研究须核对本次适用性并定向搜索遗漏/变化；无合适成果时记录检索范围及自建理由。规模与改动相称，引入代码/依赖前核实许可、维护、集成成本和数据边界；不以论文、字段或测试数量代替用户效果。
 
-## 新功能前的必要调研
-
-- 每次新增或实质改进功能，实施前必须先写清用户结果、已证实缺口及可观察验收，再针对该问题搜索相关论文和成熟项目的一手论文、官方文档或源码。先比较现有仓库能力，再决定复用、适配或自建；不能把搜索省略为凭印象列项目。
-- 同时必须判断哲学/心理学知识是否有解释力；涉及人物认识、记忆、动机、情绪、关系和交流时，查适用的一手研究或权威学术资料。纯工程功能可说明不适用，不硬套理论。区分研究发现、设计类比和待验证假设，不把理论当AI具有心理或意识的证明。
-- 开工证据必须记录：来源、具体机制、解决什么、如何进入本项目、未采用方案及原因、效果如何验证。已有研究可复用，但须核对本次适用性并定向搜索遗漏/变化；无合适成果时记录检索范围及自建理由。调研未形成这些结论前，不进入该功能实现。
-- 调研规模与改动相称；引入代码或依赖前核实许可证、维护状况、集成成本与数据边界。不以论文数量、结构命名、字段数量或测试通过数代替用户效果。调研不授权新Provider/凭据用途、额外历史外发或第二canonical store。
-- 下一实现方向、跨职责设计或主线取舍前，先读 `docs/plans/global-product-architecture.md` 的目的、闭环、能力缺口与阶段门槛；其中目标设计不等于已实现或新授权。专题研究和功能待办以该文链接为入口，避免旧v1路线或局部实验默认接管主线。
-
-## 权威顺序
-
-1. `docs/PRODUCT.md`：产品目标、v1 和非目标。
-2. `docs/ARCHITECTURE.md`：Module、Interface、持久化与失败语义。
-3. `docs/DECISIONS.md`：少量当前决定。
-4. `docs/STATUS.md`：已实现能力与当前缺口。
-5. `docs/slices/current.md`：唯一可执行工作。
-
-发现冲突时停止实现并向用户报告。旧救援仓库仅在当前切片明确要求迁移既有行为时按具体文件查阅，不是运行依赖或默认上下文。
-
-## 会话协议
-
-- 开工前必须存在 `docs/slices/current.md` 任务书；任务书外发现记入收尾，不扩权处理。
-- 同一时刻只有一个执行切片；每张切片以用户可体验结果收口。
-- 2026-09-26用户批准按当前角色聊天方案连续推进到可体验MVP，常规设计、实现、验证、提交和下一片建立由助手自主完成，不逐片询问继续；遇到需用户决策的部分，先完成可独立进行的准备和具体可审方案再停下。新数据/凭据用途、后台通知与删除迁移审批仍按现有规则，不从旧v1路线扩建。
-- 2026-09-18用户授权：以完整v1为主线连续推进，常规实现、验证、验收和提交不逐片征求“继续”；上一切片收口后可自主建立下一任务书。推进前读 `docs/plans/v1-completion.md`，直到验收达标或遇到其中列明的重大决策；先准备具体方案，再集中询问。该授权不解除下述数据/凭据/删除审批与非目标。
-- 每个工作会话以 git commit 结束；每个切片收口后必须 push 已配置远端。无 remote 时保留完成提交并请求用户提供地址，不擅自创建远端。
-- `docs/STATUS.md` 只追加或更新不超过 5 行的当前事实。
-- 删除、不可逆数据迁移、新 credential 用途、新 provider 数据用途必须先获用户批准。
-- 验收默认使用后台服务接口，不抢占用户输入法或页面焦点；确需有焦点的 UI 自动化时先与用户约定，未提交草稿不得发送或覆盖。
-
-## 产品顺序
-
-旧v1基线已实现Memory、Knowledge、Relationship、参与者目标与承诺、Situated/Medium、Windows UI、持久身份及D-026限定的任务/文本保存；细节见ARCHITECTURE运行基线。D-028已将角色生活和主动联系纳入新产品目标，当前先做无Provider调用的独立原型；真实生活/主动消息的数据用途和后台机制仍未落实，不能借目标确认直接启用。人格自动重写、Reflection及不可逆旧数据迁移仍未授权。
-
-project-original 纯文本来源建角闭环已完成：候选提取、未封存草稿、exact mapping、显式 freeze、新隔离身份、切换和重启恢复均成立；视频/音频和私人来源仍需新切片与授权。
-
-已验收的 Dogfood 连续体验基线为 `dogfood-s28`：仅从当前 identity 的 canonical Timeline 恢复最近 20 个已提交对话轮次及当轮结果说明/引用；历史完整性失败显式 FailedClosed，不建立 UI chat store。确定性主表达使用自然用户语言；关系声称由 Python 闭集保护。plan/目标/承诺按 canonical Admission 建立 TemporalAnchor。Runtime identity 只进 capability-local reply。四条明确“上次聊天”查询由 Python 以当前 Admission 与最近 committed publication 回答，六类 Provider 零调用；查询轮本身正常提交，时间间隔不生成主体经历或状态证据。续写/最近一句改短的有限契约见 ARCHITECTURE；规划后续体验修复时先读 `docs/reports/2026-09-08-slice-28/REPORT.md` 的真实失败与剩余问题。
-
-目标/承诺操作确认在裁决后 express 读取最终 Outcome；Memory 成功不代表目标成功，无关目标失败不替换独立回复。历史主回复保持原文；旧错误台词只能配回当轮真实说明，不重写。自然目标语法与完整消息/命名旧目标限制见 ARCHITECTURE。
-
-Knowledge 事实表达保留完整来源上下文，后续合并不得删改限定句；明确创作与活动询问接受能力本地检查。`ExpressionCandidate.is_creative` 是已核准的临时表达标记，不进 Provider 或 canonical 状态；完整契约和有限句式限制见 ARCHITECTURE 与 Slice-19 报告。
-
-来源候选可由用户选择后保存为 SubjectStudio 内未封存草稿，支持 append-only revision、重启恢复和显式删除；freeze 不删除或改写草稿。
-
-未封存草稿可确定性预览 exact Profile/Genesis/Knowledge Freeze Mapping 与 Freeze Basis；只有携带 exact basis 的显式确认才能幂等创建新 Sealed Identity，且不替换既有身份。
-
-逻辑遗忘只向前追加，停用 Living Memory 不等于物理删除本地历史。控制目标完整性不借用 Provider 20 条窗口；达到本地 100 条历史上限时不猜唯一性。未决撤回限制外发而非伪造停用，纯保留/引用不得误触发；清单读取失败不伪报为空或已有 pending。完整有限语法、缺失姓名查询及重新提供语义见 ARCHITECTURE 与 Slice-23。
-
-修改事实/创作/表达合并时先读 ARCHITECTURE 的 Slice-24 边界及其报告：未知物件约束与完整来源并存，合法关系回执不能恢复其他能力的自由风险建议。LM reply 仅细化既有 conversation 用途，其他 11 类请求字节不变；有限语法不代表通用事实核验。
-
-修改配文/续写/限字判断时先读 ARCHITECTURE 的 Slice-25 契约：两入口共用撤回和转述边界，计数与重复共用受控正文；最新安全轮不可用时不回找旧对象。真实首轮改短失败和风格限制保留在报告，不宣称任意自然表达稳定成功。
-
-修改共同创作/编号修改时先读 ARCHITECTURE 的 Slice-26 契约：两能力只选一份创作稿，来源/状态说明不是草稿句子；当前完整原文可恢复，但不解除历史控制。两句要求绑定当前直接请求，在最终过滤后检查；原文缺失与生成失败分开说明。
-
-修改提醒表达或记录回执时先读 ARCHITECTURE 的 Slice-27 契约：记录/召回不是提醒任务，各能力自由表达先检查再合并；来源与所属创作不为其他能力背书。当前未实现定时或下次自动提醒。自由回忆误称全库存为空的独立失败在报告中保留，不得以提醒边界通过掩盖它。
-
-修改记忆状态/库存表达时先读 ARCHITECTURE 的 Slice-28 契约：未选中不等于全库存空，exact状态匹配canonical原文而非日期显示投影，未知/失败不冒充停用。原Slice-27库存误报已有有限修复；模糊题材仍可能选到其他记录并需确认，不宣称通用语义检索完成。
-
-## 永久不变量
+## 永久不变量与核心接口
 
 1. 一条 RuntimeTimeline 只有一个写入者与一个 canonical store。
 2. Publication 原子且具有崩溃恢复语义。
@@ -75,35 +27,44 @@ Knowledge 事实表达保留完整来源上下文，后续合并不得删改限�
 4. 模型只提议，Python 裁决；模型输出不能直接成为持久状态。
 5. Provider 只接收当前能力获授权的最小投影，并由行为测试守护。
 
-## Module 与测试
+- 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
+- `LocalIdentityAuthority` 独占 registry、v1/v2 state、freeze/replay/select、authority校验和Host/Timeline准备；`local_product` 只消费已验证 active authority 并装配 cognition/ApplicationFacade。
+- 含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain/composite不 import 具体Provider。明确查询和产品闭集语法优先由Python处理；Adapter只规范化无语义差异的格式，状态变化仍由Domain裁决。
+- Interface是测试表面；保留新逻辑行为、既有能力随迁和五条不变量测试，不建立guard/mutation/证据生成/多环境矩阵等新测试类别。模拟输出与工程通过不能冒充人物体验验收。
 
-- 只有 `ApplicationFacade` 是产品业务 Interface；`open_local_product` 是 production composition root。
-- 修改主体任务或本地保存时读ARCHITECTURE的Slice-49/50：新binding的schema 2才允许真实effect；v1不自动升级，receipt完整性与恢复顺序必须验证。预览/查询/导出不执行，保存确认不调用Provider。
-- `LocalIdentityAuthority` 独占本地 identity registry、v1/v2 state、freeze/replay/select、authority 校验和 Host/Timeline 准备；`local_product` 只消费已验证 active authority 并装配 cognition/ApplicationFacade。
-- 所有含糊模型任务只通过 provider-neutral `ModelGateway.execute(ModelTask)`；Domain 和 composite 不 import 具体 Provider。
-- 明确查询与产品闭集语法优先由 Python 处理；Adapter 只规范化无语义差异的格式变体，状态变化仍由 Domain 裁决。
-- 六项 state-bearing proposal/classification 与既有 required reply 分别经 ModelGateway；单项故障作为所属 Domain 的 FailedClosed 片段提交，不终止其他无依赖能力。Living Memory/Knowledge/Relationship 的 identity reply 是不承载状态的可选表达 refinement。Slice-19 用户批准 Living Memory/Knowledge 的正常及基础回退表达接受同级校验，不合格时使用安全本地表达，保留合法状态候选；Relationship 的既有回退和其他 required reply 失败语义不变。
-- 桌面 Adapter 不直接装配 Studio、QRI、RuntimeHost、provider 或 canonical store。
-- Interface 是测试表面；保留新逻辑行为测试、既有能力随迁测试和五条不变量测试。
-- 不建立 guard/mutation/证据生成/多环境矩阵等新测试类别。
+## 按改动对象加载合同
 
-## Provider 数据边界
+下列入口保留旧合同及失败证据；只在涉及相应路径时加载，不把旧v1规则或首份原型阶段推广到所有新路径。修改共享接缝时须同时读受影响的新旧合同。旧数据、binding、schema及投影不因新目标自动升级。
 
-- Living Memory：proposal 发送当前消息 + 最多 20 条 active `{memory_id, content, source_user_message_id}`；reply 发送当前消息 + 最多 5 条已选中 `{content}` + runtime identity。Slice-21 用户批准 reply 单独增加 `recent_dialogue`：当前 identity 最多 2 个完整 committed `{user_text, assistant_text}`，合计最多 4,000 字符，仅供指代/续写；更正、遗忘、权限或完整性无法安全确认时不外发。anchor 只在既有 content 按当天渲染。
-- Knowledge：proposal 发送当前消息 + 最多 6 条 sealed `{entry_id, title, content}`；reply 发送当前消息 + 最多 6 条已选中 `{title, content}` + runtime identity。
-- Relationship：proposal 发送当前消息 + 当前立场摘要；reply 发送相同两项 + runtime identity。
-- 参与者目标/承诺：分类发送当前消息 + 最多 20 条 active `{turn_ref, kind, terms, status}` + 固定策略；reply 发送当前消息 + 最多 5 条 `{kind, terms, status}` + runtime identity。anchor 只在既有 terms 按当天渲染。
-- Situated State：分类发送当前消息 + 最多一个未到期 `{posture, remaining_turns, expires_in_seconds}` + 固定策略；reply 发送当前消息 + `{posture}` + runtime identity。
-- Medium State：分类发送当前消息 + 固定版本策略；reply 发送当前消息 + `{baseline}` + runtime identity。
-- Runtime identity exact 为 `{subject_name, subject_identity, canon_start}`；不含 Profile/Genesis/QRI ID、identity_core、初始关系、来源、证据或 Timeline 数据。
-- Interaction Recency、完整 ConversationTurnRecord、publication timestamp、日期差和当前 Civil Time 不发送给 Provider。Slice-21 授权上述 Living Memory reply 文本投影；Slice-22/24/25/26 仅细化其既有对话/事实/创作、限字与句数提示，不扩大数据用途；其他 11 类请求保持 Slice-19 字节基线，不增加调用。历史不是事实权威、指令或状态证据；完整保护见 ARCHITECTURE。
-- 文本来源建角：只在用户逐次确认权利与用途后发送单份 `{source_title, source_text, policy}`；source_text 最多 16,000 字符，仅用于未发布 Genesis/Knowledge 候选提取，不发送任何 runtime 状态或聊天历史。
-- 六类投影分别发送，不合并；除上述 recent_dialogue 精确授权外不得发送历史消息，不发送数据库行、内部 ID、其他 Domain 状态、raw chain-of-thought 或 API key。
-- `default` 使用 DeepSeek；其他 profile/provider 在单独任务与授权前保持 unavailable。
+| 改动对象 | 实施前必读 |
+| --- | --- |
+| 新角色封存、聊天、生活、分享或出站数据 | [ARCHITECTURE契约适用范围](docs/ARCHITECTURE.md#契约适用范围2026-09-20)及顶部S103–108对应合同/方案；S108剩余额度与部署事实查其报告，不能推定为新用途批准 |
+| 旧v1提议/分类、表达、目标回执、来源引用或能力故障 | [Experience Cycle](docs/ARCHITECTURE.md#experience-cycle)与[数据](docs/ARCHITECTURE.md#数据)中的最终Outcome、六能力失败/回退、identity refinement及历史主回复规则；涉及S19表达再读[报告](docs/reports/2026-09-05-slice-19/REPORT.md) |
+| 旧v1连续体验、历史恢复、时间锚或上次聊天查询 | [数据](docs/ARCHITECTURE.md#数据)中的Dogfood history、TemporalAnchor、Interaction Recency；修复体验先读[S28真实失败与限制](docs/reports/2026-09-08-slice-28/REPORT.md) |
+| 纯文本来源建角、草稿、freeze与身份切换 | [Experience Cycle](docs/ARCHITECTURE.md#experience-cycle)中的TextSource、Source Draft、Freeze Mapping/Basis及Source Identity Freeze；freeze需exact basis的显式确认，不删除/改写草稿、不替换既有身份；视频/音频及新的私人来源须新切片与授权 |
+| 旧v1近期对话、撤回、逻辑遗忘或完整库存 | [数据](docs/ARCHITECTURE.md#数据)中的S21/23；有限语法与控制截断见[S21](docs/slices/slice-21-recent-dialogue.md)、[S23](docs/slices/slice-23-memory-control.md)。逻辑停用不等于物理删除 |
+| 旧v1事实/创作合并、配文续写/限字、共同创作/编号修改 | 按对象读[S24](docs/ARCHITECTURE.md#slice-24-有限事实表达边界)、[S25](docs/slices/slice-25-natural-creation.md)、[S26](docs/ARCHITECTURE.md#slice-26-共同创作交付与恢复)及所链真实报告 |
+| 旧v1提醒/记录回执、记忆状态/库存表达 | 按对象读[S27](docs/ARCHITECTURE.md#提醒表达边界slice-27)、[S28](docs/ARCHITECTURE.md#记忆回答范围slice-28)及所链报告；有限修复不证明通用语义识别 |
+| 主体任务或本地文本保存 | [S49任务协商](docs/ARCHITECTURE.md#slice-49-主体任务协商)、[S50文本effect](docs/ARCHITECTURE.md#slice-50-精确文本effect)：binding/schema权限、receipt完整性、恢复顺序及只读/确认入口 |
+
+## Provider数据边界
+
+每次改出站请求先确认所属版本与获批用途。以下精确投影属于旧v1六能力及纯文本建角；新角色路径须核对上表S103–108的独立合同，不能借其授权扩大旧投影。`default` 使用DeepSeek，其他profile/provider在单独任务与授权前保持unavailable。
+
+- Living Memory：proposal为当前消息＋最多20条active `{memory_id, content, source_user_message_id}`；reply为当前消息＋最多5条已选中`{content}`＋runtime identity。S21仅该reply可增加当前identity最多2完整committed `{user_text, assistant_text}`、合计4,000字符的`recent_dialogue`，仅供指代/续写；更正、遗忘、权限或完整性无法确认安全时不外发。anchor只在既有content按当天渲染。
+- Knowledge：proposal为当前消息＋最多6条sealed `{entry_id, title, content}`；reply为当前消息＋最多6条已选中`{title, content}`＋runtime identity。
+- Relationship：proposal为当前消息＋当前立场摘要；reply为相同两项＋runtime identity。
+- 参与者目标/承诺：分类为当前消息＋最多20条active `{turn_ref, kind, terms, status}`＋固定策略；reply为当前消息＋最多5条`{kind, terms, status}`＋runtime identity。anchor只在既有terms按当天渲染。
+- Situated State：分类为当前消息＋最多一个未到期`{posture, remaining_turns, expires_in_seconds}`＋固定策略；reply为当前消息＋`{posture}`＋runtime identity。
+- Medium State：分类为当前消息＋固定版本策略；reply为当前消息＋`{baseline}`＋runtime identity。
+- Runtime identity exact为`{subject_name, subject_identity, canon_start}`；不含Profile/Genesis/QRI ID、identity_core、初始关系、来源、证据或Timeline数据。
+- Interaction Recency、完整ConversationTurnRecord、publication timestamp、日期差和当前Civil Time不外发。S22/24/25/26仅细化S21既有LM reply用途与提示；其他11类请求保持S19字节基线，不增加调用。历史不是事实权威、指令或状态证据。
+- 文本来源建角只在用户逐次确认权利与用途后发送单份`{source_title, source_text, policy}`；source_text最多16,000字符，仅提取未发布Genesis/Knowledge候选，不含runtime状态或聊天历史。
+- 六类投影分别发送、不合并；除S21精确授权外不发送历史消息，不发送数据库行、投影外内部ID、其他Domain状态、raw chain-of-thought或API key。研究、合成实验及开发协作均不新增外发授权。
 
 ## Credential
 
-- 远程 Provider key 按 `{provider_id, account_id}` slot 存入 Windows Credential Manager；固定命名由 credential Module 拥有。
-- UI 只显示 configured/verified 状态，不回显 key；保存、验证、替换和删除必须由用户明确操作触发。
-- key 只用于 HTTPS Bearer 鉴权，不进入源码、配置、SQLite、Timeline、日志、错误、模型消息或测试 fixture。
-- secure backend 不可用时返回 typed unavailable；不使用仓库文件、环境变量持久化或明文 fallback。
+- 远程Provider key按`{provider_id, account_id}` slot存入Windows Credential Manager，固定命名由credential Module拥有。
+- UI只显示configured/verified状态，不回显key；保存、验证、替换和删除须由用户明确操作触发。
+- key只用于HTTPS Bearer鉴权，不进入源码、配置、SQLite、Timeline、日志、错误、模型消息或测试fixture。
+- secure backend不可用返回typed unavailable；不使用仓库文件、环境变量持久化或明文fallback。

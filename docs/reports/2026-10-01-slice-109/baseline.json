@@ -1,0 +1,193 @@
+{
+  "real_provider_calls": 0,
+  "chains": [
+    {
+      "canonical_turns": 4,
+      "chain": "ordinary-goal-eight-turns",
+      "generation": "all planning choices, life text, share and replies are hand-authored synthetic responses",
+      "persistence": "unchanged v4 Facade, authority, budget and canonical Timeline; no transcript input store",
+      "quality_verdict": "not evaluated",
+      "real_provider_calls": 0,
+      "steps": [
+        {
+          "canonical_turns": 1,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 1,
+          "user": "先聊聊你最近在构思什么。"
+        },
+        {
+          "canonical_turns": 2,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 2,
+          "user": "然后呢？"
+        },
+        {
+          "canonical_turns": 3,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 3,
+          "user": "你说右侧没有灯，可当前构图里还有台灯，这两句话怎么对得上？"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 4,
+          "user": "要不要试试让窗光更柔和一点？"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 5,
+          "user": "你平时会给自己定目标吗？"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 6,
+          "user": "那聊聊你喜欢哪种颜色吧。"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 7,
+          "user": "接着聊窗边的颜色吧。"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 8,
+          "user": "也可以聊聊今天的天气题材。"
+        }
+      ],
+      "synthetic_calls": 11,
+      "wire_digests": [
+        "147ee8e7d98b7fa951a2af8fcdf1e885aa08f0946f91903b49f01a71ae713913",
+        "55426a18f69748b3eb2906dd72c40be404a715c9bb368335868646fedf25072b",
+        "3cc795994dedb9cdb520a85b9273c08f385fecbf418946af8553c4681b4af04b",
+        "4afc14a4c0dc4b4dc37d721c7491ff4bc1fd8a00c1c700fc744189334e1252a2",
+        "0ebe5b8bffe4ccd788b973d7ae4cdaf7793eb8bec979a019e94e5a33f39fccde",
+        "8d75431b4ec48d1de400fefe71c875aec165b61b11d51f21ed35dacb6e3b8b83",
+        "49a6368da57ac0cdef070d592b4b46df6ccd20c4e532bf3975aca6bbd6ecf620",
+        "ba3260556ba8606abf04f8f375bb7d6bee9ce4ffaba6e9a2f48dd55b9a92a34e",
+        "2ac6732fc4cf739459ff28a3878c9de3e6643a0b2f84063a6ee980401f2752aa",
+        "ac1803d5e42e9a594e5a1872119d247bc66c7dd68e2fcd12cc5b659dded8572b",
+        "9c3a0c85ecb9925b60763549b46b7ab1d60070cd331b6a58378f13a2c997dc60"
+      ]
+    },
+    {
+      "canonical_turns": 6,
+      "chain": "withdrawal-history-toggle-nine-turns",
+      "generation": "all planning choices, life text, share and replies are hand-authored synthetic responses",
+      "persistence": "unchanged v4 Facade, authority, budget and canonical Timeline; no transcript input store",
+      "quality_verdict": "not evaluated",
+      "real_provider_calls": 0,
+      "steps": [
+        {
+          "canonical_turns": 1,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 1,
+          "user": "先聊聊你最近在构思什么。"
+        },
+        {
+          "canonical_turns": 2,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 2,
+          "user": "然后呢？"
+        },
+        {
+          "canonical_turns": 3,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 3,
+          "user": "你说右侧没有灯，可当前构图里还有台灯，这两句话怎么对得上？"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 4,
+          "user": "要不要试试让窗光更柔和一点？"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 5,
+          "user": "不要再提刚才那句话。"
+        },
+        {
+          "canonical_turns": 4,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 6,
+          "user": "换个话题，聊聊蓝色。"
+        },
+        {
+          "canonical_turns": 5,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 7,
+          "user": "现在聊聊蓝色吧。"
+        },
+        {
+          "canonical_turns": 6,
+          "failure": null,
+          "status": "ApplicationOperationStatus.TERMINAL",
+          "synthetic_calls": 2,
+          "turn": 8,
+          "user": "仍然聊蓝色，先从浅色说起。"
+        },
+        {
+          "canonical_turns": 6,
+          "failure": "first-life-history-unverified",
+          "status": "ApplicationOperationStatus.FAILED_CLOSED",
+          "synthetic_calls": 0,
+          "turn": 9,
+          "user": "继续刚才的颜色话题。"
+        }
+      ],
+      "synthetic_calls": 15,
+      "wire_digests": [
+        "147ee8e7d98b7fa951a2af8fcdf1e885aa08f0946f91903b49f01a71ae713913",
+        "55426a18f69748b3eb2906dd72c40be404a715c9bb368335868646fedf25072b",
+        "3cc795994dedb9cdb520a85b9273c08f385fecbf418946af8553c4681b4af04b",
+        "4afc14a4c0dc4b4dc37d721c7491ff4bc1fd8a00c1c700fc744189334e1252a2",
+        "0ebe5b8bffe4ccd788b973d7ae4cdaf7793eb8bec979a019e94e5a33f39fccde",
+        "8d75431b4ec48d1de400fefe71c875aec165b61b11d51f21ed35dacb6e3b8b83",
+        "49a6368da57ac0cdef070d592b4b46df6ccd20c4e532bf3975aca6bbd6ecf620",
+        "ba3260556ba8606abf04f8f375bb7d6bee9ce4ffaba6e9a2f48dd55b9a92a34e",
+        "2ac6732fc4cf739459ff28a3878c9de3e6643a0b2f84063a6ee980401f2752aa",
+        "ac1803d5e42e9a594e5a1872119d247bc66c7dd68e2fcd12cc5b659dded8572b",
+        "9c3a0c85ecb9925b60763549b46b7ab1d60070cd331b6a58378f13a2c997dc60",
+        "79b93d71f4efadb421b0db649e688797b7e855cd3fc7c920ad80691548da962a",
+        "0c63f7492d403b811427cf807715c070389927f6b8689340607c3b088453b1f5",
+        "02c91bbbfa6d9866d55a0b167e699b7e558a4cce0a38bc3a83f95ee28912f773",
+        "41b21c1804c32f8f7dcdffdd14a6ceb5f1fce86dba627c41d7a28c01fa6262ce"
+      ]
+    }
+  ]
+}

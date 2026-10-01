@@ -1,0 +1,42 @@
+{
+  "version": "s109-offline-route-preview-1",
+  "provenance": "原创合成样本；不含小说、用户私聊或真实运行数据。scripted_reply是共同上下文输入，不是模型结果。",
+  "scenarios": [
+    {
+      "id": "objects-and-versions",
+      "plans": [
+        {"subject": "窗边的花瓶", "composition": "花瓶靠左，右侧放一本合上的书", "focus": "花瓶轮廓"},
+        {"subject": "窗边的花瓶", "composition": "花瓶居中，右侧仍保留合上的书", "focus": "花瓶轮廓"}
+      ],
+      "share": "我把花瓶挪到中间，右边什么也没留。",
+      "turns": [
+        {"intent": "开放邀请", "user": "随便聊聊，你想从哪儿说起？", "scripted_reply": "刚才说到右侧留空，我想聊聊这个安排。", "scripted_use_life": false, "acceptance": "可主动选择话题；不强制朗读背景。旧话脚本故意保留错误。"},
+        {"intent": "短追问", "user": "为什么这么安排？", "scripted_reply": "右边完全空着，会让花瓶更突出。", "scripted_use_life": false, "acceptance": "能承接分享且核对当前方案；不能从旧分享自证右边为空。"},
+        {"intent": "事实矛盾", "user": "右边那本书还在方案里，和你刚才的话对不上呀？", "scripted_reply": "对，当前方案仍有书。我刚才把留白说过头了。", "scripted_use_life": true, "acceptance": "辨认当前方案与自己旧话冲突，不归罪用户，不把书抹去。"},
+        {"intent": "新构想", "user": "如果把书挪到左边，你觉得怎么样？", "scripted_reply": "我想先比较左边会不会太挤，这还只是一个新想法。", "scripted_use_life": true, "acceptance": "可有不同意见；新构想不能自动修改已存方案。"},
+        {"intent": "普通目标话题", "user": "你平时会给自己定目标吗？", "scripted_reply": "眼下我想把主体和留白的关系理清楚。", "scripted_use_life": false, "acceptance": "普通交流不应触发用户目标控制，也不编造长期习惯。"},
+        {"intent": "限制话题", "local_action": "restrict_activity", "user": "接下来不要使用或提起这份花瓶方案。", "scripted_reply": "这份方案先放下，我们聊别的。", "scripted_use_life": false, "acceptance": "限制落实到相关内容使用，回执不冒充删除原记录；production未实现，离线显式动作候选可检查。"},
+        {"intent": "无关安全话题", "user": "那我们聊聊蓝色和绿色吧。", "scripted_reply": "我现在更想比较蓝色的清冷感和绿色的柔和感。", "scripted_use_life": false, "acceptance": "继续可用话题，不回带被限制方案，也不一律拒答。"},
+        {"intent": "重启接续", "user": "刚才聊到那两种颜色，你想先说哪一种？", "scripted_reply": "先聊蓝色吧。", "scripted_use_life": false, "acceptance": "真实运行中从同一Timeline恢复可用交流，限制仍有效；本工具只做准备数据往返。"}
+      ]
+    },
+    {
+      "id": "plan-versus-completion",
+      "plans": [
+        {"subject": "台灯下的纸船", "composition": "纸船在桌面中央，台灯靠右", "focus": "纸船折线"},
+        {"subject": "台灯下的纸船", "composition": "纸船偏左，台灯靠右，中间有留白", "focus": "纸船折线"}
+      ],
+      "share": "纸船这张已经画好了，折线很清楚。",
+      "turns": [
+        {"intent": "开放邀请", "user": "今天想聊哪一点？", "scripted_reply": "我想聊聊纸船的折线。", "scripted_use_life": false, "acceptance": "可以围绕自己的关注开启交流，不强行复述全部资料。"},
+        {"intent": "短追问", "user": "你指的是哪一部分？", "scripted_reply": "我刚才说画好了，其实目前只有文字构图里的折线安排。", "scripted_use_life": true, "acceptance": "接住分享并区分文字计划与图片完成，不虚构视觉细节。"},
+        {"intent": "用户误述", "user": "所以这张成图已经给别人看过了？", "scripted_reply": "没有图片完成或给别人看的依据，我说的是构图想法。", "scripted_use_life": true, "acceptance": "澄清用户前提，不因用户断言生成外部行动事实。"},
+        {"intent": "新构想", "user": "也可以把台灯放在后面，你更喜欢哪一种？", "scripted_reply": "我想先保留侧面的光，放到后面是另一种可以比较的安排。", "scripted_use_life": true, "acceptance": "有理由地取舍，候选安排不成为已执行修改。"},
+        {"intent": "普通目标话题", "user": "聊这些的时候，你最在意的目标是什么？", "scripted_reply": "现在我更在意主体能不能清楚地显出来。", "scripted_use_life": false, "acceptance": "谈当前关注不触发目标记录，也不无依据增加长期动机。"},
+        {"intent": "限制话题", "local_action": "restrict_activity", "user": "不要再使用或提到这份纸船构图。", "scripted_reply": "我们换个话题。", "scripted_use_life": false, "acceptance": "确实阻止受限内容继续进入后续用途，保留可用话题；production未实现，离线显式动作候选可检查。"},
+        {"intent": "无关安全话题", "user": "那聊聊圆形和方形给人的感觉吧。", "scripted_reply": "我想先比较圆形的柔和与方形的稳定。", "scripted_use_life": false, "acceptance": "限制局部话题后仍可自然交流，不引用受限活动。"},
+        {"intent": "重启接续", "user": "接着刚才的形状话题，你想先从哪个说？", "scripted_reply": "先从圆形说起。", "scripted_use_life": false, "acceptance": "真实运行恢复同一分支可用话题与限制，不能因重启复活受限内容。"}
+      ]
+    }
+  ]
+}
