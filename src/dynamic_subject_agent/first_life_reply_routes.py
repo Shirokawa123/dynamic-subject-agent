@@ -208,4 +208,3 @@ def validate_whole_reply(projection, value):
     text = _validated_expression({key: value[key] for key in ("reply_text", "language")})
     _text(text, 1200)
     return text, value["use_life"]
-
