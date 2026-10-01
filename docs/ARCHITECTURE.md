@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-115：JSON输出示例的离线诊断候选
+
+`first_life_reply_protocol`复用S113 typed候选，仅给system追加合法输出JSON示例；其他材料/参数/原策略前缀与输出裁决不变。新值是不可执行preview，无sender、预算或runtime注册，不覆盖S111–114资格/字节。安全最终字段重放明确区别于原HTTP包，示例回声与结构合法分别标识，不据此证明语义或服务可靠性。来源、证据及尚未执行的8次范围见[S115报告](reports/2026-10-01-slice-115/REPORT.md)。
+
 ### Slice-114：同一父额度中的独立候选验收
 
 用户已批准S113精确18次连续方案。`open_first_life_candidate_trial`只接受独立`ApprovedCandidateTrial`，新candidate runtime policy/witness/digest绑定冻结方案、候选builder/协议和原创建角材料；S112旧入口仍要求其原approval类型，LOCAL资格不能转远程。共享装配复用同一Facade/Timeline、seed严格匹配、live后禁回seed及每次授权重验。
