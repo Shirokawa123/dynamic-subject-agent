@@ -340,6 +340,8 @@ Slice-51混合验收修复明确清单入口：“列出/请列出我的目标/�
 
 ## Credential seam
 
+S119用户批准小林入口普通自由文字≤1000、本身份history开启时最多2完整committed轮/4000，原合成资料/活动/S1边界保持；`FreeInputReplyTrial`拥有独立策略/用途见证/固定根及exact composition，旧S117白名单/字节不放宽。typed `_whole`和素材守卫仍在发送前核界限，仅A普通回复可走新用途；未启生活/effect/其它人物。新`free-input-audit`无次数上限，避免已运行旧reader因新purpose拒读；旧audit保持，sender按trial准确类型/固定路径/manifest purpose核验，目录外初始化见证防重置。观察器仅metadata，私聊成功内容只canonical，草稿只browser session。新8781自由输入页面复用请求恢复/匹配nonce/原文保存及loopback保护，旧8780保持。真实结果与限制见[S119报告](reports/2026-10-02-slice-119/REPORT.md)。
+
 S118的loopback试用入口复用S117两个A分支及原固定消息用途，新的desktop Adapter只经Facade与注入的生命周期回调操作；服务启动/重开不生成，partial入口pointer不重置，未知text/choice在Admission前拒绝。页面只读canonical消息，浏览器只保存选择及opaque请求nonce；新TrialConversationAdapter复用同operation handle，终态清除全部对应inflight，刷新恢复只读轮询并按匹配回执清草稿。无生活/分享执行route，原用户服务与旧FirstLifeAdapter保持。真实3调用及限制见[S118报告](reports/2026-10-02-slice-118/REPORT.md)；自由输入与自我事实/取舍纯候选均未启用，不借不限次数扩大输入材料。
 
 S117新增独立`first-life-whole-scoped-s117-1`/`first-life-planned-scoped-s117-1`策略及`DevelopmentReplyTrial`，只允许S112已批准完整合成场景；新composition复用原canonical seed验证、history/policy守卫、严格裁决及Timeline。表达wire为S116已测JSON例＋正文限定/high，规划保持v4/low。`DevelopmentReplyBudget`的真实次数无上限，stage先claim、一次性ticket不从审计恢复；新分支本地有限账仅审计程序seed，旧真实42/18/200账不变。生活计数前两项仍是本支当天seed行为，开发余量None。真实A两条连续链完成，B来源选择损失及空白仍在，故先沿A作开发候选；人物习惯编造/重复修复未解决，用户运行窗口未变。见[S117完整原文与证据](reports/2026-10-01-slice-117/REPORT.md)。
