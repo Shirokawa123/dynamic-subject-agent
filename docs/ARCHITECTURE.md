@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-114：同一父额度中的独立候选验收
+
+用户已批准S113精确18次连续方案。`open_first_life_candidate_trial`只接受独立`ApprovedCandidateTrial`，新candidate runtime policy/witness/digest绑定冻结方案、候选builder/协议和原创建角材料；S112旧入口仍要求其原approval类型，LOCAL资格不能转远程。共享装配复用同一Facade/Timeline、seed严格匹配、live后禁回seed及每次授权重验。
+
+`CandidateTrialBudget`在原S112的42/0数据库追加本次18子限，绑定开工22条终态前缀及其摘要；父stage claim与子映射同一事务提交，旧行/配置/user_version保持。`counts()`是子限及父剩余取小的可用量，`parent_counts()`单独显示42总账。缺marker/表/head或批准不匹配不补建，新实例不从claimed重铸发送票据。分支阶段审计仍另行保守计次，不构成新真实额度。
+
+真实sender仅在新候选策略使用S113精确wire（B规划保持v4），并核typed批准、固定父子根、同一父账/grant、当前分支及材料；离线仍用无效credential ref阻止真实transport取key。运行器复用原连续执行和exclusive日志，另标S114版本、18子限与42父账，错误停链/0重试。该执行资格不等于语言效果通过，实际结果按S114报告判断。
+
 ### Slice-113：本地可靠性与离线回复候选
 
 `LocalIdentityAuthority`在一次registry锁内完整读取后，策略与share/chat快照复用该次已验证state/record/identity；不建立跨guard缓存。每次发送、返回及最终Publication仍重新读取，history/identity/policy revision、LEGACY回退及完整性失败语义保持。不减少Timeline验证、预算claim或持久化保证。
