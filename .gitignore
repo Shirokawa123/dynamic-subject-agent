@@ -8,13 +8,20 @@ dist/
 .venv/
 .venv-*/
 .env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
 
 # Runtime authority and private user data live outside the repository.
 data/
 *.sqlite
+*.sqlite-*
 *.sqlite3
 *.sqlite3-*
 *.db
+*.db-*
 
 # Local models, sources and generated artifacts are never source.
 models/
@@ -22,6 +29,7 @@ models/
 .local_indexes/
 .artifacts/
 .scratch/
+*.epub
 *.srt
 *.ass
 *.vtt
