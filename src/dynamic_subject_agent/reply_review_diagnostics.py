@@ -2,8 +2,10 @@
 HTTP_DIAGNOSTIC_STATUSES = frozenset((400, 401, 403, 408, 429, 500, 502, 503, 504))
 REVIEW_DIAGNOSTIC_CODES = frozenset((
     "transport-timeout", "transport-network", "transport-delivery-ambiguous", "transport-failure", "http-other",
+    "transport-dns", "transport-tls-certificate", "transport-tls", "transport-connect-refused",
+    "transport-connect-unreachable", "transport-connection-reset", "transport-connection-aborted", "transport-broken-pipe",
     "response-envelope", "response-model", "response-reasoning", "response-usage",
-    "response-truncated", "response-overbudget", "response-content-json", "response-tools",
+    "response-truncated", "response-overbudget", "response-content-empty", "response-content-json", "response-tools",
     "response-incomplete", "response-size", "review-schema", "review-quote", "review-label",
 )) | frozenset(f"http-{status}" for status in HTTP_DIAGNOSTIC_STATUSES)
 

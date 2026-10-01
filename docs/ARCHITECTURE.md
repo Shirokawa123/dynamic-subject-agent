@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-113：本地可靠性与离线回复候选
+
+`LocalIdentityAuthority`在一次registry锁内完整读取后，策略与share/chat快照复用该次已验证state/record/identity；不建立跨guard缓存。每次发送、返回及最终Publication仍重新读取，history/identity/policy revision、LEGACY回退及完整性失败语义保持。不减少Timeline验证、预算claim或持久化保证。
+
+DeepSeek显式`safe_diagnostics`路径区分空白最终正文与非空坏JSON；截断/model/usage检查仍先行。网络类只从异常类型/errno映射闭集码，未知不猜测、不保留原异常文字/地址/凭据，默认helper保留原ProviderFailure code和0重试。更细诊断不证明送达/收费，也不追认旧失败原因。
+
+`first_life_reply_candidate`复用S111 typed输入并生成不可执行的预览：完整非policy值分为background/evidence/exchange/turn，固定单system替代重复策略；旧wire/qualification不变，无sender、activation或预算。结构与权限检查不证明自然度；[S113报告](reports/2026-10-01-slice-113/REPORT.md)保留本地耗时范围与待验缺口，新真实用途按[准确18次方案](experiments/s113/CONTRACT.md)另行确认。
+
 ### Slice-112：已批准的隔离真实对照
 
 用户已对S111合同明确批准原创小林/两组冻结场景、现有DeepSeek凭据用途和最多42次/0重试。`open_first_life_reply_trial`只装配四个独立root/authority/Timeline分支；同源封存定义的profile ID可相同，隔离不靠改写人物内容。独立LIVE策略与activation见证绑定批准manifest、分支与固定本机实验根，LOCAL身份保持本地限定，旧入口不能替换资格。

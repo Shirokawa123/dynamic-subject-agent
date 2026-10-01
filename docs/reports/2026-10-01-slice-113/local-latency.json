@@ -1,0 +1,96 @@
+{
+  "version": "s113-local-latency-observation-1",
+  "baseline_commit": "855838c",
+  "real_model_calls": 0,
+  "credential_reads": 0,
+  "route": "S112 A whole via synthetic transport on a fresh isolated E: branch",
+  "methodology": "Same approved seed and first three frozen paper-boat messages through ApplicationFacade; histories checked equal after close/reopen. Three samples per variant, same local machine. Not a production or network benchmark.",
+  "wall": {
+    "before": {
+      "samples": [
+        {
+          "step": 1,
+          "status": "terminal",
+          "elapsed": 1.8135571999991953
+        },
+        {
+          "step": 2,
+          "status": "terminal",
+          "elapsed": 1.8876423000001523
+        },
+        {
+          "step": 3,
+          "status": "terminal",
+          "elapsed": 1.9623128999992332
+        }
+      ],
+      "median_seconds": 1.8876423000001523
+    },
+    "after": {
+      "samples": [
+        {
+          "step": 1,
+          "status": "terminal",
+          "elapsed": 1.0294217999980901
+        },
+        {
+          "step": 2,
+          "status": "terminal",
+          "elapsed": 0.9721480000007432
+        },
+        {
+          "step": 3,
+          "status": "terminal",
+          "elapsed": 1.013492900001438
+        }
+      ],
+      "median_seconds": 1.013492900001438
+    }
+  },
+  "profile": {
+    "before": {
+      "active_identity_reads": 45,
+      "cumulative_seconds": 3.0441574,
+      "samples": [
+        {
+          "step": 1,
+          "status": "terminal",
+          "elapsed": 2.4518796000011207
+        },
+        {
+          "step": 2,
+          "status": "terminal",
+          "elapsed": 2.6047734999992826
+        },
+        {
+          "step": 3,
+          "status": "terminal",
+          "elapsed": 2.5991870000034396
+        }
+      ]
+    },
+    "after": {
+      "active_identity_reads": 12,
+      "cumulative_seconds": 0.7483132,
+      "samples": [
+        {
+          "step": 1,
+          "status": "terminal",
+          "elapsed": 1.5761095000016212
+        },
+        {
+          "step": 2,
+          "status": "terminal",
+          "elapsed": 1.6053520999994362
+        },
+        {
+          "step": 3,
+          "status": "terminal",
+          "elapsed": 1.8246113999994122
+        }
+      ]
+    }
+  },
+  "median_relative_reduction": 0.4630905971955829,
+  "evidence_sha256": "adaa300904c11b077e5578fd6b0b81f83ffd0e46b7242b5597503fef85cfd165"
+}

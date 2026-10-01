@@ -8,8 +8,10 @@ access.  No transport is selected by the production composition root.
 
 from __future__ import annotations
 
+import errno
 import json
 import socket
+import ssl
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from hashlib import sha256
@@ -513,6 +515,47 @@ class DeepSeekResponseDiagnosticFailure(ProviderFailure):
         self.diagnostic_code = diagnostic_code
 
 
+def _safe_transport_diagnostic(error):
+    """Classify only typed causes/errno; never copy exception text or addresses.
+
+    urllib can wrap a typed exception in reason, or provide only a string. The
+    latter stays unknown. Bounded unwrapping also tolerates malformed cycles.
+    These categories describe observed failures, not remote delivery outcomes.
+    """
+    for _ in range(4):
+        if not isinstance(error, URLError):
+            break
+        if not isinstance(error.reason, Exception):
+            return "transport-network"
+        error = error.reason
+    if isinstance(error, URLError):
+        return "transport-network"
+    for kind, code in (
+        (TimeoutError, "transport-timeout"),
+        (socket.gaierror, "transport-dns"),
+        (ssl.SSLCertVerificationError, "transport-tls-certificate"),
+        (ssl.SSLError, "transport-tls"),
+        (ConnectionRefusedError, "transport-connect-refused"),
+        (ConnectionResetError, "transport-connection-reset"),
+        (ConnectionAbortedError, "transport-connection-aborted"),
+        (BrokenPipeError, "transport-broken-pipe"),
+    ):
+        if isinstance(error, kind):
+            return code
+    if isinstance(error, OSError) and type(error.errno) is int:
+        for code, names in (
+            ("transport-timeout", ("ETIMEDOUT", "WSAETIMEDOUT")),
+            ("transport-connect-refused", ("ECONNREFUSED", "WSAECONNREFUSED")),
+            ("transport-connect-unreachable", ("ENETUNREACH", "EHOSTUNREACH", "WSAENETUNREACH", "WSAEHOSTUNREACH")),
+            ("transport-connection-reset", ("ECONNRESET", "WSAECONNRESET")),
+            ("transport-connection-aborted", ("ECONNABORTED", "WSAECONNABORTED")),
+            ("transport-broken-pipe", ("EPIPE", "ESHUTDOWN", "WSAESHUTDOWN")),
+        ):
+            if any(error.errno == getattr(errno, name, None) for name in names):
+                return code
+    return "transport-network"
+
+
 def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reasoning, require_complete):
     """Check envelope/finish before content, discard reasoning, return JSON only."""
     def fail(code):
@@ -556,6 +599,8 @@ def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reaso
         fail("response-overbudget")
     if type(message.get("content")) is not str:
         fail("response-content-json")
+    if not message["content"].strip():
+        fail("response-content-empty")
     try:
         content = json.loads(message["content"])
     except ValueError:
@@ -586,6 +631,11 @@ def _post_json_reply_content(
             timeout_seconds=DEEPSEEK_TIMEOUT_SECONDS,
         )
     except ProviderFailure as failure:
+        if isinstance(failure, DeepSeekResponseDiagnosticFailure):
+            if safe_diagnostics:
+                raise
+            # Non-diagnostic callers retain the generic ProviderFailure API.
+            raise ProviderFailure(failure.code) from None
         # Credential-unavailable is a separate subclass and must retain its
         # typed unavailable path rather than becoming a transport diagnosis.
         if safe_diagnostics and type(failure) is ProviderFailure:
@@ -598,9 +648,9 @@ def _post_json_reply_content(
         if safe_diagnostics:
             raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS, "transport-timeout") from None
         raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
-    except Exception:
+    except Exception as error:
         if safe_diagnostics:
-            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.NETWORK_FAILURE, "transport-network") from None
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.NETWORK_FAILURE, _safe_transport_diagnostic(error)) from None
         raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
     if type(response) is not DeepSeekHttpResponse or response.status_code != 200:
         if safe_diagnostics:
@@ -740,13 +790,13 @@ class DeepSeekUrlLibTransport(DeepSeekTransport):
             status_code = int(error.code)
             response_body = error.read(65_537)
         except (TimeoutError, socket.timeout):
-            raise ProviderFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS) from None
-        except URLError:
-            raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.DELIVERY_AMBIGUOUS, "transport-timeout") from None
+        except URLError as error:
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.NETWORK_FAILURE, _safe_transport_diagnostic(error)) from None
         except ProviderFailure:
             raise
-        except Exception:
-            raise ProviderFailure(ProviderFailureCode.NETWORK_FAILURE) from None
+        except Exception as error:
+            raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.NETWORK_FAILURE, _safe_transport_diagnostic(error)) from None
         finally:
             secret = ""
         if not isinstance(response_body, bytes) or len(response_body) > 65_536:

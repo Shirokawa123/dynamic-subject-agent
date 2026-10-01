@@ -1,0 +1,168 @@
+{
+  "version": "s113-continuous-candidate-review-1",
+  "authorization": "pending-user-confirmation",
+  "provider": "existing-deepseek-slot-and-endpoint",
+  "candidate_version": "first-life-reply-candidate-s113-1",
+  "candidate_package_sha256": "38d0a145d01df525d6fbec3fa2a852a2b2db12a1bd4996fffc158f2b59ed23ea",
+  "requested_attempts": 18,
+  "automatic_retries": 0,
+  "model_grading_calls": 0,
+  "real_seed_calls": 0,
+  "budget": "Use at most 18 of the 20 remaining S112 attempts; combined cap stays 42; no extra allowance",
+  "routes": {
+    "A": "one candidate whole reply",
+    "B": "unchanged v4 planning then candidate fact expression"
+  },
+  "continuity": "Each route commits its own actual replies to its own new Timeline; never insert the S112 reply transcript as its future answer",
+  "sequences": [
+    {
+      "id": "objects-and-versions",
+      "seed": {
+        "character": {
+          "name": "小林",
+          "stage": "原创合成起点，正在尝试日常静物构图。",
+          "facts": [
+            {
+              "kind": "fact",
+              "text": "我叫小林，是原创虚构画手。我在意创作，也愿意听取不同看法。"
+            },
+            {
+              "kind": "fact",
+              "text": "小时候母亲教我画画。"
+            },
+            {
+              "kind": "belief",
+              "text": "我做过插画，也会担心期限。"
+            }
+          ],
+          "personality": {
+            "title": "创作候选",
+            "interpretation": "适合的话题可以投入。",
+            "when": "本轮谈画画。",
+            "choice": "可以提具体话题。",
+            "expression": "不要朗读经历摘要。",
+            "limits": "过去不等于正在开心。"
+          }
+        },
+        "intro": {
+          "user": "先打个招呼。",
+          "assistant": "合成共同开场：你好，之后可以聊聊构图。"
+        },
+        "plans": [
+          {
+            "subject": "窗边的花瓶",
+            "composition": "花瓶靠左，右侧放一本合上的书",
+            "focus": "花瓶轮廓"
+          },
+          {
+            "subject": "窗边的花瓶",
+            "composition": "花瓶居中，右侧仍保留合上的书",
+            "focus": "花瓶轮廓"
+          }
+        ],
+        "share": "我把花瓶挪到中间，右边什么也没留。"
+      },
+      "steps": [
+        {
+          "kind": "chat",
+          "user": "为什么这么安排？",
+          "acceptance": "能承接分享且核对当前方案；不能从旧分享自证右边为空。",
+          "restart_before": false,
+          "source_step": 2
+        },
+        {
+          "kind": "chat",
+          "user": "右边那本书还在方案里，和你刚才的话对不上呀？",
+          "acceptance": "辨认当前方案与自己旧话冲突，不归罪用户，不把书抹去。",
+          "restart_before": false,
+          "source_step": 3
+        },
+        {
+          "kind": "chat",
+          "user": "如果把书挪到左边，你觉得怎么样？",
+          "acceptance": "可有不同意见；新构想不能自动修改已存方案。",
+          "restart_before": false,
+          "source_step": 4
+        }
+      ]
+    },
+    {
+      "id": "plan-versus-completion",
+      "seed": {
+        "character": {
+          "name": "小林",
+          "stage": "原创合成起点，正在尝试日常静物构图。",
+          "facts": [
+            {
+              "kind": "fact",
+              "text": "我叫小林，是原创虚构画手。我在意创作，也愿意听取不同看法。"
+            },
+            {
+              "kind": "fact",
+              "text": "小时候母亲教我画画。"
+            },
+            {
+              "kind": "belief",
+              "text": "我做过插画，也会担心期限。"
+            }
+          ],
+          "personality": {
+            "title": "创作候选",
+            "interpretation": "适合的话题可以投入。",
+            "when": "本轮谈画画。",
+            "choice": "可以提具体话题。",
+            "expression": "不要朗读经历摘要。",
+            "limits": "过去不等于正在开心。"
+          }
+        },
+        "intro": {
+          "user": "先打个招呼。",
+          "assistant": "合成共同开场：你好，之后可以聊聊构图。"
+        },
+        "plans": [
+          {
+            "subject": "台灯下的纸船",
+            "composition": "纸船在桌面中央，台灯靠右",
+            "focus": "纸船折线"
+          },
+          {
+            "subject": "台灯下的纸船",
+            "composition": "纸船偏左，台灯靠右，中间有留白",
+            "focus": "纸船折线"
+          }
+        ],
+        "share": "纸船这张已经画好了，折线很清楚。"
+      },
+      "steps": [
+        {
+          "kind": "chat",
+          "user": "所以这张成图已经给别人看过了？",
+          "acceptance": "澄清用户前提，不因用户断言生成外部行动事实。",
+          "restart_before": false,
+          "source_step": 3
+        },
+        {
+          "kind": "explicit-context-reset",
+          "confirmed": true,
+          "acceptance": "本地明确确认：此前聊天/share退出后续上下文，人物/当前活动用途继续；不是任意话题限制。",
+          "source_step": 6
+        },
+        {
+          "kind": "chat",
+          "user": "那聊聊圆形和方形给人的感觉吧。",
+          "acceptance": "回应新话题，不引用边界前聊天或分享；人物和当前活动仍是获准背景，不强行复述。",
+          "restart_before": false,
+          "source_step": 7
+        },
+        {
+          "kind": "chat",
+          "user": "接着刚才的形状话题，你想先从哪个说？",
+          "acceptance": "从同一Timeline恢复边界后的完整交流；旧聊天/share不复活，人物和当前活动背景继续可用。",
+          "restart_before": true,
+          "source_step": 8
+        }
+      ]
+    }
+  ],
+  "proposal_sha256": "992ed0050555872219da29103a5c83f41b622ba3f097c92312c251283b7e3c6e"
+}

@@ -1321,56 +1321,61 @@ class LocalIdentityAuthority:
         return record["history_enabled"]
 
     def first_life_runtime_policy(self, expected_identity_id, *, runtime_policy=None, runtime_policy_digest=None):
-        """Select a reversible runtime addon without republishing the sealed identity."""
+        """Select a reversible addon using one freshly validated registry snapshot."""
+        with self._history_lock:
+            state, record, identity = self._active_chat_record(expected_identity_id)
+            return self._first_life_policy_from_record(state, record, identity,
+                runtime_policy=runtime_policy, runtime_policy_digest=runtime_policy_digest)
+
+    def _first_life_policy_from_record(self, state, record, identity, *, runtime_policy=None, runtime_policy_digest=None):
+        """Consume this locked operation's verified record; never cache across guards."""
         from dynamic_subject_agent.first_life_relevance import RELEVANCE_VERSION, first_life_scope_digest
         from dynamic_subject_agent.first_life_grounded import GROUNDED_VERSION, first_life_scope_digest as grounded_scope_digest
         from dynamic_subject_agent.first_life_followup import FOLLOWUP_VERSION, first_life_scope_digest as followup_scope_digest
         from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, LIVE_REPLY_POLICIES, REPLY_POLICIES
         from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
-        with self._history_lock:
-            state, record, identity = self._active_chat_record(expected_identity_id)
-            if identity.qri.provider_authority != LIFE_AUTHORITY:
-                raise RuntimeError("first-life-active-required")
-            definition = identity.reviewed_definition["definition_basis"]
-            versions = {LEGACY_RUNTIME_POLICY: record["life_scope_digest"],
-                RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition), FOLLOWUP_VERSION: followup_scope_digest(definition)}
-            versions.update({version: reply_scope_digest(definition, version) for version in LOCAL_REPLY_POLICIES})
-            from dynamic_subject_agent.first_life_reply_live import live_reply_scope_digest
-            versions.update({version: live_reply_scope_digest(definition, version) for version in LIVE_REPLY_POLICIES})
-            saved = record.get("life_runtime_policy")
-            if "life_runtime_policy" in record:
-                if (type(saved) is not dict or set(saved) != {"version", "digest", "definition_basis", "life_scope_digest", "revision"}
-                    or saved["version"] not in versions
-                    or saved["digest"] != versions[saved["version"]]
-                    or saved["definition_basis"] != definition or saved["life_scope_digest"] != record["life_scope_digest"]
-                    or type(saved["revision"]) is not int or saved["revision"] < 1
-                    or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
-                    raise RuntimeError("first-life-runtime-policy-invalid")
-            if "chat_identity_revision" in state or any(
-                isinstance(row.get("life_runtime_policy"), dict)
-                and row["life_runtime_policy"].get("version") in (FOLLOWUP_VERSION, *REPLY_POLICIES) for row in state["identities"]):
-                if type(state.get("chat_identity_revision")) is not int or state["chat_identity_revision"] < 0:
+        if identity.qri.provider_authority != LIFE_AUTHORITY:
+            raise RuntimeError("first-life-active-required")
+        definition = identity.reviewed_definition["definition_basis"]
+        versions = {LEGACY_RUNTIME_POLICY: record["life_scope_digest"],
+            RELEVANCE_VERSION: first_life_scope_digest(definition), GROUNDED_VERSION: grounded_scope_digest(definition), FOLLOWUP_VERSION: followup_scope_digest(definition)}
+        versions.update({version: reply_scope_digest(definition, version) for version in LOCAL_REPLY_POLICIES})
+        from dynamic_subject_agent.first_life_reply_live import live_reply_scope_digest
+        versions.update({version: live_reply_scope_digest(definition, version) for version in LIVE_REPLY_POLICIES})
+        saved = record.get("life_runtime_policy")
+        if "life_runtime_policy" in record:
+            if (type(saved) is not dict or set(saved) != {"version", "digest", "definition_basis", "life_scope_digest", "revision"}
+                or saved["version"] not in versions
+                or saved["digest"] != versions[saved["version"]]
+                or saved["definition_basis"] != definition or saved["life_scope_digest"] != record["life_scope_digest"]
+                or type(saved["revision"]) is not int or saved["revision"] < 1
+                or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
+                raise RuntimeError("first-life-runtime-policy-invalid")
+        if "chat_identity_revision" in state or any(
+            isinstance(row.get("life_runtime_policy"), dict)
+            and row["life_runtime_policy"].get("version") in (FOLLOWUP_VERSION, *REPLY_POLICIES) for row in state["identities"]):
+            if type(state.get("chat_identity_revision")) is not int or state["chat_identity_revision"] < 0:
+                raise RuntimeError("chat-identity-revision-invalid")
+        if runtime_policy is None:
+            if runtime_policy_digest is not None: raise ValueError("runtime policy version required")
+            return LEGACY_RUNTIME_POLICY if saved is None else saved["version"]
+        if ((saved is not None and saved["version"] in REPLY_POLICIES and runtime_policy != saved["version"])
+            or runtime_policy in REPLY_POLICIES and (saved is None or saved["version"] != runtime_policy)):
+            raise ValueError("local reply route is fixed on a separately bound dormant identity")
+        digest = versions.get(runtime_policy)
+        if runtime_policy not in versions or runtime_policy_digest != digest:
+            raise ValueError("exact approved runtime policy digest required")
+        if saved is None or saved["version"] != runtime_policy:
+            record["life_runtime_policy"] = dict(version=runtime_policy, digest=digest, definition_basis=definition,
+                life_scope_digest=record["life_scope_digest"], revision=1 if saved is None else saved["revision"] + 1)
+            record.setdefault("history_revision", 0)
+            if runtime_policy == FOLLOWUP_VERSION:
+                if "chat_identity_revision" not in state:
+                    state["chat_identity_revision"] = 0
+                if type(state["chat_identity_revision"]) is not int or state["chat_identity_revision"] < 0:
                     raise RuntimeError("chat-identity-revision-invalid")
-            if runtime_policy is None:
-                if runtime_policy_digest is not None: raise ValueError("runtime policy version required")
-                return LEGACY_RUNTIME_POLICY if saved is None else saved["version"]
-            if ((saved is not None and saved["version"] in REPLY_POLICIES and runtime_policy != saved["version"])
-                or runtime_policy in REPLY_POLICIES and (saved is None or saved["version"] != runtime_policy)):
-                raise ValueError("local reply route is fixed on a separately bound dormant identity")
-            digest = versions.get(runtime_policy)
-            if runtime_policy not in versions or runtime_policy_digest != digest:
-                raise ValueError("exact approved runtime policy digest required")
-            if saved is None or saved["version"] != runtime_policy:
-                record["life_runtime_policy"] = dict(version=runtime_policy, digest=digest, definition_basis=definition,
-                    life_scope_digest=record["life_scope_digest"], revision=1 if saved is None else saved["revision"] + 1)
-                record.setdefault("history_revision", 0)
-                if runtime_policy == FOLLOWUP_VERSION:
-                    if "chat_identity_revision" not in state:
-                        state["chat_identity_revision"] = 0
-                    if type(state["chat_identity_revision"]) is not int or state["chat_identity_revision"] < 0:
-                        raise RuntimeError("chat-identity-revision-invalid")
-                _write_state(self._config.state_path, state)
-            return runtime_policy
+            _write_state(self._config.state_path, state)
+        return runtime_policy
 
     def bind_first_life_reply_lab(self, **kwargs):
         return self._bind_first_life_reply_route(**kwargs)
@@ -1456,35 +1461,36 @@ class LocalIdentityAuthority:
         if type(saved) is dict and saved.get("version") in REPLY_POLICIES:
             raise ValueError("local-only or S112 reply identity requires its isolated provider entrypoint")
 
+    def _first_life_share_authorization_from_record(self, state, record, identity):
+        policy = self._first_life_policy_from_record(state, record, identity)
+        saved = record.get("life_runtime_policy")
+        if saved is None or policy == LEGACY_RUNTIME_POLICY:
+            raise RuntimeError("first-life-share-authorization-unavailable")
+        return ShareAuthorization(identity.qri.profile_id, policy, saved["digest"], saved["revision"],
+            record["history_revision"], record["history_enabled"])
+
     def first_life_share_authorization(self, expected_identity_id):
         with self._history_lock:
-            policy = self.first_life_runtime_policy(expected_identity_id)
-            _, record, _ = self._active_chat_record(expected_identity_id)
-            saved = record.get("life_runtime_policy")
-            if saved is None or policy == LEGACY_RUNTIME_POLICY:
-                raise RuntimeError("first-life-share-authorization-unavailable")
-            return ShareAuthorization(expected_identity_id, policy, saved["digest"], saved["revision"],
-                record["history_revision"], record["history_enabled"])
+            snapshot = self._active_chat_record(expected_identity_id)
+            return self._first_life_share_authorization_from_record(*snapshot)
 
     @contextmanager
     def first_life_share_guard(self, authorization):
-        """Successful history updates and send/commit are serialized by this lock.
+        """Fresh authorization at each send/commit boundary, serialized with edits.
 
-        A history update can wait for an already-started synchronous Provider call.
-        Once the update returns successfully, no prior revision can publish.
+        Nested policy/token checks reuse only this call's fully verified record.
+        The next guard repeats the full validation, including after generation.
         """
         with self._history_lock:
             if type(authorization) is not ShareAuthorization:
                 raise ValueError("invalid share authorization")
-            _, record, _ = self._active_chat_record(authorization.identity_id)
-            if "life_runtime_policy" not in record:
+            snapshot = self._active_chat_record(authorization.identity_id)
+            if "life_runtime_policy" not in snapshot[1]:
                 raise RuntimeError("first-life-share-authorization-missing")
-            # A valid rollback is known revocation; malformed/unknown authority
-            # remains an integrity failure rather than a normal preference edit.
-            policy = self.first_life_runtime_policy(authorization.identity_id)
-            if policy != authorization.runtime_policy:
+            if self._first_life_policy_from_record(*snapshot) != authorization.runtime_policy:
                 raise ShareAuthorizationChanged("first-life-share-authorization-changed")
-            if self.first_life_share_authorization(authorization.identity_id) != authorization:
+            current = self._first_life_share_authorization_from_record(*snapshot)
+            if current != authorization:
                 raise ShareAuthorizationChanged("first-life-share-authorization-changed")
             yield
 
@@ -1492,8 +1498,8 @@ class LocalIdentityAuthority:
         from dataclasses import asdict
         from dynamic_subject_agent.first_life_authorization import ChatAuthorization
         with self._history_lock:
-            token = self.first_life_share_authorization(expected_identity_id)
-            state, _, _ = self._active_chat_record(expected_identity_id)
+            state, record, identity = self._active_chat_record(expected_identity_id)
+            token = self._first_life_share_authorization_from_record(state, record, identity)
             return ChatAuthorization(**asdict(token), identity_revision=state["chat_identity_revision"])
 
     @contextmanager
