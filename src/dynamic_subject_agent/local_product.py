@@ -105,6 +105,7 @@ def open_local_product(
     _character_model: CharacterEvidenceModel | None = None,
     _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
+    _reply_protocol_trial=None,
 ) -> OpenedLocalProduct:
     """Open the selected identity through the only production composition root."""
 
@@ -125,6 +126,7 @@ def open_local_product(
         character_model=_character_model,
         character_reply_lab=_character_reply_lab,
         evidence_extraction=_evidence_extraction,
+        reply_protocol_trial=_reply_protocol_trial,
     )
 
 
@@ -140,6 +142,7 @@ def _open_loaded_local_product(
     character_model: CharacterEvidenceModel | None = None,
     character_reply_lab: CharacterReplyProducer | None = None,
     evidence_extraction: EvidenceExtractionLab | None = None,
+    reply_protocol_trial=None,
     first_life_budget=None, first_life_clock=None, first_life_day=None, first_life_development=False,
 ) -> OpenedLocalProduct:
     if loaded.reviewed_definition is not None:
@@ -169,7 +172,7 @@ def _open_loaded_local_product(
                 cognition = ReviewedCharacterChatCognition()
         else:
             cognition = ReviewedCharacterDormantCognition()
-        if any(value is not None for value in (source_authoring, character_dialogue, basis_preview, character_model, character_reply_lab, evidence_extraction)):
+        if any(value is not None for value in (source_authoring, character_dialogue, basis_preview, character_model, character_reply_lab, evidence_extraction, reply_protocol_trial)):
             raise RuntimeError("reviewed-character-chat-unavailable")
     composition = compose_application(
         m0_root=loaded.experiment_base,
@@ -185,6 +188,7 @@ def _open_loaded_local_product(
         _character_model=character_model,
         _character_reply_lab=character_reply_lab,
         _evidence_extraction=evidence_extraction,
+        _reply_protocol_trial=reply_protocol_trial,
         _source_studio_location=loaded.authoring_studio_location,
         _source_identity_freezer=authority.freeze,
         _first_life_freezer=authority.freeze,
@@ -856,3 +860,52 @@ def open_first_life_candidate_trial(config, *, approval, **kwargs):
     if type(approval) is not ApprovedCandidateTrial:
         raise ValueError("verified S114 candidate approval required")
     return _open_first_life_reply_trial(config, approval=approval, **kwargs)
+
+
+def open_reply_protocol_lab(run_root, package_path, *, live=False, _transport=None, response_audit=None):
+    """Compose the approved protocol study without a character publication path.
+
+    The current user's quantity authorization is represented by an unbounded
+    metadata audit. The frozen data/purpose checks remain independent of it.
+    """
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
+    from dynamic_subject_agent.reply_protocol_trial import (
+        open_protocol_run, ReplyProtocolTrial, fixed_development_audit_path,
+    )
+    from dynamic_subject_agent.reply_protocol_trial_provider import (
+        ProtocolTrialAdapter, OFFLINE_CREDENTIAL_BACKEND, OFFLINE_CREDENTIAL_KEY,
+    )
+    if response_audit is not None and not callable(response_audit):
+        raise TypeError("protocol observation callback must be callable")
+    if type(live) is not bool or not live and _transport is None:
+        raise ValueError("offline protocol lab requires an explicit local transport")
+    plan = open_protocol_run(run_root, package_path, live=live)
+    audit_path = fixed_development_audit_path() if live else plan.root / "offline-audit"
+    # Keep a witness outside the audit directory. Losing that directory must
+    # not turn an existing run's stable attempts into fresh send permissions.
+    witness = audit_path.with_name(audit_path.name + "-initialized")
+    if witness.exists():
+        if not witness.is_dir() or not audit_path.is_dir():
+            raise ValueError("development audit missing after initialization")
+        initialize_audit = False
+    else:
+        if audit_path.exists():
+            raise ValueError("development audit initialization witness missing")
+        witness.mkdir(parents=True, exist_ok=False)
+        initialize_audit = True
+    audit = DevelopmentCallAudit(audit_path, initialize=initialize_audit)
+    transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    credential = CredentialRef.reference(
+        backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID if live else OFFLINE_CREDENTIAL_BACKEND,
+        key_id=DEEPSEEK_CREDENTIAL_KEY_ID if live else OFFLINE_CREDENTIAL_KEY)
+    adapter = ProtocolTrialAdapter(transport, credential, plan, audit)
+    if response_audit is not None:
+        class Observations(list):
+            def append(self, row):
+                response_audit(row)
+                super().append(row)
+        adapter.rows = Observations()
+    service = ReplyProtocolTrial(ModelGateway(adapter), plan)
+    config = LocalProductConfig(plan.root / "DynamicSubjectAgent" / "m0" / "experiments", plan.root / "app-state.json")
+    return open_local_product(config, cognition=DormantDeepSeekCognition(), _reply_protocol_trial=service)

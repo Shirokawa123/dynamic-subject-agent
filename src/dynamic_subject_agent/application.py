@@ -7,6 +7,7 @@ from dynamic_subject_agent.conversation_basis import ConversationBasisPreview, B
 from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer, CharacterReplyCandidateView, preview_reply
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel, CharacterModelView, CharacterContextRequest, CharacterContextView
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab, EvidenceExtractionView
+from dynamic_subject_agent.reply_protocol_trial import ReplyProtocolTrial
 from dynamic_subject_agent.character_chat_context import (
     CharacterChatContextView, prepare_context, valid_request,
 )
@@ -358,6 +359,7 @@ class _ApplicationRouter:
         character_model: CharacterEvidenceModel | None = None,
         character_reply_lab: CharacterReplyProducer | None = None,
         evidence_extraction: EvidenceExtractionLab | None = None,
+        reply_protocol_trial: ReplyProtocolTrial | None = None,
     ) -> None:
         if single_command_authorization is not None and type(
             single_command_authorization
@@ -384,6 +386,9 @@ class _ApplicationRouter:
         if evidence_extraction is not None and not isinstance(evidence_extraction, EvidenceExtractionLab):
             raise TypeError("typed evidence extraction required")
         self._evidence_extraction = evidence_extraction
+        if reply_protocol_trial is not None and type(reply_protocol_trial) is not ReplyProtocolTrial:
+            raise TypeError("typed reply protocol trial required")
+        self._reply_protocol_trial = reply_protocol_trial
         if character_reply_lab is not None and not isinstance(character_reply_lab, CharacterReplyProducer):
             raise TypeError("typed character reply lab required")
         self._character_reply_lab = character_reply_lab
@@ -774,6 +779,12 @@ class _ApplicationRouter:
             if self._closed or self._evidence_extraction is None:
                 return EvidenceExtractionView("unavailable", "evidence-extraction-unavailable")
             return self._evidence_extraction.extract(request)
+
+    def evaluate_reply_protocol(self, request):
+        with self._lock:
+            if self._closed or self._reply_protocol_trial is None:
+                return _unavailable("reply-protocol-trial-unavailable")
+            return self._reply_protocol_trial.evaluate(request)
 
     def preview_character_reply(self, request: object) -> CharacterReplyCandidateView:
         with self._lock:
@@ -1176,6 +1187,8 @@ class _ApplicationRouter:
             self._character_dialogue.close()
         if self._evidence_extraction is not None:
             self._evidence_extraction.close()
+        if self._reply_protocol_trial is not None:
+            self._reply_protocol_trial.close()
         self._executor.shutdown(wait=True, cancel_futures=False)
 
 
@@ -1247,6 +1260,9 @@ class ApplicationFacade:
 
     def preview_character_identity_preparation(self, request: object) -> CharacterIdentityPreparationView:
         return self.__router.preview_character_identity_preparation(request)
+
+    def evaluate_reply_protocol(self, request):
+        return self.__router.evaluate_reply_protocol(request)
 
     def preview_character_reply(self, request: object) -> CharacterReplyCandidateView:
         return self.__router.preview_character_reply(request)
@@ -1332,6 +1348,7 @@ def _create_application_facade(
     _character_model: CharacterEvidenceModel | None = None,
     _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
+    _reply_protocol_trial: ReplyProtocolTrial | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -1361,6 +1378,7 @@ def _create_application_facade(
         character_model=_character_model,
         character_reply_lab=_character_reply_lab,
         evidence_extraction=_evidence_extraction,
+        reply_protocol_trial=_reply_protocol_trial,
         source_authoring=_source_authoring,
         source_studio_location=_source_studio_location,
         source_identity_freezer=_source_identity_freezer,

@@ -7,6 +7,7 @@ from dynamic_subject_agent.conversation_basis import ConversationBasisPreview
 from dynamic_subject_agent.character_reply_candidate import CharacterReplyProducer
 from dynamic_subject_agent.character_evidence_model import CharacterEvidenceModel
 from dynamic_subject_agent.evidence_extraction import EvidenceExtractionLab
+from dynamic_subject_agent.reply_protocol_trial import ReplyProtocolTrial
 
 from importlib import metadata
 from pathlib import Path
@@ -122,6 +123,7 @@ def compose_application(
     _character_model: CharacterEvidenceModel | None = None,
     _character_reply_lab: CharacterReplyProducer | None = None,
     _evidence_extraction: EvidenceExtractionLab | None = None,
+    _reply_protocol_trial: ReplyProtocolTrial | None = None,
     _source_authoring: TextSourceCharacterAuthoring | None = None,
     _source_studio_location: StudioRootRef | None = None,
     _source_identity_freezer: Callable[[object], SourceIdentityFreezeResponse]
@@ -295,6 +297,7 @@ def compose_application(
             _character_model=_character_model,
             _character_reply_lab=_character_reply_lab,
             _evidence_extraction=_evidence_extraction,
+            _reply_protocol_trial=_reply_protocol_trial,
             _source_authoring=_source_authoring,
             _source_studio_location=_source_studio_location,
             _source_identity_freezer=_source_identity_freezer,
