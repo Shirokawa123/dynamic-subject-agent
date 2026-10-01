@@ -450,3 +450,30 @@ def test_preexisting_v3_instruction_scope_manifest_and_wires_remain_exact(tmp_pa
     with pytest.raises(ValueError):
         trial.open_protocol_run(root, PACKAGE, live=False, study="reasoning-effort")
     assert (root / "manifest.json").read_bytes() == original_bytes
+
+
+def test_thinking_mode_changes_only_consistent_api_mode_fields_and_preserves_old_runs(tmp_path):
+    scoped = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="instruction-scope")
+    effort = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="reasoning-effort")
+    old_manifest = (effort.root / "manifest.json").read_bytes()
+    old_wires = [effort.wire_for(effort.request_for(row["case_id"], row["variant"])) for row in effort.sequence]
+    plan = trial.open_protocol_run(tmp_path / str(uuid4()), PACKAGE, live=False, study="thinking-mode")
+    assert plan.variants == ("thinking", "non-thinking")
+    assert plan.read()["version"] == "reply-protocol-run-5"
+    assert plan.read()["study_spec"]["changed_fields"] == ["thinking.type", "reasoning_effort"]
+    for case in plan.package["cases"]:
+        thinking = plan.wire_for(plan.request_for(case["case_id"], "thinking"))
+        candidate_request = plan.request_for(case["case_id"], "non-thinking")
+        candidate = json.loads(plan.wire_for(candidate_request))
+        assert thinking == scoped.wire_for(scoped.request_for(case["case_id"], "reply-text-style"))
+        assert candidate["thinking"] == {"type": "disabled"} and candidate["reasoning_effort"] == "none"
+        candidate["thinking"], candidate["reasoning_effort"] = {"type": "enabled"}, "high"
+        assert candidate == json.loads(thinking)
+        assert plan.validate_output(candidate_request, valid_value(plan, candidate_request)) is False
+        with pytest.raises(ValueError):
+            plan.validate_output(candidate_request, "unparsed free text")
+    restored = trial.open_protocol_run(effort.root, PACKAGE, live=False, study="reasoning-effort")
+    assert (effort.root / "manifest.json").read_bytes() == old_manifest and restored.digest == effort.digest
+    assert [restored.wire_for(restored.request_for(row["case_id"], row["variant"])) for row in restored.sequence] == old_wires
+    with pytest.raises(ValueError):
+        trial.open_protocol_run(effort.root, PACKAGE, live=False, study="thinking-mode")

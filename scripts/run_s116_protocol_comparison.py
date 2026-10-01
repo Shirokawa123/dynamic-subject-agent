@@ -84,7 +84,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--label", default="initial-format-comparison")
-    parser.add_argument("--study", choices=("json-example", "response-format", "instruction-scope", "reasoning-effort"), default="json-example")
+    parser.add_argument("--study", choices=("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode"), default="json-example")
     args = parser.parse_args()
     if not args.live:
         parser.error("use --live for the authorized actual run; tests inject a local transport")

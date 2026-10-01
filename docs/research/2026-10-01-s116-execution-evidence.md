@@ -27,3 +27,9 @@
 instruction-scope三批（`55448912-1707-4621-b3e2-d1d4f568dc72`、`634c4655-26eb-4817-92df-2f257297dc68`、`85200d62-5722-494f-8242-9a478e061535`）得到global-style 8/12与reply-text-style 11/12结构通过，均无示例照抄；候选仍在花瓶B新构想输入出现一次空白。此为固定小样本改善迹象，不能称根因完全解决或总体成功率。
 
 下一组保留作用域澄清、合法JSON例及JSON模式，只比较`reasoning_effort=high/low`。两者均为已核官方支持的同模型参数，thinking仍enabled、4096/材料/输出裁决不变。既有low规划成功与此表达任务不同，不用它当low更好的证据；新的同输入配对才能给出线索。本次属同用途技术变量诊断，在用户最新不限调用授权内，不新增资料或Provider。
+
+reasoning-effort批次`4bf3c5ff-cbda-46cc-9f1a-63e2d263fa32`：high 4/4，low 3/4（一次空白），没有支持降低强度即可解决的证据，不继续扩大该变量样本。
+
+最后定位一个不同机制：保持澄清后的提示、JSON例和严格裁决，比较思考开关。2026-10-01再次查询Context7官方`/websites/api-docs_deepseek`的Chat Completions/Thinking Mode，明确`thinking.type=disabled`和`reasoning_effort=none`均表示关闭思考；low/high则开启。为避免两个参数相互矛盾，候选一起从enabled/high改为disabled/none，这是一个模式变量、两个wire字段，不能声称只改单字段。直接web打开thinking页面超时，未据此推断产品网络故障；来源为[官方API字段](https://api-docs.deepseek.com/api/create-chat-completion/)的Context7文本。
+
+预测：若问题主要在思考模式与JSON生成交互，关闭思考后应在相同四份输入上减少空白且保持合法输出；若仍有空白，停止把更改这些协议参数当充分修复。先一组配对，只有出现差异才做预先说明的重复确认，不挑成功替换旧失败。未设置温度，不改模型/endpoint/凭据用途/材料，不读取隐藏推理，无新依赖。这是接口故障定位，心理学理论不适用。

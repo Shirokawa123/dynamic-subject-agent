@@ -15,6 +15,8 @@ The instruction-scope study keeps that JSON-example wire in JSON mode and
 limits one existing style sentence to reply_text, leaving outer fields explicit.
 The reasoning-effort study uses that scoped wire for both arms, varying only
 high versus low effort while retaining enabled thinking and the 4096-token cap.
+The thinking-mode study changes enabled/high to disabled/none together, one
+effective mode choice expressed by two consistent API fields.
 """
 from dataclasses import dataclass
 from hashlib import sha256
@@ -41,7 +43,8 @@ VARIANTS = ("baseline", "json-example")
 RESPONSE_FORMAT_VARIANTS = ("json-object", "text-json")
 INSTRUCTION_SCOPE_VARIANTS = ("global-style", "reply-text-style")
 REASONING_EFFORT_VARIANTS = ("high", "low")
-STUDIES = ("json-example", "response-format", "instruction-scope", "reasoning-effort")
+THINKING_MODE_VARIANTS = ("thinking", "non-thinking")
+STUDIES = ("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode")
 GLOBAL_STYLE_SENTENCE = "使用第一人称自然中文短消息，通常两三句；不输出动作旁白、档案、字段名、规则、分析或思考过程。"
 REPLY_TEXT_STYLE_SENTENCE = (
     "本接口需要JSON数据，外层字段供程序读取。reply_text的值才是给用户看的正文："
@@ -130,7 +133,8 @@ def _variants(study):
     if study not in STUDIES:
         raise ValueError("known frozen protocol study required")
     return {"json-example": VARIANTS, "response-format": RESPONSE_FORMAT_VARIANTS,
-        "instruction-scope": INSTRUCTION_SCOPE_VARIANTS, "reasoning-effort": REASONING_EFFORT_VARIANTS}[study]
+        "instruction-scope": INSTRUCTION_SCOPE_VARIANTS, "reasoning-effort": REASONING_EFFORT_VARIANTS,
+        "thinking-mode": THINKING_MODE_VARIANTS}[study]
 
 
 def _sequence(package, study):
@@ -146,15 +150,17 @@ def _study_wire(row, study, variant):
         raise ValueError("variant does not belong to this study")
     if study == "json-example":
         return row["baseline_wire_utf8" if variant == "baseline" else "candidate_wire_utf8"].encode("utf-8")
-    if study == "reasoning-effort":
+    if study in ("reasoning-effort", "thinking-mode"):
         original = _study_wire(row, "instruction-scope", "reply-text-style")
         body = json.loads(original)
         if (body["reasoning_effort"] != "high" or body["thinking"] != {"type": "enabled"}
             or body["max_tokens"] != 4096 or body["response_format"] != {"type": "json_object"}):
             raise ValueError("exact scoped high-effort baseline required")
-        if variant == "high":
+        if variant in ("high", "thinking"):
             return original
-        body["reasoning_effort"] = "low"
+        body["reasoning_effort"] = "low" if study == "reasoning-effort" else "none"
+        if study == "thinking-mode":
+            body["thinking"] = {"type": "disabled"}
         return canonical_json(body).encode("utf-8")
     original = row["candidate_wire_utf8"].encode("utf-8")
     if variant in ("json-object", "global-style"):
@@ -205,6 +211,20 @@ def _reasoning_effort_spec(package):
             for row in _sequence(package, "reasoning-effort")])
 
 
+def _thinking_mode_spec(package):
+    cases = {row["case_id"]: row for row in package["cases"]}
+    return dict(version="reply-thinking-mode-study-1", base_study="instruction-scope",
+        base_variant="reply-text-style", changed_fields=["thinking.type", "reasoning_effort"],
+        variants=list(THINKING_MODE_VARIANTS),
+        modes={"thinking": dict(thinking=dict(type="enabled"), reasoning_effort="high"),
+            "non-thinking": dict(thinking=dict(type="disabled"), reasoning_effort="none")},
+        max_tokens=4096, response_format=dict(type="json_object"),
+        output_validation="unchanged-strict-json-and-original-reply-schema",
+        sequence=[dict(case_id=row["case_id"], variant=row["variant"],
+            wire_sha256=sha256(_study_wire(cases[row["case_id"]], "thinking-mode", row["variant"])).hexdigest())
+            for row in _sequence(package, "thinking-mode")])
+
+
 def _manifest(root, package, live, study="json-example"):
     if type(live) is not bool or type(study) is not str:
         raise ValueError("explicit protocol execution mode and study required")
@@ -225,6 +245,8 @@ def _manifest(root, package, live, study="json-example"):
         result.update(version="reply-protocol-run-3", study=study, study_spec=_instruction_scope_spec(package))
     elif study == "reasoning-effort":
         result.update(version="reply-protocol-run-4", study=study, study_spec=_reasoning_effort_spec(package))
+    elif study == "thinking-mode":
+        result.update(version="reply-protocol-run-5", study=study, study_spec=_thinking_mode_spec(package))
     return result
 
 

@@ -57,7 +57,7 @@ def test_facade_records_once_without_chat_publication_and_reopen_cannot_resend(t
     assert "DO_NOT_PERSIST_REASONING" not in canonical_json(observed)
 
 
-@pytest.mark.parametrize("study", ["json-example", "response-format", "instruction-scope", "reasoning-effort"])
+@pytest.mark.parametrize("study", ["json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode"])
 def test_eight_planned_arms_keep_blank_failures_without_hidden_retries(tmp_path, study):
     spec = importlib.util.spec_from_file_location("s116_runner", ROOT / "scripts/run_s116_protocol_comparison.py")
     runner = importlib.util.module_from_spec(spec)
