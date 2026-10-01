@@ -787,7 +787,9 @@ def _open_first_life_reply_trial(config, *, definition_basis, life_scope_digest,
     from dynamic_subject_agent.first_life_reply_live_provider import LiveReplyBudget, LiveReplyAdapter
     from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
     from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
-    if type(approval) not in (ApprovedReplyTrial, ApprovedCandidateTrial):
+    from dynamic_subject_agent.first_life_development_trial import DevelopmentReplyTrial, DevelopmentReplyBudget, DevelopmentReplyAdapter, OFFLINE_BACKEND, OFFLINE_KEY
+    development_trial = type(approval) is DevelopmentReplyTrial
+    if type(approval) not in (ApprovedReplyTrial, ApprovedCandidateTrial, DevelopmentReplyTrial):
         raise ValueError("verified reply trial approval required")
     manifest = approval.read()
     _, policy = approval.branch(branch_id)
@@ -818,12 +820,15 @@ def _open_first_life_reply_trial(config, *, definition_basis, life_scope_digest,
     if seed_gateway is not None:
         gateway = ModelGateway(ApprovedSeedAdapter(seed_gateway, approval, branch_id))
     else:
-        budget = LiveReplyBudget(budget, approval.shared_budget(), policy=policy)
+        budget = (DevelopmentReplyBudget(budget, approval, branch_id) if development_trial
+            else LiveReplyBudget(budget, approval.shared_budget(), policy=policy))
         transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
         credential_ref = (CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)
-            if manifest["live"] else CredentialRef.reference(backend_id="s112-offline", key_id="no-credential"))
-        adapter = LiveReplyAdapter(transport, credential_ref, budget, approval=approval, branch_id=branch_id,
-            request_guard=lambda task: approval.validate_task(branch_id, task))
+            if manifest["live"] else CredentialRef.reference(
+                backend_id=OFFLINE_BACKEND if development_trial else "s112-offline", key_id=OFFLINE_KEY if development_trial else "no-credential"))
+        adapter = (DevelopmentReplyAdapter(transport, credential_ref, budget, approval=approval, branch_id=branch_id)
+            if development_trial else LiveReplyAdapter(transport, credential_ref, budget, approval=approval, branch_id=branch_id,
+                request_guard=lambda task: approval.validate_task(branch_id, task)))
         adapter.rows = approval.observations
         gateway = ModelGateway(adapter)
     cognition = FirstLifeCognition(envelope=loaded.reviewed_definition, gateway=gateway, budget=budget,
@@ -859,6 +864,14 @@ def open_first_life_candidate_trial(config, *, approval, **kwargs):
     from dynamic_subject_agent.first_life_candidate_trial import ApprovedCandidateTrial
     if type(approval) is not ApprovedCandidateTrial:
         raise ValueError("verified S114 candidate approval required")
+    return _open_first_life_reply_trial(config, approval=approval, **kwargs)
+
+
+def open_first_life_development_trial(config, *, approval, **kwargs):
+    """S117 reuses fixed synthetic branches with scoped JSON and unlimited calls."""
+    from dynamic_subject_agent.first_life_development_trial import DevelopmentReplyTrial
+    if type(approval) is not DevelopmentReplyTrial:
+        raise ValueError("verified development trial required")
     return _open_first_life_reply_trial(config, approval=approval, **kwargs)
 
 

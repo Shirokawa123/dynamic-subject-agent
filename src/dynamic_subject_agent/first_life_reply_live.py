@@ -122,6 +122,9 @@ def approved_trial_from_witness(witness):
 
 def resolve_reply_trial(witness):
     """Exact dispatch for independently approved trial witnesses, no fallback."""
+    if type(witness) is dict and witness.get("kind") == "s117-development":
+        from dynamic_subject_agent.first_life_development_trial import development_trial_from_witness
+        return development_trial_from_witness(witness)
     if type(witness) is dict and witness.get("kind") == "s114-candidate":
         from dynamic_subject_agent.first_life_candidate_trial import candidate_trial_from_witness
         return candidate_trial_from_witness(witness)
@@ -129,7 +132,10 @@ def resolve_reply_trial(witness):
 
 
 def approved_reply_scope_digest(definition_basis, policy):
-    from dynamic_subject_agent.first_life_reply_routes import CANDIDATE_REPLY_POLICIES
+    from dynamic_subject_agent.first_life_reply_routes import CANDIDATE_REPLY_POLICIES, DEVELOPMENT_REPLY_POLICIES
+    if policy in DEVELOPMENT_REPLY_POLICIES:
+        from dynamic_subject_agent.first_life_development_trial import development_reply_scope_digest
+        return development_reply_scope_digest(definition_basis, policy)
     if policy in CANDIDATE_REPLY_POLICIES:
         from dynamic_subject_agent.first_life_candidate_trial import candidate_reply_scope_digest
         return candidate_reply_scope_digest(definition_basis, policy)

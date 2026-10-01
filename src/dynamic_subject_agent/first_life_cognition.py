@@ -206,7 +206,8 @@ class FirstLifeCognition(CognitionEngine):
             remaining = self.budget.counts()[2]
             development = self.budget.life_counts(self.civil_day(), development_run=self.development_run)[2]
             required = 1 if self.runtime_policy in WHOLE_REPLY_POLICIES else 2
-            if remaining < required or development is not None and development < required: raise ValueError("reply allowance unavailable")
+            if (remaining is not None and remaining < required
+                or development is not None and development < required): raise ValueError("reply allowance unavailable")
         except Exception:
             raise CognitionFailedClosed("budget", "first-life-budget-unavailable", "No verified allowance is available for this reply route.") from None
         try:

@@ -205,6 +205,17 @@ class LiveReplyAdapter(ProviderAdapter):
             or candidate and self._budget._shared.grant_digest != self._approval.manifest_digest):
             raise ValueError("real sender requires the approved shared cap and branch audit")
 
+    def _wire(self, task):
+        if (self._budget.policy in CANDIDATE_REPLY_POLICIES
+            and task.kind is not ModelTaskKind.CHARACTER_COMMUNICATION_PLAN):
+            from dynamic_subject_agent.first_life_reply_candidate import preview_reply_candidate
+            return preview_reply_candidate(task).wire
+        return draft_wire(task)
+
+    def _validate_received(self, value):
+        """Subclass protocol checks run before the observation is journaled."""
+        return None
+
     def invoke(self, task):
         if self._real_credential or self._request_guard is not None:
             try:
@@ -222,29 +233,28 @@ class LiveReplyAdapter(ProviderAdapter):
                     pass
                 raise ModelGatewayFailure("structured-choice-invalid") from None
         self._budget.consume(task)
-        if (self._budget.policy in CANDIDATE_REPLY_POLICIES
-            and task.kind is not ModelTaskKind.CHARACTER_COMMUNICATION_PLAN):
-            from dynamic_subject_agent.first_life_reply_candidate import preview_reply_candidate
-            wire = preview_reply_candidate(task).wire
-        else:
-            wire = draft_wire(task)
+        wire = self._wire(task)
         observed = _ObservedTransport(self._transport)
         row = dict(task_kind=task.kind.value, payload=asdict(task.payload),
             request_digest=sha256(canonical_json(asdict(task.payload)).encode()).hexdigest(),
             wire_sha256=sha256(wire).hexdigest(), value=None, error_code=None)
-        if self._budget.policy in CANDIDATE_REPLY_POLICIES:
+        if self._budget.policy in CANDIDATE_REPLY_POLICIES or getattr(self, "_development_wire", False):
             row["request_body"] = json.loads(wire)
         started = perf_counter()
         try:
             value = _post_json_reply_content(observed, self._credential_ref, wire, max_output_tokens=4096,
                 require_complete=True, discard_reasoning=True, safe_diagnostics=True)
             row["value"] = value
+            self._validate_received(value)
         except CharacterCredentialUnavailable:
             row["error_code"] = "character-credential-unavailable"
             raise ModelGatewayFailure("character-credential-unavailable") from None
         except DeepSeekResponseDiagnosticFailure as failure:
             row["error_code"] = failure.diagnostic_code
             raise ModelGatewayFailure(failure.diagnostic_code) from None
+        except ModelGatewayFailure as failure:
+            row["error_code"] = "structured-choice-invalid" if failure.code == "structured-choice-invalid" else "provider-failed"
+            raise ModelGatewayFailure(row["error_code"]) from None
         except Exception:
             row["error_code"] = "provider-failed"
             raise ModelGatewayFailure("provider-failed") from None

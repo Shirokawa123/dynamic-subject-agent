@@ -24,7 +24,7 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 
 
 AUTHORIZATION = "user-unlimited-model-development-2026-10-01"
-PURPOSES = frozenset(("reply-protocol-comparison",))
+PURPOSES = frozenset(("reply-protocol-comparison", "continuous-reply-development"))
 _TERMINAL = frozenset(("complete", "unavailable", "unknown", "failed-closed"))
 _DATABASE = "calls.sqlite3"
 _MARKER = "initialized"
