@@ -340,4 +340,6 @@ Slice-51混合验收修复明确清单入口：“列出/请列出我的目标/�
 
 ## Credential seam
 
+S116在原有已授权合成材料/DeepSeek/slot用途内新增隔离`ApplicationFacade.evaluate_reply_protocol`诊断入口，经`ModelGateway`及严格JSON/schema返回技术结果，不创建人物Publication。用户取消后续开发调用次数限制；独立`DevelopmentCallAudit`以`limit=null`记录实际claim/terminal/unknown，目录外初始化见证防缺失账本被重置，同逻辑attempt不恢复重发。原42/18账保留历史，不迁移或重置。固定研究manifest绑定wire；JSON例、作用域和参数候选的历史版本均保持可重建。真实提示作用域对照有改善但空白仍在，详细边界与结果见[S116报告](reports/2026-10-01-slice-116/REPORT.md)，不能当人物体验或用户服务升级。
+
 `CredentialStore` 是 Host 侧深 Module Interface，以 `{provider_id, account_id}` 的 `CredentialSlot` 读写；生产使用 Windows Credential Manager Adapter，测试使用内存 Adapter。桌面仅查询 configured/verified 状态，不能读取或回显 key。当前 DeepSeek 验证只访问 `/models`，不携带产品、角色或用户内容；无 Windows secure backend 时失败关闭。
