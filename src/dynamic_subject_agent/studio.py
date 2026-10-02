@@ -14,7 +14,7 @@ from dynamic_subject_agent.reviewed_character_definition import (
 
 from dynamic_subject_agent.first_life import (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, first_life_definition, first_life_source_refs, is_first_life_source, life_profile_id)
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, matches_chat_source_contract
-from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope, whole_publication_key
 
 import hashlib
 import json
@@ -8809,7 +8809,7 @@ class SubjectStudio:
         }
         if reviewed_chat_contract is not None:
             if capabilities == CapabilityManifest.original_whole_chat():
-                if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract):
+                if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract, allow_legacy=True):
                     raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
                 expected = reviewed_chat_contract
             elif capabilities == CapabilityManifest.reviewed_character_chat() and is_reviewed_source(profile.source):
@@ -9744,7 +9744,7 @@ class SubjectStudio:
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
             if (qri.provider_authority != WHOLE_AUTHORITY or qri.capabilities != CapabilityManifest.original_whole_chat()
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
-                or qri.publication_key != "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
+                or qri.publication_key != whole_publication_key(contract)
                 or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
                 or predecessor.genesis_snapshot_id != snapshot.snapshot_id
                 or qri.predecessor_qualification_id != predecessor.qualification_id

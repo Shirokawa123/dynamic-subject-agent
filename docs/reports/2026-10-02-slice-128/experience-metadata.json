@@ -1,0 +1,659 @@
+{
+  "version": "s128-authorized-whole-metadata-1",
+  "attempts": 17,
+  "committed_turns": 12,
+  "empty_content_failures": 5,
+  "automatic_retries": 0,
+  "original_whole_global_attempts": 25,
+  "canonical_text_exported": false,
+  "note": "Application replay flag is not a model retry; chains use their own generated history. v1 short-reference fields match current authorized v2 reconstruction on its unaffected inputs.",
+  "cases": [
+    {
+      "variant": "baseline",
+      "case": "capability",
+      "attempts": 4,
+      "committed_turns": 3,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.275,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "e8b06c69eb295f76e4c471a408b6a38699dd0b2efcfd001b89959c69a8ebaec4",
+              "wire_sha256": "651850c7c18a6a6523dcc0a983bc0cb7283a132b9e77b9f56c865c0c87f8002d",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2147,
+                "completion_tokens": 215,
+                "total_tokens": 2362,
+                "prompt_cache_hit_tokens": 1920,
+                "prompt_cache_miss_tokens": 227
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.2251841999968747
+            }
+          ],
+          "reply_chars": 91,
+          "reply_sha256": "8786316eaba7028286cf2a3b386b2545da6c1bbc06f2a3819abaeb04470b0233"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 4.888,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "fd2cf718f9c451c297587e71538e753456f5e6dbc3a53a4ca587e3e181c55557",
+              "wire_sha256": "7fcdf281a3f1c49b9e16c9a8785c58965e40eace0ad165f74620f0201e0b8404",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2234,
+                "completion_tokens": 446,
+                "total_tokens": 2680,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 186
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 3.767090499997721
+            }
+          ],
+          "reply_chars": 115,
+          "reply_sha256": "4ce858ae257b01766b33a3e46a8f405abf1d98b455dd97d7fac2723ea6732c99"
+        },
+        {
+          "turn": 3,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 5.451,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "9673905e81cfd56ffa68bfea79db3bf245e639a3899aac0d3fa34b020736b73e",
+              "wire_sha256": "b5b8aa6f64d7ce06aee775b871565c6708a4ef6ee56b54e2430301a9b6544cae",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2325,
+                "completion_tokens": 687,
+                "total_tokens": 3012,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 149
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 4.302899899994372
+            }
+          ],
+          "reply_chars": 120,
+          "reply_sha256": "8cf70a7342d7d7fed4e8a5d0950b2bd372e04099d333f7bae55ebf52b2635039"
+        },
+        {
+          "turn": 4,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.144,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "ae927ce6ef598745a14654be6860d76f053136eaaa9acd32954dd1bb9cdd893c",
+              "wire_sha256": "7d33e82e3e34722b7d227f21a9e13a7b16534b39f901250d03e7048975cf9a36",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2343,
+                "completion_tokens": 75,
+                "total_tokens": 2418,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 295
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.1123370999994222
+            }
+          ],
+          "failure_code": "original-whole-provider-failed"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 0,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 0,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 4,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "case": "family",
+      "attempts": 2,
+      "committed_turns": 1,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": false,
+          "elapsed_seconds": 0.216,
+          "observations": [],
+          "failure_code": null,
+          "initial_observation": "unavailable",
+          "canonical_recovered_zero_model": true,
+          "reply_sha256": "f2a37b7fd7cb2908f1193f8bcf1938f667b78e8f9b7b35aeae6cd8e5cc854850",
+          "reply_chars": 36
+        },
+        {
+          "turn": 2,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.871,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "dcc916c76fe071e503041e9f8a32412046d22fab17f07849176795b083ee9a9e",
+              "wire_sha256": "77bc9bd5e08bdf2b8360a75c9d104d908901c533c60f053512450da702c91d6b",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2267,
+                "completion_tokens": 172,
+                "total_tokens": 2439,
+                "prompt_cache_hit_tokens": 1792,
+                "prompt_cache_miss_tokens": 475
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.9797680000046967
+            }
+          ],
+          "failure_code": "original-whole-provider-failed"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": false,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 1,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "case": "origins",
+      "attempts": 4,
+      "committed_turns": 4,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 2.764,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "5b9a80c9c734cf955a3a4c3fa31749429cdbdbbaead5325e31917737a4dca222",
+              "wire_sha256": "83f668f7b17cc7699fe0357a717473de00a6c06781a348f2bf62a74374ec3440",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2208,
+                "completion_tokens": 106,
+                "total_tokens": 2314,
+                "prompt_cache_hit_tokens": 1792,
+                "prompt_cache_miss_tokens": 416
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.6999893999891356
+            }
+          ],
+          "reply_chars": 48,
+          "reply_sha256": "9cb7927fcf042fc077d45796ac5dab7fb64ef16343358ef372e39197464164fd"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 4.368,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "e907d02ce6ae9fb6e5efe1279b3ceb7d22413cf43aae002fd87119b16c67f36f",
+              "wire_sha256": "1e7ec8742b8e8637116e1e8b8c9925f86d16f23bc64b572426f82bdec5be4f5b",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2327,
+                "completion_tokens": 367,
+                "total_tokens": 2694,
+                "prompt_cache_hit_tokens": 1920,
+                "prompt_cache_miss_tokens": 407
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 3.2832103000109782
+            }
+          ],
+          "reply_chars": 91,
+          "reply_sha256": "86da0b24b9ea8a63d0eee5b94554f63c46e8e3c036cdb37655f082e925bad12d"
+        },
+        {
+          "turn": 3,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.518,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "45a3b09b2771235c5fbc188b5c3ec0ce3a78254329c09a36b4229fe383e40567",
+              "wire_sha256": "abcfe08b149d8584822b3a760c8af7921fd0cb9cde5933b7482c0dea9ca11bba",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2271,
+                "completion_tokens": 327,
+                "total_tokens": 2598,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 223
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.3593270999990636
+            }
+          ],
+          "reply_chars": 84,
+          "reply_sha256": "78575a6b844d98d8da00819e578b4b36d9a2d2135b549a0acf1e7db17ab8a691"
+        },
+        {
+          "turn": 4,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 2.866,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "459eb2c6fe614e52abdd66212512c3dac58e3f05553e72e81a2dd905137a4a95",
+              "wire_sha256": "b9cfb35de052ad34ee4457a72cecce0cd5e327c48942c90d13b9ee53c24ff3f4",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2300,
+                "completion_tokens": 161,
+                "total_tokens": 2461,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 252
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.6947732999979053
+            }
+          ],
+          "reply_chars": 107,
+          "reply_sha256": "1192c828108a26d3baa3ddef09fa3e0965ea5d7eee9b2b89a36b547a3467274d"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 2,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 4,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "case": "short-references",
+      "attempts": 3,
+      "committed_turns": 2,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.427,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "7874aea80d3f5eb649297f7621793c060ab9cfdba264b034e62909613808f9e7",
+              "wire_sha256": "3c1125c356b79f2c95b77a17d72ea805a478e8d13a21e8b4a1baaf26fedf7ed6",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2209,
+                "completion_tokens": 228,
+                "total_tokens": 2437,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 161
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.290115699986927
+            }
+          ],
+          "reply_chars": 64,
+          "reply_sha256": "dacb877bd24c70b6711ee5de362751ee676edd22bc091284a186741645e5f902"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 4.026,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "ea410539c6b030cf9813707562c93c1eee9e54c9271c4f6484aeb48217033edf",
+              "wire_sha256": "08f646594c023fbb605cad04e988b9eac27b17294b1f9925e9f33091d88f5261",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2198,
+                "completion_tokens": 432,
+                "total_tokens": 2630,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 150
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.8276082999946084
+            }
+          ],
+          "reply_chars": 60,
+          "reply_sha256": "dd01fa5ddb72f06421c436f681d5aacf149f818398985895936f6d7b5a3ebe4b"
+        },
+        {
+          "turn": 3,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.704,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "81825a14e91feb6b4deb232f49b06145ea0c75b17fa55a8e6d9bf1919734456a",
+              "wire_sha256": "4297765eb6b0e71d1b018d96d52addee35e896ff5770350cfb2409cd7aba96ad",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2253,
+                "completion_tokens": 203,
+                "total_tokens": 2456,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 205
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.6455016999971122
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 0,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "followup",
+      "case": "short-references",
+      "attempts": 3,
+      "committed_turns": 2,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.606,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "7874aea80d3f5eb649297f7621793c060ab9cfdba264b034e62909613808f9e7",
+              "wire_sha256": "3c1125c356b79f2c95b77a17d72ea805a478e8d13a21e8b4a1baaf26fedf7ed6",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2209,
+                "completion_tokens": 277,
+                "total_tokens": 2486,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 161
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.5801308999944013
+            }
+          ],
+          "reply_chars": 59,
+          "reply_sha256": "3fbf3d85e9b782efc577c6b26d3e4e88809b7bccc5a4c88e7964ab5c210dfd6f"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 5.139,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "c95811281eefeec2c05c3f591fd00e87fd46efd75e935ce073e1e8fc9b7277a3",
+              "wire_sha256": "801362f417c3ff2b9e1b21268c6cc9bf55c2918683e61b7f38685df11eb71fee",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2263,
+                "completion_tokens": 557,
+                "total_tokens": 2820,
+                "prompt_cache_hit_tokens": 1920,
+                "prompt_cache_miss_tokens": 343
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 4.005000300006941
+            }
+          ],
+          "reply_chars": 89,
+          "reply_sha256": "a2addcbdfb0f9d60b5960d3e0ecbb5f72d1d61b34e4e775a4e168c6c9a569a92"
+        },
+        {
+          "turn": 3,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 3.008,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "abb1a55d91cfc0f295bcf3eea4a738cebaa399ff029049ec09ad785e03a405e8",
+              "wire_sha256": "5a17d1a24e212409f84fae73d5b66051553794212b45755ee7b024b9b7a4cd79",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2274,
+                "completion_tokens": 198,
+                "total_tokens": 2472,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 226
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.035158600003342
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true,
+          "local_selection_reason": "current-related-preferred",
+          "source_user_offset": null
+        },
+        {
+          "turn": 2,
+          "related_units": 1,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true,
+          "local_selection_reason": "recovered-user-topic",
+          "source_user_offset": 1
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true,
+          "local_selection_reason": "not-a-bounded-followup",
+          "source_user_offset": null
+        }
+      ]
+    },
+    {
+      "variant": "followup",
+      "case": "topic-boundary",
+      "attempts": 1,
+      "committed_turns": 0,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.587,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "9f4763af5632fb4f1a4fe1b4041c1544c26bb9a126af724de38f678d3028fbf3",
+              "wire_sha256": "3053fc6ee1bc3cba3a22f4f32414ecd3e907cd869acac2da3a4a5ec32d8f990a",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2208,
+                "completion_tokens": 79,
+                "total_tokens": 2287,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 160
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.686126200002036
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true,
+          "local_selection_reason": "current-related-preferred",
+          "source_user_offset": null
+        }
+      ]
+    }
+  ]
+}

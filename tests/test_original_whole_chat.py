@@ -32,8 +32,9 @@ class WholeTransport(DeepSeekTransport):
         value = dict(reply_text=self.reply, language="zh")
         if self.fault == "schema":
             value["use_life"] = False
+        content = "" if self.fault == "empty" else "RAW_PRIVATE_NON_JSON" if self.fault == "json" else canonical_json(value)
         return DeepSeekHttpResponse(200, canonical_json(dict(model="deepseek-flash",
-            choices=[dict(finish_reason="stop", message=dict(role="assistant", content=canonical_json(value), reasoning_content="RAW_PRIVATE_REASONING"))],
+            choices=[dict(finish_reason="stop", message=dict(role="assistant", content=content, reasoning_content="RAW_PRIVATE_REASONING"))],
             usage=dict(prompt_tokens=100, completion_tokens=20, total_tokens=120))).encode())
 
 

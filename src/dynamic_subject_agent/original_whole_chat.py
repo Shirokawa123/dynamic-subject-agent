@@ -37,17 +37,57 @@ def digest(value):
     return sha256(canonical_json(value).encode()).hexdigest()
 
 
-def whole_contract(binding):
+def whole_contract(binding, *, technical_variant="baseline"):
     if (type(binding) is not dict or binding != APPROVED_BINDING
         or sha256(WHOLE_USE_POLICY.encode()).hexdigest() != APPROVED_POLICY_SHA):
         raise ValueError("exact S126 approved object and use required")
-    return dict(version=WHOLE_VERSION, authorization="user-approved-original-whole-use-2026-10-02",
+    result = dict(version=WHOLE_VERSION, authorization="user-approved-original-whole-use-2026-10-02",
         **binding, provider="deepseek", endpoint="https://api.deepseek.com/chat/completions", model="deepseek-flash",
         credential_use="existing-Windows-slot-HTTPS-Bearer-only", max_current_chars=1000,
         max_complete_turns=2, max_exchange_chars=4000, max_reply_chars=1200, max_tokens=4096,
         timeout_seconds=30, thinking="enabled", reasoning_effort="high", max_requests_per_turn=1,
         automatic_retries=0, call_limit=None, policy_sha=APPROVED_POLICY_SHA,
         retention="canonical-Timeline-only", excluded="S1-life-persona-relation-writeback-cloud-migration")
+    if technical_variant == "baseline":
+        return result
+    if technical_variant != "followup":
+        raise ValueError("known exact whole technical variant required")
+    from dynamic_subject_agent.original_whole_followup import SELECTOR_VERSION, selector_digest
+    return dict(result, version="original-character-whole-chat-followup-s128-1",
+        technical_variant=dict(name="followup", selector_version=SELECTOR_VERSION, selector_digest=selector_digest()))
+
+
+def contract_variant(contract):
+    if type(contract) is not dict:
+        raise ValueError("exact whole contract required")
+    variant = "baseline"
+    if "technical_variant" in contract:
+        witness = contract["technical_variant"]
+        if type(witness) is not dict or witness.get("name") != "followup":
+            raise ValueError("known whole technical witness required")
+        variant = "followup-legacy" if witness == LEGACY_FOLLOWUP_WITNESS else "followup"
+    binding = {key: contract[key] for key in APPROVED_BINDING}
+    expected = (_legacy_followup_contract(binding) if variant == "followup-legacy"
+        else whole_contract(binding, technical_variant=variant))
+    if contract != expected:
+        raise ValueError("whole technical contract changed")
+    return variant
+
+
+LEGACY_FOLLOWUP_WITNESS = dict(name="followup", selector_version="original-whole-user-followup-selection-s128-1",
+    selector_digest="096496df339ea4eb730c66e3e6d34ec7403a68155dc64473b8729cdd0b51dfd5")
+
+
+def _legacy_followup_contract(binding):
+    """Exact immutable v1 witness for qualification/receipt reads, never activation."""
+    return dict(whole_contract(binding), version="original-character-whole-chat-followup-s128-1",
+        technical_variant=dict(LEGACY_FOLLOWUP_WITNESS))
+
+
+def whole_publication_key(contract):
+    variant = contract_variant(contract)
+    key = "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
+    return key if variant == "baseline" else key + "-s128-" + digest(contract["technical_variant"])
 
 
 def validate_whole_envelope(envelope, contract):
@@ -57,8 +97,7 @@ def validate_whole_envelope(envelope, contract):
     from dynamic_subject_agent.reviewed_character_definition import validate_reviewed_envelope
     validate_reviewed_envelope(envelope)
     binding = {key: contract[key] for key in APPROVED_BINDING}
-    if contract != whole_contract(binding):
-        raise ValueError("whole contract changed")
+    contract_variant(contract)
     asset = envelope["runtime_asset"]
     if (envelope["definition_basis"] != binding["definition_basis"]
         or envelope["runtime_asset_sha"] != binding["runtime_asset_sha"]
@@ -68,9 +107,11 @@ def validate_whole_envelope(envelope, contract):
         raise ValueError("whole sealed object mismatch")
 
 
-def matches_whole_source_contract(source, contract):
+def matches_whole_source_contract(source, contract, *, allow_legacy=False):
     try:
-        return (type(contract) is dict and contract == whole_contract({key: contract[key] for key in APPROVED_BINDING})
+        if contract_variant(contract) == "followup-legacy" and not allow_legacy:
+            return False
+        return (type(contract) is dict
             and source.source_asset_refs == ("reviewed-definition:" + contract["definition_basis"],
                 "runtime-asset:" + contract["runtime_asset_sha"], "use:private-character-chat"))
     except Exception:
@@ -91,6 +132,25 @@ def whole_projection(envelope, identity, message, dialogue, enabled):
         raise ValueError("verified whole character dialogue required")
     model = sealed_model(envelope)
     context = prepare_context(model, message)
+    return _projection_from_context(envelope, identity, message, dialogue, enabled, model, context)
+
+
+def projection_for_contract(envelope, identity, message, dialogue, enabled, contract):
+    variant = contract_variant(contract)
+    if variant == "followup-legacy":
+        raise ValueError("legacy followup qualification is receipt-only")
+    if variant == "baseline":
+        return whole_projection(envelope, identity, message, dialogue, enabled)
+    if (type(identity) is not RuntimeIdentityProjection or type(dialogue) is not CharacterDialogueBasis
+        or dialogue.status != "available" or type(enabled) is not bool):
+        raise ValueError("verified whole character dialogue required")
+    from dynamic_subject_agent.original_whole_followup import select_followup_context
+    model = sealed_model(envelope)
+    context, _, _ = select_followup_context(model, message, dialogue, enabled)
+    return _projection_from_context(envelope, identity, message, dialogue, enabled, model, context)
+
+
+def _projection_from_context(envelope, identity, message, dialogue, enabled, model, context):
     if context.status != "previewed":
         raise ValueError("sealed whole context unavailable")
     core = tuple(row for row in context.self_knowledge if row.dimension == ("core" if model.chat_organization else "identity"))

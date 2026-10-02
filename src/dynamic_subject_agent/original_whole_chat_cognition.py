@@ -8,7 +8,8 @@ from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelG
 from dynamic_subject_agent.first_life_authorization import ShareAuthorizationChanged
 from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, OriginalWholeAuthorization,
-    whole_projection, validate_whole_reply, digest)
+    projection_for_contract, validate_whole_reply, digest)
+from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
 from dataclasses import asdict
 
 
@@ -45,8 +46,8 @@ class OriginalWholeChatCognition(CognitionEngine):
             if type(authorization) is not OriginalWholeAuthorization:
                 raise ValueError("exact whole authorization required")
             dialogue = context.load_character_dialogue(authorization.history_enabled)
-            projection = whole_projection(self.envelope, context.runtime_identity, command.utterance,
-                dialogue, authorization.history_enabled)
+            projection = projection_for_contract(self.envelope, context.runtime_identity, command.utterance,
+                dialogue, authorization.history_enabled, self.delivery.contract)
         except Exception:
             raise CognitionFailedClosed("history", "original-whole-history-unverified", "History and exact whole disclosure are unavailable.") from None
         identity = sha256(plan.operation_ref.authority_scope_id.encode()).hexdigest()
@@ -61,8 +62,8 @@ class OriginalWholeChatCognition(CognitionEngine):
             self.delivery.record("complete", value=value)
         except Exception as error:
             code = error.code if isinstance(error, ModelGatewayFailure) else "history-changed" if isinstance(error, ShareAuthorizationChanged) else "delivery-unverified"
-            safe = {"character-credential-unavailable", "transport-timeout", "transport-delivery-ambiguous", "structured-choice-invalid",
-                "expression-invalid", "response-empty-content", "response-incomplete", "provider-failed", "history-changed", "delivery-unverified"}
+            safe = (REVIEW_DIAGNOSTIC_CODES - {"review-schema", "review-quote", "review-label"}) | {
+                "character-credential-unavailable", "structured-choice-invalid", "expression-invalid", "provider-failed", "history-changed", "delivery-unverified"}
             if code not in safe:
                 code = "provider-failed"
             status = "unavailable" if code == "character-credential-unavailable" else "unknown" if code in ("transport-timeout", "transport-delivery-ambiguous") else "failed-closed"

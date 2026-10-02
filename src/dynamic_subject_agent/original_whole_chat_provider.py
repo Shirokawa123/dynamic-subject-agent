@@ -15,7 +15,7 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import (ProviderAdapter, ProviderCapabilities, StructuredOutputMode,
     ModelTask, ModelTaskKind, ModelResult, ModelGatewayFailure)
 from dynamic_subject_agent.original_whole_chat import (WHOLE_USE_POLICY, digest, validate_whole_envelope,
-    validate_whole_projection, whole_projection, validate_whole_reply)
+    validate_whole_projection, projection_for_contract, validate_whole_reply, contract_variant)
 from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
@@ -39,6 +39,8 @@ class DeepSeekOriginalWholeAdapter(ProviderAdapter):
             or (credential_ref.backend_id, credential_ref.key_id) != (DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID)):
             raise ValueError("approved whole transport, slot and delivery required")
         validate_whole_envelope(envelope, delivery.contract)
+        if contract_variant(delivery.contract) == "followup-legacy":
+            raise ValueError("legacy followup qualification is receipt-only; no sender is available")
         self.transport, self.credential_ref, self.delivery, self.envelope = transport, credential_ref, delivery, envelope
         self.rows = observations if observations is not None else OriginalWholeObservations()
 
@@ -53,9 +55,9 @@ class DeepSeekOriginalWholeAdapter(ProviderAdapter):
         validate_whole_envelope(envelope, self.delivery.contract)
         identity = RuntimeIdentityProjection(envelope["runtime_asset"]["subject"]["name"],
             envelope["genesis_content"]["subject_identity"], envelope["genesis_content"]["canon_start"])
-        expected = whole_projection(envelope, identity, projection.turn["current_message"],
+        expected = projection_for_contract(envelope, identity, projection.turn["current_message"],
             CharacterDialogueBasis("available", projection.turn["has_prior_committed_exchange"], projection.exchange),
-            projection.turn["history_enabled"])
+            projection.turn["history_enabled"], self.delivery.contract)
         if projection != expected:
             raise ValueError("whole material differs from sealed approved selection")
         protocol = communication_protocol("thinking-high", "low")

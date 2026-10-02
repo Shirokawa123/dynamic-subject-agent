@@ -145,16 +145,22 @@ def _open_loaded_local_product(
     reply_protocol_trial=None,
     first_life_budget=None, first_life_clock=None, first_life_day=None, first_life_development=False,
 ) -> OpenedLocalProduct:
+    whole_receipts_only = False
     if loaded.reviewed_definition is not None:
         from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
         from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
         from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
-        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, contract_variant
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
         if loaded.qri.provider_authority == WHOLE_AUTHORITY:
-            if type(cognition) is not OriginalWholeChatCognition:
+            if contract_variant(loaded.qri.reviewed_chat_contract) == "followup-legacy":
+                whole_receipts_only = True
+                if type(cognition) is OriginalWholeChatCognition and cognition.gateway is not None:
+                    raise ValueError("legacy followup qualification is receipt-only")
+                cognition = OriginalWholeChatCognition()
+            elif type(cognition) is not OriginalWholeChatCognition:
                 cognition = OriginalWholeChatCognition()
             elif cognition.gateway is not None and getattr(cognition, "_whole_composition_witness", None) != loaded.qri.reviewed_chat_contract:
                 raise ValueError("original whole identity requires its exact production composition")
@@ -204,7 +210,7 @@ def _open_loaded_local_product(
         _first_life_day=first_life_day,
         _first_life_development=first_life_development,
         _reviewed_chat_status=lambda: authority.reviewed_character_chat_status(loaded.qri.profile_id),
-        _reviewed_history_setter=lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id),
+        _reviewed_history_setter=(None if whole_receipts_only else lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id)),
         _local_identity_lister=authority.list,
         _local_identity_selector=lambda request: authority.select(
             request,
@@ -657,7 +663,7 @@ def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan
 
 
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
-                                scope_digest=None, audit_path=None, _transport=None, observations=None):
+                                scope_digest=None, audit_path=None, _transport=None, observations=None, technical_variant="baseline"):
     """New exact whole qualification; opening/reopening performs no model call."""
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     from dynamic_subject_agent.original_whole_chat_audit import (
@@ -671,7 +677,7 @@ def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, 
     if not isinstance(audit_path, Path) or not audit_path.is_absolute():
         raise ValueError("absolute dedicated whole audit required")
     authority = LocalIdentityAuthority(config)
-    loaded = authority.activate_original_whole(binding=binding, audit_path=audit_path)
+    loaded = authority.activate_original_whole(binding=binding, audit_path=audit_path, technical_variant=technical_variant)
     delivery = OriginalWholeDelivery(open_original_whole_audit(audit_path), contract=loaded.qri.reviewed_chat_contract,
         state_path=config.state_path)
     transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())

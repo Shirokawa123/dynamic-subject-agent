@@ -64,7 +64,7 @@ from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_c
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, whole_contract,
-    validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest)
+    validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest, whole_publication_key, contract_variant)
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
 
@@ -1242,9 +1242,12 @@ class LocalIdentityAuthority:
         return self.load_active()
 
     @_registry_mutation
-    def activate_original_whole(self, *, binding, audit_path):
-        contract = whole_contract(binding)
+    def activate_original_whole(self, *, binding, audit_path, technical_variant="baseline"):
+        contract = whole_contract(binding, technical_variant=technical_variant)
         state, record, identity = self._active_chat_record()
+        if (identity.qri.provider_authority == WHOLE_AUTHORITY
+            and contract_variant(identity.qri.reviewed_chat_contract) == "followup-legacy"):
+            raise RuntimeError("original-whole-legacy-live-unavailable")
         validate_whole_envelope(identity.reviewed_definition, contract)
         metadata = dict(contract=contract, audit_path=str(audit_path.resolve()))
         existing = record.get("whole_chat_activation") or record.get("pending_whole_chat_activation")
@@ -1270,7 +1273,7 @@ class LocalIdentityAuthority:
         predecessor = identity.qri
         studio = SubjectStudio.open(identity.studio_location, policy_kernel=PolicyKernel())
         try:
-            key = "original-character-whole-" + binding["definition_basis"] + "-" + binding["scope_digest"]
+            key = whole_publication_key(contract)
             try:
                 successor = studio.query_qri(publication_key=key)
             except Exception as error:

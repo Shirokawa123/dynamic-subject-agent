@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-128：同用途取材技术候选
+
+`open_original_whole_product(...technical_variant="baseline"|"followup")`允许同已批whole用途的闭集技术对照；默认baseline contract/policy/projection/key与S127字节保持。followup在新空root发行selector见证绑定的独立QRI/key，既有root不可换variant；共享原人物metadata账，Sender从保存合同及同一sealed快照重建实际选择，不接受调用方任意policy/selector。
+
+候选仅为8种短追问、当前related为空时，从已验证最多2完整轮的用户原话恢复已审资料；先处理既有换题边界，不用旧assistant新增事实，不改current_message/出站字段，history-off不借旧轮。P2修正后v2见证独立；v1精确旧资格/历史/完成回执只读可核，新激活/投影/Sender/历史设置拒绝，generic打开不恢复旧pending，不迁移数据。真实局部收益、5空白与范围限制见[S128报告](reports/2026-10-02-slice-128/REPORT.md)，不是通用语义检索或MVP通过。
+
 ### Slice-127：准确原人物单阶段聊天
 
 用户批准S126纱雾whole用途后，新增独立 `original-character-whole-chat-deepseek-s127-1` authority/manifest/contract，精确绑定已审definition/asset/persona/review/scope；S126 review仍不可执行，旧chat/小林/生活资格和数据不升级。新 `open_original_whole_product` 是production composition入口，Authority独占封存后资格转换、registry、history revision与Host准备，桌面只消费Facade。
