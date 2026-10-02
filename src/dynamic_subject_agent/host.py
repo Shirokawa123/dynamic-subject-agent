@@ -7592,6 +7592,25 @@ class RuntimeHost:
                 reader.execute('ROLLBACK')
             reader.close()
 
+    def preview_whole_message_scope(self, binding, message, enabled):
+        self._require_open()
+        if binding.provider_authority not in WHOLE_AUTHORITIES:
+            raise RuntimeHostRejected('whole-scope-unavailable', 'only current whole chat has a scope preview')
+        self._require_binding_permit(binding)
+        root=binding.timeline_root
+        reader=_connect_readonly(root.timeline_database)
+        try:
+            reader.execute('BEGIN')
+            _verify_timeline_manifest(reader,root_id=root.root_id,store_id=root.timeline_store_id,store_kind='timeline',schema_family=TIMELINE_SCHEMA_FAMILY)
+            _verify_timeline_store_integrity(reader,expected_tables=_TIMELINE_TABLES)
+            engine=TimelineEngine(root,self._authority_for_binding(binding),reader,None)
+            dialogue,basis=engine.preview_whole_dialogue(message,enabled)
+            context=engine.whole_context_basis(expected_head=basis.head_sequence) if binding.provider_authority==CONTEXT_AUTHORITY else dict(context_revision=0,cutoff_sequence=0)
+            return dialogue,basis,context
+        finally:
+            if reader.in_transaction: reader.execute('ROLLBACK')
+            reader.close()
+
     def apply_whole_context_boundary(self, binding, request):
         from dynamic_subject_agent.whole_context_boundary import WholeContextInput, WholeContextBoundaryResponse
         scope = self._read_whole_context(binding, request)

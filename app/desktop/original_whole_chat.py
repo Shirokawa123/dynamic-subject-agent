@@ -9,6 +9,7 @@ from dynamic_subject_agent.application import (ApplicationQuery, ApplicationQuer
     SubjectRequestLookupRequest, SubjectRequestLookupStatus)
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRequest
+from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewRequest
 
 
 APPLICATION_ID = "original-character-whole-chat-s127"
@@ -77,6 +78,22 @@ class OriginalWholeChatAdapter:
             status = value.get("status") if type(value) is dict else None
             value = dict(status=status if status in ("unavailable", "failed-closed") else "unavailable")
         return dict(ok=value["status"] == "available", basis=value,
+            scope_key=sha256((self.product.profile_id + ":" + self.product.timeline_id).encode()).hexdigest())
+
+    def message_scope(self, payload):
+        if (type(payload) is not dict or set(payload) != {"text"} or type(payload["text"]) is not str
+            or not payload["text"].strip() or len(payload["text"]) > 1000 or "\x00" in payload["text"]):
+            raise ValueError("invalid-request")
+        preview = getattr(self.product.application, "preview_whole_message_scope", None)
+        try:
+            value = self._plain(preview(WholeMessageScopePreviewRequest(self.product.profile_id,
+                self.product.timeline_id, payload["text"]))) if callable(preview) else dict(status="unavailable")
+        except Exception:
+            value = dict(status="unavailable")
+        if type(value) is not dict or value.get("status") != "available":
+            status = value.get("status") if type(value) is dict else None
+            value = dict(status=status if status in ("unavailable", "failed-closed") else "unavailable")
+        return dict(ok=value["status"] == "available", message_scope=value,
             scope_key=sha256((self.product.profile_id + ":" + self.product.timeline_id).encode()).hexdigest())
 
     def _boundary_request(self, payload, *, query=False):
@@ -237,4 +254,5 @@ def original_whole_server(product, *, reopen, port=0):
             "/request-result":adapter.lookup,
             "/context-boundary-query":adapter.boundary_query, "/context-boundary":adapter.boundary_apply,
             "/character-basis":adapter.character_basis,
+            "/message-scope":adapter.message_scope,
             "/history":adapter.set_history, "/reload":adapter.reload})

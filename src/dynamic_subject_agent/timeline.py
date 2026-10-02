@@ -7726,11 +7726,15 @@ class TimelineEngine:
     def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
-        whole = getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
-            from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
+        whole = getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+        if whole:
+            command = self._query_command(operation_ref)
+            verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
+            return self._whole_dialogue_from_prefix(command.utterance, enabled, verified)
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
+            from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if enabled or LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
             verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
             if verified is None:
@@ -7844,6 +7848,8 @@ class TimelineEngine:
         if (isinstance(expected_head, bool) or not isinstance(expected_head, int)
             or frozen.head_sequence != expected_head or frozen != snapshot.timeline_basis):
             raise PublicationFailedClosed('dialogue-basis-mismatch', 'dialogue does not match the frozen turn basis')
+        if getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES:
+            return self._verified_whole_dialogue_at_basis(frozen, exclude_operation_id=operation_ref.operation_id)
         records = self.list_conversation_turns(limit=2)
         if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed('dialogue-head-mismatch', 'dialogue does not end at the frozen head')
@@ -7889,6 +7895,59 @@ class TimelineEngine:
                 return None
             cutoff = max(cutoff, int(row[4]))
         return records, cutoff
+
+    def _verified_whole_dialogue_at_basis(self, basis, *, exclude_operation_id=None):
+        from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES or basis != _read_timeline_basis(self._writer):
+            raise PublicationFailedClosed('whole-preview-basis-unverified', 'whole scope requires this actual complete canonical prefix')
+        if _read_admission_gate(self._writer).authority != self._authority:
+            raise PublicationFailedClosed('whole-preview-authority-unverified', 'whole scope no longer matches the exact canonical authority')
+        self._verified_publications()
+        records = self.list_conversation_turns(limit=2)
+        cutoff = self.whole_context_basis(expected_head=basis.head_sequence)['cutoff_sequence'] if CONTEXT_INTENT in self._authority.allowed_intents else 0
+        if CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != basis.head_sequence:
+            raise PublicationFailedClosed('dialogue-head-mismatch', 'whole dialogue does not match its canonical head')
+        rows = self._writer.execute("""SELECT op.operation_id,op.contract_version,op.operation_kind,hex(op.payload_fingerprint),
+            frozen.head_sequence,failure.operation_id FROM subject_operation op
+            LEFT JOIN attempt_cycle_basis frozen USING(operation_id) LEFT JOIN operation_failure failure USING(operation_id)
+            WHERE NOT EXISTS(SELECT 1 FROM timeline_outcome outcome WHERE outcome.operation_id=op.operation_id)""").fetchall()
+        for row in rows:
+            if exclude_operation_id is not None and bytes(row[0]) == UUID(exclude_operation_id).bytes:
+                continue
+            ref = self._admitted_for_operation(self._writer, bytes(row[0]), replayed=True).operation_ref
+            command = self._query_command(ref)
+            if row[4] is None or row[5] is None or self.query(ref).operation_state is not OperationState.FAILED_CLOSED:
+                return None
+            self.query_failure(ref)
+            if type(command) is WholeContextInput:
+                self._verify_whole_failed_prefix(ref, int(row[4]), basis)
+                continue
+            if int(row[4]) < cutoff:
+                self._verify_whole_failed_prefix(ref, int(row[4]))
+                continue
+            if is_first_life_dialogue_control(command.utterance):
+                return None
+            cutoff = max(cutoff, int(row[4]))
+        return records, cutoff
+
+    def _whole_dialogue_from_prefix(self, message, enabled, verified):
+        from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
+        from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        from dynamic_subject_agent.recent_dialogue import select_recent_dialogue
+        if verified is None:
+            return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved')
+        records, cutoff = verified
+        if (is_first_life_dialogue_control(message)
+            or records and records[-1].head_sequence > cutoff and is_first_life_dialogue_control(records[-1].user_text)):
+            return CharacterDialogueBasis('restricted', bool(records), problem_code='character-history-restricted')
+        selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_first_life_dialogue_control) if enabled else ()
+        return CharacterDialogueBasis('available', bool(records), selected)
+
+    def preview_whole_dialogue(self, message, enabled):
+        if type(enabled) is not bool:
+            raise PublicationFailedClosed('character-history-policy-invalid', 'preview disclosure must be explicit')
+        basis = _read_timeline_basis(self._writer)
+        return self._whole_dialogue_from_prefix(message, enabled, self._verified_whole_dialogue_at_basis(basis)), basis
 
     def preference_question_before(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.preference_clarification import PendingPreference

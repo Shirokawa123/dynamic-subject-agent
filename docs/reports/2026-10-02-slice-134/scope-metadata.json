@@ -1,0 +1,93 @@
+{
+  "version": "s134-actual-local-preview-metadata-1",
+  "attempts": 2,
+  "committed_turns": 1,
+  "empty_responses": 1,
+  "automatic_retries": 0,
+  "global_attempts": 58,
+  "canonical_text_exported": false,
+  "steps": {
+    "turn1": {
+      "status": "complete",
+      "preview_projection_digest": "e512db71c56e5df3f0ca6bd61af035869b6147f67223687b5dee2d74c8cb4bbf",
+      "preview_snapshot": "03b07f50de07bf7c766f2cb14a8128117505cf5929e7472a4312ecc33a0518d4",
+      "exchange_turns": 0,
+      "has_prior": true,
+      "preview_model_calls": 0,
+      "observation": {
+        "task_kind": "character-original-whole-reply",
+        "purpose": "original-character-whole-chat",
+        "stage": "whole-reply",
+        "status": "complete",
+        "request_digest": "e512db71c56e5df3f0ca6bd61af035869b6147f67223687b5dee2d74c8cb4bbf",
+        "wire_sha256": "867f7e2a8cbadfb7c362ec30057ef7efa7ff7b53e3b4bc7b88653e0aec28c0f7",
+        "model": "deepseek-flash",
+        "usage": {
+          "prompt_tokens": 2303,
+          "completion_tokens": 232,
+          "total_tokens": 2535,
+          "prompt_cache_hit_tokens": 2048,
+          "prompt_cache_miss_tokens": 255
+        },
+        "finish_reason": "stop",
+        "elapsed_seconds": 2.4786796999978833
+      },
+      "request_digest_matches": true,
+      "committed_turns": 1,
+      "old_history_preserved": true,
+      "global_before": 56,
+      "global_after": 57
+    },
+    "switches": {
+      "model_calls": 0,
+      "on_exchange_turns": 1,
+      "off_exchange_turns": 0,
+      "restored_exchange_turns": 1,
+      "setting_revision_invalidates_snapshot": true,
+      "reopen_same_projection": true,
+      "canonical_unchanged": true
+    },
+    "turn2": {
+      "status": "failed-closed",
+      "preview_projection_digest": "e3dba4df276b187bdfe1856895f324bd16bc6f170230195db310a215ba3159a0",
+      "preview_snapshot": "bd089cd3370eac46eea083adb9a155fce60333341089a7019968b511bbb54799",
+      "exchange_turns": 1,
+      "has_prior": true,
+      "preview_model_calls": 0,
+      "observation": {
+        "task_kind": "character-original-whole-reply",
+        "purpose": "original-character-whole-chat",
+        "stage": "whole-reply",
+        "status": "failed-closed",
+        "request_digest": "e3dba4df276b187bdfe1856895f324bd16bc6f170230195db310a215ba3159a0",
+        "wire_sha256": "6450701a647fa58871835098bb733d52f8ffe51e2a945854d26de4df512f3ce2",
+        "error_code": "response-content-empty",
+        "model": "deepseek-flash",
+        "usage": {
+          "prompt_tokens": 2380,
+          "completion_tokens": 207,
+          "total_tokens": 2587,
+          "prompt_cache_hit_tokens": 2176,
+          "prompt_cache_miss_tokens": 204
+        },
+        "finish_reason": "stop",
+        "elapsed_seconds": 2.2557864999980666
+      },
+      "request_digest_matches": true,
+      "committed_turns": 0,
+      "old_history_preserved": true,
+      "global_before": 57,
+      "global_after": 58
+    }
+  },
+  "ui": {
+    "read_preview_zero_model": true,
+    "edit_clears_old_content": true,
+    "explicit_refresh_uses_new_draft": true,
+    "close_preserves_draft": true,
+    "canonical_turns": 5,
+    "history_enabled": true,
+    "model_calls": 0,
+    "own_test_draft_cleared": true
+  }
+}

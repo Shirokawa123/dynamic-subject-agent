@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-134：本轮范围只读预览
+
+Facade `preview_whole_message_scope(WholeMessageScopePreviewRequest)`以真实readonly Timeline basis和fresh已批whole授权复用正式projection。whole专用前缀核验/控制/失败证明/cutoff/两完整轮窗口共用，正式发送wrapper保留真实admitted/frozen完整basis校验；preview不虚构operation、不admit/claim/恢复或写Timeline，不取得发送许可。两次readonly快照及末次auth/scope复核变化则空返回，canonical gate/legacy receipt-only与关闭历史的完整性规则保持。
+
+UI按需呈现内容范围，改草稿/设置/上下文/新状态清旧预览，迟到结果丢弃；正式send不携预览票。实际0/1轮两个请求digest与预览相同，1正常提交1空白；off/on和重开0模型保持canonical。预览是当前快照，不保证之后发送仍相同或模型表达正确，见[S134报告](reports/2026-10-02-slice-134/REPORT.md)。
+
 ### Slice-133：当前人物依据只读查看
 
 Facade `query_character_basis()`通过Authority fresh读取并验证当前profile/timeline、QRI及准确whole sealed envelope，返回知识的事实/信念与事件/知情范围、组织单元的支持文本和有边界的作者解释；回程复核当前registry scope，关闭/身份变化/损坏只返空unavailable/failed-closed。读取不进入worker、不等待模型所持registry锁，不创建资格、写Timeline或更改出站。DTO不带内部ID/digest/cues或虚构原文出处。

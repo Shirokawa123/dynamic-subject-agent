@@ -22,4 +22,4 @@ HAX [G7](https://www.microsoft.com/en-us/haxtoolkit/guideline/support-efficient-
 
 补核[SQLite官方Scrolling Window Queries](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)：OFFSET需要跳过前面的结果，官方示例用上一页最后的有序键继续；效率结论依赖合适索引。本次只适配稳定键边界这一机制，使用既有head_sequence，仍先完整验证canonical，不据此声称当前全链校验已变成常数成本，也不为分页增加SQLite版本/索引/表。以序号而非位置定位可避免新消息插入头部导致旧页位置移动，这是本仓append-only事实下的设计推论。已按context7技能resolve到`/websites/sqlite_docs`并query；未命中该专题，故回退到上述官方页面。
 
-验收应包含超过20轮的合成canonical、真实本支既有原话只读比对、多页无漏重、同身份边界前后均可查、未结算/坏链关闭、查询/翻页/刷新0模型且不增加记录。合成大量历史只用于接口，不当作真实人物体验；真实正文不导出Git。无新库或存储、无更多历史外发；不做全文向量索引、搜索模型或跨root汇总。
+验收应包含超过20轮的合成canonical、真实本支既有原话只读比对、多页无漏重、同身份边界前后均可查、未结算不冒充已提交/坏链关闭、查询/翻页/刷新0模型且不增加记录。此处读取是用户本地查原话，不是Provider取材；待处理新轮不进入结果，也不必因此遮住已经核实的旧提交，history-off同样不删除本地可查历史。具体pending提示随当前只读合同落实。合成大量历史只用于接口，不当作真实人物体验；真实正文不导出Git。无新库或存储、无更多历史外发；不做全文向量索引、搜索模型或跨root汇总。

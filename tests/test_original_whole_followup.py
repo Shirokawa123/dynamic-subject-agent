@@ -231,6 +231,9 @@ def test_immutable_legacy_candidate_allows_receipt_reads_but_never_new_activatio
             declared_intent="ask-collaborator-status", utterance="普通合成问题。", language="zh", provenance="project-original")
         lookup = receipts.application.lookup_subject_request(SubjectRequestLookupRequest(command, "original-whole-test-legacy-complete"))
         assert lookup.query_status == "found" and lookup.operation.projection.expression_text == original.projection.expression_text
+        from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewRequest
+        preview = receipts.application.preview_whole_message_scope(WholeMessageScopePreviewRequest(receipts.profile_id, receipts.timeline_id, "旧候选只读结果。"))
+        assert preview.status == "unavailable" and preview.problem_code == "whole-scope-receipt-only" and preview.character_core == ()
         rejected = send(receipts, "新输入不得启旧候选。", "legacy-new")
         assert rejected.status == "unavailable" and rejected.operation_ref is None
         assert receipts.application.set_reviewed_character_history(False).status == "unavailable"

@@ -371,6 +371,7 @@ class _ApplicationRouter:
         first_life_development=False,
         reviewed_chat_status=None,
         character_basis_reader=None,
+        whole_scope_reader=None,
         reviewed_history_setter=None,
         local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
         local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -390,6 +391,7 @@ class _ApplicationRouter:
         self._host = host
         self._binding = binding
         self._character_basis_reader = character_basis_reader
+        self._whole_scope_reader = whole_scope_reader
         self._single_command_authorization = single_command_authorization
         self._start_runtime = start_runtime
         self._stop_runtime = stop_runtime
@@ -1187,6 +1189,53 @@ class _ApplicationRouter:
         except Exception:
             return CharacterBasisView('failed-closed', 'character-basis-unverified')
 
+    def preview_whole_message_scope(self, request):
+        from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewRequest, WholeMessageScopePreviewView
+        from dynamic_subject_agent.original_whole_chat import projection_for_contract, validate_whole_envelope, digest, contract_variant
+        from dynamic_subject_agent.character_chat_context import SelfKnowledge
+        if (self._closed or type(request) is not WholeMessageScopePreviewRequest or self._whole_scope_reader is None
+            or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id):
+            return WholeMessageScopePreviewView('unavailable','whole-scope-unavailable')
+        try:
+            command=SubjectCommand.contribute_utterance(target_profile_id=request.target_profile_id,target_timeline_id=request.target_timeline_id,
+                declared_intent='ask-collaborator-status',utterance=request.text,language='zh',provenance='project-original')
+            if len(command.utterance)>1000:
+                return WholeMessageScopePreviewView('unavailable','whole-scope-message-invalid')
+            source=self._whole_scope_reader()
+            validate_whole_envelope(source['envelope'],source['contract'])
+            if contract_variant(source['contract']) == 'followup-legacy':
+                return WholeMessageScopePreviewView('unavailable','whole-scope-receipt-only')
+            authorization=source['authorization']
+            dialogue,basis,context=self._host.preview_whole_message_scope(self._binding,command.utterance,authorization.history_enabled)
+            if dialogue.status!='available':
+                return WholeMessageScopePreviewView('unavailable','whole-scope-pending-or-restricted')
+            projection=projection_for_contract(source['envelope'],source['identity'],command.utterance,dialogue,authorization.history_enabled,source['contract'])
+            current=self._whole_scope_reader()
+            if current['authorization']!=authorization or current['contract']!=source['contract'] or self._closed:
+                return WholeMessageScopePreviewView('unavailable','whole-scope-changed')
+            # A final read fences publication/control changes during selection.
+            latest_dialogue,latest_basis,latest_context=self._host.preview_whole_message_scope(self._binding,command.utterance,authorization.history_enabled)
+            final_source=self._whole_scope_reader()
+            if (latest_dialogue.status!='available' or latest_basis!=basis or latest_context!=context
+                or final_source['authorization']!=authorization or final_source['contract']!=source['contract'] or self._closed):
+                return WholeMessageScopePreviewView('unavailable','whole-scope-changed')
+            return WholeMessageScopePreviewView('available',current_message=command.utterance,history_enabled=authorization.history_enabled,
+                has_prior_committed_exchange=dialogue.has_prior_committed_exchange,
+                character_core=tuple(SelfKnowledge(**row) for row in projection.background['character_core']),
+                self_knowledge=tuple(SelfKnowledge(**row) for row in projection.background['self_knowledge']),
+                personality_count=len(projection.background['personality']),recent_dialogue=projection.exchange,
+                context_revision=context['context_revision'],cutoff_sequence=context['cutoff_sequence'],
+                projection_digest=digest(asdict(projection)),snapshot_fingerprint=digest(dict(basis=asdict(basis),authorization=asdict(authorization),
+                    context=context,command=command.payload_fingerprint)),
+                limitations=('这里只展示当前快照会提供的内容范围，不解释模型思考或保证回复真实。',
+                    '编辑文字、身份、历史开关或交流边界变化后应重新查看；发送时仍独立重核。'))
+        except RuntimeError as error:
+            return WholeMessageScopePreviewView('unavailable','whole-scope-unavailable')
+        except PreAdmissionRejected:
+            return WholeMessageScopePreviewView('unavailable','whole-scope-message-invalid')
+        except Exception:
+            return WholeMessageScopePreviewView('failed-closed','whole-scope-unverified')
+
     def set_reviewed_character_history(self, enabled):
         from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
         with self._lock:
@@ -1442,6 +1491,9 @@ class ApplicationFacade:
     def query_character_basis(self):
         return self.__router.query_character_basis()
 
+    def preview_whole_message_scope(self, request):
+        return self.__router.preview_whole_message_scope(request)
+
     def set_reviewed_character_history(self, enabled):
         return self.__router.set_reviewed_character_history(enabled)
 
@@ -1478,6 +1530,7 @@ def _create_application_facade(
     _first_life_development=False,
     _reviewed_chat_status=None,
     _character_basis_reader=None,
+    _whole_scope_reader=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -1508,6 +1561,7 @@ def _create_application_facade(
         first_life_development=_first_life_development,
         reviewed_chat_status=_reviewed_chat_status,
         character_basis_reader=_character_basis_reader,
+        whole_scope_reader=_whole_scope_reader,
         reviewed_history_setter=_reviewed_history_setter,
         local_identity_lister=_local_identity_lister,
         local_identity_selector=_local_identity_selector,

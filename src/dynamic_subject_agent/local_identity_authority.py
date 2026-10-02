@@ -1390,6 +1390,19 @@ class LocalIdentityAuthority:
         finally:
             self._history_lock.release()
 
+    def try_whole_scope_snapshot(self, expected_identity_id, expected_timeline_id):
+        if not self._history_lock.acquire(blocking=False):
+            raise RuntimeError('whole-scope-busy')
+        try:
+            state, record, identity = self._active_chat_record(expected_identity_id)
+            if identity.qri.provider_authority not in WHOLE_AUTHORITIES or record.get('timeline_id') != expected_timeline_id:
+                raise RuntimeError('whole-scope-changed')
+            from copy import deepcopy
+            return dict(envelope=deepcopy(identity.reviewed_definition), contract=deepcopy(identity.qri.reviewed_chat_contract),
+                identity=identity.runtime_identity, authorization=self._original_whole_authorization_from_record(state,record,identity))
+        finally:
+            self._history_lock.release()
+
     @contextmanager
     def original_whole_guard(self, authorization):
         if type(authorization) is not OriginalWholeAuthorization:

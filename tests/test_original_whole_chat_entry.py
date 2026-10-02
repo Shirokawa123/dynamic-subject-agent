@@ -20,6 +20,9 @@ from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatS
 from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryResponse
 from dynamic_subject_agent.character_basis import (CharacterBasisView, CharacterBasisKnowledge,
     CharacterBasisUnit, CharacterBasisInterpretation)
+from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewView
+from dynamic_subject_agent.character_chat_context import SelfKnowledge
+from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -33,6 +36,15 @@ def synthetic_basis():
         stage_description="合成初次交流。", knowledge=(fact, belief), core=(CharacterBasisUnit("合成核心", "核心概括。", (fact,)),),
         details=(CharacterBasisUnit("工作关注", "对压力的信念。", (belief,)),), personality=(persona,),
         source_note="当前封存的已审依据，聊天不是依据。", trace_note="原小说逐段定位尚未接入。", limitations=("不是本轮全部选材或模型推理。",))
+
+
+def synthetic_scope(text="当前合成草稿。", history=True):
+    core = SelfKnowledge("core", "合成人物有限核心。", "fact", "direct", "before", "before")
+    related = SelfKnowledge("episode", "已审学习概括。", "fact", "linked-evidence", "before", "before")
+    return WholeMessageScopePreviewView("available", current_message=text, history_enabled=history,
+        has_prior_committed_exchange=True, character_core=(core,), self_knowledge=(related,), personality_count=4,
+        recent_dialogue=(RecentDialogueTurn("先前合成消息。", "先前合成回复。"),) if history else (),
+        projection_digest="a"*64, snapshot_fingerprint="b"*64, limitations=("发送前仍重新核对，不增加本轮权限。",))
 
 
 class FakeWholeFacade:
@@ -344,6 +356,40 @@ def test_basis_http_only_reads_facade_and_never_returns_failed_cached_body(modul
         failed = post({})
         assert not failed["ok"] and failed["basis"] == {"status": "failed-closed"}
         assert not facade.submissions and not facade.lookups and not facade.waits and facade.state.history_enabled is True
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+def test_scope_http_is_nonce_free_read_only_and_preserves_exact_local_draft(modules):
+    desktop, _ = modules
+    facade = FakeWholeFacade(); requests = []
+    def preview(request):
+        requests.append(request)
+        return synthetic_scope(request.text)
+    facade.preview_whole_message_scope = preview
+    facade.query = lambda *args: (_ for _ in ()).throw(AssertionError("scope route must not fetch UI history"))
+    product = fake_product(facade)
+    server = desktop.original_whole_server(product, reopen=lambda: product)
+    thread = Thread(target=server.serve_forever, daemon=True); thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            token = re.search(r"TOKEN='([^']+)'", response.read().decode()).group(1)
+        def post(payload):
+            with urlopen(Request(base + "/message-scope", data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Chat-Token": token}), timeout=5) as response:
+                return json.load(response)
+        text = "  本地合成草稿\n"
+        response = post(dict(text=text))
+        assert response["ok"] and response["message_scope"]["current_message"] == text
+        assert requests[0].text == text and requests[0].target_profile_id == product.profile_id
+        assert requests[0].target_timeline_id == product.timeline_id and "request_id" not in response
+        with pytest.raises(HTTPError) as error:
+            post(dict(text=text, request_id=str(uuid4())))
+        assert error.value.code == 400 and len(requests) == 1
+        facade.preview_whole_message_scope = lambda request: replace(synthetic_scope(request.text), status="failed-closed")
+        assert post(dict(text=text))["message_scope"] == {"status": "failed-closed"}
+        assert not facade.submissions and not facade.operations and not facade.lookups and facade.state.history_enabled
     finally:
         server.shutdown(); server.server_close(); thread.join(timeout=5)
 
@@ -683,3 +729,60 @@ const available={ok:true,scope_key:input.state.scope_key,basis:input.basis};
         capture_output=True, timeout=20)
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert result.stdout == b"character-basis-page-complete"
+
+
+def test_scope_page_edit_settings_state_and_late_response_never_send_or_change_nonce(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product()
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    page = (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")
+    script = re.search(r"<script>([\s\S]*?)</script>", page).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state;
+const element=()=>({value:'',textContent:'',disabled:false,hidden:true,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}});
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> {throw Error('preview cannot generate nonce')}},setTimeout:callback=>setImmediate(callback),
+ fetch:async(path,options)=>{if(path==='/status')return {ok:true,json:async()=>status};calls.push({path,body:JSON.parse(options.body)});
+ return new Promise(resolve=>waiting.push(value=>resolve({ok:true,json:async()=>value})))}};
+vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),click=id=>get(id).handlers.click();
+const text=item=>item.textContent+item.children.map(text).join('');
+const draft=value=>{get('draft').value=value;get('draft').handlers.input()};
+const available=value=>({ok:true,scope_key:input.state.scope_key,message_scope:{...input.preview,current_message:value}});
+(async()=>{
+ await flush();draft('当前合成草稿。');const before=new Map(storage);
+ let preview=click('scope-open');assert.deepEqual(calls.at(-1),{path:'/message-scope',body:{text:'当前合成草稿。'}});
+ waiting.shift()(available('当前合成草稿。'));await preview;
+ assert(text(get('scope-content')).includes('先前合成消息。'));assert(text(get('scope-content')).includes('已审学习概括。'));
+ assert.equal(text(get('scope-content')).includes(input.preview.projection_digest),false);
+ assert.deepEqual(storage,before);assert.equal(get('draft').value,'当前合成草稿。');
+ draft('编辑后的草稿。');assert.equal(text(get('scope-content')),'');
+ preview=click('scope-refresh');draft('再次编辑的草稿。');waiting.shift()(available('编辑后的草稿。'));await preview;
+ assert.equal(text(get('scope-content')),'');assert.equal(get('draft').value,'再次编辑的草稿。');
+ preview=click('scope-refresh');waiting.shift()(available('再次编辑的草稿。'));await preview;
+ get('history').checked=false;get('history').handlers.change();assert.equal(text(get('scope-content')),'');
+ const off={...input.state,character:{...input.state.character,history_enabled:false}};
+ waiting.shift()({ok:true,state:off});await flush();await flush();
+ preview=click('scope-refresh');waiting.shift()({ok:true,scope_key:input.state.scope_key,message_scope:{...input.preview,current_message:'再次编辑的草稿。',history_enabled:false,recent_dialogue:[]}});await preview;
+ assert.equal(text(get('scope-content')).includes('先前合成消息。'),false);assert(text(get('scope-content')).includes('历史参考已关闭'));
+ status=off;await click('refresh');assert.equal(text(get('scope-content')),'');
+ preview=click('scope-refresh');waiting.shift()({ok:false,scope_key:input.state.scope_key,message_scope:{status:'unavailable'}});await preview;
+ assert.equal(text(get('scope-content')),'');assert.equal(get('draft').value,'再次编辑的草稿。');
+ click('scope-close');assert.equal(get('scope-panel').hidden,true);
+ assert.equal(calls.some(row=>row.path==='/send'||row.path==='/context-boundary'),false);
+ process.stdout.write('whole-message-scope-page-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state, preview=asdict(synthetic_scope()))).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"whole-message-scope-page-complete"
