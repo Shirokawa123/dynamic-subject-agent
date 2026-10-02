@@ -14,6 +14,8 @@ def main():
         summary = json.loads(path.read_text(encoding="utf-8"))
         if not summary.get("live"):
             continue
+        if summary["package_sha256"]!="4e4ed6a664821d18f827d7a6f62d50aeec8b07222709ef238a9853bbba2e88e5":
+            continue
         manifest_path = path.with_name("manifest.json")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         plan = ProtocolRun(path.parent, summary["run_digest"])

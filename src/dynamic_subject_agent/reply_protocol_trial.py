@@ -39,12 +39,13 @@ from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_COD
 AUTHORIZATION = "user-unlimited-model-development-2026-10-01"
 PURPOSE = "reply-protocol-comparison"
 PACKAGE_DIGEST = "4e4ed6a664821d18f827d7a6f62d50aeec8b07222709ef238a9853bbba2e88e5"
+EXPRESSION_SCOPE_PACKAGE_DIGEST = "a70342797db073389d511f7cce49c5de82e029df8f81c4f27375d848d780768e"
 VARIANTS = ("baseline", "json-example")
 RESPONSE_FORMAT_VARIANTS = ("json-object", "text-json")
 INSTRUCTION_SCOPE_VARIANTS = ("global-style", "reply-text-style")
 REASONING_EFFORT_VARIANTS = ("high", "low")
 THINKING_MODE_VARIANTS = ("thinking", "non-thinking")
-STUDIES = ("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode")
+STUDIES = ("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode", "self-choice", "current-topic")
 GLOBAL_STYLE_SENTENCE = "使用第一人称自然中文短消息，通常两三句；不输出动作旁白、档案、字段名、规则、分析或思考过程。"
 REPLY_TEXT_STYLE_SENTENCE = (
     "本接口需要JSON数据，外层字段供程序读取。reply_text的值才是给用户看的正文："
@@ -92,6 +93,22 @@ class ProtocolTrialView:
 
 
 def _verified_package(package):
+    if type(package) is dict and package.get("version")=="s120-expression-scope-package-1":
+        content=dict(package); supplied=content.pop("package_sha256",None)
+        if supplied!=EXPRESSION_SCOPE_PACKAGE_DIGEST or digest(content)!=EXPRESSION_SCOPE_PACKAGE_DIGEST:
+            raise ValueError("exact S120 expression package required")
+        from dynamic_subject_agent.first_life_development_trial import scoped_reply_wire
+        from dynamic_subject_agent.first_life_self_choice_candidate import preview_self_choice_candidate
+        from dynamic_subject_agent.first_life_current_topic_candidate import preview_current_topic_candidate
+        if len(package["cases"])!=5 or len({r["case_id"] for r in package["cases"]})!=5:
+            raise ValueError("exact five expression inputs required")
+        for row in package["cases"]:
+            task=recorded_reply_task(row["task_kind"],row["payload"])
+            wires={"baseline":scoped_reply_wire(task),"self-choice":preview_self_choice_candidate(task).wire,
+                "current-topic":preview_current_topic_candidate(task).wire}
+            if row["wires"]!={name:dict(utf8=wire.decode(),sha256=sha256(wire).hexdigest()) for name,wire in wires.items()}:
+                raise ValueError("expression builders differ from frozen wires")
+        return package
     if type(package) is not dict or package.get("package_sha256") != PACKAGE_DIGEST:
         raise ValueError("exact S115 protocol package required")
     content = dict(package)
@@ -134,11 +151,15 @@ def _variants(study):
         raise ValueError("known frozen protocol study required")
     return {"json-example": VARIANTS, "response-format": RESPONSE_FORMAT_VARIANTS,
         "instruction-scope": INSTRUCTION_SCOPE_VARIANTS, "reasoning-effort": REASONING_EFFORT_VARIANTS,
-        "thinking-mode": THINKING_MODE_VARIANTS}[study]
+        "thinking-mode": THINKING_MODE_VARIANTS,"self-choice":("baseline","self-choice"),
+        "current-topic":("self-choice","current-topic")}[study]
 
 
 def _sequence(package, study):
     _variants(study)
+    if study in ("self-choice","current-topic"):
+        return [dict(case_id=row["case_id"],variant=name,maximum_attempts=1)
+            for i,row in enumerate(package["cases"]) for name in (_variants(study) if i%2==0 else _variants(study)[::-1])]
     if study == "json-example":
         return package["sequence"]
     names = dict(zip(VARIANTS, _variants(study), strict=True))
@@ -148,6 +169,8 @@ def _sequence(package, study):
 def _study_wire(row, study, variant):
     if variant not in _variants(study):
         raise ValueError("variant does not belong to this study")
+    if study in ("self-choice","current-topic"):
+        return row["wires"][variant]["utf8"].encode("utf-8")
     if study == "json-example":
         return row["baseline_wire_utf8" if variant == "baseline" else "candidate_wire_utf8"].encode("utf-8")
     if study in ("reasoning-effort", "thinking-mode"):
@@ -236,9 +259,12 @@ def _manifest(root, package, live, study="json-example"):
     elif root.is_relative_to(fixed_development_root().resolve()):
         raise ValueError("offline protocol run cannot use the real development root")
     _verified_package(package)
+    semantic=study in ("self-choice","current-topic")
+    if semantic!=(package.get("version")=="s120-expression-scope-package-1"):
+        raise ValueError("expression study and exact material package must match")
     result = dict(version="reply-protocol-run-1", authorization=AUTHORIZATION, purpose=PURPOSE,
         call_limit=None, automatic_retries=0, live=live, run_id=run_id, root=str(root),
-        package_digest=PACKAGE_DIGEST, package=package)
+        package_digest=package["package_sha256"], package=package)
     if study == "response-format":
         result.update(version="reply-protocol-run-2", study=study, study_spec=_response_format_spec(package))
     elif study == "instruction-scope":
@@ -247,6 +273,13 @@ def _manifest(root, package, live, study="json-example"):
         result.update(version="reply-protocol-run-4", study=study, study_spec=_reasoning_effort_spec(package))
     elif study == "thinking-mode":
         result.update(version="reply-protocol-run-5", study=study, study_spec=_thinking_mode_spec(package))
+    elif semantic:
+        cases={row["case_id"]:row for row in package["cases"]}
+        result.update(version="reply-protocol-run-6" if study=="self-choice" else "reply-protocol-run-7",study=study,
+            study_spec=dict(version="s120-expression-scope-study-1",variants=list(_variants(study)),
+                changed_field="messages[0].content",changed_paragraphs=[3,5] if study=="self-choice" else [5],
+                output_validation="unchanged-strict-json-and-original-reply-schema",
+                sequence=[dict(case_id=row["case_id"],variant=row["variant"],wire_sha256=sha256(_study_wire(cases[row["case_id"]],study,row["variant"])).hexdigest()) for row in _sequence(package,study)]))
     return result
 
 

@@ -25,8 +25,8 @@ OUTPUT_FAILURES = frozenset(("response-content-empty", "response-content-json", 
     "response-truncated", "response-overbudget", "format-example-copied"))
 
 
-def run_once(run_root, *, live, transport=None, label="initial-format-comparison", study="json-example"):
-    plan = open_protocol_run(run_root, PACKAGE, live=live, study=study)
+def run_once(run_root, *, live, transport=None, label="initial-format-comparison", study="json-example", package_path=PACKAGE):
+    plan = open_protocol_run(run_root, package_path, live=live, study=study)
     observations, results = [], []
     with (plan.root / "results.jsonl").open("x", encoding="utf-8") as journal:
         def append(row):
@@ -40,7 +40,7 @@ def run_once(run_root, *, live, transport=None, label="initial-format-comparison
             run_digest=plan.digest, live=live, study=study, call_limit=None,
             planned_requests=len(plan.sequence), automatic_retries=0))
         stop_reason = None
-        with open_reply_protocol_lab(plan.root, PACKAGE, live=live, study=study, _transport=transport,
+        with open_reply_protocol_lab(plan.root, package_path, live=live, study=study, _transport=transport,
                 response_audit=observed) as product:
             for number, row in enumerate(plan.sequence, 1):
                 request = plan.request_for(row["case_id"], row["variant"])
@@ -84,13 +84,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--label", default="initial-format-comparison")
-    parser.add_argument("--study", choices=("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode"), default="json-example")
+    parser.add_argument("--study", choices=("json-example", "response-format", "instruction-scope", "reasoning-effort", "thinking-mode", "self-choice", "current-topic"), default="json-example")
     args = parser.parse_args()
     if not args.live:
         parser.error("use --live for the authorized actual run; tests inject a local transport")
     run_root = fixed_protocol_runs_root() / str(uuid4())
     print(canonical_json(dict(started_run=str(run_root), label=args.label, study=args.study, call_limit=None)), flush=True)
-    result = run_once(run_root, live=True, label=args.label, study=args.study)
+    package_path=ROOT/"docs/experiments/s120/expression-scope.json" if args.study in ("self-choice","current-topic") else PACKAGE
+    result = run_once(run_root, live=True, label=args.label, study=args.study,package_path=package_path)
     print(canonical_json(dict(root=str(run_root), status=result["status"], variants=result["variants"],
         development_attempts_total=result["development_attempts_total"], call_limit=None)))
     return 0 if result["status"] == "completed" else 1
