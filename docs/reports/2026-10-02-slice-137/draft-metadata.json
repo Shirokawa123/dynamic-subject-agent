@@ -1,0 +1,67 @@
+{
+  "version": "s137-actual-pending-draft-metadata-1",
+  "attempts": 1,
+  "committed_turns": 0,
+  "empty_responses": 1,
+  "automatic_retries": 0,
+  "global_attempts": 59,
+  "original_submitted_message_matches_actual_projection": true,
+  "next_draft_not_sent": true,
+  "pending_ui": {
+    "draftEditable": true,
+    "feedback": "",
+    "historyDisabled": true,
+    "sendDisabled": true,
+    "sendLabel": "处理中…",
+    "turns": 5,
+    "draftMatchesOwnedNextText": true
+  },
+  "after_ui": {
+    "draftEditable": true,
+    "feedback": "这一轮已结束，没有形成可提交的回复；草稿保留，可以明确重新发送。",
+    "historyDisabled": false,
+    "sendDisabled": false,
+    "sendLabel": "发送",
+    "turns": 5,
+    "draftMatchesOwnedNextText": true
+  },
+  "canonical_history_unchanged": true,
+  "canonical_text_exported": false,
+  "observation": {
+    "task_kind": "character-original-whole-reply",
+    "purpose": "original-character-whole-chat",
+    "stage": "whole-reply",
+    "status": "failed-closed",
+    "request_digest": "04ace60c798ccfc5af06012dd776ceabce0b1aba4889edcd6260fe0b1cf4613a",
+    "wire_sha256": "912fbf50bd8dacf9defa8cd8704d3f7e6acc1f87275fc13bf9f4c4cf77f6b34e",
+    "error_code": "response-content-empty",
+    "model": "deepseek-flash",
+    "usage": {
+      "prompt_tokens": 2302,
+      "completion_tokens": 188,
+      "total_tokens": 2490,
+      "prompt_cache_hit_tokens": 2048,
+      "prompt_cache_miss_tokens": 254
+    },
+    "finish_reason": "stop",
+    "elapsed_seconds": 2.4602831000083825
+  },
+  "own_test_draft_cleared": true,
+  "production_entry_seeded": false,
+  "production_final": {
+    "url": "http://127.0.0.1:8788",
+    "health": {
+      "application": "original-character-context-chat-s136"
+    },
+    "process_id": 49040,
+    "active": true,
+    "history_empty": true,
+    "context_revision": 0,
+    "pending": false,
+    "s137_page_loaded": true,
+    "global_attempts": 59,
+    "identity_same_as_s136": true,
+    "final_feedback_copy_loaded": true
+  },
+  "final_copy_note": "真实观察之后，仅将已知终态失败反馈改为点击发送会提交输入区的当前文字；没有重复模型调用。"
+}

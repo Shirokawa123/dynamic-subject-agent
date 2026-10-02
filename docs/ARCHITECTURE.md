@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-137：待处理期间保留下一稿
+
+HTML仅在当前可核scope、presentation_pending及本页保存的request_id相符时开放编辑，提交/Enter仍拒busy/pending/context pending，原request_text/nonce与可变draft.text分开。success只清未改原稿，失败/unknown保后写文本，IME composition同scope暂空不被render复填。没有队列或自动发送；最终已知失败反馈明确点击发送提交输入区当前文字。
+
+24项入口行为与独立复核通过；真实1轮空白终态前可编辑、后新稿保持未发送，旧5轮不变。success/unknown另合成验证，正式8788仍为空且身份不变。两句Facade限制仅文案，不改Provider/contract/digest，见[S137报告](reports/2026-10-02-slice-137/REPORT.md)。
+
 ### Slice-136：独立context启动生命周期
 
 `serve_original_context_chat.py`/`Start-OriginalContextChat.cmd`固定新root、8788及独立health标识`original-character-context-chat-s136`，准确context-boundary variant；新root先纯review再创建，freeze不旧select，初始空聊天。existing/reopen在任何Host/coldrecover前经Authority纯核pointer=active exact scope，opener显式保存identity_id，错误身份无激活副作用。明确拒绝连接才初始化，其他健康失败保持现状；Windows实测后探测为6秒。

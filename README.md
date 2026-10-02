@@ -4,7 +4,7 @@
 
 ## 当前角色聊天试用
 
-本机双击 [Start-OriginalContextChat.cmd](app/desktop/Start-OriginalContextChat.cmd)，打开[新交流入口](http://127.0.0.1:8788)。首次是一段空的独立聊天，以后从同一份本地记录继续；启动、查看依据、查旧聊天与重开不会生成回复。该入口包含新交流边界、人物依据、本轮参考范围和完整已提交历史的本地查找。
+本机双击 [Start-OriginalContextChat.cmd](app/desktop/Start-OriginalContextChat.cmd)，打开[新交流入口](http://127.0.0.1:8788)。首次是一段空的独立聊天，以后从同一份本地记录继续；启动、查看依据、查旧聊天与重开不会生成回复。该入口包含新交流边界、人物依据、本轮参考内容和完整已提交历史的本地查找；等待回复时可继续写下一条，结束后仍须自己点击发送。
 
 [原入口](http://127.0.0.1:8785)保留原聊天；本次交付检查时它未监听，可通过 [Start-OriginalWholeChat.cmd](app/desktop/Start-OriginalWholeChat.cmd)打开。本批未主动停止/重启该旧服务，原因未核实。新旧记录分别保存，程序不会复制或迁移它们。本地能查完整已提交历史，模型仍只接收已批人物资料、主动提交文字≤1000与可关闭的最多两完整轮≤4000。
 

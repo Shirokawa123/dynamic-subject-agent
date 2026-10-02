@@ -931,3 +931,139 @@ const available=archive=>({ok:true,scope_key:input.state.scope_key,archive});
         capture_output=True, timeout=20)
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert result.stdout == b"whole-chat-archive-page-complete"
+
+
+@pytest.mark.parametrize("outcome_status", ["success", "failed-closed", "unknown"])
+def test_pending_next_draft_retains_original_request_and_needs_explicit_next_send(modules, outcome_status):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product(FakeBoundaryFacade())
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    script = re.search(r"<script>([\s\S]*?)</script>",
+        (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let nextId=0;
+const element=()=>({value:'',textContent:'',disabled:false,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}});
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> '00000000-0000-4000-8000-'+String(++nextId).padStart(12,'0')},
+ setTimeout:callback=>setImmediate(callback),fetch:async(path,options)=>{
+ if(path==='/status')return {ok:true,json:async()=>input.state};calls.push({path,body:JSON.parse(options.body)});
+ return new Promise(resolve=>waiting.push(value=>resolve({ok:true,json:async()=>value})))}};
+vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+get('composer').requestSubmit=()=>get('composer').handlers.submit({preventDefault(){}});
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),submit=()=>get('composer').requestSubmit();
+const draft=text=>{get('draft').value=text;get('draft').handlers.input()};
+const key=extra=>get('draft').handlers.keydown({key:'Enter',preventDefault(){},...extra});
+const saved=()=>JSON.parse(storage.get('s127-draft:'+input.state.scope_key));
+const terminal=id=>({ok:input.outcome==='success',settled:input.outcome!=='unknown',pending:null,
+ request_id:id,query_status:'found',request_verified:true,can_abandon:input.outcome==='unknown',state:input.state});
+(async()=>{
+ await flush();draft('当前明确提交的合成原话。');const sending=submit(),id=calls.at(-1).body.request_id;
+ assert.equal(get('draft').disabled,true);
+ const pending={...input.state,presentation_pending:true,pending_handle:'owned-handle',pending_request_id:id,
+  context_boundary:{...input.state.context_boundary,pending:true}};
+ waiting.shift()({ok:true,pending:'owned-handle',request_id:id,state:pending});await flush();await flush();
+ assert.equal(calls.at(-1).path,'/operation');assert.equal(get('draft').disabled,false);
+ assert.equal(get('send').disabled,true);assert.equal(get('history').disabled,true);assert.equal(get('reload').disabled,true);
+ assert(get('compose-hint').textContent.includes('可以先写下一条'));
+ draft('等待时写的下一稿。');assert.deepEqual(saved(),{text:'等待时写的下一稿。',request_text:'当前明确提交的合成原话。',request_id:id});
+ const count=calls.length;key({});key({shiftKey:true});key({isComposing:true});key({keyCode:229});
+ get('draft').handlers.compositionstart();key({});await submit();get('draft').handlers.compositionend();
+ assert.equal(calls.length,count);
+ vm.runInContext('render('+JSON.stringify({...pending,pending_request_id:'foreign-request'})+')',sandbox);
+ assert.equal(get('draft').disabled,true);
+ vm.runInContext('render('+JSON.stringify(pending)+')',sandbox);assert.equal(get('draft').disabled,false);
+ waiting.shift()(terminal(id));await sending;await flush();
+ assert.equal(get('draft').value,'等待时写的下一稿。');assert.equal(get('draft').disabled,false);
+ assert.equal(calls.filter(row=>row.path==='/send').length,1);
+ if(input.outcome==='unknown'){
+  assert.equal(saved().request_id,id);assert.equal(saved().request_text,'当前明确提交的合成原话。');
+  const reading=submit();assert.deepEqual(calls.at(-1),{path:'/request-result',body:{request_id:id,text:'当前明确提交的合成原话。'}});
+  waiting.shift()(terminal(id));await reading;
+  get('abandon-start').handlers.click();assert.equal(get('draft').disabled,true);
+  get('abandon-confirm').handlers.click();assert.equal(saved().request_id,undefined);
+ }else assert.equal(saved().request_id,undefined);
+ assert.equal(get('draft').value,'等待时写的下一稿。');assert.equal(calls.filter(row=>row.path==='/send').length,1);
+ const next=submit(),nextCall=calls.at(-1);assert.equal(nextCall.path,'/send');
+ assert.notEqual(nextCall.body.request_id,id);assert.equal(nextCall.body.text,'等待时写的下一稿。');
+ waiting.shift()({ok:true,settled:true,pending:null,request_id:nextCall.body.request_id,state:input.state});await next;
+ assert.equal(get('draft').value,'');assert.equal(calls.filter(row=>row.path==='/send').length,2);
+ const boundary=get('boundary-start').handlers.click();waiting.shift()({ok:true,context_boundary:input.state.context_boundary,state:input.state});await boundary;
+ assert.equal(get('draft').disabled,true);get('boundary-cancel').handlers.click();assert.equal(get('draft').disabled,false);
+ vm.runInContext('render('+JSON.stringify({...pending,character:{...input.state.character,status:'failed-closed'}})+')',sandbox);
+ assert.equal(get('draft').disabled,true);assert.equal(get('send').disabled,true);
+ process.stdout.write('pending-next-draft-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state, outcome=outcome_status)).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"pending-next-draft-complete"
+
+
+def test_pending_composition_empty_and_scope_recovery_do_not_restore_old_input(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product()
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    script = re.search(r"<script>([\s\S]*?)</script>",
+        (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state,nextId=0;
+const element=()=>({value:'',textContent:'',disabled:false,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}});
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+function start(){nodes.clear();const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> '00000000-0000-4000-8000-'+String(++nextId).padStart(12,'0')},
+ setTimeout:callback=>setImmediate(callback),fetch:async(path,options)=>{
+ if(path==='/status')return {ok:true,json:async()=>status};calls.push({path,body:JSON.parse(options.body)});
+ return new Promise(resolve=>waiting.push(value=>resolve({ok:true,json:async()=>value})))}};
+ vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+ get('composer').requestSubmit=()=>get('composer').handlers.submit({preventDefault(){}});}
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),draft=text=>{get('draft').value=text;get('draft').handlers.input()};
+const submit=()=>get('composer').requestSubmit(),stored=()=>JSON.parse(storage.get('s127-draft:'+input.state.scope_key));
+(async()=>{
+ start();await flush();draft('原请求文字。');const sending=submit(),id=calls.at(-1).body.request_id;
+ const pending={...input.state,presentation_pending:true,pending_handle:'owned-handle',pending_request_id:id};
+ waiting.shift()({ok:true,pending:'owned-handle',request_id:id,state:pending});await flush();await flush();
+ draft('输入法替换前的后写草稿。');get('draft').handlers.compositionstart();get('draft').value='';
+ waiting.shift()({ok:true,settled:true,pending:null,request_id:id,state:input.state});await sending;
+ assert.equal(get('draft').value,'');assert.equal(stored().text,'输入法替换前的后写草稿。');
+ get('draft').value='输入法选好的下一稿。';get('draft').handlers.input();get('draft').handlers.compositionend();
+ assert.equal(stored().text,'输入法选好的下一稿。');assert.equal(calls.filter(row=>row.path==='/send').length,1);
+ const next=submit(),nextId=calls.at(-1).body.request_id;
+ waiting.shift()({ok:true,pending:'next-handle',request_id:nextId,state:{...pending,pending_handle:'next-handle',pending_request_id:nextId}});
+ await flush();await flush();draft('这一轮等待期间的第三稿。');
+ const before=storage.get('s127-draft:'+input.state.scope_key);
+ waiting.shift()({ok:false,settled:false,pending:null,request_id:nextId,state:input.state});await next;
+ // A foreign identity cannot load or query this original request.
+ const beforeSwitch=calls.length;status={...input.state,scope_key:'another-owned-scope'};start();await flush();assert.equal(get('draft').value,'');
+ assert.equal(calls.length,beforeSwitch);
+ assert.equal(storage.get('s127-draft:'+input.state.scope_key),before);
+ status=input.state;start();await flush();assert.equal(calls.at(-1).path,'/request-result');
+ assert.deepEqual(calls.at(-1).body,{request_id:nextId,text:'输入法选好的下一稿。'});
+ assert.equal(get('draft').value,'这一轮等待期间的第三稿。');
+ waiting.shift()({ok:false,settled:true,pending:null,request_id:nextId,query_status:'found',request_verified:true,state:input.state});
+ await flush();await flush();assert.equal(get('draft').value,'这一轮等待期间的第三稿。');
+ assert.equal(calls.filter(row=>row.path==='/send').length,2);assert.equal(stored().request_id,undefined);
+ process.stdout.write('pending-ime-scope-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state)).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"pending-ime-scope-complete"

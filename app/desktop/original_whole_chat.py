@@ -183,7 +183,7 @@ class OriginalWholeChatAdapter:
         ok = response.status.value == "terminal" and projection is not None and not projection.failure_code and bool(projection.expression_text)
         code = getattr(projection, "failure_code", None)
         message = "" if ok or pending else (
-            "这一轮已结束，没有形成可提交的回复；草稿保留，可以明确重新发送。" if settled
+            "这一轮已结束，没有形成可提交的回复。当前草稿保留；点击发送会提交输入区的当前文字。" if settled
             else "回复交付尚未确认，草稿与原请求保留；请先刷新核对，不会自动重发。")
         if code and "history" in code:
             message = "本轮的上下文范围或完整性未能确认，已停止生成；现有记录和草稿保留。"

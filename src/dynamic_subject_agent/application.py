@@ -1229,8 +1229,8 @@ class _ApplicationRouter:
                 context_revision=context['context_revision'],cutoff_sequence=context['cutoff_sequence'],
                 projection_digest=digest(asdict(projection)),snapshot_fingerprint=digest(dict(basis=asdict(basis),authorization=asdict(authorization),
                     context=context,command=command.payload_fingerprint)),
-                limitations=('这里只展示当前快照会提供的内容范围，不解释模型思考或保证回复真实。',
-                    '编辑文字、身份、历史开关或交流边界变化后应重新查看；发送时仍独立重核。'))
+                limitations=('这里展示当前文字和设置对应的参考内容，不说明模型如何思考，也不保证回复真实。',
+                    '文字、人物、历史开关或交流边界变化后请重新查看；发送时会按最新状态重新核对。'))
         except RuntimeError as error:
             return WholeMessageScopePreviewView('unavailable','whole-scope-unavailable')
         except PreAdmissionRejected:
