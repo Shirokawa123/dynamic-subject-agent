@@ -1,0 +1,36 @@
+{
+  "version": "s135-actual-local-archive-metadata-1",
+  "model_calls": 0,
+  "committed_turns": 5,
+  "context_boundaries": 2,
+  "canonical_text_hashes": [
+    "b3d1836c853b1c81e2de313ab88e6ba5669adeb9e598c9c858f01252ad1bba33",
+    "4eafc013ccd14ea590ba724bdcbb8c620ff844add68a2a01508c2c7e6770cbc3",
+    "483ddbc1b15c2811371d0433aac1b04d3b97398dfdc5bd20ae822880dcdcd45b",
+    "5144421c3193845d11403612ff9bf4ca98a8b2efcce40f1d85ae250fc8bfc8c6",
+    "ba3a1e6861460833f2526fdae05de7d8ab1deabbd0b9ce5e7c3ce9cd33b00cbb"
+  ],
+  "archive_exact_matches_existing_history": true,
+  "stable_older_cursor_rows": 5,
+  "earlier_segment_matches": 2,
+  "current_segment_matches": 1,
+  "empty_query_matches": 0,
+  "percent_is_literal": true,
+  "history_off_preserves_archive": true,
+  "reopen_preserves_archive": true,
+  "canonical_unchanged": true,
+  "context_unchanged": true,
+  "history_setting_restored": true,
+  "global_attempts": 58,
+  "canonical_text_exported": false,
+  "ui": {
+    "all_five_turns_and_two_boundaries_visible": true,
+    "earlier_segment_query_matches": 2,
+    "empty_query_matches": 0,
+    "return_latest_restores_five_turns": true,
+    "close_preserves_draft": true,
+    "history_enabled": true,
+    "model_calls": 0,
+    "own_test_draft_cleared": true
+  }
+}

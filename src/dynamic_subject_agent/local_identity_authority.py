@@ -1403,6 +1403,14 @@ class LocalIdentityAuthority:
         finally:
             self._history_lock.release()
 
+    def whole_archive_authorization(self, expected_identity_id, expected_timeline_id):
+        # Registry replacement is atomic. This read must not wait for a model's
+        # publication guard; the Facade rechecks the fresh scope after reading.
+        state, record, identity = self._active_chat_record(expected_identity_id)
+        if identity.qri.provider_authority not in WHOLE_AUTHORITIES or record.get('timeline_id') != expected_timeline_id:
+            raise RuntimeError('whole-archive-scope-changed')
+        return self._original_whole_authorization_from_record(state, record, identity)
+
     @contextmanager
     def original_whole_guard(self, authorization):
         if type(authorization) is not OriginalWholeAuthorization:

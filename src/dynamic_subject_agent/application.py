@@ -372,6 +372,7 @@ class _ApplicationRouter:
         reviewed_chat_status=None,
         character_basis_reader=None,
         whole_scope_reader=None,
+        whole_archive_reader=None,
         reviewed_history_setter=None,
         local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
         local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -392,6 +393,7 @@ class _ApplicationRouter:
         self._binding = binding
         self._character_basis_reader = character_basis_reader
         self._whole_scope_reader = whole_scope_reader
+        self._whole_archive_reader = whole_archive_reader
         self._single_command_authorization = single_command_authorization
         self._start_runtime = start_runtime
         self._stop_runtime = stop_runtime
@@ -1236,6 +1238,28 @@ class _ApplicationRouter:
         except Exception:
             return WholeMessageScopePreviewView('failed-closed','whole-scope-unverified')
 
+    def query_whole_chat_archive(self, request):
+        from dynamic_subject_agent.whole_chat_archive import WholeChatArchiveRequest, WholeChatArchiveView
+        if (self._closed or type(request) is not WholeChatArchiveRequest or self._whole_archive_reader is None
+            or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id):
+            return WholeChatArchiveView('unavailable', 'whole-archive-unavailable')
+        if (type(request.query) is not str or len(request.query) > 1000 or '\x00' in request.query
+            or request.before_sequence is not None and (type(request.before_sequence) is not int or request.before_sequence < 1)):
+            return WholeChatArchiveView('unavailable', 'whole-archive-request-invalid')
+        try:
+            request.query.encode('utf-8')
+            authorization = self._whole_archive_reader()
+            view = self._host.query_whole_chat_archive(self._binding, request)
+            if self._closed or self._whole_archive_reader() != authorization:
+                return WholeChatArchiveView('unavailable', 'whole-archive-scope-changed')
+            return view
+        except PreAdmissionRejected:
+            return WholeChatArchiveView('unavailable', 'whole-archive-request-invalid')
+        except RuntimeError:
+            return WholeChatArchiveView('unavailable', 'whole-archive-unavailable')
+        except Exception:
+            return WholeChatArchiveView('failed-closed', 'whole-archive-unverified')
+
     def set_reviewed_character_history(self, enabled):
         from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
         with self._lock:
@@ -1494,6 +1518,9 @@ class ApplicationFacade:
     def preview_whole_message_scope(self, request):
         return self.__router.preview_whole_message_scope(request)
 
+    def query_whole_chat_archive(self, request):
+        return self.__router.query_whole_chat_archive(request)
+
     def set_reviewed_character_history(self, enabled):
         return self.__router.set_reviewed_character_history(enabled)
 
@@ -1531,6 +1558,7 @@ def _create_application_facade(
     _reviewed_chat_status=None,
     _character_basis_reader=None,
     _whole_scope_reader=None,
+    _whole_archive_reader=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -1562,6 +1590,7 @@ def _create_application_facade(
         reviewed_chat_status=_reviewed_chat_status,
         character_basis_reader=_character_basis_reader,
         whole_scope_reader=_whole_scope_reader,
+        whole_archive_reader=_whole_archive_reader,
         reviewed_history_setter=_reviewed_history_setter,
         local_identity_lister=_local_identity_lister,
         local_identity_selector=_local_identity_selector,

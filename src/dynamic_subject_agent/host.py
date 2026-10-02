@@ -7611,6 +7611,26 @@ class RuntimeHost:
             if reader.in_transaction: reader.execute('ROLLBACK')
             reader.close()
 
+    def query_whole_chat_archive(self, binding, request):
+        self._require_open()
+        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority not in WHOLE_AUTHORITIES
+            or binding.host_root_id != self._location.root_id):
+            raise RuntimeHostRejected('whole-archive-unavailable', 'archive requires this current whole binding')
+        self._require_binding_permit(binding)
+        root = binding.timeline_root
+        reader = _connect_readonly(root.timeline_database)
+        try:
+            reader.execute('BEGIN')
+            _verify_timeline_manifest(reader, root_id=root.root_id, store_id=root.timeline_store_id, store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
+            if reader.execute('PRAGMA user_version').fetchone() != ((4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+                raise RuntimeHostFailedClosed('whole-archive-schema-unverified', 'archive requires its existing whole schema')
+            _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
+            return TimelineEngine(root, self._authority_for_binding(binding), reader, None).query_whole_chat_archive(request)
+        finally:
+            if reader.in_transaction:
+                reader.execute('ROLLBACK')
+            reader.close()
+
     def apply_whole_context_boundary(self, binding, request):
         from dynamic_subject_agent.whole_context_boundary import WholeContextInput, WholeContextBoundaryResponse
         scope = self._read_whole_context(binding, request)

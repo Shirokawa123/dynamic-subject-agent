@@ -10,6 +10,7 @@ from dynamic_subject_agent.application import (ApplicationQuery, ApplicationQuer
 from dynamic_subject_agent.timeline import SubjectCommand
 from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRequest
 from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewRequest
+from dynamic_subject_agent.whole_chat_archive import WholeChatArchiveRequest
 
 
 APPLICATION_ID = "original-character-whole-chat-s127"
@@ -95,6 +96,28 @@ class OriginalWholeChatAdapter:
             value = dict(status=status if status in ("unavailable", "failed-closed") else "unavailable")
         return dict(ok=value["status"] == "available", message_scope=value,
             scope_key=sha256((self.product.profile_id + ":" + self.product.timeline_id).encode()).hexdigest())
+
+    def chat_archive(self, payload):
+        if (type(payload) is not dict or set(payload) != {"query", "before_sequence"}
+            or type(payload["query"]) is not str or len(payload["query"]) > 1000 or "\x00" in payload["query"]
+            or payload["before_sequence"] is not None and (
+                type(payload["before_sequence"]) is not int or payload["before_sequence"] < 1)):
+            raise ValueError("invalid-request")
+        product = self.product
+        query = getattr(product.application, "query_whole_chat_archive", None)
+        try:
+            value = self._plain(query(WholeChatArchiveRequest(product.profile_id, product.timeline_id,
+                before_sequence=payload["before_sequence"], query=payload["query"]))) if callable(query) else dict(status="unavailable")
+        except Exception:
+            value = dict(status="unavailable")
+        if type(value) is not dict or value.get("status") != "available":
+            status = value.get("status") if type(value) is dict else None
+            value = dict(status=status if status in ("unavailable", "failed-closed") else "unavailable")
+        elif (product is not self.product or value.get("target_profile_id") != product.profile_id
+            or value.get("target_timeline_id") != product.timeline_id or value.get("query") != payload["query"]):
+            value = dict(status="unavailable")
+        return dict(ok=value["status"] == "available", archive=value,
+            scope_key=sha256((product.profile_id + ":" + product.timeline_id).encode()).hexdigest())
 
     def _boundary_request(self, payload, *, query=False):
         fields = {"request_id", "expected_revision"} if query else {"request_id", "expected_revision", "confirmed"}
@@ -255,4 +278,5 @@ def original_whole_server(product, *, reopen, port=0):
             "/context-boundary-query":adapter.boundary_query, "/context-boundary":adapter.boundary_apply,
             "/character-basis":adapter.character_basis,
             "/message-scope":adapter.message_scope,
+            "/chat-archive":adapter.chat_archive,
             "/history":adapter.set_history, "/reload":adapter.reload})

@@ -7550,6 +7550,41 @@ class TimelineEngine:
             )
         return tuple(records[-limit:])
 
+    def query_whole_chat_archive(self, request):
+        from dynamic_subject_agent.whole_chat_archive import WholeChatArchiveRow, WholeChatArchiveView
+        if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES or _read_admission_gate(self._writer).authority != self._authority:
+            raise PublicationFailedClosed('whole-archive-authority-unverified', 'archive requires this exact canonical authority')
+        basis = _read_timeline_basis(self._writer)
+        publications = self._verified_publications()
+        context = self.whole_context_basis(expected_head=basis.head_sequence) if CONTEXT_INTENT in self._authority.allowed_intents else dict(context_revision=0, cutoff_sequence=0)
+        if request.before_sequence is not None and request.before_sequence > basis.head_sequence + 1:
+            raise PreAdmissionRejected('whole-archive-cursor-invalid', 'archive cursor is beyond its current canonical prefix')
+        rows = []
+        revision = 0
+        for outcome, command, published_at in publications:
+            if type(command) is WholeContextInput:
+                revision = command.expected_revision + 1
+                if not request.query:
+                    rows.append(WholeChatArchiveRow('context-boundary', outcome.head_sequence, revision,
+                        published_at_us=published_at, label=outcome.expression.text))
+            elif type(command) is SubjectCommand:
+                if not request.query or request.query in command.utterance or request.query in outcome.expression.text:
+                    rows.append(WholeChatArchiveRow('turn', outcome.head_sequence, revision,
+                        command.utterance, outcome.expression.text, published_at))
+            else:
+                raise PublicationFailedClosed('whole-archive-origin-unverified', 'archive has an unexpected Publication origin')
+        # Stable sequence keys select the preceding page even after an append.
+        eligible = [row for row in reversed(rows) if request.before_sequence is None or row.head_sequence < request.before_sequence]
+        page = tuple(eligible[:20])
+        more = len(eligible) > len(page)
+        pending = bool(self.pending_original_whole_operations())
+        return WholeChatArchiveView('available', rows=page, query=request.query,
+            next_before_sequence=page[-1].head_sequence if more else None, has_more=more, pending=pending,
+            snapshot_head_sequence=basis.head_sequence, context_revision=context['context_revision'],
+            target_profile_id=self._authority.profile_id, target_timeline_id=self._authority.timeline_id,
+            limitations=('这里是本机已提交的双方原话，只证明当时这样说，不证明内容就是人物设定。',
+                '查找不发送给模型，历史开关与新交流边界不删除这些旧记录。'))
+
     def list_subject_tasks(self):
         return self._verified_subject_tasks()[0]
 

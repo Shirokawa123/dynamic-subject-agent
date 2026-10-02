@@ -21,6 +21,7 @@ from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRes
 from dynamic_subject_agent.character_basis import (CharacterBasisView, CharacterBasisKnowledge,
     CharacterBasisUnit, CharacterBasisInterpretation)
 from dynamic_subject_agent.whole_message_scope import WholeMessageScopePreviewView
+from dynamic_subject_agent.whole_chat_archive import WholeChatArchiveView, WholeChatArchiveRow
 from dynamic_subject_agent.character_chat_context import SelfKnowledge
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
 
@@ -45,6 +46,19 @@ def synthetic_scope(text="当前合成草稿。", history=True):
         has_prior_committed_exchange=True, character_core=(core,), self_knowledge=(related,), personality_count=4,
         recent_dialogue=(RecentDialogueTurn("先前合成消息。", "先前合成回复。"),) if history else (),
         projection_digest="a"*64, snapshot_fingerprint="b"*64, limitations=("发送前仍重新核对，不增加本轮权限。",))
+
+
+def synthetic_archive(product, query="", *, earlier=False):
+    rows = (WholeChatArchiveRow("turn", 4, 0, "更早的合成原话。", "更早的合成回复。"),) if earlier else (
+        WholeChatArchiveRow("turn", 30, 1, "边界后的合成原话。", "合成回复。<img onerror=alert(1)>"),
+        WholeChatArchiveRow("context-boundary", 29, 1, label="新交流边界"),
+        WholeChatArchiveRow("turn", 28, 0, "边界前的合成原话。", "此前合成回复。"))
+    if query:
+        rows = tuple(row for row in rows if row.kind == "turn" and (query in row.user_text or query in row.assistant_text))
+    return WholeChatArchiveView("available", rows=rows, query=query, next_before_sequence=None if earlier else 28,
+        has_more=not earlier, pending=True, snapshot_head_sequence=30, context_revision=1,
+        target_profile_id=product.profile_id, target_timeline_id=product.timeline_id,
+        limitations=("这里只证明曾说过；本地查找不扩展发送范围。",))
 
 
 class FakeWholeFacade:
@@ -390,6 +404,48 @@ def test_scope_http_is_nonce_free_read_only_and_preserves_exact_local_draft(modu
         facade.preview_whole_message_scope = lambda request: replace(synthetic_scope(request.text), status="failed-closed")
         assert post(dict(text=text))["message_scope"] == {"status": "failed-closed"}
         assert not facade.submissions and not facade.operations and not facade.lookups and facade.state.history_enabled
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+def test_archive_http_read_only_exact_cursor_literal_search_pending_and_failure_empty(modules):
+    desktop, _ = modules
+    product = fake_product(); facade = product.application; requests = []
+    def query(request):
+        requests.append(request)
+        return synthetic_archive(product, request.query, earlier=request.before_sequence is not None)
+    facade.query_whole_chat_archive = query
+    facade.query = lambda *args: (_ for _ in ()).throw(AssertionError("archive must not fetch recent UI history"))
+    facade.reviewed_character_chat_status = lambda: (_ for _ in ()).throw(AssertionError("archive must not query worker status"))
+    server = desktop.original_whole_server(product, reopen=lambda: product)
+    thread = Thread(target=server.serve_forever, daemon=True); thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            token = re.search(r"TOKEN='([^']+)'", response.read().decode()).group(1)
+        def post(payload):
+            with urlopen(Request(base + "/chat-archive", data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Chat-Token": token}), timeout=5) as response:
+                return json.load(response)
+        result = post(dict(query="", before_sequence=None))
+        assert result["ok"] and result["archive"]["pending"] and len(result["archive"]["rows"]) == 3
+        assert result["archive"]["rows"][1]["kind"] == "context-boundary" and "request_id" not in result
+        literal = " 合成\n"
+        post(dict(query=literal, before_sequence=28))
+        assert requests[-1].query == literal and requests[-1].before_sequence == 28
+        assert all(request.target_profile_id == product.profile_id and request.target_timeline_id == product.timeline_id for request in requests)
+        for payload in (dict(query="", before_sequence=True), dict(query="", before_sequence=0),
+            dict(query="", before_sequence=None, request_id=str(uuid4())), dict(query="\x00", before_sequence=None)):
+            with pytest.raises(HTTPError) as error:
+                post(payload)
+            assert error.value.code == 400
+        assert len(requests) == 2
+        view = synthetic_archive(product)
+        facade.query_whole_chat_archive = lambda request: replace(view, status="failed-closed")
+        assert post(dict(query="", before_sequence=None))["archive"] == {"status": "failed-closed"}
+        facade.query_whole_chat_archive = lambda request: replace(view, target_timeline_id=str(uuid4()))
+        assert post(dict(query="", before_sequence=None))["archive"] == {"status": "unavailable"}
+        assert not facade.submissions and not facade.lookups and not facade.waits and facade.state.history_enabled
     finally:
         server.shutdown(); server.server_close(); thread.join(timeout=5)
 
@@ -786,3 +842,70 @@ const available=value=>({ok:true,scope_key:input.state.scope_key,message_scope:{
         capture_output=True, timeout=20)
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert result.stdout == b"whole-message-scope-page-complete"
+
+
+def test_archive_page_search_pagination_boundary_and_late_scope_preserve_request(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product()
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    state = dict(state, presentation_pending=True)
+    page = (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")
+    script = re.search(r"<script>([\s\S]*?)</script>", page).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state;
+const element=()=>{const item={value:'',textContent:'',disabled:false,hidden:true,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}};
+ Object.defineProperty(item,'innerHTML',{set(){throw Error('unsafe HTML')}});return item};
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=>{throw Error('archive cannot create request nonce')}},setTimeout:callback=>setImmediate(callback),
+ fetch:async(path,options)=>{if(path==='/status')return {ok:true,json:async()=>status};calls.push({path,body:JSON.parse(options.body)});
+ if(path!=='/chat-archive')throw Error('archive must not send/control/recover');
+ return new Promise(resolve=>waiting.push(value=>resolve({ok:true,json:async()=>value})))}};
+vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),click=id=>get(id).handlers.click();
+const text=item=>item.textContent+item.children.map(text).join('');
+const available=archive=>({ok:true,scope_key:input.state.scope_key,archive});
+(async()=>{
+ await flush();const draftKey='s127-draft:'+input.state.scope_key;
+ storage.set(draftKey,JSON.stringify({text:'保持合成草稿',request_text:'原消息',request_id:'00000000-0000-4000-8000-000000000001'}));
+ get('draft').value='保持合成草稿';const before=new Map(storage);
+ assert.equal(get('archive-open').disabled,false);
+ let reading=click('archive-open');assert.deepEqual(calls.at(-1),{path:'/chat-archive',body:{query:'',before_sequence:null}});
+ waiting.shift()(available(input.latest));await reading;
+ assert(text(get('archive-content')).includes('新交流边界'));assert(text(get('archive-content')).includes('第2段交流'));
+ assert(text(get('archive-content')).includes('onerror=alert(1)'));assert(text(get('archive-status')).includes('仍在处理'));
+ assert.equal(get('archive-earlier').disabled,false);
+ reading=click('archive-earlier');assert.equal(calls.at(-1).body.before_sequence,28);
+ waiting.shift()(available(input.earlier));await reading;
+ assert(text(get('archive-content')).includes('更早的合成原话'));assert.equal(get('archive-earlier').disabled,true);
+ get('archive-search').value='更早';get('archive-search').handlers.input();assert.equal(text(get('archive-content')),'');
+ reading=click('archive-find');assert.deepEqual(calls.at(-1).body,{query:'更早',before_sequence:null});
+ waiting.shift()(available({...input.earlier,query:'更早'}));await reading;
+ reading=click('archive-latest');assert.deepEqual(calls.at(-1).body,{query:'',before_sequence:null});
+ waiting.shift()(available(input.latest));await reading;assert.equal(get('archive-search').value,'');
+ reading=click('archive-find');get('archive-search').value='编辑';get('archive-search').handlers.input();
+ waiting.shift()(available(input.latest));await reading;assert.equal(text(get('archive-content')),'');
+ reading=click('archive-find');waiting.shift()({ok:false,scope_key:input.state.scope_key,archive:{status:'failed-closed'}});await reading;
+ assert.equal(text(get('archive-content')),'');assert.equal(get('draft').value,'保持合成草稿');assert.deepEqual(storage,before);
+ reading=click('archive-find');click('archive-close');waiting.shift()(available({...input.latest,query:'编辑'}));await reading;
+ assert.equal(get('archive-panel').hidden,true);assert.equal(text(get('archive-content')),'');
+ reading=click('archive-open');status={...input.state,scope_key:'another-owned-scope'};
+ await click('refresh');waiting.shift()(available(input.latest));await reading;
+ assert.equal(get('archive-panel').hidden,true);assert.equal(text(get('archive-content')),'');
+ assert.deepEqual(storage,before);assert.equal(calls.every(row=>row.path==='/chat-archive'),true);
+ process.stdout.write('whole-chat-archive-page-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state,
+        latest=asdict(synthetic_archive(product)), earlier=asdict(synthetic_archive(product, earlier=True)))).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"whole-chat-archive-page-complete"

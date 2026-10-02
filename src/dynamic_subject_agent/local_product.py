@@ -212,6 +212,7 @@ def _open_loaded_local_product(
         _reviewed_chat_status=lambda: authority.reviewed_character_chat_status(loaded.qri.profile_id),
         _character_basis_reader=lambda: authority.character_basis(loaded.qri.profile_id, loaded.timeline_id),
         _whole_scope_reader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
+        _whole_archive_reader=lambda: authority.whole_archive_authorization(loaded.qri.profile_id, loaded.timeline_id),
         _reviewed_history_setter=(None if whole_receipts_only else lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id)),
         _local_identity_lister=authority.list,
         _local_identity_selector=lambda request: authority.select(

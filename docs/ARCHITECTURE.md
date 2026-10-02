@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-135：本地已提交聊天分页
+
+Facade `query_whole_chat_archive(WholeChatArchiveRequest)`验证当前whole scope，Host独立readonly/query_only单Tx读取完整verified Publication链，首末授权复核；不进入worker/admit/恢复，不扩Provider窗口。每页20项按head_sequence稳定游标，字面query只查完整user/assistant原话，SYSTEM边界单列；pending不成为提交，history-off不遮住本地旧记录，legacy只读不激活Sender。
+
+UI按需查找/更早/返回最新/收起，scope/词变化或失败清旧页并丢迟到，草稿/原nonce/设置保持。实际5轮2边界hash一致且0模型；超过20轮与追加后的无漏重另合成验证。无新表/索引/schema，仍全链验证成本，见[S135报告](reports/2026-10-02-slice-135/REPORT.md)。
+
 ### Slice-134：本轮范围只读预览
 
 Facade `preview_whole_message_scope(WholeMessageScopePreviewRequest)`以真实readonly Timeline basis和fresh已批whole授权复用正式projection。whole专用前缀核验/控制/失败证明/cutoff/两完整轮窗口共用，正式发送wrapper保留真实admitted/frozen完整basis校验；preview不虚构operation、不admit/claim/恢复或写Timeline，不取得发送许可。两次readonly快照及末次auth/scope复核变化则空返回，canonical gate/legacy receipt-only与关闭历史的完整性规则保持。
