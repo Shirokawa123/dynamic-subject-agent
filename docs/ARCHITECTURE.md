@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-131：原请求纯查读
+
+Facade `lookup_subject_request(SubjectRequestLookupRequest(command,idempotency_key))`区分outer query_status和inner已核operation结果。仅whole/currentbinding/闭集命令/opaque键、scope索引、完整原指纹/command及Publication chain匹配才返回body；mismatch/foreign无body，读失败不伪装UNKNOWN。Host在同store独立readonly/query_only连接和单read Tx验证，不进入worker、Admission、恢复、claim或新store。pending只观察，原submit/follow/wait行为不改。
+
+薄入口刷新/轮询/nonce恢复都pure query；查询失败保标识，verified本地终态UNKNOWN明确放下后仍须用户发送。not-found同文明确发送沿原nonce防迟到重复，后改草稿保持。实际4原回复多次重取/重开0模型，独立8786一次真实发送和页面后续操作0新增；旧8785保持，完整证据与模拟/实际边界见[S131报告](reports/2026-10-02-slice-131/REPORT.md)。
+
 ### Slice-130：来源范围组合候选
 
 闭集 `grounded` 将S128 v2 selector、S129合法例与一个明确断言范围段精确绑定在独立contract/policy/key中；旧variant、slot、Parser、NoOp及revision/Publication不变，无真假审核请求、语义正则或新数据。真实当前配色构想四轮可澄清并继续假想，过去细节仍有无据解释，11请求8提交3空白，未选择默认或声明忠实通过，见[S130报告](reports/2026-10-02-slice-130/REPORT.md)。

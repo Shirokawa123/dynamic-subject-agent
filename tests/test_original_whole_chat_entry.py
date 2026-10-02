@@ -14,7 +14,8 @@ from uuid import uuid4
 
 import pytest
 
-from dynamic_subject_agent.application import ApplicationOperationResponse, ApplicationOperationStatus
+from dynamic_subject_agent.application import (ApplicationOperationResponse, ApplicationOperationStatus,
+    ApplicationProblemView, SubjectRequestLookupResponse, SubjectRequestLookupStatus)
 from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,6 +25,7 @@ class FakeWholeFacade:
     def __init__(self):
         self.state = ReviewedCharacterChatStatus("active", "合成测试人物", True, None, 0, None)
         self.turns, self.submissions, self.waits, self.operations, self.finished = [], [], [], {}, set()
+        self.lookups, self.outcomes = [], {}
 
     def reviewed_character_chat_status(self):
         return self.state
@@ -39,13 +41,27 @@ class FakeWholeFacade:
             return self.result("terminal", ref)
         return self.result("pending", ref)
 
-    def wait(self, ref, *, timeout_seconds):
-        self.waits.append((ref, timeout_seconds))
+    def complete(self, ref):
         if ref not in self.finished:
             self.finished.add(ref)
             command = next(command for command, key in self.submissions if self.operations[key] == ref)
             self.turns.append(SimpleNamespace(user_text=command.utterance, assistant_text="合成回复。"))
         return self.result("terminal", ref)
+
+    def wait(self, ref, *, timeout_seconds):
+        raise AssertionError("request lookup must not wait, follow or resume")
+
+    def lookup_subject_request(self, request):
+        self.lookups.append(request)
+        ref = self.operations.get(request.idempotency_key)
+        if ref is None:
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND)
+        original = next(command for command, key in self.submissions if key == request.idempotency_key)
+        if original.payload_fingerprint != request.command.payload_fingerprint:
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
+                problem=ApplicationProblemView("subject-request-payload-mismatch"))
+        result = self.outcomes.get(ref) or self.result("terminal" if ref in self.finished else "pending", ref)
+        return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FOUND, operation=result)
 
     def set_reviewed_character_history(self, enabled):
         self.state = replace(self.state, history_enabled=enabled)
@@ -118,11 +134,19 @@ def test_http_async_exact_input_nonce_read_only_status_and_no_extra_permissions(
             with pytest.raises(HTTPError) as error:
                 post("/operation", dict(handle=handle))
             assert error.value.code == 400
+        observed = post("/operation", dict(handle=first["pending"]))
+        assert observed["pending"] == first["pending"] and observed["request_verified"]
+        assert not product.application.finished and len(product.application.submissions) == 2
+        ref = product.application.operations["original-whole-" + nonce]
+        product.application.complete(ref)
         terminal = post("/operation", dict(handle=first["pending"]))
         assert terminal["ok"] and terminal["settled"] and terminal["request_id"] == nonce and not terminal["state"]["presentation_pending"]
-        assert product.application.waits == [(product.application.operations["original-whole-" + nonce], 0)]
+        assert terminal["query_status"] == "found" and terminal["request_verified"] and not product.application.waits
+        assert all(request.command == product.application.submissions[0][0] for request in product.application.lookups)
         assert post("/send", payload)["ok"] and len(product.application.operations) == 1
         saved = terminal["state"]["history"]
+        recovered = post("/request-result", payload)
+        assert recovered["ok"] and recovered["state"]["history"] == saved and len(product.application.submissions) == 3
         assert post("/history", dict(enabled=False))["state"]["character"]["history_enabled"] is False
         assert post("/reload", {})["state"]["history"] == saved and reopens == [True]
         for path in ("/context-reset", "/simulate", "/heartbeat", "/controls", "/attachments"):
@@ -151,6 +175,30 @@ def test_terminal_failure_clears_duplicate_handles_without_disclosing_unverified
     product.application.query = lambda query: SimpleNamespace(status=SimpleNamespace(value="failed-closed"),
         projection=SimpleNamespace(turns=[SimpleNamespace(user_text="不可核实", assistant_text="不可核实")]))
     assert adapter.snapshot()["history"] == dict(status="failed-closed", turns=[])
+
+
+def test_lookup_after_adapter_restart_distinguishes_unknown_from_query_failure(modules):
+    desktop, _ = modules
+    product = fake_product()
+    original = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product)
+    payload = dict(text="  合成原消息\n", request_id=str(uuid4()))
+    first = original.send(payload)
+    ref = product.application.operations["original-whole-" + payload["request_id"]]
+    product.application.outcomes[ref] = product.application.result("unknown", ref, text=None,
+        failure="original-whole-transport-timeout")
+    restarted = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product)
+    result = restarted.lookup(payload)
+    assert result["query_status"] == "found" and result["can_abandon"] and not result["settled"]
+    assert result["request_id"] == first["request_id"] and len(product.application.submissions) == 1
+    mismatch = restarted.lookup(dict(payload, text="不是原消息。"))
+    assert mismatch["query_status"] == "unavailable" and not mismatch["request_verified"] and not mismatch["can_abandon"]
+    absent = restarted.lookup(dict(text="合成未提交消息。", request_id=str(uuid4())))
+    assert absent["query_status"] == "not-found" and not absent["can_abandon"] and not absent["settled"]
+    product.application.lookup_subject_request = lambda request: SubjectRequestLookupResponse(
+        SubjectRequestLookupStatus.FAILED_CLOSED, problem=ApplicationProblemView("synthetic-integrity-failed"))
+    failed = restarted.lookup(payload)
+    assert failed["query_status"] == "failed-closed" and not failed["settled"] and not failed["request_verified"]
+    assert not failed["can_abandon"] and len(product.application.submissions) == 1 and not product.application.waits
 
 
 @pytest.mark.parametrize("status,settled", [("terminal", True), ("failed-closed", True),
@@ -282,20 +330,24 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const draft=text=>{get('draft').value=text;get('draft').handlers.input()};
 const submit=()=>get('composer').requestSubmit();
 const key=extra=>get('draft').handlers.keydown({key:'Enter',preventDefault(){},...extra});
-const outcome=(id,ok=true,settled=true)=>({ok,settled,pending:null,request_id:id,state:input.state});
+const outcome=(id,ok=true,settled=true)=>({ok,settled,pending:null,request_id:id,state:input.state,can_abandon:false});
+const found=(id,ok=true,settled=true)=>({...outcome(id,ok,settled),query_status:'found',request_verified:true});
+const failure=id=>({...outcome(id,false,false),query_status:'failed-closed',request_verified:false});
+const unknown=id=>({...found(id,false,false),can_abandon:true});
 (async()=>{
  start();await flush();draft('合成未发送草稿');
  key({shiftKey:true});key({isComposing:true});key({keyCode:229});
  get('draft').handlers.compositionstart();key({});await submit();get('draft').handlers.compositionend();
  assert.equal(calls.length,0);await get('refresh').handlers.click();assert.equal(get('draft').value,'合成未发送草稿');
  const first=submit();const id=calls.at(-1).body.request_id;waiting.shift().fail();await first;
- assert.equal(get('draft').value,'合成未发送草稿');assert.equal(get('send').disabled,true);
- start();await flush();assert.equal(calls.length,1);assert.equal(get('send').textContent,'继续上次发送');
- const retry=submit();assert.equal(calls.at(-1).body.request_id,id);waiting.shift().ok(outcome(id,false,false));await retry;
- assert.equal(get('draft').value,'合成未发送草稿');assert.equal(get('send').textContent,'继续上次发送');
- const again=submit();draft('后来的草稿');waiting.shift().ok(outcome(id));await again;
+ assert.equal(get('draft').value,'合成未发送草稿');assert.equal(get('send').disabled,false);assert.equal(get('send').textContent,'读取原结果');
+ start();await flush();assert.equal(calls.at(-1).path,'/request-result');
+ assert.deepEqual(calls.at(-1).body,{request_id:id,text:'合成未发送草稿'});
+ assert.equal(calls.filter(row=>row.path==='/send').length,1);
+ draft('后来的草稿');waiting.shift().ok(found(id));await flush();await flush();
  assert.equal(get('draft').value,'后来的草稿');
  const changed=submit(),changedId=calls.at(-1).body.request_id;assert.notEqual(changedId,id);
+ assert.equal(calls.at(-1).path,'/send');
  waiting.shift().ok(outcome(changedId));await changed;assert.equal(get('draft').value,'');
  draft('已知失败保留草稿');const known=submit(),knownId=calls.at(-1).body.request_id;
  waiting.shift().ok(outcome(knownId,false));await known;
@@ -303,13 +355,44 @@ const outcome=(id,ok=true,settled=true)=>({ok,settled,pending:null,request_id:id
  const beforeNew=calls.length;await flush();assert.equal(calls.length,beforeNew);
  const explicitNew=submit(),newId=calls.at(-1).body.request_id;assert.notEqual(newId,knownId);
  waiting.shift().ok(outcome(newId));await explicitNew;assert.equal(get('draft').value,'');
+ // An UNKNOWN from send is not a verified lookup and cannot be abandoned yet.
+ draft('不确定原草稿');const uncertain=submit(),uncertainId=calls.at(-1).body.request_id;
+ waiting.shift().ok(outcome(uncertainId,false,false));await uncertain;
+ assert.equal(get('abandon').hidden,true);assert.equal(get('send').textContent,'读取原结果');
+ const blockedRead=submit();assert.equal(calls.at(-1).path,'/request-result');
+ waiting.shift().ok(failure(uncertainId));await blockedRead;
+ assert.equal(get('abandon').hidden,true);assert.equal(get('send').textContent,'读取原结果');
+ const verifiedRead=submit();waiting.shift().ok(unknown(uncertainId));await verifiedRead;
+ assert.equal(get('abandon').hidden,false);
+ const beforeAbandon=calls.length;
+ get('abandon-start').handlers.click();get('abandon-cancel').handlers.click();
+ assert.equal(get('send').textContent,'读取原结果');assert.equal(calls.length,beforeAbandon);
+ draft('不确定后编辑的草稿');get('abandon-start').handlers.click();get('abandon-confirm').handlers.click();
+ assert.equal(get('draft').value,'不确定后编辑的草稿');assert.equal(get('send').textContent,'发送');
+ assert.equal(calls.length,beforeAbandon);
+ const userNew=submit(),userNewId=calls.at(-1).body.request_id;
+ assert.equal(calls.at(-1).path,'/send');assert.notEqual(userNewId,uncertainId);
+ waiting.shift().ok(outcome(userNewId));await userNew;assert.equal(get('draft').value,'');
+ // A verified missing nonce is not an implicit send; only the next click sends.
+ draft('合成尚未admit草稿');const missingSend=submit(),missingId=calls.at(-1).body.request_id;
+ waiting.shift().fail();await missingSend;const beforeMissing=calls.filter(row=>row.path==='/send').length;
+ start();await flush();assert.equal(calls.at(-1).path,'/request-result');
+ waiting.shift().ok({...failure(missingId),query_status:'not-found',request_verified:true});await flush();await flush();
+ assert.equal(calls.filter(row=>row.path==='/send').length,beforeMissing);
+ assert.equal(get('draft').value,'合成尚未admit草稿');assert.equal(get('send').textContent,'发送');
+ const explicitMissing=submit(),newMissingId=calls.at(-1).body.request_id;assert.equal(newMissingId,missingId);
+ waiting.shift().ok(outcome(newMissingId));await explicitMissing;assert.equal(get('draft').value,'');
  draft('合成等待回复');const pending=submit(),pendingId=calls.at(-1).body.request_id;
  const pendingState={...input.state,presentation_pending:true,pending_handle:'owned-handle',pending_request_id:pendingId};
  waiting.shift().ok({ok:true,pending:'owned-handle',request_id:pendingId,state:pendingState});
  await flush();await flush();assert.equal(calls.at(-1).path,'/operation');waiting.shift().fail();await pending;
- status=pendingState;const sends=calls.filter(row=>row.path==='/send').length;start();await flush();await flush();
- assert.equal(calls.filter(row=>row.path==='/send').length,sends);assert.equal(calls.at(-1).path,'/operation');
- assert.equal(get('draft').value,'合成等待回复');waiting.shift().ok(outcome(pendingId,false));await flush();await flush();
+ // After restart no process-local handle is needed: saved original text is queried.
+ status=input.state;const sends=calls.filter(row=>row.path==='/send').length;start();await flush();await flush();
+ assert.equal(calls.filter(row=>row.path==='/send').length,sends);assert.equal(calls.at(-1).path,'/request-result');
+ assert.equal(calls.at(-1).body.request_id,pendingId);assert.equal(calls.at(-1).body.text,'合成等待回复');
+ waiting.shift().ok({...found(pendingId,true,false),pending:'restored-handle',state:pendingState});await flush();await flush();
+ assert.equal(calls.at(-1).path,'/operation');
+ assert.equal(get('draft').value,'合成等待回复');waiting.shift().ok(found(pendingId,false));await flush();await flush();
  assert.equal(get('draft').value,'合成等待回复');assert.equal(get('send').textContent,'发送');
  const retryKnownPending=submit(),afterPendingId=calls.at(-1).body.request_id;assert.notEqual(afterPendingId,pendingId);
  waiting.shift().ok(outcome(afterPendingId));await retryKnownPending;assert.equal(get('draft').value,'');

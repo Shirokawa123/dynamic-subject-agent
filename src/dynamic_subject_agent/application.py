@@ -49,6 +49,7 @@ from dynamic_subject_agent.timeline import (
     OperationRef,
     OperationState,
     PayloadConflict,
+    PreAdmissionRejected,
     RelationshipStanceInteraction,
     SubjectCommand,
 )
@@ -84,6 +85,26 @@ class ApplicationOperationStatus(str, Enum):
     UNAVAILABLE = "unavailable"
     CONFLICT = "conflict"
     NOT_FOUND_OR_NOT_AUTHORIZED = "not-found-or-not-authorized"
+
+
+class SubjectRequestLookupStatus(str, Enum):
+    FOUND = "found"
+    NOT_FOUND = "not-found"
+    UNAVAILABLE = "unavailable"
+    FAILED_CLOSED = "failed-closed"
+
+
+@dataclass(frozen=True)
+class SubjectRequestLookupRequest:
+    command: SubjectCommand
+    idempotency_key: str
+
+
+@dataclass(frozen=True)
+class SubjectRequestLookupResponse:
+    query_status: SubjectRequestLookupStatus
+    operation: ApplicationOperationResponse | None = None
+    problem: ApplicationProblemView | None = None
 
 
 ApplicationOperationKind = OperationKind
@@ -543,6 +564,36 @@ class _ApplicationRouter:
                     payload_fingerprint=command.payload_fingerprint,
                 )
             return response
+
+    def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
+        self._require_open()
+        if type(request) is not SubjectRequestLookupRequest or type(request.command) is not SubjectCommand:
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
+                problem=ApplicationProblemView('typed-subject-request-lookup-required'))
+        command = request.command
+        if (command.target_profile_id != self._binding.profile_id or command.target_timeline_id != self._binding.timeline_id):
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND,
+                problem=ApplicationProblemView('subject-request-not-found-or-not-authorized'))
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+        if (self._binding.provider_authority != WHOLE_AUTHORITY or command.declared_intent != 'ask-collaborator-status'
+            or command.language != 'zh' or command.provenance != 'project-original' or len(command.utterance) > 1000
+            or not isinstance(request.idempotency_key, str)):
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
+                problem=ApplicationProblemView('subject-request-lookup-invalid'))
+        try:
+            SubjectCommand(**asdict(command))
+            observed = self._host.lookup_subject_request(self._binding, command, request.idempotency_key)
+            if observed is None:
+                return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND,
+                    problem=ApplicationProblemView('subject-request-not-found-or-not-authorized'))
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FOUND, operation=_from_runtime_result(observed))
+        except PreAdmissionRejected as error:
+            safe = {'subject-request-payload-mismatch', 'malformed-idempotency-key', 'subject-request-lookup-invalid'}
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
+                problem=ApplicationProblemView(error.code if error.code in safe else 'subject-request-lookup-invalid'))
+        except Exception:
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
+                problem=ApplicationProblemView('subject-request-lookup-unverified'))
 
     def control(self, command: object) -> ApplicationHostResponse:
         self._require_open()
@@ -1238,6 +1289,9 @@ class ApplicationFacade:
     def follow(self, operation_ref: object) -> ApplicationOperationResponse:
         return self.__router.follow(operation_ref)
 
+    def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
+        return self.__router.lookup_subject_request(request)
+
     def wait(
         self,
         operation_ref: object,
@@ -1789,6 +1843,9 @@ def _query_not_found_or_not_authorized() -> ApplicationQueryResponse:
 
 __all__ = [
     "ApplicationFacade",
+    "SubjectRequestLookupRequest",
+    "SubjectRequestLookupResponse",
+    "SubjectRequestLookupStatus",
     "ConversationHistoryApplicationProjection",
     "ApplicationHostCommand",
     "ApplicationHostCommandKind",

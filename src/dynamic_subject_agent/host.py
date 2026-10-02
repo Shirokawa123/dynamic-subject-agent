@@ -7498,6 +7498,37 @@ class RuntimeHost:
             provider_authority=binding.provider_authority,
         )
 
+    def lookup_subject_request(self, binding, command, idempotency_key):
+        """A separate read-only snapshot never leases or resumes the worker."""
+        self._require_open()
+        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority != WHOLE_AUTHORITY
+            or binding.host_root_id != self._location.root_id):
+            raise RuntimeHostRejected('subject-request-lookup-unavailable', 'lookup requires this exact whole binding')
+        self._require_binding_permit(binding)
+        location = binding.timeline_root
+        _validate_timeline_existing_root(location.root, location.root_id, root_kind=location.root_kind)
+        _read_timeline_root_identity(location.root, location.root_id, location.root_kind)
+        reader = _connect_readonly(location.timeline_database)
+        try:
+            reader.execute('BEGIN')
+            _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
+                store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
+            if reader.execute('PRAGMA user_version').fetchone() != (1,):
+                raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its existing schema-1 store')
+            _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
+            authority = self._authority_for_binding(binding)
+            verifier = TimelineEngine(location, authority, reader, None)
+            observed = verifier.lookup_subject_request(command, idempotency_key)
+            if observed is None:
+                return None
+            ref, snapshot, outcome, failure = observed
+            return RuntimeResult(operation_ref=ref, snapshot=snapshot, outcome=outcome, failure=failure,
+                admission_replayed=True, publication_replayed=outcome is not None)
+        finally:
+            if reader.in_transaction:
+                reader.execute('ROLLBACK')
+            reader.close()
+
     def _qri_for_binding(
         self,
         binding: RuntimeAuthorityBinding,

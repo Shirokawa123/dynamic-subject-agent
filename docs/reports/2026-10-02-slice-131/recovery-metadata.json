@@ -1,0 +1,43 @@
+{
+  "real_canonical_turns_read": 4,
+  "pure_queries": 16,
+  "reply_hashes_equal": true,
+  "reopen_zero_model": true,
+  "missing_no_body": true,
+  "mismatch_no_body": true,
+  "foreign_no_body": true,
+  "attempts_before": 49,
+  "attempts_after": 49,
+  "live_new_requests": 0,
+  "canonical_text_exported": false,
+  "results": [
+    {
+      "turn": 1,
+      "canonical_reply_hash_equal": true,
+      "three_pure_reads": true
+    },
+    {
+      "turn": 2,
+      "canonical_reply_hash_equal": true,
+      "three_pure_reads": true
+    },
+    {
+      "turn": 3,
+      "canonical_reply_hash_equal": true,
+      "three_pure_reads": true
+    },
+    {
+      "turn": 4,
+      "canonical_reply_hash_equal": true,
+      "three_pure_reads": true
+    }
+  ],
+  "ui_isolated_port": 8786,
+  "ui_startup_zero_model": true,
+  "ui_explicit_live_requests": 1,
+  "ui_committed_turns": 1,
+  "ui_counter_before": 49,
+  "ui_counter_after": 50,
+  "ui_refresh_reopen_zero_model": true,
+  "ui_later_owned_draft_preserved": true
+}

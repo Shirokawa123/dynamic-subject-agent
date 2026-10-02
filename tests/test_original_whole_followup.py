@@ -225,6 +225,12 @@ def test_immutable_legacy_candidate_allows_receipt_reads_but_never_new_activatio
     with open_local_product(config, cognition=DormantDeepSeekCognition()) as receipts:
         assert history(receipts) == saved
         assert receipts.application.follow(original.operation_ref).projection.expression_text == original.projection.expression_text
+        from dynamic_subject_agent.application import SubjectRequestLookupRequest
+        from dynamic_subject_agent.timeline import SubjectCommand
+        command = SubjectCommand.contribute_utterance(target_profile_id=receipts.profile_id, target_timeline_id=receipts.timeline_id,
+            declared_intent="ask-collaborator-status", utterance="普通合成问题。", language="zh", provenance="project-original")
+        lookup = receipts.application.lookup_subject_request(SubjectRequestLookupRequest(command, "original-whole-test-legacy-complete"))
+        assert lookup.query_status == "found" and lookup.operation.projection.expression_text == original.projection.expression_text
         rejected = send(receipts, "新输入不得启旧候选。", "legacy-new")
         assert rejected.status == "unavailable" and rejected.operation_ref is None
         assert receipts.application.set_reviewed_character_history(False).status == "unavailable"

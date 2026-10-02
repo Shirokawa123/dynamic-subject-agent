@@ -4132,6 +4132,48 @@ class TimelineEngine:
             recovered_after_commit=recovered_after_commit,
         )
 
+    def lookup_subject_request(self, command, idempotency_key):
+        """Read a matched whole Admission from an already-open snapshot only."""
+        self._require_open()
+        if (type(command) is not SubjectCommand or getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY
+            or command.declared_intent != 'ask-collaborator-status' or command.language != 'zh'
+            or command.provenance != 'project-original' or len(command.utterance) > 1000
+            or not isinstance(idempotency_key, str)):
+            raise PreAdmissionRejected('subject-request-lookup-invalid', 'only the current bounded whole chat request can be looked up')
+        SubjectCommand(**_canonical_value(command))
+        self._validate_authority(command)
+        key_digest = _validate_idempotency_key(idempotency_key)
+        if _read_admission_gate(self._writer).authority != self._authority:
+            raise AdmissionFailedClosed('subject-request-authority-unverified', 'lookup authority does not match the canonical store')
+        # Admission creates exactly one matching claim in the same transaction.
+        # A lost index row must not become a guessed "never submitted" result.
+        index_rows = self._writer.execute('''SELECT operation.operation_id, operation.payload_fingerprint,
+            operation.authority_scope_id, COUNT(claim.operation_id), MIN(claim.payload_fingerprint), MIN(claim.authority_scope_id)
+            FROM subject_operation operation LEFT JOIN idempotency_claim claim USING(operation_id)
+            WHERE operation.operation_kind='subject' GROUP BY operation.operation_id''').fetchall()
+        if any(count != 1 or fingerprint != claimed_fingerprint or scope != claimed_scope or scope != self._authority.authority_scope_id
+            for _, fingerprint, scope, count, claimed_fingerprint, claimed_scope in index_rows):
+            raise AdmissionFailedClosed('subject-request-index-unverified', 'the canonical request index is incomplete or mismatched')
+        row = self._writer.execute('''SELECT payload_fingerprint, operation_id FROM idempotency_claim
+            WHERE authority_scope_id=? AND key_digest=?''', (self._authority.authority_scope_id, key_digest)).fetchone()
+        if row is None:
+            self._verified_publications()
+            return None
+        admitted = self._admitted_for_operation(self._writer, bytes(row[1]), replayed=True)
+        ref = admitted.operation_ref
+        if (ref.authority_scope_id != self._authority.authority_scope_id or ref.operation_kind is not OperationKind.SUBJECT
+            or bytes(row[0]).hex() != ref.admitted_payload_fingerprint):
+            raise AdmissionFailedClosed('subject-request-claim-unverified', 'request claim does not match its canonical Admission')
+        if command.payload_fingerprint != ref.admitted_payload_fingerprint:
+            raise PreAdmissionRejected('subject-request-payload-mismatch', 'the nonce belongs to a different original payload')
+        if self._query_command(ref) != command:
+            raise AdmissionFailedClosed('subject-request-command-unverified', 'the canonical command is not the requested payload')
+        self._verified_publications()
+        snapshot = self.query(ref)
+        outcome = self.query_outcome(ref) if snapshot.operation_state is OperationState.COMPLETED else None
+        failure = self.query_failure(ref) if snapshot.operation_state is OperationState.FAILED_CLOSED else None
+        return ref, snapshot, outcome, failure
+
     def _validate_commit_plan(self, plan: CycleCommitPlan) -> None:
         if not isinstance(plan, CycleCommitPlan):
             raise CommitPlanRejected(
