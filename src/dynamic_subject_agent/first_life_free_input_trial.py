@@ -13,7 +13,8 @@ from uuid import UUID
 from dynamic_subject_agent.first_life_development_trial import (DevelopmentReplyTrial, digest, _contract)
 from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
 from dynamic_subject_agent.first_life_reply_live import SCENARIOS_DIGEST, BACKGROUND_DIGEST
-from dynamic_subject_agent.first_life_reply_routes import (WHOLE_FREE_INPUT_POLICY, WHOLE_FREE_TOPIC_POLICY, WHOLE_LOCAL_POLICY, _whole)
+from dynamic_subject_agent.first_life_reply_routes import (WHOLE_FREE_INPUT_POLICY, WHOLE_FREE_TOPIC_POLICY,
+    WHOLE_FREE_PROPOSAL_POLICY, WHOLE_LOCAL_POLICY, _whole)
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.reply_protocol_trial import fixed_development_root
@@ -22,6 +23,14 @@ from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 
 AUTHORIZATION = "user-approved-s118-free-input-purpose-2026-10-02"
 CALL_PURPOSE = "free-input-character-chat"
+EXPRESSION_POLICIES = {"baseline": WHOLE_FREE_INPUT_POLICY, "current-topic": WHOLE_FREE_TOPIC_POLICY,
+    "proposal-source": WHOLE_FREE_PROPOSAL_POLICY}
+
+
+def expression_policy(variant):
+    if type(variant) is not str or variant not in EXPRESSION_POLICIES:
+        raise ValueError("known free input expression variant required")
+    return EXPRESSION_POLICIES[variant]
 
 
 def data_use_contract():
@@ -37,6 +46,14 @@ def data_use_contract():
 
 
 def expression_contract(variant):
+    expression_policy(variant)
+    if variant == "proposal-source":
+        from dynamic_subject_agent.first_life_conversation_expression import (
+            replace_role_paragraphs, proposal_changes, PROPOSAL_VERSION)
+        contract = expression_contract("current-topic")
+        contract["role_policy"] = replace_role_paragraphs(contract["role_policy"], proposal_changes())
+        contract["candidate_version"] = PROPOSAL_VERSION
+        return contract
     contract=_contract()
     if variant=="baseline":return contract
     if variant!="current-topic":raise ValueError("known free input expression variant required")
@@ -51,11 +68,24 @@ def expression_contract(variant):
 
 
 def free_input_reply_scope_digest(definition_basis, policy):
-    if policy not in (WHOLE_FREE_INPUT_POLICY,WHOLE_FREE_TOPIC_POLICY):
+    variants = [variant for variant, value in EXPRESSION_POLICIES.items() if value == policy]
+    if len(variants) != 1:
         raise ValueError("exact free input A policy required")
     return digest(dict(version=policy, data_use=data_use_contract(),
         original_design=reply_scope_digest(definition_basis, WHOLE_LOCAL_POLICY),
-        contract=expression_contract("baseline" if policy==WHOLE_FREE_INPUT_POLICY else "current-topic")))
+        contract=expression_contract(variants[0])))
+
+
+def expression_wire(task, variant):
+    expression_policy(variant)
+    if variant == "proposal-source":
+        from dynamic_subject_agent.first_life_conversation_expression import preview_proposal_source
+        return preview_proposal_source(task).wire
+    if variant == "current-topic":
+        from dynamic_subject_agent.first_life_current_topic_candidate import preview_current_topic_candidate
+        return preview_current_topic_candidate(task).wire
+    from dynamic_subject_agent.first_life_development_trial import scoped_reply_wire
+    return scoped_reply_wire(task)
 
 
 def fixed_free_input_runs_root():
@@ -94,6 +124,7 @@ def _manifest(root, scenarios, background, live,expression_variant="baseline"):
         live=live, provider="deepseek", call_limit=None, retries=0, call_purpose=CALL_PURPOSE, data_use=data_use_contract(),
         scenarios=scenarios, background=background, contract=expression_contract(expression_variant))
     if expression_variant!="baseline":result.update(version="s120-free-input-approval-1",expression_variant=expression_variant)
+    if expression_variant=="proposal-source":result["version"]="s123-free-input-approval-1"
     return result
 
 
@@ -128,7 +159,7 @@ class FreeInputReplyTrial(DevelopmentReplyTrial):
         value=self.read()
         for scenario in value["scenarios"]["scenarios"]:
             if branch_id == scenario["id"]+"-A":
-                return scenario, WHOLE_FREE_TOPIC_POLICY if value.get("expression_variant")=="current-topic" else WHOLE_FREE_INPUT_POLICY
+                return scenario, expression_policy(value.get("expression_variant", "baseline"))
         raise ValueError("one of the two authorized free input A branches required")
 
     def witness(self, branch_id):
