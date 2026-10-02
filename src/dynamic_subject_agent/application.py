@@ -1261,6 +1261,12 @@ class ApplicationFacade:
     def preview_character_identity_preparation(self, request: object) -> CharacterIdentityPreparationView:
         return self.__router.preview_character_identity_preparation(request)
 
+    @staticmethod
+    def preview_original_character_whole_use_preparation(request: object):
+        """Pure author review; does not create or open a product authority."""
+        from dynamic_subject_agent.original_whole_use_preparation import prepare_original_whole_use
+        return prepare_original_whole_use(request)
+
     def evaluate_reply_protocol(self, request):
         return self.__router.evaluate_reply_protocol(request)
 

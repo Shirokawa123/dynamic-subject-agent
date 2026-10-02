@@ -52,7 +52,7 @@ def _declaration(value):
     return CharacterSourceDeclaration(**value)
 
 
-def validate_reviewed_envelope(value):
+def validate_reviewed_envelope(value, *, require_rights_confirmation=True):
     if type(value) is not dict or set(value) != {"version", "definition_basis", "content_mapping_basis", "source_declaration", "runtime_asset", "runtime_asset_sha", "profile_content", "genesis_content", "source_title", "source_text", "candidates"}:
         raise ValueError("reviewed-definition-shape-invalid")
     if value["version"] != REVIEWED_DEFINITION_VERSION: raise ValueError("reviewed-definition-version-invalid")
@@ -67,7 +67,8 @@ def validate_reviewed_envelope(value):
         or not text(declaration.subject_id, 120) or not text(declaration.anchor_id, 120)):
         raise ValueError("reviewed-definition-declaration-invalid")
     if (declaration.origin_kind != "reviewed-fiction-derived" or declaration.intended_use != "private-character-chat"
-            or declaration.rights_confirmation_required is not True or declaration.rights_confirmed is not True
+            or declaration.rights_confirmation_required is not True or type(declaration.rights_confirmed) is not bool
+            or require_rights_confirmation and declaration.rights_confirmed is not True
             or type(asset) is not dict or set(asset) != {"version", "subject", "anchor", "initial_stage", "eligible", "chat_organization", "personality", "persona_digest"}
             or asset["version"] != "character-runtime-definition-2"
             or type(asset["subject"]) is not dict or set(asset["subject"]) != {"subject_id", "name"}
@@ -144,12 +145,10 @@ def validate_reviewed_envelope(value):
     return value
 
 
-def prepare_reviewed_definition(request):
-    if type(request) is not ReviewedCharacterFreezeRequest or request.confirmed is not True or request.rights_confirmed is not True:
-        raise ValueError("reviewed-character-confirmation-required")
-    if not isinstance(request.preparation_json, str) or len(request.preparation_json) > 1_000_000:
+def _character_preparation_envelope(preparation_json, definition_basis, *, rights_confirmation=None):
+    if not isinstance(preparation_json, str) or len(preparation_json) > 1_000_000:
         raise ValueError("reviewed-character-package-invalid")
-    value = json.loads(request.preparation_json)
+    value = json.loads(preparation_json)
     if value.get("status") != "previewed" or value.get("definition_version") != "character-definition-approval-2":
         raise ValueError("reviewed-character-package-version-invalid")
     asset_json = value["runtime_asset_json"]
@@ -177,18 +176,29 @@ def prepare_reviewed_definition(request):
         raise ValueError("reviewed-character-mapping-invalid")
     declaration = _declaration(value["source_declaration"])
     if declaration.derived_document_digest != source_sha: raise ValueError("reviewed-character-source-digest-invalid")
-    # Record the explicit request confirmation in the sealed copy only.
-    # The content basis excludes this flag; the unsigned preparation stays intact.
-    declaration = replace(declaration, rights_confirmed=True)
+    if rights_confirmation is True:
+        declaration = replace(declaration, rights_confirmed=True)
     envelope = dict(version=REVIEWED_DEFINITION_VERSION, definition_basis=value["definition_basis"],
         content_mapping_basis=mapping.view.freeze_basis_digest, source_declaration=asdict(declaration),
         runtime_asset=asset, runtime_asset_sha=_sha(asset), profile_content=asdict(mapping.view.profile), genesis_content=asdict(mapping.view.genesis))
     envelope.update(source_title=value["source_title"], source_text=source_text, candidates=[asdict(item) for item in candidates])
-    validate_reviewed_envelope(envelope)
-    if (envelope["definition_basis"] != request.definition_basis or value["runtime_asset_sha"] != envelope["runtime_asset_sha"]
+    validate_reviewed_envelope(envelope, require_rights_confirmation=rights_confirmation is True)
+    if (envelope["definition_basis"] != definition_basis or value["runtime_asset_sha"] != envelope["runtime_asset_sha"]
             or value["provisional_basis"] != envelope["content_mapping_basis"]):
         raise ValueError("reviewed-character-request-basis-conflict")
     return envelope
+
+
+def validate_character_preparation(preparation_json, definition_basis):
+    """Validate an existing preparation without confirming rights or producing a command."""
+    return _character_preparation_envelope(preparation_json, definition_basis)
+
+
+def prepare_reviewed_definition(request):
+    if type(request) is not ReviewedCharacterFreezeRequest or request.confirmed is not True or request.rights_confirmed is not True:
+        raise ValueError("reviewed-character-confirmation-required")
+    # Only the existing explicit freeze command records confirmation in its sealed copy.
+    return _character_preparation_envelope(request.preparation_json, request.definition_basis, rights_confirmation=True)
 
 
 def reviewed_profile_id(basis):

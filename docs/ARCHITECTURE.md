@@ -350,6 +350,8 @@ S124新增独立`conversation`/manifest与`first-life-whole-free-conversation-s1
 
 S125同页对照入口8784组合closed current-topic/conversation各自独立UUID根与两场景Facade，带variant的UI case及manifest组合scope用于草稿/nonce，不合并模型来源或canonical store。默认原版，候选标试验；恢复在Host打开前核variant，根唯一，旧默认钩子无操作。4实际请求/重开0/草稿保留和限制见[S125报告](reports/2026-10-02-slice-125/REPORT.md)，旧私聊/服务不迁移，不等于真实目标人物已升级。
 
+S126新增纯static Facade `preview_original_character_whole_use_preparation`消费显式完整准备包/expected definition-asset-persona/subject-anchor，复用无确认内容校验和最小选择；输出独立review basis、范围、数量/摘要及纯合成示例，remote/execution false，无ModelTask/freeze/activation或Sender。旧freeze确认先行及Studio默认strict保持，定义basis不变；新review不记录确认、不打开Authority/Timeline/凭据。真实已审包0调用验证及待审新用途见[S126](reports/2026-10-02-slice-126/REPORT.md)，不能借小林资格外发原人物或将准备当MVP完成。
+
 S119用户批准小林入口普通自由文字≤1000、本身份history开启时最多2完整committed轮/4000，原合成资料/活动/S1边界保持；`FreeInputReplyTrial`拥有独立策略/用途见证/固定根及exact composition，旧S117白名单/字节不放宽。typed `_whole`和素材守卫仍在发送前核界限，仅A普通回复可走新用途；未启生活/effect/其它人物。新`free-input-audit`无次数上限，避免已运行旧reader因新purpose拒读；旧audit保持，sender按trial准确类型/固定路径/manifest purpose核验，目录外初始化见证防重置。观察器仅metadata，私聊成功内容只canonical，草稿只browser session。新8781自由输入页面复用请求恢复/匹配nonce/原文保存及loopback保护，旧8780保持。真实结果与限制见[S119报告](reports/2026-10-02-slice-119/REPORT.md)。
 
 S118的loopback试用入口复用S117两个A分支及原固定消息用途，新的desktop Adapter只经Facade与注入的生命周期回调操作；服务启动/重开不生成，partial入口pointer不重置，未知text/choice在Admission前拒绝。页面只读canonical消息，浏览器只保存选择及opaque请求nonce；新TrialConversationAdapter复用同operation handle，终态清除全部对应inflight，刷新恢复只读轮询并按匹配回执清草稿。无生活/分享执行route，原用户服务与旧FirstLifeAdapter保持。真实3调用及限制见[S118报告](reports/2026-10-02-slice-118/REPORT.md)；自由输入与自我事实/取舍纯候选均未启用，不借不限次数扩大输入材料。
