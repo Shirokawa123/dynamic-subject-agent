@@ -266,6 +266,10 @@ class DevelopmentReplyAdapter(LiveReplyAdapter):
             raise ValueError("development transport/credential/audit purpose mismatch")
 
     def _wire(self, task):
+        from dynamic_subject_agent.first_life_free_input_trial import FreeInputReplyTrial
+        if type(self._approval) is FreeInputReplyTrial and self._approval.read().get("expression_variant")=="current-topic":
+            from dynamic_subject_agent.first_life_current_topic_candidate import preview_current_topic_candidate
+            return preview_current_topic_candidate(task).wire
         return scoped_reply_wire(task)
 
     def invoke(self, task):

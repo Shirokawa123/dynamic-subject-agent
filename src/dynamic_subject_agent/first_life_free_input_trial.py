@@ -13,7 +13,7 @@ from uuid import UUID
 from dynamic_subject_agent.first_life_development_trial import (DevelopmentReplyTrial, digest, _contract)
 from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
 from dynamic_subject_agent.first_life_reply_live import SCENARIOS_DIGEST, BACKGROUND_DIGEST
-from dynamic_subject_agent.first_life_reply_routes import (WHOLE_FREE_INPUT_POLICY, WHOLE_LOCAL_POLICY, _whole)
+from dynamic_subject_agent.first_life_reply_routes import (WHOLE_FREE_INPUT_POLICY, WHOLE_FREE_TOPIC_POLICY, WHOLE_LOCAL_POLICY, _whole)
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.reply_protocol_trial import fixed_development_root
@@ -36,11 +36,26 @@ def data_use_contract():
         character_source_sha256=SCENARIOS_DIGEST, background_sha256=BACKGROUND_DIGEST)
 
 
+def expression_contract(variant):
+    contract=_contract()
+    if variant=="baseline":return contract
+    if variant!="current-topic":raise ValueError("known free input expression variant required")
+    from dynamic_subject_agent.first_life_self_choice_candidate import EVIDENCE_BEFORE,EVIDENCE_AFTER,REPAIR_BEFORE
+    from dynamic_subject_agent.first_life_current_topic_candidate import TOPIC_REPAIR,CANDIDATE_VERSION
+    role=contract["role_policy"]
+    if role.count(EVIDENCE_BEFORE)!=1 or role.count(REPAIR_BEFORE)!=1:
+        raise ValueError("exact original expression contract required")
+    contract["role_policy"]=role.replace(EVIDENCE_BEFORE,EVIDENCE_AFTER,1).replace(REPAIR_BEFORE,TOPIC_REPAIR,1)
+    contract["candidate_version"]=CANDIDATE_VERSION
+    return contract
+
+
 def free_input_reply_scope_digest(definition_basis, policy):
-    if policy != WHOLE_FREE_INPUT_POLICY:
+    if policy not in (WHOLE_FREE_INPUT_POLICY,WHOLE_FREE_TOPIC_POLICY):
         raise ValueError("exact free input A policy required")
     return digest(dict(version=policy, data_use=data_use_contract(),
-        original_design=reply_scope_digest(definition_basis, WHOLE_LOCAL_POLICY), contract=_contract()))
+        original_design=reply_scope_digest(definition_basis, WHOLE_LOCAL_POLICY),
+        contract=expression_contract("baseline" if policy==WHOLE_FREE_INPUT_POLICY else "current-topic")))
 
 
 def fixed_free_input_runs_root():
@@ -66,7 +81,7 @@ def _open_live_audit():
     return DevelopmentCallAudit(path,initialize=True)
 
 
-def _manifest(root, scenarios, background, live):
+def _manifest(root, scenarios, background, live,expression_variant="baseline"):
     if (type(live) is not bool or str(UUID(root.name)) != root.name
         or digest(scenarios) != SCENARIOS_DIGEST or digest(background) != BACKGROUND_DIGEST):
         raise ValueError("exact original materials and free input UUID root required")
@@ -75,9 +90,11 @@ def _manifest(root, scenarios, background, live):
             raise ValueError("fixed free input live directory required")
     elif root.is_relative_to(fixed_development_root().resolve()):
         raise ValueError("offline free input cannot use the live directory")
-    return dict(version="s119-free-input-approval-1", authorization=AUTHORIZATION, root=str(root),
+    result=dict(version="s119-free-input-approval-1", authorization=AUTHORIZATION, root=str(root),
         live=live, provider="deepseek", call_limit=None, retries=0, call_purpose=CALL_PURPOSE, data_use=data_use_contract(),
-        scenarios=scenarios, background=background, contract=_contract())
+        scenarios=scenarios, background=background, contract=expression_contract(expression_variant))
+    if expression_variant!="baseline":result.update(version="s120-free-input-approval-1",expression_variant=expression_variant)
+    return result
 
 
 class MetadataOnlyObservations(list):
@@ -95,7 +112,7 @@ class FreeInputReplyTrial(DevelopmentReplyTrial):
     def _manifest(self):
         root=self.root.resolve()
         value=json.loads((root/"approval.json").read_text(encoding="utf-8"))
-        if (value != _manifest(root,value["scenarios"],value["background"],value["live"])
+        if (value != _manifest(root,value["scenarios"],value["background"],value["live"],value.get("expression_variant","baseline"))
             or digest(value) != self.manifest_digest):
             raise ValueError("free input approval changed")
         return value
@@ -108,9 +125,10 @@ class FreeInputReplyTrial(DevelopmentReplyTrial):
         return DevelopmentCallAudit(path)
 
     def branch(self, branch_id):
-        for scenario in self.scenarios["scenarios"]:
+        value=self.read()
+        for scenario in value["scenarios"]["scenarios"]:
             if branch_id == scenario["id"]+"-A":
-                return scenario, WHOLE_FREE_INPUT_POLICY
+                return scenario, WHOLE_FREE_TOPIC_POLICY if value.get("expression_variant")=="current-topic" else WHOLE_FREE_INPUT_POLICY
         raise ValueError("one of the two authorized free input A branches required")
 
     def witness(self, branch_id):
@@ -159,13 +177,13 @@ def free_input_trial_from_witness(witness):
     return result
 
 
-def open_free_input_reply_trial(root, scenarios_path, *, live, confirmed):
+def open_free_input_reply_trial(root, scenarios_path, *, live, confirmed,expression_variant="baseline"):
     if confirmed is not True or not isinstance(root,Path) or not root.is_absolute():
         raise ValueError("confirmed free input purpose and absolute root required")
     root=root.resolve()
     scenarios=json.loads(scenarios_path.read_text(encoding="utf-8"))
     background=json.loads(scenarios_path.with_name("s112-reviewed-background.json").read_text(encoding="utf-8"))
-    manifest=_manifest(root,scenarios,background,live)
+    manifest=_manifest(root,scenarios,background,live,expression_variant)
     if live:
         _open_live_audit()
     if not root.exists():
