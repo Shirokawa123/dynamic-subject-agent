@@ -80,6 +80,7 @@ class TrialEntry:
             raise ValueError("trial root changed")
         self.trial = self.trial_type(root, value["manifest_digest"])
         self.trial.read()
+        self.validate_entry_trial()
         self.branches = value["branches"]
         self.choices = {}
         try:
@@ -100,6 +101,10 @@ class TrialEntry:
         return self.open_product(LocalProductConfig(root/"DynamicSubjectAgent/m0/experiments", root/"state.json"),
             approval=self.trial, branch_id=case+"-A", definition_basis=binding["definition_basis"],
             life_scope_digest=binding["life_scope_digest"], _transport=self.transport)
+
+    def validate_entry_trial(self):
+        """Composition-specific pointer checks before claiming any runtime."""
+        return None
 
     def reopen(self, case):
         if case not in self.products:

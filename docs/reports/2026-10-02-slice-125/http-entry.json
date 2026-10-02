@@ -1,0 +1,34 @@
+[
+  {
+    "case_id": "current-topic:objects-and-versions",
+    "user_text": "今天先聊点新的：圆形和方形，哪个更容易让你想到安静？",
+    "status": "committed",
+    "assistant_text": "如果只凭第一感觉，我会选圆形——它没有硬角，轮廓收得比较缓，容易让人安静下来。方形也安静，但更像秩序和停顿，偏克制一点；真要入画，还得看它周围的留白怎么安排。",
+    "automatic_retries": 0,
+    "reload_history_equal": true
+  },
+  {
+    "case_id": "current-topic:plan-versus-completion",
+    "user_text": "你说纸船已经画好了。我没有提供图片，我们现在能确认什么？",
+    "status": "committed",
+    "assistant_text": "你说得对，我那句“已经画好了”说错了——目前没有图片，也没有生成过图片。现在能确认的只有一份构图文字方案：纸船偏左、台灯靠右、中间留白，重点放在纸船的折线上，而且它已经改到第二版。",
+    "automatic_retries": 0,
+    "reload_history_equal": true
+  },
+  {
+    "case_id": "conversation:objects-and-versions",
+    "user_text": "今天先聊点新的：圆形和方形，哪个更容易让你想到安静？",
+    "status": "committed",
+    "assistant_text": "我会先想到圆形。它没有尖角，边缘是连续往回的，像呼吸慢慢收住；方形更容易让我想到秩序和克制，不过把方形放低、留出大片空白时，也会有一种规整的安静。你问这个，是想用在下一张构图里吗？",
+    "automatic_retries": 0,
+    "reload_history_equal": true
+  },
+  {
+    "case_id": "conversation:plan-versus-completion",
+    "user_text": "你说纸船已经画好了。我没有提供图片，我们现在能确认什么？",
+    "status": "committed",
+    "assistant_text": "你问得对，我先前那句“已经画好了”不准确，我手头并没有图片。按现有记录，能确认的只有一份构图文字方案：台灯下的纸船，纸船偏左、台灯靠右、中间留白，重点是折线。至于画本身是否完成、效果怎样，目前都确认不了。",
+    "automatic_retries": 0,
+    "reload_history_equal": true
+  }
+]
