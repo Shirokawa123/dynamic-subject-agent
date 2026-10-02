@@ -164,6 +164,28 @@ def fake_product(facade=None):
     return SimpleNamespace(application=facade or FakeWholeFacade(), profile_id=str(uuid4()), timeline_id=str(uuid4()))
 
 
+def test_context_factory_health_is_distinct_without_opening_or_sending(modules):
+    desktop, _ = modules
+    product = fake_product()
+    application_id = "original-character-context-chat-s136"
+    server = desktop.original_whole_server(product, reopen=lambda: product, application_id=application_id)
+    thread = Thread(target=server.serve_forever, daemon=True); thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/health", timeout=5) as response:
+            assert json.load(response) == dict(application=application_id)
+        assert application_id != desktop.APPLICATION_ID
+        with urlopen(base + "/", timeout=5) as response:
+            page = response.read().decode()
+        assert "__SESSION_TOKEN__" not in page and "查看更早的聊天" in page
+        with pytest.raises(HTTPError) as error:
+            urlopen(Request(base + "/health", headers={"Host": "other-host"}), timeout=5)
+        assert error.value.code == 403
+        assert not product.application.submissions and not product.application.lookups and not product.application.turns
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
 def test_http_async_exact_input_nonce_read_only_status_and_no_extra_permissions(modules):
     desktop, _ = modules
     product, reopens = fake_product(), []

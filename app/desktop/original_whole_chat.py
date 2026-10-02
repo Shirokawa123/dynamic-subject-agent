@@ -270,10 +270,10 @@ class OriginalWholeChatAdapter:
             return dict(ok=True, message="已从本地记录重新打开；草稿未发送。", state=self.snapshot())
 
 
-def original_whole_server(product, *, reopen, port=0):
+def original_whole_server(product, *, reopen, port=0, application_id=APPLICATION_ID):
     adapter = OriginalWholeChatAdapter(product, reopen=reopen)
     return create_server(None, port=port, adapter=adapter, page_name="original_whole_chat.html",
-        application_id=APPLICATION_ID, post_routes={"/send":adapter.send, "/operation":adapter.poll,
+        application_id=application_id, post_routes={"/send":adapter.send, "/operation":adapter.poll,
             "/request-result":adapter.lookup,
             "/context-boundary-query":adapter.boundary_query, "/context-boundary":adapter.boundary_apply,
             "/character-basis":adapter.character_basis,

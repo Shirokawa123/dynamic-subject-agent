@@ -40,10 +40,13 @@ def history(product):
 
 class OriginalWholeChatEntry:
     """Own just this new root; a partial initialization is never silently recreated."""
+    ENTRY_VERSION = ENTRY_VERSION
+    default_entry_root = staticmethod(default_entry_root)
+
     def __init__(self, entry_root, *, live=True, package_path=DEFAULT_PACKAGE, transport=None, audit_path=None):
         self.root = Path(entry_root).resolve()
-        if (type(live) is not bool or live and self.root != default_entry_root().resolve()
-            or not live and (self.root.is_relative_to(default_entry_root().resolve())
+        if (type(live) is not bool or live and self.root != self.default_entry_root().resolve()
+            or not live and (self.root.is_relative_to(self.default_entry_root().resolve())
                 or transport is None or audit_path is None)):
             raise ValueError("exact isolated whole chat entry required")
         self.product = None
@@ -58,39 +61,20 @@ class OriginalWholeChatEntry:
                 self.root.mkdir(parents=True, exist_ok=False)
                 (self.root / "initialized").mkdir(exist_ok=False)
                 package_path = Path(package_path).resolve()
-                review = ApplicationFacade.preview_original_character_whole_use_preparation(
-                    OriginalWholeUsePreparationRequest(package_path, APPROVED_BINDING["definition_basis"],
-                        APPROVED_BINDING["runtime_asset_sha"], APPROVED_BINDING["persona_digest"],
-                        APPROVED_BINDING["subject_id"], APPROVED_BINDING["anchor_id"]))
-                if review.status != "previewed" or review.review_basis != APPROVED_BINDING["review_basis"]:
-                    raise ValueError("exact approved original whole package required")
-                content = package_path.read_text(encoding="utf-8")
+                content = self._review_package(package_path)
                 with open_local_product(self.config, cognition=DormantDeepSeekCognition()) as author:
-                    frozen = author.application.freeze_source_identity(ReviewedCharacterFreezeRequest(
-                        content, APPROVED_BINDING["definition_basis"], True, True))
-                    if frozen.status != "created":
-                        raise ValueError("new original whole identity not created")
-                    selected = author.application.select_local_identity(LocalIdentitySelectRequest(frozen.view.identity_id, True))
-                    if selected.status != "selected":
-                        raise ValueError("new original whole identity not selected")
+                    self._freeze_identity(author, content)
                 self.product = self._open()
                 if history(self.product):
                     raise ValueError("new original whole entry must have empty history")
-                value = dict(version=ENTRY_VERSION, binding=dict(APPROVED_BINDING),
+                value = dict(version=self.ENTRY_VERSION, binding=dict(APPROVED_BINDING),
                     profile_id=self.product.profile_id, timeline_id=self.product.timeline_id)
                 with pointer.open("x", encoding="utf-8") as output:
                     output.write(canonical_json(value)); output.flush(); os.fsync(output.fileno())
-            if (not (self.root / "initialized").is_dir() or not pointer.is_file()
-                or not self.config.state_path.is_file()):
-                raise ValueError("whole entry initialization incomplete; existing data preserved")
-            value = json.loads(pointer.read_text(encoding="utf-8"))
-            if (type(value) is not dict or set(value) != {"version", "binding", "profile_id", "timeline_id"}
-                or value["version"] != ENTRY_VERSION or value["binding"] != APPROVED_BINDING
-                or any(type(value[key]) is not str or str(UUID(value[key])) != value[key]
-                    for key in ("profile_id", "timeline_id"))):
-                raise ValueError("whole entry pointer changed")
+            value = self._read_pointer()
             self.identity = value["profile_id"], value["timeline_id"]
             if self.product is None:
+                self._validate_current_identity()
                 self.product = self._open()
             if (self.product.profile_id, self.product.timeline_id) != self.identity:
                 raise ValueError("whole entry identity changed")
@@ -99,9 +83,43 @@ class OriginalWholeChatEntry:
             self.close()
             raise
 
+    def _review_package(self, package_path):
+        review = ApplicationFacade.preview_original_character_whole_use_preparation(
+            OriginalWholeUsePreparationRequest(package_path, APPROVED_BINDING["definition_basis"],
+                APPROVED_BINDING["runtime_asset_sha"], APPROVED_BINDING["persona_digest"],
+                APPROVED_BINDING["subject_id"], APPROVED_BINDING["anchor_id"]))
+        if review.status != "previewed" or review.review_basis != APPROVED_BINDING["review_basis"]:
+            raise ValueError("exact approved original whole package required")
+        return package_path.read_text(encoding="utf-8")
+
+    def _freeze_identity(self, author, content):
+        frozen = author.application.freeze_source_identity(ReviewedCharacterFreezeRequest(
+            content, APPROVED_BINDING["definition_basis"], True, True))
+        if frozen.status != "created":
+            raise ValueError("new original whole identity not created")
+        selected = author.application.select_local_identity(LocalIdentitySelectRequest(frozen.view.identity_id, True))
+        if selected.status != "selected":
+            raise ValueError("new original whole identity not selected")
+
+    def _read_pointer(self):
+        pointer = self.root / 'current.json'
+        if (not (self.root / "initialized").is_dir() or not pointer.is_file()
+            or not self.config.state_path.is_file()):
+            raise ValueError("whole entry initialization incomplete; existing data preserved")
+        value = json.loads(pointer.read_text(encoding="utf-8"))
+        if (type(value) is not dict or set(value) != {"version", "binding", "profile_id", "timeline_id"}
+            or value["version"] != self.ENTRY_VERSION or value["binding"] != APPROVED_BINDING
+            or any(type(value[key]) is not str or str(UUID(value[key])) != value[key]
+                for key in ("profile_id", "timeline_id"))):
+            raise ValueError("whole entry pointer changed")
+        return value
+
     def _open(self):
         return open_original_whole_product(self.config, **self.options,
             audit_path=self.audit_path, _transport=self.transport)
+
+    def _validate_current_identity(self):
+        pass
 
     def reopen(self):
         if self.product is None:

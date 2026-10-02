@@ -665,6 +665,11 @@ def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan
     return open_local_product(config, cognition=DormantDeepSeekCognition(), _evidence_extraction=lab)
 
 
+def validate_original_context_entry(config, *, profile_id, timeline_id):
+    """Pure current sealed witness check, before any entry activation/open."""
+    LocalIdentityAuthority(config).validate_original_context_entry(profile_id, timeline_id)
+
+
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
                                 scope_digest=None, audit_path=None, _transport=None, observations=None, technical_variant="baseline", identity_id=None):
     """New exact whole qualification; opening/reopening performs no model call."""

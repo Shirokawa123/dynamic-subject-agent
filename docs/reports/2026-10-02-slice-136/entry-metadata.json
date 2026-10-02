@@ -1,0 +1,56 @@
+{
+  "version": "s136-empty-user-entry-metadata-1",
+  "technical_variant": "context-boundary",
+  "application_id": "original-character-context-chat-s136",
+  "first_root_absent": true,
+  "first_history_empty": true,
+  "reopen_identity_same": true,
+  "reopen_history_empty": true,
+  "missing_original_package_reopen": true,
+  "registry_bytes_preserved_on_reopen": true,
+  "context_revision": 0,
+  "cutoff_sequence": 0,
+  "local_basis_counts": [
+    30,
+    4
+  ],
+  "archive_rows": 0,
+  "preview_history_turns": 0,
+  "has_prior": false,
+  "model_calls": 0,
+  "global_attempts": 58,
+  "profile_sha256": "d6bcefb57e69dc266a10378ec0bc5ab3a12dd4c23771677da7e298b532d6298d",
+  "timeline_sha256": "a77e793a8091a79be9476830c58c1c466984faaf5f4ff8a012cbb00dfeeeaefe",
+  "developer_transcript_seeded": false,
+  "canonical_text_exported": false,
+  "http": {
+    "health": {
+      "application": "original-character-context-chat-s136"
+    },
+    "active": true,
+    "history_empty": true,
+    "context_revision": 0,
+    "pending": false,
+    "global_attempts": 58,
+    "old_health": {
+      "8785": {
+        "status": "not-listening",
+        "service_not_restarted_by_this_work": true
+      },
+      "8786": {
+        "status": "available",
+        "health": {
+          "application": "original-character-whole-chat-s127"
+        }
+      }
+    },
+    "windows_probe_timeout_seconds": 6
+  },
+  "ui": {
+    "empty_history_visible": true,
+    "draft_empty": true,
+    "history_enabled": true,
+    "send_disabled_for_empty_draft": true,
+    "developer_message_sent": false
+  }
+}

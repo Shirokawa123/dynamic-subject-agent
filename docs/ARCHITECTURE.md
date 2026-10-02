@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-136：独立context启动生命周期
+
+`serve_original_context_chat.py`/`Start-OriginalContextChat.cmd`固定新root、8788及独立health标识`original-character-context-chat-s136`，准确context-boundary variant；新root先纯review再创建，freeze不旧select，初始空聊天。existing/reopen在任何Host/coldrecover前经Authority纯核pointer=active exact scope，opener显式保存identity_id，错误身份无激活副作用。明确拒绝连接才初始化，其他健康失败保持现状；Windows实测后探测为6秒。
+
+旧baseline Entry/marker/root/默认health与启动器保持，未迁移旧记录。新入口0模型首开/重开、缺原来源参数重开仍用完整sealed、空UI成立。旧8785本片观测未监听且原因未知，本批未主动停止/重启；事实与启动位置见[S136报告](reports/2026-10-02-slice-136/REPORT.md)。
+
 ### Slice-135：本地已提交聊天分页
 
 Facade `query_whole_chat_archive(WholeChatArchiveRequest)`验证当前whole scope，Host独立readonly/query_only单Tx读取完整verified Publication链，首末授权复核；不进入worker/admit/恢复，不扩Provider窗口。每页20项按head_sequence稳定游标，字面query只查完整user/assistant原话，SYSTEM边界单列；pending不成为提交，history-off不遮住本地旧记录，legacy只读不激活Sender。

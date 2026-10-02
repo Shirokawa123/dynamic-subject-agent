@@ -1411,6 +1411,13 @@ class LocalIdentityAuthority:
             raise RuntimeError('whole-archive-scope-changed')
         return self._original_whole_authorization_from_record(state, record, identity)
 
+    def validate_original_context_entry(self, expected_identity_id, expected_timeline_id):
+        _, record, identity = self._active_chat_record(expected_identity_id)
+        if (identity.qri.provider_authority != CONTEXT_AUTHORITY
+            or record.get('timeline_id') != expected_timeline_id
+            or contract_variant(identity.qri.reviewed_chat_contract) != 'context-boundary'):
+            raise RuntimeError('context-entry-identity-unverified')
+
     @contextmanager
     def original_whole_guard(self, authorization):
         if type(authorization) is not OriginalWholeAuthorization:
