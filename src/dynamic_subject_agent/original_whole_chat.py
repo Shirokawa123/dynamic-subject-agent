@@ -31,6 +31,11 @@ WHOLE_USE_POLICY = PERSONALITY_POLICY + HISTORY_POLICY + (
     "使用第一人称自然中文短消息，通常两三句；不朗读档案、内部字段、审计流程或思考过程。"
     "只返回JSON exact {reply_text,language}；language=zh，reply_text非空且最多1200字符。"
 )
+JSON_EXAMPLE_VERSION = "original-whole-json-format-example-s129-1"
+JSON_EXAMPLE_SUFFIX = (
+    '\n合法JSON格式示例：{"reply_text":"按当前话题自然回答。","language":"zh"}\n'
+    '这个示例只展示字段、引号和合法JSON格式，不是人物台词，也不是本轮答案。不要复述示例内容；请按当前话题自然回答。'
+)
 
 
 def digest(value):
@@ -50,6 +55,10 @@ def whole_contract(binding, *, technical_variant="baseline"):
         retention="canonical-Timeline-only", excluded="S1-life-persona-relation-writeback-cloud-migration")
     if technical_variant == "baseline":
         return result
+    if technical_variant == "json-example":
+        policy_sha = sha256((WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX).encode()).hexdigest()
+        return dict(result, version="original-character-whole-chat-json-example-s129-1", policy_sha=policy_sha,
+            technical_variant=dict(name="json-example", version=JSON_EXAMPLE_VERSION, selector="baseline", policy_sha=policy_sha))
     if technical_variant != "followup":
         raise ValueError("known exact whole technical variant required")
     from dynamic_subject_agent.original_whole_followup import SELECTOR_VERSION, selector_digest
@@ -63,9 +72,9 @@ def contract_variant(contract):
     variant = "baseline"
     if "technical_variant" in contract:
         witness = contract["technical_variant"]
-        if type(witness) is not dict or witness.get("name") != "followup":
+        if type(witness) is not dict or witness.get("name") not in ("followup", "json-example"):
             raise ValueError("known whole technical witness required")
-        variant = "followup-legacy" if witness == LEGACY_FOLLOWUP_WITNESS else "followup"
+        variant = "json-example" if witness["name"] == "json-example" else "followup-legacy" if witness == LEGACY_FOLLOWUP_WITNESS else "followup"
     binding = {key: contract[key] for key in APPROVED_BINDING}
     expected = (_legacy_followup_contract(binding) if variant == "followup-legacy"
         else whole_contract(binding, technical_variant=variant))
@@ -87,7 +96,20 @@ def _legacy_followup_contract(binding):
 def whole_publication_key(contract):
     variant = contract_variant(contract)
     key = "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
-    return key if variant == "baseline" else key + "-s128-" + digest(contract["technical_variant"])
+    if variant == "baseline":
+        return key
+    return key + ("-s129-" if variant == "json-example" else "-s128-") + digest(contract["technical_variant"])
+
+
+def policy_for_contract(contract):
+    """Resolve one exact closed policy; never consume caller-provided policy text."""
+    variant = contract_variant(contract)
+    if variant == "followup-legacy":
+        raise ValueError("legacy followup qualification is receipt-only")
+    policy = WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX if variant == "json-example" else WHOLE_USE_POLICY
+    if sha256(policy.encode()).hexdigest() != contract["policy_sha"]:
+        raise ValueError("whole policy witness changed")
+    return policy
 
 
 def validate_whole_envelope(envelope, contract):
@@ -139,7 +161,7 @@ def projection_for_contract(envelope, identity, message, dialogue, enabled, cont
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant == "baseline":
+    if variant in ("baseline", "json-example"):
         return whole_projection(envelope, identity, message, dialogue, enabled)
     if (type(identity) is not RuntimeIdentityProjection or type(dialogue) is not CharacterDialogueBasis
         or dialogue.status != "available" or type(enabled) is not bool):

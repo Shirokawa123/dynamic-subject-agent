@@ -14,8 +14,8 @@ from dynamic_subject_agent.deepseek import DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPS
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import (ProviderAdapter, ProviderCapabilities, StructuredOutputMode,
     ModelTask, ModelTaskKind, ModelResult, ModelGatewayFailure)
-from dynamic_subject_agent.original_whole_chat import (WHOLE_USE_POLICY, digest, validate_whole_envelope,
-    validate_whole_projection, projection_for_contract, validate_whole_reply, contract_variant)
+from dynamic_subject_agent.original_whole_chat import (digest, validate_whole_envelope,
+    validate_whole_projection, projection_for_contract, validate_whole_reply, contract_variant, policy_for_contract)
 from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
@@ -61,7 +61,7 @@ class DeepSeekOriginalWholeAdapter(ProviderAdapter):
         if projection != expected:
             raise ValueError("whole material differs from sealed approved selection")
         protocol = communication_protocol("thinking-high", "low")
-        body = dict(model=protocol["model"], messages=[dict(role="system", content=WHOLE_USE_POLICY),
+        body = dict(model=protocol["model"], messages=[dict(role="system", content=policy_for_contract(self.delivery.contract)),
             dict(role="user", content=canonical_json(asdict(projection)))], **protocol["expression"])
         if (body["model"] != self.delivery.contract["model"] or body["max_tokens"] != 4096
             or body["reasoning_effort"] != "high" or body["thinking"] != {"type": "enabled"}):

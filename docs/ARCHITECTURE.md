@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-129：同用途合法输出例
+
+闭集 `json-example` 技术候选仅在whole system尾部加合法格式例及不作台词说明，selector为baseline。`policy_for_contract`从完整准确合同解析唯一policy，未知文字/伪SHA/混搭拒绝；独立policy SHA/key，旧baseline/followup字节、v1只读与出站字段/参数/Parser保持。真实13请求11提交2空白，两个四轮链完成且无例子回声；来源扩写仍在，不宣称可靠性或人物忠实通过，见[S129](reports/2026-10-02-slice-129/REPORT.md)。
+
 ### Slice-128：同用途取材技术候选
 
 `open_original_whole_product(...technical_variant="baseline"|"followup")`允许同已批whole用途的闭集技术对照；默认baseline contract/policy/projection/key与S127字节保持。followup在新空root发行selector见证绑定的独立QRI/key，既有root不可换variant；共享原人物metadata账，Sender从保存合同及同一sealed快照重建实际选择，不接受调用方任意policy/selector。
