@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-130：来源范围组合候选
+
+闭集 `grounded` 将S128 v2 selector、S129合法例与一个明确断言范围段精确绑定在独立contract/policy/key中；旧variant、slot、Parser、NoOp及revision/Publication不变，无真假审核请求、语义正则或新数据。真实当前配色构想四轮可澄清并继续假想，过去细节仍有无据解释，11请求8提交3空白，未选择默认或声明忠实通过，见[S130报告](reports/2026-10-02-slice-130/REPORT.md)。
+
 ### Slice-129：同用途合法输出例
 
 闭集 `json-example` 技术候选仅在whole system尾部加合法格式例及不作台词说明，selector为baseline。`policy_for_contract`从完整准确合同解析唯一policy，未知文字/伪SHA/混搭拒绝；独立policy SHA/key，旧baseline/followup字节、v1只读与出站字段/参数/Parser保持。真实13请求11提交2空白，两个四轮链完成且无例子回声；来源扩写仍在，不宣称可靠性或人物忠实通过，见[S129](reports/2026-10-02-slice-129/REPORT.md)。

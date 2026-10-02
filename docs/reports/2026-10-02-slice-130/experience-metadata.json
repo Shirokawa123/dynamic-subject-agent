@@ -1,0 +1,441 @@
+{
+  "version": "s130-authorized-whole-metadata-1",
+  "attempts": 11,
+  "committed_turns": 8,
+  "failures": 3,
+  "failure_codes": [
+    "original-whole-response-content-empty",
+    "original-whole-response-content-empty",
+    "original-whole-response-content-empty"
+  ],
+  "automatic_retries": 0,
+  "original_whole_global_attempts": 49,
+  "canonical_text_exported": false,
+  "cases": [
+    {
+      "variant": "grounded",
+      "case": "attribution",
+      "attempts": 2,
+      "committed_turns": 1,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.343,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "0aa1d556810cfb1b43c28c89a1268574827a74f15a4951102d43edac2903c088",
+              "wire_sha256": "a242b52b2aa1d8f629cc356189044e31660d1dafc3b7d45dd9b2c9e28a6bce73",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2363,
+                "completion_tokens": 219,
+                "total_tokens": 2582,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 187
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.2996037999982946
+            }
+          ],
+          "reply_chars": 63,
+          "reply_sha256": "a7864fe8397d3b0ba990657154a97e1f1e229d296b000a181cb3dc49edb4889a"
+        },
+        {
+          "turn": 2,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 3.1,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "3445fdc9758f0c353cd4b35a3ed4f7874bbcf6d3e75c4c1019f339e9f3554dc5",
+              "wire_sha256": "1eb74b1617286344416b66af210a232a4e0f7d0fc8e7239f56ab46ace875d019",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2359,
+                "completion_tokens": 214,
+                "total_tokens": 2573,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 311
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.1389589000027627
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 0,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "grounded",
+      "case": "past-detail",
+      "attempts": 3,
+      "committed_turns": 2,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.303,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "7874aea80d3f5eb649297f7621793c060ab9cfdba264b034e62909613808f9e7",
+              "wire_sha256": "62768691472579fa34f6346c8af4f7467178773b61336893a57816ae0e46e1b0",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2352,
+                "completion_tokens": 157,
+                "total_tokens": 2509,
+                "prompt_cache_hit_tokens": 256,
+                "prompt_cache_miss_tokens": 2096
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.159808199998224
+            }
+          ],
+          "reply_chars": 55,
+          "reply_sha256": "8438bb7db7e5da69bcc15fb61f9c8c56c60a613c13f0a066c233d10a4c9ef9fc"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 6.322,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "e3568eedcbcc6d71360138a18ba04aa0ccde4d84046b707b9c37edbeaaabd9e9",
+              "wire_sha256": "d6d50bc58407a6b0dccf27210bbcef28d303f38a587dabd691d0f25a009b1e71",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2405,
+                "completion_tokens": 864,
+                "total_tokens": 3269,
+                "prompt_cache_hit_tokens": 1024,
+                "prompt_cache_miss_tokens": 1381
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 5.196337200002745
+            }
+          ],
+          "reply_chars": 94,
+          "reply_sha256": "206a41665cbcfa947f3d8c6c4a24d757d83332f2f5f906332afc50b9f3501237"
+        },
+        {
+          "turn": 3,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.666,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "1ffea355693d540b330e565da5dad097c679f82ec3fe73dfbbfd5023d4b5c2f5",
+              "wire_sha256": "acfca647ab1d84e205ffbbad7cc45fadcbf079ab15b54193d881f9e04c95ec50",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2422,
+                "completion_tokens": 141,
+                "total_tokens": 2563,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 374
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.657274099998176
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 1,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "grounded",
+      "case": "proposal",
+      "attempts": 4,
+      "committed_turns": 4,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.093,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "f4ab9876cb528a8781642995d6b93e01df3e5b4ac12c5eefa7de8200b4be1751",
+              "wire_sha256": "3dccddf1634329927d16b07a0843b2ea36770bae7ea110a4041a5d1189e5b244",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2290,
+                "completion_tokens": 198,
+                "total_tokens": 2488,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 242
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.042037999999593
+            }
+          ],
+          "reply_chars": 61,
+          "reply_sha256": "d5c782dfc0be80b6f74a03d6d5d8f0e99e3b99732a7da8082ac15a33d84c5d65"
+        },
+        {
+          "turn": 2,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 4.006,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "34fe21c59656494d86c3185f33b39e75c015755289f07f85f99c1b2243ae9c1b",
+              "wire_sha256": "e86a6947e268a1f4b39b12cd82f344ae22ae616781c8036c93c44ad4ff50f42c",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2350,
+                "completion_tokens": 394,
+                "total_tokens": 2744,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 302
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.9121560999919893
+            }
+          ],
+          "reply_chars": 79,
+          "reply_sha256": "afd4300e3a9978a1ce7ad770343e23e892d9578d0b21e5ec04a3472161bcf36b"
+        },
+        {
+          "turn": 3,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 7.47,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "8a2f81639bf5449f83edc5bbd1bdfdc765a2b128e41af9b6e458323909c97a76",
+              "wire_sha256": "91471134620be773ac4110b06dd6acdb8ac0f90672cfb7efb753f326f263b197",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2424,
+                "completion_tokens": 1022,
+                "total_tokens": 3446,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 248
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 6.288696200004779
+            }
+          ],
+          "reply_chars": 117,
+          "reply_sha256": "d7d514bf147bf0921f630f8e6bf723c8dd710e46a515c56b70631ea616d42d97"
+        },
+        {
+          "turn": 4,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.241,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "972ddd6846e7f168d509817549a220622936e79c05f40613d487eb98e6c2d68e",
+              "wire_sha256": "335a54b7a7a859dc8fbfac3e5cd2b0abdff9c5bca0b20c7fdb0f7eb8bca92076",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2462,
+                "completion_tokens": 215,
+                "total_tokens": 2677,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 414
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.8880470000003697
+            }
+          ],
+          "reply_chars": 123,
+          "reply_sha256": "1ed39f442a1c1b889d7d1e48503dc723ec85fe4979c131eee4e504b86b40c22b"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 0,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 0,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 3,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 4,
+          "related_units": 0,
+          "exchange_turns": 2,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    },
+    {
+      "variant": "grounded",
+      "case": "topic-boundary",
+      "attempts": 2,
+      "committed_turns": 1,
+      "observations": [
+        {
+          "turn": 1,
+          "status": "terminal",
+          "replayed": true,
+          "elapsed_seconds": 3.328,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "complete",
+              "request_digest": "9f4763af5632fb4f1a4fe1b4041c1544c26bb9a126af724de38f678d3028fbf3",
+              "wire_sha256": "e75a8c3db4086af883fe226573ed71428f5085831f19df792b05de998e20bbc4",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2351,
+                "completion_tokens": 190,
+                "total_tokens": 2541,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 175
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.2470057000027737
+            }
+          ],
+          "reply_chars": 67,
+          "reply_sha256": "e91a449cc214d5f845cd4582bd20fb6ecd05b6fc88f2c8989fff0f19b82cbb13"
+        },
+        {
+          "turn": 2,
+          "status": "failed-closed",
+          "replayed": true,
+          "elapsed_seconds": 2.572,
+          "observations": [
+            {
+              "task_kind": "character-original-whole-reply",
+              "purpose": "original-character-whole-chat",
+              "stage": "whole-reply",
+              "status": "failed-closed",
+              "request_digest": "5bfed1c81163dbb9d77404099114780dedcb3dda9c504afaba0c633488b14240",
+              "wire_sha256": "92932b090f39f643dc812863d3e001c3a4b287a983487d2dbafe64437bf4382f",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2426,
+                "completion_tokens": 111,
+                "total_tokens": 2537,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 250
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.6352501000073971
+            }
+          ],
+          "failure_code": "original-whole-response-content-empty"
+        }
+      ],
+      "windows": [
+        {
+          "turn": 1,
+          "related_units": 1,
+          "exchange_turns": 0,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        },
+        {
+          "turn": 2,
+          "related_units": 1,
+          "exchange_turns": 1,
+          "material_projection_matches_claim": true,
+          "life_evidence_empty": true
+        }
+      ]
+    }
+  ]
+}
