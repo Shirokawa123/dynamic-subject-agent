@@ -32,8 +32,8 @@ class WholeReplyChatAdapter(WholeReplyTrialAdapter):
             return self._wrap(case, adapter.send(data))
 
 
-def chat_server(products, *, choices, scope_key, reopen, port=0):
+def chat_server(products, *, choices, scope_key, reopen, port=0,application_id=APPLICATION_ID,page_name="whole_reply_chat.html"):
     adapter = WholeReplyChatAdapter(products, choices=choices, scope_key=scope_key, reopen=reopen)
-    return create_server(None, port=port, adapter=adapter, page_name="whole_reply_chat.html",
-        application_id=APPLICATION_ID, post_routes={"/send":adapter.send, "/operation":adapter.poll,
+    return create_server(None, port=port, adapter=adapter, page_name=page_name,
+        application_id=application_id, post_routes={"/send":adapter.send, "/operation":adapter.poll,
             "/history":adapter.history, "/context-reset":adapter.reset_context, "/reload":adapter.reload})
