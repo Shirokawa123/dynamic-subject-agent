@@ -346,6 +346,8 @@ S120的`first-life-whole-free-topic-s120-1`/独立v2 free-input manifest只改�
 
 S123新增闭集`proposal-source`/独立manifest与`first-life-whole-free-proposal-s123-1`，只替换current-topic表达第3/4段；统一expression_wire入口与scope绑定，旧baseline/topic字节和data_use不变。当前交流理由可影响取舍，先前构想不独立成为方案属性/行动/人格；Python/窗口/Publication保持。实际20请求、原版也能直接澄清及候选来源前提失败见[S123报告](reports/2026-10-02-slice-123/REPORT.md)，不将结构通过当完整来源忠实。
 
+S124新增独立`conversation`/manifest与`first-life-whole-free-conversation-s124-1`，只换S123来源/语气段，既有JSON/reply_text范围逐字保留；旧版本/root不能换用。来源前提应核实际原话，语气按当前问题需要表达，参数/schema/data_use不变。24真实记录含明确cue纠正及纸船现状/理由、history-off否定歧义，见[S124报告](reports/2026-10-02-slice-124/REPORT.md)，仅供受限对照，未宣称全面winner。
+
 S119用户批准小林入口普通自由文字≤1000、本身份history开启时最多2完整committed轮/4000，原合成资料/活动/S1边界保持；`FreeInputReplyTrial`拥有独立策略/用途见证/固定根及exact composition，旧S117白名单/字节不放宽。typed `_whole`和素材守卫仍在发送前核界限，仅A普通回复可走新用途；未启生活/effect/其它人物。新`free-input-audit`无次数上限，避免已运行旧reader因新purpose拒读；旧audit保持，sender按trial准确类型/固定路径/manifest purpose核验，目录外初始化见证防重置。观察器仅metadata，私聊成功内容只canonical，草稿只browser session。新8781自由输入页面复用请求恢复/匹配nonce/原文保存及loopback保护，旧8780保持。真实结果与限制见[S119报告](reports/2026-10-02-slice-119/REPORT.md)。
 
 S118的loopback试用入口复用S117两个A分支及原固定消息用途，新的desktop Adapter只经Facade与注入的生命周期回调操作；服务启动/重开不生成，partial入口pointer不重置，未知text/choice在Admission前拒绝。页面只读canonical消息，浏览器只保存选择及opaque请求nonce；新TrialConversationAdapter复用同operation handle，终态清除全部对应inflight，刷新恢复只读轮询并按匹配回执清草稿。无生活/分享执行route，原用户服务与旧FirstLifeAdapter保持。真实3调用及限制见[S118报告](reports/2026-10-02-slice-118/REPORT.md)；自由输入与自我事实/取舍纯候选均未启用，不借不限次数扩大输入材料。

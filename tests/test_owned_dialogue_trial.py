@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from run_s122_experience_choice import PACKAGE, run_branch
 from owned_dialogue_trial import digest
+from run_s124_conversation_scope import PACKAGE as SCOPE_PACKAGE, run_case
 
 
 def test_complete_owned_reason_chain_reopens_and_exports_only_structural_wire_facts(tmp_path):
@@ -27,3 +28,14 @@ def test_complete_owned_reason_chain_reopens_and_exports_only_structural_wire_fa
     assert third["background_digest"] == fourth["background_digest"]
     assert third["evidence_digest"] == fourth["evidence_digest"]
     assert all("text" not in source for source in third["sources"])
+
+
+def test_conversation_history_off_has_no_dialogue_and_settings_and_reopen_do_not_generate(tmp_path):
+    row = json.loads(SCOPE_PACKAGE.read_text(encoding="utf-8"))["cases"][0]
+    transport = SyntheticTransport()
+    result = run_case(row, live=False, root=tmp_path / str(uuid4()), transport=transport)
+    assert result["status"] == "completed" and len(transport.calls) == 4
+    off = result["steps"][2]["envelopes"][0]
+    assert off["history_enabled"] is False and off["sources"] == []
+    assert result["steps"][3]["envelopes"][0]["history_enabled"] is True
+    assert all(row["additional_model_calls"] == 0 for row in result["actions"])

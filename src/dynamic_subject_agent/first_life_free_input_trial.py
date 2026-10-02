@@ -14,7 +14,7 @@ from dynamic_subject_agent.first_life_development_trial import (DevelopmentReply
 from dynamic_subject_agent.first_life_reply_drafts import reply_scope_digest
 from dynamic_subject_agent.first_life_reply_live import SCENARIOS_DIGEST, BACKGROUND_DIGEST
 from dynamic_subject_agent.first_life_reply_routes import (WHOLE_FREE_INPUT_POLICY, WHOLE_FREE_TOPIC_POLICY,
-    WHOLE_FREE_PROPOSAL_POLICY, WHOLE_LOCAL_POLICY, _whole)
+    WHOLE_FREE_PROPOSAL_POLICY, WHOLE_FREE_CONVERSATION_POLICY, WHOLE_LOCAL_POLICY, _whole)
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.reply_protocol_trial import fixed_development_root
@@ -24,7 +24,7 @@ from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 AUTHORIZATION = "user-approved-s118-free-input-purpose-2026-10-02"
 CALL_PURPOSE = "free-input-character-chat"
 EXPRESSION_POLICIES = {"baseline": WHOLE_FREE_INPUT_POLICY, "current-topic": WHOLE_FREE_TOPIC_POLICY,
-    "proposal-source": WHOLE_FREE_PROPOSAL_POLICY}
+    "proposal-source": WHOLE_FREE_PROPOSAL_POLICY, "conversation": WHOLE_FREE_CONVERSATION_POLICY}
 
 
 def expression_policy(variant):
@@ -47,6 +47,13 @@ def data_use_contract():
 
 def expression_contract(variant):
     expression_policy(variant)
+    if variant == "conversation":
+        from dynamic_subject_agent.first_life_conversation_expression import (
+            replace_role_paragraphs, conversation_changes, CONVERSATION_VERSION)
+        contract = expression_contract("proposal-source")
+        contract["role_policy"] = replace_role_paragraphs(contract["role_policy"], conversation_changes())
+        contract["candidate_version"] = CONVERSATION_VERSION
+        return contract
     if variant == "proposal-source":
         from dynamic_subject_agent.first_life_conversation_expression import (
             replace_role_paragraphs, proposal_changes, PROPOSAL_VERSION)
@@ -78,6 +85,9 @@ def free_input_reply_scope_digest(definition_basis, policy):
 
 def expression_wire(task, variant):
     expression_policy(variant)
+    if variant == "conversation":
+        from dynamic_subject_agent.first_life_conversation_expression import preview_conversation
+        return preview_conversation(task).wire
     if variant == "proposal-source":
         from dynamic_subject_agent.first_life_conversation_expression import preview_proposal_source
         return preview_proposal_source(task).wire
@@ -125,6 +135,7 @@ def _manifest(root, scenarios, background, live,expression_variant="baseline"):
         scenarios=scenarios, background=background, contract=expression_contract(expression_variant))
     if expression_variant!="baseline":result.update(version="s120-free-input-approval-1",expression_variant=expression_variant)
     if expression_variant=="proposal-source":result["version"]="s123-free-input-approval-1"
+    if expression_variant=="conversation":result["version"]="s124-free-input-approval-1"
     return result
 
 
