@@ -27,7 +27,8 @@ from dynamic_subject_agent.first_life import (
     initial_life_record, adjudicate_life, event_summary,
 )
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
-from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -2676,11 +2677,12 @@ def _bootstrap_timeline(
         _begin(connection)
         effects = 'confirmed-text-save-v1' in authority.allowed_intents
         life = LIFE_SYSTEM_INTENT in authority.allowed_intents
+        whole_context = CONTEXT_INTENT in authority.allowed_intents
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
-        schema_version = 3 if life else 2 if effects else SCHEMA_VERSION
+        schema_version = 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
-            if life:
+            if life or whole_context:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
             if effects:
                 statement=statement.replace('CHECK (committed_effect_eligible = 0)', 'CHECK (committed_effect_eligible IN (0,1))')
@@ -2694,6 +2696,9 @@ def _bootstrap_timeline(
             connection.execute('INSERT INTO effect_receipt_head VALUES (1,0,?)', (_EMPTY_EFFECT_HEAD,))
         if life:
             for statement in _LIFE_DDL:
+                connection.execute(statement)
+        if whole_context:
+            for statement in CONTEXT_DDL:
                 connection.execute(statement)
         connection.execute(f"PRAGMA user_version = {schema_version}")
         _insert_manifest(
@@ -2853,7 +2858,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2887,6 +2892,8 @@ def _verify_store_integrity(
         expected_tables=expected_tables | {'effect_receipt','effect_receipt_head'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==3:
         expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
+    elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==4:
+        expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary'}
     try:
         tables = frozenset(
             row[0]
@@ -3386,6 +3393,8 @@ class TimelineEngine:
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
+            if (writer.execute('PRAGMA user_version').fetchone()[0]==4) != (CONTEXT_INTENT in authority.allowed_intents):
+                raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
             if authority.timeline_id != location.timeline_id:
                 raise AdmissionFailedClosed(
                     "store-identity-mismatch",
@@ -3563,6 +3572,16 @@ class TimelineEngine:
                 "OperationRef does not belong to this Timeline authority",
             )
         if operation_ref.operation_kind is OperationKind.SYSTEM:
+            if CONTEXT_INTENT in self._authority.allowed_intents:
+                row = self._writer.execute('SELECT input_json,payload_fingerprint FROM whole_context_input WHERE operation_id=?',
+                    (UUID(operation_ref.operation_id).bytes,)).fetchone()
+                try:
+                    command = WholeContextInput(**json.loads(row[0]))
+                    if _canonical_json(command) != row[0] or bytes(row[1]).hex() != command.payload_fingerprint or command.payload_fingerprint != operation_ref.admitted_payload_fingerprint:
+                        raise ValueError('whole context input differs')
+                    return command
+                except Exception:
+                    raise AdmissionFailedClosed('whole-context-input-unverified', 'whole boundary input is invalid') from None
             self._require_life_authority()
             row = self._writer.execute(
                 'SELECT input_json, payload_fingerprint FROM system_input WHERE operation_id=?',
@@ -3706,9 +3725,11 @@ class TimelineEngine:
     def pending_original_whole_operations(self):
         """Schema-1 whole cold recovery verifies, then closes uncommitted work."""
         self._require_open()
-        if getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY:
+        if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES:
             raise PreAdmissionRejected('original-whole-unavailable', 'this is not the whole runtime')
         self._verified_publications()
+        if CONTEXT_INTENT in self._authority.allowed_intents:
+            self.whole_context_basis()
         pending = []
         for (operation_id,) in self._writer.execute('SELECT operation_id FROM subject_operation ORDER BY admitted_at_us, operation_id').fetchall():
             ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
@@ -3725,10 +3746,17 @@ class TimelineEngine:
         return tuple(pending)
 
     def _validate_authority(self, command: SubjectCommand) -> None:
+        if type(command) is WholeContextInput:
+            if CONTEXT_INTENT not in self._authority.allowed_intents:
+                raise PreAdmissionRejected('whole-context-unavailable', 'no whole context permission')
+            WholeContextInput(**_canonical_value(command))
+            if command.target_profile_id != self._authority.profile_id or command.target_timeline_id != self._authority.timeline_id:
+                raise PreAdmissionRejected('whole-context-target-mismatch', 'whole boundary belongs to another binding')
+            return
         if type(command) is FirstLifeInput:
             self._validate_first_life_input(command)
             return
-        if command.declared_intent == LIFE_SYSTEM_INTENT:
+        if command.declared_intent in (LIFE_SYSTEM_INTENT, CONTEXT_INTENT):
             raise PreAdmissionRejected('typed-system-input-required', 'a user utterance cannot impersonate a life input')
         if (
             command.target_profile_id != self._authority.profile_id
@@ -3782,7 +3810,7 @@ class TimelineEngine:
         _reserved_operation_id: str | None = None,
     ) -> Admitted:
         self._require_open()
-        if not isinstance(command, SubjectCommand) and type(command) is not FirstLifeInput:
+        if not isinstance(command, SubjectCommand) and type(command) not in (FirstLifeInput, WholeContextInput):
             raise PreAdmissionRejected(
                 "malformed-command",
                 "Admission requires a SubjectCommand",
@@ -3886,14 +3914,16 @@ class TimelineEngine:
                 (
                     operation_id,
                     self._authority.authority_scope_id,
-                    OperationKind.SYSTEM.value if type(command) is FirstLifeInput else OperationKind.SUBJECT.value,
+                    OperationKind.SYSTEM.value if type(command) in (FirstLifeInput, WholeContextInput) else OperationKind.SUBJECT.value,
                     command.contract_version,
                     payload,
                     OperationState.ADMITTED_PENDING.value,
                     recorded_at,
                 ),
             )
-            if type(command) is FirstLifeInput:
+            if type(command) is WholeContextInput:
+                self._writer.execute('INSERT INTO whole_context_input VALUES (?,?,?)', (operation_id, _canonical_json(command), payload))
+            elif type(command) is FirstLifeInput:
                 self._writer.execute('INSERT INTO system_input VALUES (?,?,?)',
                     (operation_id, _canonical_json(command), payload))
             else:
@@ -3935,7 +3965,7 @@ class TimelineEngine:
                     recorded_at_us
                 ) VALUES (?, ?, ?, ?)
                 """,
-                (event_id, operation_id, 'system-input-admitted' if type(command) is FirstLifeInput else 'command-admitted', recorded_at),
+                (event_id, operation_id, 'system-input-admitted' if type(command) in (FirstLifeInput, WholeContextInput) else 'command-admitted', recorded_at),
             )
             self._writer.execute(
                 """
@@ -4135,7 +4165,7 @@ class TimelineEngine:
     def lookup_subject_request(self, command, idempotency_key):
         """Read a matched whole Admission from an already-open snapshot only."""
         self._require_open()
-        if (type(command) is not SubjectCommand or getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY
+        if (type(command) is not SubjectCommand or getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES
             or command.declared_intent != 'ask-collaborator-status' or command.language != 'zh'
             or command.provenance != 'project-original' or len(command.utterance) > 1000
             or not isinstance(idempotency_key, str)):
@@ -4245,7 +4275,7 @@ class TimelineEngine:
                     f"{field} must be a typed {expected_type.__name__}",
                 )
 
-        if plan.operation_ref.operation_kind is OperationKind.SYSTEM and plan.life_record is None:
+        if plan.operation_ref.operation_kind is OperationKind.SYSTEM and plan.life_record is None and CONTEXT_INTENT not in self._authority.allowed_intents:
             raise CommitPlanRejected('life-record-required', 'system Publication requires an adjudicated life record')
 
         if (
@@ -4264,7 +4294,7 @@ class TimelineEngine:
             or plan.timeline_id != self._authority.timeline_id
             or plan.operation_ref.operation_kind not in (
                 (OperationKind.SUBJECT, OperationKind.SYSTEM)
-                if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else (OperationKind.SUBJECT,)
+                if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or CONTEXT_INTENT in self._authority.allowed_intents else (OperationKind.SUBJECT,)
             )
         ):
             raise CommitPlanRejected(
@@ -4481,13 +4511,86 @@ class TimelineEngine:
             command = self._query_command(ref)
             if (outcome.head_sequence != row[0] or outcome.previous_outcome_digest != previous
                 or type(row[1]) is not int or row[1] <= 0
-                or (type(command) is FirstLifeInput) != (ref.operation_kind is OperationKind.SYSTEM)):
+                or (type(command) in (FirstLifeInput, WholeContextInput)) != (ref.operation_kind is OperationKind.SYSTEM)):
                 raise PublicationFailedClosed('timeline-chain-invalid', 'global Publication lineage is invalid')
             result.append((outcome, command, row[1]))
             previous = outcome.outcome_digest
         if previous != basis.published_outcome_digest:
             raise PublicationFailedClosed('timeline-head-invalid', 'global Publication head does not match its chain')
         return tuple(result)
+
+    def whole_context_basis(self, *, expected_head=None):
+        if CONTEXT_INTENT not in self._authority.allowed_intents:
+            raise PreAdmissionRejected('whole-context-unavailable', 'this store has no context control')
+        head = _read_timeline_basis(self._writer).head_sequence if expected_head is None else expected_head
+        revision, cutoff = 0, 0
+        rows = self._writer.execute('''SELECT boundary.plan_id,boundary.revision,boundary.cutoff_sequence,
+            boundary.record_json,boundary.record_digest,outcome.operation_id
+            FROM whole_context_boundary boundary LEFT JOIN timeline_outcome outcome USING(plan_id)
+            WHERE boundary.cutoff_sequence<=? ORDER BY boundary.revision''', (head,)).fetchall()
+        systems = self._writer.execute('''SELECT COUNT(*) FROM timeline_outcome outcome JOIN subject_operation operation USING(operation_id)
+            WHERE operation.operation_kind='system' AND outcome.head_sequence<=?''', (head,)).fetchone()[0]
+        if systems != len(rows):
+            raise PublicationFailedClosed('whole-context-head-unverified', 'a non-chat head has no exact boundary proof')
+        for plan_id, number, sequence, raw, checksum, operation_id in rows:
+            if operation_id is None:
+                raise PublicationFailedClosed('whole-context-orphan', 'boundary lacks its atomic Publication')
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            command, outcome = self._query_command(ref), self.query_outcome(ref)
+            record = dict(version=CONTEXT_VERSION, previous_revision=revision, revision=revision+1,
+                cutoff_sequence=outcome.head_sequence, request_digest=command.request_digest,
+                expected_basis=command.expected_basis)
+            if (type(command) is not WholeContextInput or number != revision+1 or sequence != outcome.head_sequence
+                or raw != _canonical_json(record) or checksum != hashlib.sha256(raw.encode()).hexdigest()
+                or outcome.expression.text != CONTEXT_RECEIPT):
+                raise PublicationFailedClosed('whole-context-integrity-failed', 'boundary lineage or receipt is invalid')
+            receipt = self._writer.execute('''SELECT expected_head_sequence,expected_head_outcome_digest,
+                expected_verified_prefix_digest,expected_revision_head_digest FROM cycle_commit_plan_receipt WHERE plan_id=?''', (plan_id,)).fetchone()
+            proven = TimelineBasis(receipt[0], None if receipt[1] is None else bytes(receipt[1]).hex(), bytes(receipt[2]).hex(), bytes(receipt[3]).hex())
+            if command.expected_basis != _canonical_value(proven) or command.expected_revision != revision:
+                raise PublicationFailedClosed('whole-context-prefix-invalid', 'boundary differs from its complete frozen prefix')
+            revision, cutoff = number, sequence
+        return dict(context_revision=revision, cutoff_sequence=cutoff)
+
+    def _verify_whole_failed_prefix(self, ref, head, current_basis=None):
+        self.query_failure(ref)
+        frozen = self._writer.execute('''SELECT attempt_id,head_sequence,published_outcome_digest,verified_prefix_digest,
+            revision_head_digest FROM attempt_cycle_basis WHERE operation_id=?''', (UUID(ref.operation_id).bytes,)).fetchone()
+        if frozen is None or bytes(frozen[0]) != UUID(self.query(ref).attempt_id).bytes or frozen[1] != head:
+            raise PublicationFailedClosed('whole-context-failure-unverified', 'old failure has no complete frozen basis')
+        actual = TimelineBasis(head, None if frozen[2] is None else bytes(frozen[2]).hex(), bytes(frozen[3]).hex(), bytes(frozen[4]).hex())
+        if current_basis is not None and current_basis.head_sequence == head:
+            proven = current_basis
+        else:
+            row = self._writer.execute('''SELECT receipt.expected_head_sequence,receipt.expected_head_outcome_digest,
+                receipt.expected_verified_prefix_digest,receipt.expected_revision_head_digest FROM timeline_outcome outcome
+                JOIN cycle_commit_plan_receipt receipt USING(plan_id) WHERE outcome.head_sequence=?''', (head+1,)).fetchone()
+            if row is None:
+                raise PublicationFailedClosed('whole-context-failure-unverified', 'old failure lacks a subsequent proven Publication')
+            proven = TimelineBasis(row[0], None if row[1] is None else bytes(row[1]).hex(), bytes(row[2]).hex(), bytes(row[3]).hex())
+        if actual != proven:
+            raise PublicationFailedClosed('whole-context-failure-unverified', 'old failure prefix does not match canonical proof')
+
+    def _validate_whole_boundary_plan(self, plan):
+        command = self._query_command(plan.operation_ref)
+        if type(command) is not WholeContextInput:
+            return
+        scope = self.whole_context_basis(expected_head=plan.expected_basis.head_sequence)
+        if (command.expected_revision != scope['context_revision'] or command.expected_basis != _canonical_value(plan.expected_basis)
+            or plan.expression.text != CONTEXT_RECEIPT):
+            raise CommitPlanRejected('whole-context-stale', 'control scope or complete prefix has changed')
+        self._verified_publications()
+        rows = self._writer.execute('''SELECT operation_id FROM subject_operation WHERE operation_id!=?
+            AND NOT EXISTS(SELECT 1 FROM timeline_outcome outcome WHERE outcome.operation_id=subject_operation.operation_id)''',
+            (UUID(plan.operation_ref.operation_id).bytes,)).fetchall()
+        for (operation_id,) in rows:
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            if self.query(ref).operation_state is not OperationState.FAILED_CLOSED:
+                raise CommitPlanRejected('whole-context-pending', 'unresolved work must not be concealed by a boundary')
+            frozen = self._writer.execute('SELECT head_sequence FROM attempt_cycle_basis WHERE operation_id=?', (operation_id,)).fetchone()
+            if frozen is None:
+                raise CommitPlanRejected('whole-context-failure-unverified', 'old failure has no frozen source basis')
+            self._verify_whole_failed_prefix(ref, frozen[0], plan.expected_basis)
 
     def _check_life_change(self, record, command, before, expression):
         """Python adjudication of the entire delta, also used during replay."""
@@ -4661,10 +4764,12 @@ class TimelineEngine:
         )
         committed = False
         try:
+            if CONTEXT_INTENT in self._authority.allowed_intents:
+                self._validate_whole_boundary_plan(plan)
             self._hit(FaultPoint.BEFORE_PLAN_CLAIM)
             _begin(self._writer)
             life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents
-            if (life or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
+            if (life or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot be claimed or published')
             existing = self._writer.execute(
                 """
@@ -4895,7 +5000,7 @@ class TimelineEngine:
     def _share_publication_guard(self, plan):
         authorization = plan.chat_authorization or plan.share_authorization
         if authorization is None:
-            if getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY:
+            if getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES:
                 guard = getattr(self, '_original_whole_publication_guard', None)
                 try:
                     if guard is None:
@@ -5803,7 +5908,7 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PUBLICATION_TRANSACTION)
             _begin(self._writer)
             _require_publication_gate(self._writer, self._authority)
-            if ((LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY)
+            if ((LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES)
                 and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone()):
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot publish')
             existing = self._writer.execute(
@@ -5912,6 +6017,15 @@ class TimelineEngine:
                 observed_basis,
                 published_at,
             )
+            if CONTEXT_INTENT in self._authority.allowed_intents:
+                command = self._query_command(plan.operation_ref)
+                if type(command) is WholeContextInput:
+                    record = dict(version=CONTEXT_VERSION, previous_revision=command.expected_revision,
+                        revision=command.expected_revision+1, cutoff_sequence=observed_basis.head_sequence+1,
+                        request_digest=command.request_digest, expected_basis=command.expected_basis)
+                    raw = _canonical_json(record)
+                    self._writer.execute('INSERT INTO whole_context_boundary VALUES (?,?,?,?,?)',
+                        (plan_id, command.expected_revision+1, observed_basis.head_sequence+1, raw, hashlib.sha256(raw.encode()).hexdigest()))
             self._hit(FaultPoint.BEFORE_PUBLICATION_COMMIT)
             # The final authorization sample defines the publication accounting
             # day. Nothing that may wait on a fault hook precedes COMMIT after it.
@@ -6547,7 +6661,7 @@ class TimelineEngine:
                 """,
                 (operation_id,),
             ).fetchone()
-            if publication is not None or claimed is not None and getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY:
+            if publication is not None or claimed is not None and getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES:
                 raise PublicationFailedClosed(
                     "operation-publication-already-started",
                     "a claimed or terminal Publication cannot become a cycle failure",
@@ -7336,7 +7450,7 @@ class TimelineEngine:
             or not 1 <= limit <= 100
         ):
             raise ValueError("limit must be between 1 and 100")
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or CONTEXT_INTENT in self._authority.allowed_intents:
             turns = []
             for outcome, command, published_at in self._verified_publications():
                 if type(command) is not SubjectCommand:
@@ -7612,7 +7726,7 @@ class TimelineEngine:
     def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
-        whole = getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY
+        whole = getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
         if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
@@ -7637,7 +7751,7 @@ class TimelineEngine:
         if snapshot.timeline_basis is None or snapshot.timeline_basis.head_sequence != expected_head:
             raise PublicationFailedClosed("character-history-basis-invalid", "character foreground must match frozen Admission")
         records = self.list_conversation_turns(limit=2)
-        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed("character-history-head-invalid", "character foreground is not current")
         return CharacterDialogueBasis("available", bool(records))
 
@@ -7716,7 +7830,7 @@ class TimelineEngine:
 
     def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.recent_dialogue import is_dialogue_control
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY:
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
 
         snapshot = self.query(operation_ref)
@@ -7731,10 +7845,13 @@ class TimelineEngine:
             or frozen.head_sequence != expected_head or frozen != snapshot.timeline_basis):
             raise PublicationFailedClosed('dialogue-basis-mismatch', 'dialogue does not match the frozen turn basis')
         records = self.list_conversation_turns(limit=2)
-        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != expected_head:
             raise PublicationFailedClosed('dialogue-head-mismatch', 'dialogue does not end at the frozen head')
         reset_cutoff = (self.first_life_basis(expected_head=expected_head).context_start_sequence
             if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else 0)
+        if CONTEXT_INTENT in self._authority.allowed_intents:
+            self._verified_publications()
+            reset_cutoff = self.whole_context_basis(expected_head=expected_head)['cutoff_sequence']
         cutoff = reset_cutoff
         unpublished = self._writer.execute('''
             SELECT op.operation_id, op.contract_version, op.operation_kind,
@@ -7755,12 +7872,18 @@ class TimelineEngine:
             # Pending/interrupted or unfrozen admissions have unresolved intent.
             if row[4] is None or row[5] is None:
                 return None
+            if type(previous_command) is WholeContextInput:
+                self._verify_whole_failed_prefix(previous_ref, int(row[4]), frozen)
+                continue
             if int(row[4]) < reset_cutoff:
                 # The explicit published boundary covers only verified terminal
                 # old attempts. Pending/unfrozen intent is never guessed away.
                 if self.query(previous_ref).operation_state is not OperationState.FAILED_CLOSED:
                     return None
-                self._verify_failed_context_prefix(previous_ref, int(row[4]))
+                if CONTEXT_INTENT in self._authority.allowed_intents:
+                    self._verify_whole_failed_prefix(previous_ref, int(row[4]))
+                else:
+                    self._verify_failed_context_prefix(previous_ref, int(row[4]))
                 continue
             if is_dialogue_control(previous_command.utterance):
                 return None

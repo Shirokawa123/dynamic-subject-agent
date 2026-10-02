@@ -17,6 +17,7 @@ from time import monotonic, sleep, time_ns
 from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.first_life import FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_INTENT, CONTEXT_AUTHORITY, WholeContextInput
 
 from dynamic_subject_agent.domains import (
     AgencyAdjudicationRequest,
@@ -359,6 +360,7 @@ class CognitionRuntimeView:
     subject_time_result: SubjectTimeResult = SubjectTimeResult.no_op()
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_character_dialogue: Callable[[bool], object] | None = None
+    load_whole_context: Callable[[], object] | None = None
     load_first_life_followup: Callable[[bool], object] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
@@ -838,6 +840,8 @@ class SubjectRuntime:
         self._engine._life_share_guard = getattr(cognition, "share_guard", None)
         self._engine._life_chat_guard = getattr(cognition, "chat_guard", None)
         self._engine._original_whole_publication_guard = getattr(cognition, "publication_guard", None)
+        if getattr(cognition, 'supports_whole_context', False):
+            cognition._context_revision_at = lambda head: self._engine.whole_context_basis(expected_head=head)['context_revision']
         self._interrupt_at = interrupt_at
         self._domain_fault = domain_fault
         self._fault_hook = fault_hook
@@ -1094,6 +1098,8 @@ class SubjectRuntime:
                 (lambda enabled: self._engine.character_dialogue_before(dialogue_operation, expected_head=dialogue_head, enabled=enabled))
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
+            load_whole_context=((lambda: self._engine.whole_context_basis(expected_head=dialogue_head))
+                if CONTEXT_INTENT in self._context.authority.allowed_intents and dialogue_head is not None else None),
             load_recent_dialogue=(
                 (lambda: self._engine.recent_dialogue_before(dialogue_operation, expected_head=dialogue_head))
                 if dialogue_operation is not None and dialogue_head is not None else None
@@ -1137,6 +1143,12 @@ class SubjectRuntime:
             self._engine.fail_operation(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='Cold recovery closes an uncommitted whole attempt; schema 1 has no durable reply preparation and never retries the model.')
         return len(pending)
+
+    def apply_whole_context_boundary(self, command, key):
+        self._context.validate_command(command)
+        self._cognition.preflight(context=self._cognition_view(), command=command)
+        admitted = self._engine.admit(command, idempotency_key=key)
+        return self._continue_cycle(admitted.operation_ref, command, admission_replayed=admitted.replayed)
 
     def recover_first_life_pending(self):
         """Cold-start only: settle prior admissions without invoking Cognition.
@@ -1363,8 +1375,8 @@ class SubjectRuntime:
                 publication_replayed=False,
             )
 
-        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
-        whole = getattr(self._context.authority, 'provider_authority', None) == WHOLE_AUTHORITY
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES
+        whole = getattr(self._context.authority, 'provider_authority', None) in WHOLE_AUTHORITIES
         if whole and self._engine.has_frozen_attempt(operation_ref):
             self._fail_cycle(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='An earlier whole attempt has no durable prepared reply; automatic model retry is unavailable.')

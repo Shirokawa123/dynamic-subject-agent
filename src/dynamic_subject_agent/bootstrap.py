@@ -249,8 +249,8 @@ def compose_application(
             # Interface and any new user/system work. GET never drives this.
             with host.lease(profile_id=qualified_runtime_input.profile_id, timeline_id=timeline_id) as recovery:
                 recovery.recover_first_life_pending()
-        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, contract_variant
-        if (qualified_runtime_input.provider_authority == WHOLE_AUTHORITY
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
+        if (qualified_runtime_input.provider_authority in WHOLE_AUTHORITIES
             and contract_variant(qualified_runtime_input.reviewed_chat_contract) != "followup-legacy"):
             with host.lease(profile_id=qualified_runtime_input.profile_id, timeline_id=timeline_id) as recovery:
                 recovery.recover_original_whole_pending()

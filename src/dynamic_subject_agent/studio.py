@@ -15,6 +15,8 @@ from dynamic_subject_agent.reviewed_character_definition import (
 from dynamic_subject_agent.first_life import (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, first_life_definition, first_life_source_refs, is_first_life_source, life_profile_id)
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, matches_chat_source_contract
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope, whole_publication_key
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
 
 import hashlib
 import json
@@ -728,6 +730,13 @@ class CapabilityManifest:
             included=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "original-single-stage-whole-reply", "bounded-canonical-dialogue"),
             certified=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "original-single-stage-whole-reply", "bounded-canonical-dialogue"),
             unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "life-events", "background-notifications", "persona-rewrite", "relationship-writeback"))
+
+    @classmethod
+    def original_whole_context(cls):
+        old = cls.original_whole_chat()
+        return cls(manifest_version="original-whole-context-capabilities-s132-1",
+            included=(*old.included, "local-whole-context-boundary"), certified=(*old.certified, "local-whole-context-boundary"),
+            unavailable=old.unavailable)
 
     @classmethod
     def first_life_dormant(cls):
@@ -1685,7 +1694,7 @@ class PolicyKernel:
             (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
              or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
                  and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract))
-             or (question.capability_manifest == CapabilityManifest.original_whole_chat()
+             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context())
                  and matches_whole_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
@@ -8808,9 +8817,11 @@ class SubjectStudio:
             "isolation_proof": isolation.to_dict(),
         }
         if reviewed_chat_contract is not None:
-            if capabilities == CapabilityManifest.original_whole_chat():
+            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context()):
                 if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract, allow_legacy=True):
                     raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
+                if (capabilities == CapabilityManifest.original_whole_context()) != (contract_variant(reviewed_chat_contract) == "context-boundary"):
+                    raise StudioRejected("original-whole-contract-invalid", "local context qualification must match its contract")
                 expected = reviewed_chat_contract
             elif capabilities == CapabilityManifest.reviewed_character_chat() and is_reviewed_source(profile.source):
                 expected = chat_contract(dict(definition_basis=profile.source.source_asset_refs[0].split(":", 1)[1],
@@ -9544,7 +9555,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                WHOLE_AUTHORITY
+                CONTEXT_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.original_whole_context()
+                else WHOLE_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.original_whole_chat()
                 else LIFE_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.first_life_active()
@@ -9683,7 +9696,7 @@ class SubjectStudio:
         if ("first_life_contract" in snapshot_hint or qri.first_life_contract is not None
             or qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY)):
             return self._verify_first_life_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
-        if qri.provider_authority == WHOLE_AUTHORITY or qri.capabilities == CapabilityManifest.original_whole_chat():
+        if qri.provider_authority in WHOLE_AUTHORITIES or qri.capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context()):
             return self._verify_original_whole_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
         reviewed_contract = ("reviewed_definition" in snapshot_hint
             or qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
@@ -9741,8 +9754,10 @@ class SubjectStudio:
         try:
             contract = qri.reviewed_chat_contract
             validate_whole_envelope(snapshot.reviewed_definition, contract)
+            context = contract_variant(contract) == "context-boundary"
+            expected_manifest = CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
-            if (qri.provider_authority != WHOLE_AUTHORITY or qri.capabilities != CapabilityManifest.original_whole_chat()
+            if (qri.provider_authority != (CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
                 or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
@@ -9757,7 +9772,7 @@ class SubjectStudio:
             for decision_id in qri.policy_decision_ids:
                 decision = self._read_policy_decision(decision_id)
                 sealing = decision_id == snapshot.policy_decision_id
-                manifest = CapabilityManifest.reviewed_character_dormant() if sealing else CapabilityManifest.original_whole_chat()
+                manifest = CapabilityManifest.reviewed_character_dormant() if sealing else expected_manifest
                 question = self._policy_question(snapshot.draft_id, manifest, None if sealing else contract)
                 if (decision.capability_manifest != manifest or decision.question_digest != question.question_digest
                     or decision.disposition is not PolicyDisposition.QUALIFIED):

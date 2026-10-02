@@ -17,6 +17,7 @@ import pytest
 from dynamic_subject_agent.application import (ApplicationOperationResponse, ApplicationOperationStatus,
     ApplicationProblemView, SubjectRequestLookupResponse, SubjectRequestLookupStatus)
 from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
+from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryResponse
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -71,6 +72,42 @@ class FakeWholeFacade:
     def result(status, ref=None, *, text="合成回复。", failure=None):
         projection = SimpleNamespace(expression_text=text, failure_code=failure) if status != "pending" else None
         return ApplicationOperationResponse(ApplicationOperationStatus(status), ref, projection, None)
+
+
+class FakeBoundaryFacade(FakeWholeFacade):
+    def __init__(self):
+        super().__init__()
+        self.context_revision, self.boundaries, self.boundary_calls = 0, {}, []
+
+    def query_whole_context_boundary(self, original_request=None):
+        pending = any(ref not in self.finished and ref not in self.outcomes for ref in self.operations.values())
+        value = dict(status="available", context_revision=self.context_revision,
+            cutoff_sequence=self.context_revision * 3, has_prior_committed_exchange=bool(self.turns),
+            pending=pending, basis={})
+        if original_request is not None:
+            stored = self.boundaries.get(original_request.request_id)
+            if stored is None:
+                value["request_status"] = "busy" if pending else "not-found"
+            elif stored[0] != original_request.request_digest:
+                value["request_status"] = "conflict"
+            else:
+                value.update(request_status="replayed", receipt=stored[1])
+        return value
+
+    def apply_whole_context_boundary(self, request):
+        self.boundary_calls.append(request)
+        if not request.confirmed:
+            return WholeContextBoundaryResponse("unavailable", problem_code="confirmation-required")
+        stored = self.boundaries.get(request.request_id)
+        if stored is not None:
+            return WholeContextBoundaryResponse("replayed", stored[1]) if stored[0] == request.request_digest else WholeContextBoundaryResponse("conflict")
+        if request.expected_revision != self.context_revision:
+            return WholeContextBoundaryResponse("conflict")
+        self.context_revision += 1
+        receipt = dict(context_revision=self.context_revision, cutoff_sequence=self.context_revision * 3,
+            request_digest=request.request_digest, operation_ref=dict(kind="system", operation_id=str(uuid4())))
+        self.boundaries[request.request_id] = request.request_digest, receipt
+        return WholeContextBoundaryResponse("committed", receipt)
 
 
 @pytest.fixture
@@ -199,6 +236,66 @@ def test_lookup_after_adapter_restart_distinguishes_unknown_from_query_failure(m
     failed = restarted.lookup(payload)
     assert failed["query_status"] == "failed-closed" and not failed["settled"] and not failed["request_verified"]
     assert not failed["can_abandon"] and len(product.application.submissions) == 1 and not product.application.waits
+
+
+def test_boundary_http_preview_confirmation_replay_and_history_are_separate_from_chat(modules):
+    desktop, _ = modules
+    facade = FakeBoundaryFacade()
+    facade.turns = [SimpleNamespace(user_text="先前合成消息。", assistant_text="先前合成回复。")]
+    facade.state = replace(facade.state, history_enabled=False)
+    product = fake_product(facade)
+    server = desktop.original_whole_server(product, reopen=lambda: product)
+    thread = Thread(target=server.serve_forever, daemon=True); thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            token = re.search(r"TOKEN='([^']+)'", response.read().decode()).group(1)
+        def post(path, payload):
+            with urlopen(Request(base + path, data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Chat-Token": token}), timeout=5) as response:
+                return json.load(response)
+        preview = post("/context-boundary-query", {})
+        assert preview["ok"] and preview["context_boundary"]["context_revision"] == 0
+        assert not facade.boundary_calls and not facade.submissions
+        payload = dict(request_id=str(uuid4()), expected_revision=0, confirmed=False)
+        assert not post("/context-boundary", payload)["ok"] and facade.context_revision == 0
+        with pytest.raises(HTTPError) as error:
+            post("/context-boundary", dict(payload, text="不能夹带草稿"))
+        assert error.value.code == 400
+        payload["confirmed"] = True
+        committed = post("/context-boundary", payload)
+        assert committed["ok"] and committed["boundary_settled"] and committed["boundary_status"] == "committed"
+        assert "request_id" not in committed  # A control response never clears a chat draft nonce.
+        assert committed["state"]["history"] == preview["state"]["history"]
+        assert committed["state"]["character"]["history_enabled"] is False
+        assert facade.boundary_calls[-1].target_profile_id == product.profile_id
+        assert facade.boundary_calls[-1].target_timeline_id == product.timeline_id
+        replayed = post("/context-boundary", payload)
+        assert replayed["boundary_status"] == "replayed" and replayed["boundary_receipt"] == committed["boundary_receipt"]
+        assert facade.context_revision == 1
+        lookup = post("/context-boundary-query", {key: payload[key] for key in ("request_id", "expected_revision")})
+        assert lookup["boundary_settled"] and lookup["context_boundary"]["receipt"] == committed["boundary_receipt"]
+        assert len(facade.boundary_calls) == 3 and not facade.submissions and not facade.waits
+        conflict = post("/context-boundary-query", dict(request_id=payload["request_id"], expected_revision=1))
+        assert conflict["boundary_failed"] and not conflict["boundary_settled"] and facade.context_revision == 1
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+def test_boundary_capability_and_inflight_never_borrow_old_scope_or_wait(modules):
+    desktop, _ = modules
+    old_product = fake_product()
+    old = desktop.OriginalWholeChatAdapter(old_product, reopen=lambda: old_product)
+    assert old.snapshot()["context_boundary"]["status"] == "unavailable"
+    assert not old.boundary_apply(dict(request_id=str(uuid4()), expected_revision=0, confirmed=True))["ok"]
+    facade = FakeBoundaryFacade()
+    product = fake_product(facade)
+    adapter = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product)
+    adapter.send(dict(text="合成在途请求。", request_id=str(uuid4())))
+    result = adapter.boundary_apply(dict(request_id=str(uuid4()), expected_revision=0, confirmed=True))
+    assert result["boundary_status"] == "busy" and not result["ok"]
+    assert not facade.boundary_calls and facade.context_revision == 0
+    assert not adapter.boundary_query({})["ok"] and adapter.snapshot()["context_boundary"]["pending"]
 
 
 @pytest.mark.parametrize("status,settled", [("terminal", True), ("failed-closed", True),
@@ -408,3 +505,78 @@ const unknown=id=>({...found(id,false,false),can_abandon:true});
         capture_output=True, timeout=20)
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert result.stdout == b"original-whole-page-complete"
+
+
+def test_boundary_page_cancel_lost_response_and_failed_confirmation_preserve_draft(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    facade = FakeBoundaryFacade(); facade.state = replace(facade.state, history_enabled=False)
+    product = fake_product(facade)
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    page = (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")
+    script = re.search(r"<script>([\s\S]*?)</script>", page).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state,nextId=0;
+const element=()=>({value:'',textContent:'',disabled:false,hidden:true,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}});
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+const atRevision=rev=>({...input.state,context_boundary:{...input.state.context_boundary,context_revision:rev,cutoff_sequence:rev*3}});
+function start(){nodes.clear();const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> '00000000-0000-4000-8000-'+String(++nextId).padStart(12,'0')},
+ setTimeout:callback=>setImmediate(callback),fetch:async(path,options)=>{
+  if(path==='/status')return {ok:true,json:async()=>status};calls.push({path,body:JSON.parse(options.body)});
+  return new Promise((resolve,reject)=>waiting.push({ok:value=>resolve({ok:true,json:async()=>value}),fail:()=>reject(Error('network'))}));
+ }};vm.createContext(sandbox);vm.runInContext(input.script,sandbox);}
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),click=id=>get(id).handlers.click();
+const query=(rev,id=null,requestStatus=null)=>({ok:!id||requestStatus==='replayed',boundary_request_id:id,
+ boundary_settled:requestStatus==='replayed',boundary_failed:['failed-closed','conflict'].includes(requestStatus),
+ context_boundary:{...atRevision(rev).context_boundary,...(requestStatus?{request_status:requestStatus}:{}),
+ receipt:requestStatus==='replayed'?{context_revision:rev}:null},state:atRevision(rev),message:''});
+(async()=>{
+ start();await flush();get('draft').value='确认以后仍保留的合成草稿';get('draft').handlers.input();
+ assert.equal(get('boundary-start').disabled,false);assert.equal(get('history').checked,false);
+ let preview=click('boundary-start');assert.equal(calls.at(-1).path,'/context-boundary-query');
+ waiting.shift().ok(query(0));await preview;assert.equal(get('boundary-panel').hidden,false);
+ click('boundary-cancel');assert.equal(calls.filter(row=>row.path==='/context-boundary').length,0);
+ assert.equal(get('draft').value,'确认以后仍保留的合成草稿');
+ preview=click('boundary-start');waiting.shift().ok(query(0));await preview;
+ const lost=click('boundary-confirm'),originalId=calls.at(-1).body.request_id;
+ assert.deepEqual(calls.at(-1).body,{request_id:originalId,expected_revision:0,confirmed:true});
+ waiting.shift().fail();await lost;click('boundary-cancel');
+ status=atRevision(1);start();await flush();assert.equal(calls.at(-1).path,'/context-boundary-query');
+ assert.deepEqual(calls.at(-1).body,{request_id:originalId,expected_revision:0});
+ waiting.shift().ok(query(1,originalId,'replayed'));await flush();await flush();
+ assert.equal(calls.filter(row=>row.path==='/context-boundary').length,1);
+ assert.equal(calls.filter(row=>row.path==='/send').length,0);assert.equal(get('history').checked,false);
+ assert.equal(get('draft').value,'确认以后仍保留的合成草稿');
+ preview=click('boundary-start');waiting.shift().ok(query(1));await preview;
+ const failed=click('boundary-confirm'),failedId=calls.at(-1).body.request_id;assert.notEqual(failedId,originalId);
+ waiting.shift().ok({ok:false,boundary_status:'failed-closed',boundary_settled:false,boundary_request_id:failedId,state:atRevision(1)});
+ await flush();await flush();assert.equal(calls.at(-1).path,'/context-boundary-query');
+ waiting.shift().ok(query(1,failedId,'failed-closed'));await failed;
+ assert.equal(get('boundary-release').hidden,false);assert.equal(get('boundary-confirm').disabled,true);
+ const beforeRelease=calls.filter(row=>row.path==='/context-boundary').length;
+ const release=click('boundary-release');assert.equal(calls.at(-1).path,'/context-boundary-query');
+ assert.deepEqual(calls.at(-1).body,{});waiting.shift().ok(query(1));await release;
+ assert.equal(calls.filter(row=>row.path==='/context-boundary').length,beforeRelease);
+ assert.equal(get('boundary-confirm').disabled,false);assert.equal(get('boundary-confirm').textContent,'确认新交流边界');
+ const next=click('boundary-confirm'),nextId=calls.at(-1).body.request_id;assert.notEqual(nextId,failedId);
+ assert.equal(calls.at(-1).body.expected_revision,1);
+ waiting.shift().ok({ok:true,boundary_status:'committed',boundary_settled:true,boundary_request_id:nextId,state:atRevision(2)});await next;
+ assert.equal(get('boundary-panel').hidden,true);assert.equal(get('draft').value,'确认以后仍保留的合成草稿');
+ assert.equal(calls.filter(row=>row.path==='/send').length,0);
+ status={...input.state,context_boundary:{status:'unavailable',pending:false}};start();await flush();
+ assert.equal(get('boundary-start').disabled,true);assert.equal(get('draft').value,'确认以后仍保留的合成草稿');
+ process.stdout.write('whole-boundary-page-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state)).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"whole-boundary-page-complete"

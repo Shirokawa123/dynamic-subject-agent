@@ -1,5 +1,5 @@
 """Thin async loopback presentation for the explicitly approved whole character chat."""
-from dataclasses import asdict
+from dataclasses import asdict, is_dataclass
 from threading import RLock
 from uuid import UUID, uuid4
 from hashlib import sha256
@@ -8,6 +8,7 @@ from character_chat import create_server
 from dynamic_subject_agent.application import (ApplicationQuery, ApplicationQueryKind,
     SubjectRequestLookupRequest, SubjectRequestLookupStatus)
 from dynamic_subject_agent.timeline import SubjectCommand
+from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRequest
 
 
 APPLICATION_ID = "original-character-whole-chat-s127"
@@ -28,7 +29,8 @@ class OriginalWholeChatAdapter:
             if self.inflight and self.last_snapshot is not None:
                 handle = next(iter(self.inflight))
                 return dict(self.last_snapshot, presentation_pending=True, pending_handle=handle,
-                    pending_request_id=self.request_ids.get(handle))
+                    pending_request_id=self.request_ids.get(handle), context_boundary=dict(
+                        self.last_snapshot.get("context_boundary", {"status": "unavailable"}), pending=True))
             state = self.product.application.reviewed_character_chat_status()
             history = self.product.application.query(ApplicationQuery(ApplicationQueryKind.CONVERSATION_HISTORY,
                 self.product.profile_id, self.product.timeline_id))
@@ -36,10 +38,77 @@ class OriginalWholeChatAdapter:
                 for row in history.projection.turns]
             scope_key = sha256((self.product.profile_id + ":" + self.product.timeline_id).encode()).hexdigest()
             result = dict(scope_key=scope_key, character=asdict(state), history=dict(status=history.status.value, turns=turns),
-                presentation_pending=False, pending_handle=None, pending_request_id=None)
+                presentation_pending=False, pending_handle=None, pending_request_id=None,
+                context_boundary=self._boundary_status())
             if history.status.value == "available" and state.status == "active":
                 self.last_snapshot = result
             return result
+
+    @staticmethod
+    def _plain(value):
+        if is_dataclass(value):
+            return asdict(value)
+        if type(value) is dict:
+            return {key: OriginalWholeChatAdapter._plain(item) for key, item in value.items()}
+        if type(value) in (list, tuple):
+            return [OriginalWholeChatAdapter._plain(item) for item in value]
+        return value
+
+    def _boundary_status(self, original_request=None):
+        query = getattr(self.product.application, "query_whole_context_boundary", None)
+        if not callable(query):
+            return dict(status="unavailable", pending=False)
+        try:
+            value = query(original_request) if original_request is not None else query()
+            return self._plain(value) if type(value) is dict else dict(status="failed-closed", pending=False)
+        except Exception:
+            return dict(status="unavailable", problem_code="whole-context-query-unavailable", pending=False)
+
+    def _boundary_request(self, payload, *, query=False):
+        fields = {"request_id", "expected_revision"} if query else {"request_id", "expected_revision", "confirmed"}
+        if (type(payload) is not dict or set(payload) != fields or type(payload["request_id"]) is not str
+            or str(UUID(payload["request_id"])) != payload["request_id"]
+            or type(payload["expected_revision"]) is not int or payload["expected_revision"] < 0
+            or not query and type(payload["confirmed"]) is not bool):
+            raise ValueError("invalid-request")
+        return WholeContextBoundaryRequest(self.product.profile_id, self.product.timeline_id,
+            payload["request_id"], payload["expected_revision"], True if query else payload["confirmed"])
+
+    def boundary_query(self, payload):
+        if type(payload) is not dict:
+            raise ValueError("invalid-request")
+        original = self._boundary_request(payload, query=True) if payload else None
+        with self.lock:
+            value = self._boundary_status(original)
+            replayed = value.get("request_status") == "replayed" and value.get("receipt") is not None
+            available = value.get("status") == "available"
+            busy = value.get("pending") is True or value.get("request_status") == "busy"
+            return dict(ok=available and not busy and (original is None or replayed), context_boundary=value,
+                boundary_request_id=None if original is None else original.request_id,
+                boundary_settled=available and replayed,
+                boundary_failed=available and original is not None and value.get("request_status") in ("failed-closed", "conflict"),
+                message="已取回原确认的回执；草稿未发送。" if available and replayed else (
+                    "这轮仍在处理，暂不能确认新交流边界。" if busy
+                    else "" if available and original is None else "这次交流边界尚未能确认；原确认与草稿保留。"),
+                state=self.snapshot())
+
+    def boundary_apply(self, payload):
+        request = self._boundary_request(payload)
+        with self.lock:
+            apply = getattr(self.product.application, "apply_whole_context_boundary", None)
+            if self.inflight:
+                return dict(ok=False, boundary_status="busy", boundary_request_id=request.request_id,
+                    boundary_settled=False, message="这轮仍在处理，请先查清结果；没有开始新一段交流。", state=self.snapshot())
+            if not callable(apply):
+                return dict(ok=False, boundary_status="unavailable", boundary_request_id=request.request_id,
+                    boundary_settled=False, message="这个入口暂不支持新交流边界；草稿保留。", state=self.snapshot())
+            response = apply(request)
+            ok = response.status in ("committed", "replayed") and response.receipt is not None
+            return dict(ok=ok, boundary_status=response.status, boundary_request_id=request.request_id,
+                boundary_settled=ok, boundary_receipt=self._plain(response.receipt),
+                message="已开始新一段交流；旧记录、人物资料和历史开关保持，草稿未发送。" if ok else (
+                    "这轮尚未结束，请先查清结果；没有开始新一段交流。" if response.status == "busy"
+                    else "这次未能确认新交流边界；原确认和草稿保留。"), state=self.snapshot())
 
     def _result(self, response, handle, request_id, *, request_text=None, verified=False):
         status = response.status.value
@@ -151,4 +220,5 @@ def original_whole_server(product, *, reopen, port=0):
     return create_server(None, port=port, adapter=adapter, page_name="original_whole_chat.html",
         application_id=APPLICATION_ID, post_routes={"/send":adapter.send, "/operation":adapter.poll,
             "/request-result":adapter.lookup,
+            "/context-boundary-query":adapter.boundary_query, "/context-boundary":adapter.boundary_apply,
             "/history":adapter.set_history, "/reload":adapter.reload})

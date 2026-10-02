@@ -11,6 +11,7 @@ from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, Original
     projection_for_contract, validate_whole_reply, digest)
 from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
 from dataclasses import asdict
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, WholeContextInput, CONTEXT_RECEIPT
 
 
 class OriginalWholeChatCognition(CognitionEngine):
@@ -19,12 +20,19 @@ class OriginalWholeChatCognition(CognitionEngine):
     experimental, test_only = True, False
     supports_subject_tasks, supports_text_effects = False, False
 
-    def __init__(self, *, envelope=None, gateway=None, delivery=None, authorization=None, guard=None):
+    def __init__(self, *, envelope=None, gateway=None, delivery=None, authorization=None, guard=None, provider_authority=WHOLE_AUTHORITY):
         self.envelope, self.gateway, self.delivery = envelope, gateway, delivery
         self.authorization, self.guard = authorization, guard
         self._publication = None
+        self.provider_authority = provider_authority
+        self.supports_whole_context = provider_authority == CONTEXT_AUTHORITY
+        self._publication_context_revision = 0
 
     def preflight(self, *, context, command):
+        if type(command) is WholeContextInput:
+            if not self.supports_whole_context or self.guard is None:
+                raise PreAdmissionRejected("whole-context-unavailable", "No exact local context control is assembled.")
+            return
         if self.gateway is None:
             raise PreAdmissionRejected("original-whole-chat-unavailable", "The exact whole provider is not assembled.")
         if command.language != "zh" or not command.utterance.strip() or len(command.utterance) > 1000:
@@ -34,11 +42,19 @@ class OriginalWholeChatCognition(CognitionEngine):
     def publication_guard(self, plan):
         if self._publication is None or self._publication[0] != plan.operation_ref.operation_id:
             raise ValueError("this whole proposal has no current publication authorization")
+        if self.supports_whole_context and self._context_revision_at(plan.expected_basis.head_sequence) != self._publication_context_revision:
+            raise ShareAuthorizationChanged("whole-context-revision-changed")
         with self.guard(self._publication[1]):
             yield
 
     def propose(self, *, plan, context, command, basis):
         self._publication = None
+        if type(command) is WholeContextInput:
+            self._publication = (plan.operation_ref.operation_id, OriginalWholeAuthorization(**command.authorization))
+            self._publication_context_revision = command.expected_revision
+            return self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary="已建立本地交流边界；人物、旧记录与历史开关保持。",
+                expression_candidate=ExpressionCandidate(CONTEXT_RECEIPT, "zh"))
         try:
             if is_first_life_dialogue_control(command.utterance):
                 raise ValueError("current control must be resolved locally")
@@ -74,6 +90,7 @@ class OriginalWholeChatCognition(CognitionEngine):
                     code = "audit-failed"
             raise CognitionFailedClosed("whole-reply", "original-whole-" + code, "The whole reply did not complete safely; it will not be retried.") from None
         self._publication = (plan.operation_ref.operation_id, authorization)
+        self._publication_context_revision = context.load_whole_context()["context_revision"] if self.supports_whole_context else 0
         return self._bounded_noop_proposal(context=context, basis=basis,
             experience_summary="已提交一轮整体人物回复；台词不成为知识、生活、人格或关系写回。",
             expression_candidate=ExpressionCandidate(text, "zh"))

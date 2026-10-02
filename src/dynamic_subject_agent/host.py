@@ -17,7 +17,7 @@ import tempfile
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, asdict
 from enum import Enum
 from hashlib import sha256
 from pathlib import Path
@@ -105,7 +105,8 @@ from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACT
 from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, LIFE_RUNTIME_CONTRACT, LIFE_SYSTEM_INTENT
 from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
-from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_RUNTIME_CONTRACT, CONTEXT_INTENT
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
@@ -128,6 +129,7 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
         REVIEWED_CHARACTER_AUTHORITY,
         CHAT_AUTHORITY,
         WHOLE_AUTHORITY,
+        CONTEXT_AUTHORITY,
         LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
@@ -143,6 +145,8 @@ TEXT_EFFECT_INTENTS = (*SUBJECT_TASK_INTENTS, 'confirmed-text-save-v1')
 
 
 def _intents_for_contract(version: str) -> tuple[str, ...]:
+    if version == CONTEXT_RUNTIME_CONTRACT:
+        return (*ALLOWED_INTENTS, CONTEXT_INTENT)
     if version == LIFE_RUNTIME_CONTRACT:
         return (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT)
     if version == RUNTIME_CONTRACT_VERSION:
@@ -155,6 +159,8 @@ def _intents_for_contract(version: str) -> tuple[str, ...]:
 
 
 def _contract_for_intents(intents: tuple[str, ...]) -> str:
+    if intents == (*ALLOWED_INTENTS, CONTEXT_INTENT):
+        return CONTEXT_RUNTIME_CONTRACT
     if intents == (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT):
         return LIFE_RUNTIME_CONTRACT
     if intents == ALLOWED_INTENTS:
@@ -195,6 +201,8 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
+    if qri.provider_authority == CONTEXT_AUTHORITY:
+        return qri.capabilities == CapabilityManifest.original_whole_context() and qri.reviewed_chat_contract is not None
     if qri.provider_authority == WHOLE_AUTHORITY:
         return qri.capabilities == CapabilityManifest.original_whole_chat() and qri.reviewed_chat_contract is not None
     if qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
@@ -222,7 +230,7 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
-    if cognition.provider_authority == WHOLE_AUTHORITY:
+    if cognition.provider_authority in WHOLE_AUTHORITIES:
         return type(cognition) is OriginalWholeChatCognition
     if cognition.provider_authority == LIFE_AUTHORITY:
         return type(cognition) is FirstLifeCognition
@@ -792,6 +800,21 @@ class _CognitionAssembly:
         instance = cls._prepared_control_only()
         instance._slots = (_CognitionAssemblySlot._from_qri(predecessor, ReviewedCharacterDormantCognition()),
             _CognitionAssemblySlot._from_qri(successor, OriginalWholeChatCognition()))
+        return instance
+
+    @classmethod
+    def _original_whole_context_transition(cls, predecessor, successor):
+        if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY or successor.provider_authority != CONTEXT_AUTHORITY
+            or successor.predecessor_qualification_id != predecessor.qualification_id or successor.profile_id != predecessor.profile_id
+            or successor.genesis_snapshot_id != predecessor.genesis_snapshot_id or successor.isolation_proof != predecessor.isolation_proof):
+            raise RuntimeHostRejected('whole-context-transition-invalid', 'exact new context successor required')
+        dormant = ReviewedCharacterDormantCognition()
+        # Private, unserved preparation allocates schema 4. Dormant preflight
+        # still denies every input until the exact qualified successor is bound.
+        dormant.supports_whole_context = True
+        instance = cls._prepared_control_only()
+        instance._slots = (_CognitionAssemblySlot._from_qri(predecessor, dormant),
+            _CognitionAssemblySlot._from_qri(successor, OriginalWholeChatCognition(provider_authority=CONTEXT_AUTHORITY)))
         return instance
 
     @classmethod
@@ -3331,7 +3354,7 @@ class RuntimeLease:
     def recover_original_whole_pending(self):
         self._require_active()
         self._host._require_binding_permit(self.binding)
-        if self.binding.provider_authority != WHOLE_AUTHORITY:
+        if self.binding.provider_authority not in WHOLE_AUTHORITIES:
             raise RuntimeHostRejected("original-whole-unavailable", "this is not the whole chat runtime")
         return self._lane.worker.call("recover_original_whole_pending")
 
@@ -6893,7 +6916,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=timeline_id,
-            allowed_intents=((*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT) if getattr(cognition, "supports_first_life", False) else TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
+            allowed_intents=((*ALLOWED_INTENTS, CONTEXT_INTENT) if getattr(cognition, "supports_whole_context", False) else (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT) if getattr(cognition, "supports_first_life", False) else TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=1,
@@ -7291,7 +7314,7 @@ class RuntimeHost:
             expected != (str(row[23]), str(row[24]), str(row[25]))
             or binding.runtime_kind != RUNTIME_KIND
             or binding.provider_authority not in _SUPPORTED_PROVIDER_AUTHORITIES
-            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION, LIFE_RUNTIME_CONTRACT}
+            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION, LIFE_RUNTIME_CONTRACT, CONTEXT_RUNTIME_CONTRACT}
             or binding.studio_root_id != self._studio_location.root_id
             or binding.studio_store_id != self._studio_location.profile_store_id
             or binding.host_root_id != self._location.root_id
@@ -7501,7 +7524,7 @@ class RuntimeHost:
     def lookup_subject_request(self, binding, command, idempotency_key):
         """A separate read-only snapshot never leases or resumes the worker."""
         self._require_open()
-        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority != WHOLE_AUTHORITY
+        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority not in WHOLE_AUTHORITIES
             or binding.host_root_id != self._location.root_id):
             raise RuntimeHostRejected('subject-request-lookup-unavailable', 'lookup requires this exact whole binding')
         self._require_binding_permit(binding)
@@ -7513,7 +7536,7 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
                 store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != (1,):
+            if reader.execute('PRAGMA user_version').fetchone() != ((4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its existing schema-1 store')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
@@ -7528,6 +7551,72 @@ class RuntimeHost:
             if reader.in_transaction:
                 reader.execute('ROLLBACK')
             reader.close()
+
+    def _read_whole_context(self, binding, request=None):
+        self._require_open()
+        if binding.provider_authority != CONTEXT_AUTHORITY:
+            raise RuntimeHostRejected('whole-context-unavailable', 'this binding has no context control')
+        self._require_binding_permit(binding)
+        root = binding.timeline_root
+        reader = _connect_readonly(root.timeline_database)
+        try:
+            reader.execute('BEGIN')
+            _verify_timeline_manifest(reader, root_id=root.root_id, store_id=root.timeline_store_id, store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
+            _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
+            engine = TimelineEngine(root, self._authority_for_binding(binding), reader, None)
+            publications = engine._verified_publications()
+            scope = engine.whole_context_basis()
+            scope.update(status='available', basis=asdict(_read_timeline_basis(reader)),
+                has_prior_committed_exchange=any(type(command) is SubjectCommand for _, command, _ in publications))
+            scope['pending'] = bool(engine.pending_original_whole_operations())
+            if request is not None:
+                from dynamic_subject_agent.timeline import _validate_idempotency_key
+                from dynamic_subject_agent.whole_context_boundary import WholeContextInput
+                key = _validate_idempotency_key(request.request_id)
+                row = reader.execute('SELECT operation_id FROM idempotency_claim WHERE authority_scope_id=? AND key_digest=?',
+                    (binding.authority_scope_id, key)).fetchone()
+                if row is not None:
+                    ref = engine._admitted_for_operation(reader, bytes(row[0]), replayed=True).operation_ref
+                    command = engine._query_command(ref)
+                    if type(command) is not WholeContextInput or command.request_digest != request.request_digest:
+                        scope['existing'] = dict(status='conflict', receipt=None)
+                    elif engine.query(ref).operation_state is OperationState.COMPLETED:
+                        outcome = engine.query_outcome(ref)
+                        scope['existing'] = dict(status='replayed', receipt=dict(operation_ref=ref, context_revision=command.expected_revision+1,
+                            cutoff_sequence=outcome.head_sequence, request_digest=command.request_digest))
+                    else:
+                        scope['existing'] = dict(status='busy' if engine.query(ref).operation_state is OperationState.ADMITTED_PENDING else 'failed-closed', receipt=None)
+            return scope
+        finally:
+            if reader.in_transaction:
+                reader.execute('ROLLBACK')
+            reader.close()
+
+    def apply_whole_context_boundary(self, binding, request):
+        from dynamic_subject_agent.whole_context_boundary import WholeContextInput, WholeContextBoundaryResponse
+        scope = self._read_whole_context(binding, request)
+        if 'existing' in scope:
+            return WholeContextBoundaryResponse(**scope['existing'])
+        lane = self._lanes.get((binding.profile_id, binding.timeline_id))
+        if lane is None or not lane.lock.acquire(blocking=False):
+            return WholeContextBoundaryResponse('busy', problem_code='whole-context-pending')
+        try:
+            scope = self._read_whole_context(binding, request)
+            if scope['pending']:
+                return WholeContextBoundaryResponse('busy', problem_code='whole-context-pending')
+            if request.expected_revision != scope['context_revision']:
+                return WholeContextBoundaryResponse('conflict', problem_code='whole-context-revision-changed')
+            cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
+            authorization = cognition.try_authorization()
+            command = WholeContextInput(binding.profile_id, binding.timeline_id, request.request_digest, request.expected_revision,
+                scope['basis'], asdict(authorization))
+            result = lane.worker.call('apply_whole_context_boundary', command, request.request_id)
+            if result.outcome is None:
+                return WholeContextBoundaryResponse('failed-closed', problem_code='whole-context-uncommitted')
+            return WholeContextBoundaryResponse('committed', receipt=dict(operation_ref=result.operation_ref,
+                context_revision=request.expected_revision+1, cutoff_sequence=result.outcome.head_sequence, request_digest=request.request_digest))
+        finally:
+            lane.lock.release()
 
     def _qri_for_binding(
         self,

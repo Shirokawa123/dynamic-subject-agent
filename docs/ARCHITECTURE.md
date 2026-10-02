@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-132：同一人物的新交流边界
+
+`context-boundary`是同已批whole用途的独立技术合同、`original-character-whole-context-deepseek-s132-1` authority/manifest及新Timeline schema4，只有`whole_context_input`/`whole_context_boundary`两张专用表，不取得LIFE、活动/S1、effect或人格关系权限。新精确freeze后由whole composition直接以identity_id激活；不能先旧select创建schema1，也不升级旧root。普通回复沿grounded材料/策略，出站仍是原批准范围的子集。
+
+Facade的`query_whole_context_boundary`只读状态与可选原请求receipt；`apply_whole_context_boundary(WholeContextBoundaryRequest)`须准确身份、request_id、expected_revision及明确confirmed。取消/查询/重复receipt零模型，确认通过同一Timeline唯一写者以SYSTEM typed NoOp Publication原子提交cutoff/revision/receipt，旧聊天与历史开关不变。边界后取材与S128回取均不得跨cutoff，`has_prior_committed_exchange`仍表示此前确实交流过。
+
+系统head只有在全Publication链、边界记录与immutable commit receipt四项冻结basis一致时认可，不放开任意非聊天head；旧终态失败须完整冻结依据及后继Publication证明，pending/坏源/新控制不能被边界掩盖。Authority短锁核验后释放再进worker，未决请求及时拒绝，最终Publication重核权限与上下文revision。旧schema1合同、记录与服务保持；真实验收和适用限制由S132结果报告记录。
+
 ### Slice-131：原请求纯查读
 
 Facade `lookup_subject_request(SubjectRequestLookupRequest(command,idempotency_key))`区分outer query_status和inner已核operation结果。仅whole/currentbinding/闭集命令/opaque键、scope索引、完整原指纹/command及Publication chain匹配才返回body；mismatch/foreign无body，读失败不伪装UNKNOWN。Host在同store独立readonly/query_only连接和单read Tx验证，不进入worker、Admission、恢复、claim或新store。pending只观察，原submit/follow/wait行为不改。

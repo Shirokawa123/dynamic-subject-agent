@@ -9,8 +9,10 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.reviewed_character_chat import HISTORY_POLICY, sealed_model, CharacterDialogueBasis
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
+from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_VERSION
 
 WHOLE_AUTHORITY = "original-character-whole-chat-deepseek-s127-1"
+WHOLE_AUTHORITIES = (WHOLE_AUTHORITY, CONTEXT_AUTHORITY)
 WHOLE_VERSION = "original-character-whole-chat-s127-1"
 APPROVED_POLICY_SHA = "4849cf2c42313b2dffe5b95e859ee8eb0d79e0a6ad85cab0b05b3ea064fb3218"
 APPROVED_BINDING = dict(
@@ -73,12 +75,17 @@ def whole_contract(binding, *, technical_variant="baseline"):
         policy_sha = sha256((WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX).encode()).hexdigest()
         return dict(result, version="original-character-whole-chat-json-example-s129-1", policy_sha=policy_sha,
             technical_variant=dict(name="json-example", version=JSON_EXAMPLE_VERSION, selector="baseline", policy_sha=policy_sha))
-    if technical_variant == "grounded":
+    if technical_variant in ("grounded", "context-boundary"):
         from dynamic_subject_agent.original_whole_followup import SELECTOR_VERSION, selector_digest
         policy_sha = sha256(_grounded_policy().encode()).hexdigest()
-        return dict(result, version="original-character-whole-chat-grounded-s130-1", policy_sha=policy_sha,
+        grounded = dict(result, version="original-character-whole-chat-grounded-s130-1", policy_sha=policy_sha,
             technical_variant=dict(name="grounded", selector_version=SELECTOR_VERSION, selector_digest=selector_digest(),
                 json_example_version=JSON_EXAMPLE_VERSION, policy_version=GROUNDED_POLICY_VERSION, policy_sha=policy_sha))
+        if technical_variant == "context-boundary":
+            grounded["version"] = "original-character-whole-context-s132-1"
+            grounded["technical_variant"] = dict(grounded["technical_variant"], name="context-boundary",
+                local_context_version=CONTEXT_VERSION, timeline_schema=4)
+        return grounded
     if technical_variant != "followup":
         raise ValueError("known exact whole technical variant required")
     from dynamic_subject_agent.original_whole_followup import SELECTOR_VERSION, selector_digest
@@ -92,9 +99,9 @@ def contract_variant(contract):
     variant = "baseline"
     if "technical_variant" in contract:
         witness = contract["technical_variant"]
-        if type(witness) is not dict or witness.get("name") not in ("followup", "json-example", "grounded"):
+        if type(witness) is not dict or witness.get("name") not in ("followup", "json-example", "grounded", "context-boundary"):
             raise ValueError("known whole technical witness required")
-        variant = witness["name"] if witness["name"] in ("json-example", "grounded") else "followup-legacy" if witness == LEGACY_FOLLOWUP_WITNESS else "followup"
+        variant = witness["name"] if witness["name"] in ("json-example", "grounded", "context-boundary") else "followup-legacy" if witness == LEGACY_FOLLOWUP_WITNESS else "followup"
     binding = {key: contract[key] for key in APPROVED_BINDING}
     expected = (_legacy_followup_contract(binding) if variant == "followup-legacy"
         else whole_contract(binding, technical_variant=variant))
@@ -118,7 +125,7 @@ def whole_publication_key(contract):
     key = "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
     if variant == "baseline":
         return key
-    marker = "-s130-" if variant == "grounded" else "-s129-" if variant == "json-example" else "-s128-"
+    marker = "-s132-" if variant == "context-boundary" else "-s130-" if variant == "grounded" else "-s129-" if variant == "json-example" else "-s128-"
     return key + marker + digest(contract["technical_variant"])
 
 
@@ -127,7 +134,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    policy = (_grounded_policy() if variant == "grounded" else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
+    policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)
     if sha256(policy.encode()).hexdigest() != contract["policy_sha"]:
         raise ValueError("whole policy witness changed")

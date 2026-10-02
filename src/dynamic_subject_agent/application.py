@@ -574,8 +574,8 @@ class _ApplicationRouter:
         if (command.target_profile_id != self._binding.profile_id or command.target_timeline_id != self._binding.timeline_id):
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND,
                 problem=ApplicationProblemView('subject-request-not-found-or-not-authorized'))
-        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
-        if (self._binding.provider_authority != WHOLE_AUTHORITY or command.declared_intent != 'ask-collaborator-status'
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES
+        if (self._binding.provider_authority not in WHOLE_AUTHORITIES or command.declared_intent != 'ask-collaborator-status'
             or command.language != 'zh' or command.provenance != 'project-original' or len(command.utterance) > 1000
             or not isinstance(request.idempotency_key, str)):
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
@@ -594,6 +594,40 @@ class _ApplicationRouter:
         except Exception:
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
+
+    def query_whole_context_boundary(self, request=None):
+        self._require_open()
+        try:
+            if request is not None:
+                from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRequest
+                if (type(request) is not WholeContextBoundaryRequest or request.confirmed is not True
+                    or type(request.expected_revision) is not int or request.expected_revision < 0
+                    or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id):
+                    return dict(status='unavailable', problem_code='whole-context-target-mismatch')
+            scope = self._host._read_whole_context(self._binding, request)
+            if request is not None:
+                existing = scope.pop('existing', dict(status='not-found', receipt=None))
+                scope['request_status'], scope['receipt'] = existing['status'], existing['receipt']
+            return scope
+        except Exception:
+            return dict(status='unavailable', problem_code='whole-context-unverified')
+
+    def apply_whole_context_boundary(self, request):
+        from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryRequest, WholeContextBoundaryResponse
+        self._require_open()
+        if type(request) is not WholeContextBoundaryRequest:
+            return WholeContextBoundaryResponse('unavailable', problem_code='typed-whole-context-request-required')
+        if request.confirmed is False:
+            return WholeContextBoundaryResponse('cancelled')
+        if (request.confirmed is not True or request.target_profile_id != self._binding.profile_id
+            or request.target_timeline_id != self._binding.timeline_id or type(request.expected_revision) is not int or request.expected_revision < 0):
+            return WholeContextBoundaryResponse('unavailable', problem_code='whole-context-target-or-confirmation-invalid')
+        try:
+            return self._host.apply_whole_context_boundary(self._binding, request)
+        except RuntimeHostRejected as error:
+            return WholeContextBoundaryResponse('unavailable', problem_code=error.code if error.code == 'whole-context-unavailable' else 'whole-context-unverified')
+        except Exception:
+            return WholeContextBoundaryResponse('failed-closed', problem_code='whole-context-unverified')
 
     def control(self, command: object) -> ApplicationHostResponse:
         self._require_open()
@@ -1291,6 +1325,12 @@ class ApplicationFacade:
 
     def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
         return self.__router.lookup_subject_request(request)
+
+    def query_whole_context_boundary(self, request=None):
+        return self.__router.query_whole_context_boundary(request)
+
+    def apply_whole_context_boundary(self, request):
+        return self.__router.apply_whole_context_boundary(request)
 
     def wait(
         self,
