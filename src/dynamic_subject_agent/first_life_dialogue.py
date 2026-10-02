@@ -31,14 +31,31 @@ def is_first_life_dialogue_control(message):
     referenced = re.sub(r'保存的(?:方案|构图|版本)', '该创作内容', text)
     if referenced == text:
         return _requires_control(text)
+    source = r'(?:该创作内容|聊天|对话|历史|原话|记录|资料|它|这(?:个|些|件事)|那(?:个|些|件事))'
     # Only a complete question can use this narrow nominal-reference exception.
     # Negative usage instructions have priority, including the shorter Chinese 用.
     # These finite editing/effect exclusions apply only to a candidate exception;
     # they do not introduce a general Chinese command classifier.
     if (not text.endswith(('?', '？'))
-        # A negative or stopping expression is not eligible for this exception,
-        # even when phrased as willingness rather than an imperative.
-        or re.search(r'[不勿别没无莫]|拒绝|取消|停|撤回|放弃|禁止|反对', text)
+        # Negating plan content is not a withdrawal. Any negative form with a
+        # source action stays conservative; it need not be an imperative.
+        or re.search(r'拒绝|取消|停|撤回|放弃|禁止|反对', text)
+        or re.search(
+        r'[不勿别没无莫][^。！？!?]*(?:用|记|提|说|保留|存|分享|发送|删|清除|移除)', referenced)
+        # Use can precede refusal (再用下去我不同意). Descriptive 说/提 do
+        # not enter this reverse check: 说右边没留东西 is the reported claim.
+        or re.search(
+        r'(?:用|记|保留|存|分享|发送|删|清除|移除)[^。！？!?]*[不勿别没无莫]', referenced)
+        # Disclosure/留 before refusal needs a source before that refusal too.
+        # In the reported claim 说…没留东西, the plan reference follows 没.
+        or re.search(
+        r'(?:(?:说|提|留)[^。！？!?]*' + source + r'|' + source +
+        r'[^。！？!?]*(?:说|提|留))[^。！？!?]*[不勿别没无莫]', referenced)
+        # Bare 留 also describes layout (没留东西). Keep it a source action
+        # when its same clause names the source or refers back to it.
+        or any(re.search(r'[不勿别没无莫][^。！？!?，,]*留', clause)
+            and re.search(source, clause)
+            for clause in re.split(r'[。！？!?，,]', referenced))
         or re.search(r'改|加|换|调整|移动|重做|存|生成|导出|复制|执行', referenced)
         or re.search(
         r'(?:不要|不再|不用|不能|不许|不准|禁止|停止|别|勿|请|帮我|替我|给我|麻烦|把|将)'

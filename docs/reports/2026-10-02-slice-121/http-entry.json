@@ -1,0 +1,12 @@
+{
+  "version": "s121-owned-http-entry-1",
+  "base_url": "http://127.0.0.1:8783",
+  "user_text": "你开头那条近况说右边没留东西，但保存的方案里书一直在。你想怎么说明？",
+  "assistant_text": "你说得对，是我话说岔了。保存下来的方案里，花瓶确实挪到了中间，但右边那本合着的书一直还在，这次改的只是花瓶的位置。至于我开头为什么说成右边没留东西，我也说不清，就不编理由了。",
+  "request_id": "800c96b1-21d3-4cec-9b8a-539caedf6cdb",
+  "status": "committed",
+  "real_attempts": 1,
+  "reload_additional_calls": 0,
+  "canonical_messages_equal_after_reload": true,
+  "private_user_content_exported": false
+}
