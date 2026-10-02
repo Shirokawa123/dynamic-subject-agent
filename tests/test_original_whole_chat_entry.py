@@ -1,5 +1,5 @@
 """Thin entry lifecycle, async HTTP and draft recovery; no real model or account."""
-from dataclasses import replace
+from dataclasses import asdict, replace
 import importlib.util
 import json
 from pathlib import Path
@@ -18,8 +18,21 @@ from dynamic_subject_agent.application import (ApplicationOperationResponse, App
     ApplicationProblemView, SubjectRequestLookupResponse, SubjectRequestLookupStatus)
 from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
 from dynamic_subject_agent.whole_context_boundary import WholeContextBoundaryResponse
+from dynamic_subject_agent.character_basis import (CharacterBasisView, CharacterBasisKnowledge,
+    CharacterBasisUnit, CharacterBasisInterpretation)
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def synthetic_basis():
+    fact = CharacterBasisKnowledge("biography", "合成小时候学画的概括。", "fact", "direct", "before", "before")
+    belief = CharacterBasisKnowledge("work", "我相信交稿有压力。<img src=x onerror=alert(1)>", "belief", "linked-evidence", "at", "at")
+    persona = CharacterBasisInterpretation("合成解释", "可对构图取舍感兴趣。", "讨论画面时", "比较方案", "说本轮理由",
+        "不补造过去细节。", "author-interpretation", False)
+    return CharacterBasisView("available", subject_name="合成测试人物", subject_identity="合成有限身份。", canon_start="合成起点。",
+        stage_description="合成初次交流。", knowledge=(fact, belief), core=(CharacterBasisUnit("合成核心", "核心概括。", (fact,)),),
+        details=(CharacterBasisUnit("工作关注", "对压力的信念。", (belief,)),), personality=(persona,),
+        source_note="当前封存的已审依据，聊天不是依据。", trace_note="原小说逐段定位尚未接入。", limitations=("不是本轮全部选材或模型推理。",))
 
 
 class FakeWholeFacade:
@@ -296,6 +309,43 @@ def test_boundary_capability_and_inflight_never_borrow_old_scope_or_wait(modules
     assert result["boundary_status"] == "busy" and not result["ok"]
     assert not facade.boundary_calls and facade.context_revision == 0
     assert not adapter.boundary_query({})["ok"] and adapter.snapshot()["context_boundary"]["pending"]
+
+
+def test_basis_http_only_reads_facade_and_never_returns_failed_cached_body(modules):
+    desktop, _ = modules
+    facade = FakeWholeFacade(); reads = []; view = synthetic_basis()
+    def query_basis():
+        reads.append(True)
+        return view
+    facade.query_character_basis = query_basis
+    def forbid(*args):
+        raise AssertionError("basis viewing must not fetch history or settings")
+    facade.query = forbid
+    product = fake_product(facade)
+    server = desktop.original_whole_server(product, reopen=lambda: product)
+    thread = Thread(target=server.serve_forever, daemon=True); thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            token = re.search(r"TOKEN='([^']+)'", response.read().decode()).group(1)
+        def post(payload):
+            with urlopen(Request(base + "/character-basis", data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Chat-Token": token}), timeout=5) as response:
+                return json.load(response)
+        response = post({})
+        assert response["ok"] and len(response["basis"]["knowledge"]) == 2
+        assert response["basis"]["knowledge"][1]["kind"] == "belief"
+        assert response["basis"]["personality"][0]["basis"] == "author-interpretation"
+        assert response["basis"]["core"][0]["support"][0]["event_scope"] == "before"
+        with pytest.raises(HTTPError) as error:
+            post(dict(path="unrequested-file"))
+        assert error.value.code == 400 and len(reads) == 1
+        facade.query_character_basis = lambda: replace(view, status="failed-closed")
+        failed = post({})
+        assert not failed["ok"] and failed["basis"] == {"status": "failed-closed"}
+        assert not facade.submissions and not facade.lookups and not facade.waits and facade.state.history_enabled is True
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
 
 
 @pytest.mark.parametrize("status,settled", [("terminal", True), ("failed-closed", True),
@@ -580,3 +630,56 @@ const query=(rev,id=null,requestStatus=null)=>({ok:!id||requestStatus==='replaye
         capture_output=True, timeout=20)
     assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
     assert result.stdout == b"whole-boundary-page-complete"
+
+
+def test_basis_page_search_close_failure_and_late_scope_keep_chat_untouched(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product()
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    page = (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")
+    script = re.search(r"<script>([\s\S]*?)</script>", page).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state;
+const element=tag=>{const item={tag,value:'',textContent:'',disabled:false,hidden:true,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}};
+ Object.defineProperty(item,'innerHTML',{set(){throw Error('unsafe HTML')}});return item};
+const get=id=>{if(!nodes.has(id))nodes.set(id,element('div'));return nodes.get(id)};
+const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> '00000000-0000-4000-8000-000000000001'},setTimeout:callback=>setImmediate(callback),
+ fetch:async(path,options)=>{if(path==='/status')return {ok:true,json:async()=>status};calls.push({path,body:JSON.parse(options.body)});
+ return new Promise(resolve=>waiting.push(value=>resolve({ok:true,json:async()=>value})))}};
+vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+const flush=()=>new Promise(resolve=>setImmediate(resolve)),click=id=>get(id).handlers.click();
+const text=item=>item.textContent+item.children.map(text).join('');
+const available={ok:true,scope_key:input.state.scope_key,basis:input.basis};
+(async()=>{
+ await flush();get('draft').value='仍未提交的合成草稿';get('draft').handlers.input();const before=new Map(storage);
+ let opening=click('basis-open');assert.equal(calls.at(-1).path,'/character-basis');waiting.shift()(available);await opening;
+ assert.equal(get('basis-panel').hidden,false);assert(text(get('basis-content')).includes('人物信念'));
+ assert(text(get('basis-content')).includes('作者解释'));assert(text(get('basis-content')).includes('onerror=alert(1)'));
+ const count=calls.length;get('basis-search').value='压力';get('basis-search').handlers.input();assert.equal(calls.length,count);
+ assert.equal(get('basis-status').textContent.includes('1项认识'),true);
+ assert.equal(get('draft').value,'仍未提交的合成草稿');assert.deepEqual(storage,before);
+ let refreshing=click('basis-refresh');waiting.shift()({ok:false,scope_key:input.state.scope_key,basis:{status:'unavailable'}});await refreshing;
+ assert.equal(text(get('basis-content')),'');assert.equal(get('basis-search').disabled,true);
+ click('basis-close');assert.equal(get('basis-panel').hidden,true);assert.deepEqual(storage,before);
+ opening=click('basis-open');click('basis-close');waiting.shift()(available);await opening;
+ assert.equal(text(get('basis-content')),'');assert.equal(get('basis-panel').hidden,true);
+ opening=click('basis-open');status={...input.state,scope_key:'another-owned-scope'};
+ await click('refresh');waiting.shift()(available);await opening;
+ assert.equal(text(get('basis-content')),'');assert.equal(get('basis-panel').hidden,true);
+ assert.deepEqual(storage,before);assert.equal(calls.some(row=>row.path==='/send'||row.path==='/history'||row.path==='/context-boundary'),false);
+ process.stdout.write('character-basis-page-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state, basis=asdict(synthetic_basis()))).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"character-basis-page-complete"

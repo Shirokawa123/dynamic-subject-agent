@@ -370,6 +370,7 @@ class _ApplicationRouter:
         first_life_day=None,
         first_life_development=False,
         reviewed_chat_status=None,
+        character_basis_reader=None,
         reviewed_history_setter=None,
         local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
         local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -388,6 +389,7 @@ class _ApplicationRouter:
             raise TypeError("application submission authorization is invalid")
         self._host = host
         self._binding = binding
+        self._character_basis_reader = character_basis_reader
         self._single_command_authorization = single_command_authorization
         self._start_runtime = start_runtime
         self._stop_runtime = stop_runtime
@@ -1172,6 +1174,19 @@ class _ApplicationRouter:
             callback = self._reviewed_chat_status
         return callback() if callback is not None else ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-chat-unavailable")
 
+    def query_character_basis(self):
+        from dynamic_subject_agent.character_basis import CharacterBasisView
+        with self._lock:
+            if self._closed or self._character_basis_reader is None:
+                return CharacterBasisView('unavailable', 'character-basis-unavailable')
+            callback = self._character_basis_reader
+        try:
+            view = callback()
+            with self._lock:
+                return CharacterBasisView('unavailable', 'character-basis-unavailable') if self._closed else view
+        except Exception:
+            return CharacterBasisView('failed-closed', 'character-basis-unverified')
+
     def set_reviewed_character_history(self, enabled):
         from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
         with self._lock:
@@ -1424,6 +1439,9 @@ class ApplicationFacade:
     def reviewed_character_chat_status(self):
         return self.__router.reviewed_character_chat_status()
 
+    def query_character_basis(self):
+        return self.__router.query_character_basis()
+
     def set_reviewed_character_history(self, enabled):
         return self.__router.set_reviewed_character_history(enabled)
 
@@ -1459,6 +1477,7 @@ def _create_application_facade(
     _first_life_day=None,
     _first_life_development=False,
     _reviewed_chat_status=None,
+    _character_basis_reader=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -1488,6 +1507,7 @@ def _create_application_facade(
         first_life_day=_first_life_day,
         first_life_development=_first_life_development,
         reviewed_chat_status=_reviewed_chat_status,
+        character_basis_reader=_character_basis_reader,
         reviewed_history_setter=_reviewed_history_setter,
         local_identity_lister=_local_identity_lister,
         local_identity_selector=_local_identity_selector,

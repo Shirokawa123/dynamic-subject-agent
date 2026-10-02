@@ -64,6 +64,21 @@ class OriginalWholeChatAdapter:
         except Exception:
             return dict(status="unavailable", problem_code="whole-context-query-unavailable", pending=False)
 
+    def character_basis(self, payload):
+        if type(payload) is not dict or payload:
+            raise ValueError("invalid-request")
+        query = getattr(self.product.application, "query_character_basis", None)
+        try:
+            value = self._plain(query()) if callable(query) else dict(status="unavailable")
+        except Exception:
+            value = dict(status="unavailable")
+        if type(value) is not dict or value.get("status") != "available":
+            # Failed viewing cannot reveal a previous or partially trusted body.
+            status = value.get("status") if type(value) is dict else None
+            value = dict(status=status if status in ("unavailable", "failed-closed") else "unavailable")
+        return dict(ok=value["status"] == "available", basis=value,
+            scope_key=sha256((self.product.profile_id + ":" + self.product.timeline_id).encode()).hexdigest())
+
     def _boundary_request(self, payload, *, query=False):
         fields = {"request_id", "expected_revision"} if query else {"request_id", "expected_revision", "confirmed"}
         if (type(payload) is not dict or set(payload) != fields or type(payload["request_id"]) is not str
@@ -221,4 +236,5 @@ def original_whole_server(product, *, reopen, port=0):
         application_id=APPLICATION_ID, post_routes={"/send":adapter.send, "/operation":adapter.poll,
             "/request-result":adapter.lookup,
             "/context-boundary-query":adapter.boundary_query, "/context-boundary":adapter.boundary_apply,
+            "/character-basis":adapter.character_basis,
             "/history":adapter.set_history, "/reload":adapter.reload})

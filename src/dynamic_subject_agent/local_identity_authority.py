@@ -1497,6 +1497,28 @@ class LocalIdentityAuthority:
         except Exception:
             return ReviewedCharacterChatStatus("failed-closed", problem_code="reviewed-character-status-unverified")
 
+    def character_basis(self, expected_identity_id, expected_timeline_id):
+        from dynamic_subject_agent.character_basis import CharacterBasisView, build_character_basis
+        try:
+            _, record, identity = self._active_chat_record(expected_identity_id)
+            if identity.qri.provider_authority not in WHOLE_AUTHORITIES or record.get('timeline_id') != expected_timeline_id:
+                return CharacterBasisView('unavailable', 'current-whole-character-required')
+            view = build_character_basis(identity.reviewed_definition, identity.qri.reviewed_chat_contract)
+            # Registry publication uses atomic replacement. Recheck current
+            # scope after validating the snapshot without locking a model call.
+            state = _state_v2(json.loads(self._config.state_path.read_text(encoding='utf-8')))
+            current = next(row for row in state['identities'] if row['identity_id'] == state['active_identity_id'])
+            if (state['active_identity_id'] != expected_identity_id or current.get('timeline_id') != expected_timeline_id
+                or current.get('publication_key') != record['publication_key']):
+                return CharacterBasisView('unavailable', 'character-basis-scope-changed')
+            return view
+        except RuntimeError as error:
+            if str(error) == 'reviewed-chat-identity-changed':
+                return CharacterBasisView('unavailable', 'character-basis-scope-changed')
+            return CharacterBasisView('failed-closed', 'character-basis-unverified')
+        except Exception:
+            return CharacterBasisView('failed-closed', 'character-basis-unverified')
+
     def character_history_preference(self, expected_identity_id=None):
         _, record, identity = self._active_chat_record(expected_identity_id)
         if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY, *WHOLE_AUTHORITIES): raise RuntimeError("reviewed chat inactive")

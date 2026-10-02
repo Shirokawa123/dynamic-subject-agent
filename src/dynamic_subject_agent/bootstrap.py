@@ -134,6 +134,7 @@ def compose_application(
     _first_life_day=None,
     _first_life_development=False,
     _reviewed_chat_status=None,
+    _character_basis_reader=None,
     _reviewed_history_setter=None,
     _local_identity_lister: Callable[[], LocalIdentityListResponse] | None = None,
     _local_identity_selector: Callable[[object], LocalIdentitySelectResponse]
@@ -312,6 +313,7 @@ def compose_application(
             _first_life_day=_first_life_day,
             _first_life_development=_first_life_development,
             _reviewed_chat_status=_reviewed_chat_status,
+            _character_basis_reader=_character_basis_reader,
             _reviewed_history_setter=_reviewed_history_setter,
             _local_identity_lister=_local_identity_lister,
             _local_identity_selector=_local_identity_selector,

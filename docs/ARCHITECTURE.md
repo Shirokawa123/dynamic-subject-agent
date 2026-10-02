@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-133：当前人物依据只读查看
+
+Facade `query_character_basis()`通过Authority fresh读取并验证当前profile/timeline、QRI及准确whole sealed envelope，返回知识的事实/信念与事件/知情范围、组织单元的支持文本和有边界的作者解释；回程复核当前registry scope，关闭/身份变化/损坏只返空unavailable/failed-closed。读取不进入worker、不等待模型所持registry锁，不创建资格、写Timeline或更改出站。DTO不带内部ID/digest/cues或虚构原文出处。
+
+入口按需读取、内存分组/本地检索，收起、失效与scope变化清显示，迟到响应不能覆盖新scope。当前sealed没有原EPUB逐段定位，界面明确说明；模型台词不加入依据，也不把全部人物资料称为本轮实际选材。真实30项事实/4项作者解释及组织4/4/2与sealed逐项一致，重复/重开0模型且原记录/边界/开关保持；完整结果由S133报告承接。
+
 ### Slice-132：同一人物的新交流边界
 
 `context-boundary`是同已批whole用途的独立技术合同、`original-character-whole-context-deepseek-s132-1` authority/manifest及新Timeline schema4，只有`whole_context_input`/`whole_context_boundary`两张专用表，不取得LIFE、活动/S1、effect或人格关系权限。新精确freeze后由whole composition直接以identity_id激活；不能先旧select创建schema1，也不升级旧root。普通回复沿grounded材料/策略，出站仍是原批准范围的子集。

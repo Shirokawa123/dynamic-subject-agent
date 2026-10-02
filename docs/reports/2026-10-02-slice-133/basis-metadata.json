@@ -1,0 +1,37 @@
+{
+  "version": "s133-actual-local-basis-metadata-1",
+  "api_reads": 3,
+  "model_calls": 0,
+  "sealed_exact_match": true,
+  "knowledge_items": 30,
+  "facts": 30,
+  "beliefs": 0,
+  "author_interpretations": 4,
+  "groups": {
+    "core": 4,
+    "episodes": 4,
+    "details": 2
+  },
+  "basis_sha256": "3570d2fba7338300a3191133a68a9f73e4391370c4aea150af1246ee2ac3bda1",
+  "repeat_and_reopen_match": true,
+  "history_sha256": "25eb74fbd6ce5c8d6d49cfd095311afa3b69909e23506f780706df3cfb6896dc",
+  "history_unchanged": true,
+  "context_unchanged": true,
+  "history_setting_unchanged": true,
+  "global_attempts": 56,
+  "source_text_exported": false,
+  "ui": {
+    "viewer_expands": true,
+    "matching_search_knowledge": 1,
+    "matching_search_interpretations": 1,
+    "no_match_counts": [
+      0,
+      0
+    ],
+    "refresh_and_close_preserve_draft": true,
+    "history_setting_unchanged": true,
+    "canonical_turns": 4,
+    "model_calls": 0,
+    "own_test_draft_cleared": true
+  }
+}

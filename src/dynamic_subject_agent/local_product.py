@@ -210,6 +210,7 @@ def _open_loaded_local_product(
         _first_life_day=first_life_day,
         _first_life_development=first_life_development,
         _reviewed_chat_status=lambda: authority.reviewed_character_chat_status(loaded.qri.profile_id),
+        _character_basis_reader=lambda: authority.character_basis(loaded.qri.profile_id, loaded.timeline_id),
         _reviewed_history_setter=(None if whole_receipts_only else lambda enabled: authority.set_reviewed_character_history(enabled, loaded.qri.profile_id)),
         _local_identity_lister=authority.list,
         _local_identity_selector=lambda request: authority.select(
