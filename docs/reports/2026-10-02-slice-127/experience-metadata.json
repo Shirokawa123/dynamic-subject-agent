@@ -1,0 +1,273 @@
+{
+  "version": "s127-real-experience-metadata-1",
+  "purpose": "original-character-whole-chat",
+  "attempts": 8,
+  "committed_turns": 8,
+  "automatic_retries": 0,
+  "known_model_failures": 0,
+  "old_audits_unchanged": {
+    "development": 113,
+    "free_input": 84
+  },
+  "original_package_sha256": "05fbb0603e645fe8114ed48a134575d108792fd3ed94a77eafdaaaab96c72199",
+  "startup_zero_calls": true,
+  "process_restart_after_four_zero_calls": true,
+  "process_restart_four_reply_hashes_equal": true,
+  "composition_reopen_before_turn8_zero_calls": true,
+  "ui_refresh_and_reopen_zero_calls": true,
+  "ui_owned_draft_preserved": true,
+  "turns": [
+    {
+      "turn": 1,
+      "ok": true,
+      "attempts_before": 0,
+      "attempts_after": 1,
+      "history_enabled": true,
+      "committed_turns": 1,
+      "elapsed_seconds": 5.552,
+      "reply_chars": 68,
+      "reply_sha256": "fb40897f0d6cc3cd8c783f24fb50b63ab27d7657ccf8cc73078187362e60708b",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 2,
+      "ok": true,
+      "attempts_before": 1,
+      "attempts_after": 2,
+      "history_enabled": true,
+      "committed_turns": 2,
+      "elapsed_seconds": 5.093,
+      "reply_chars": 100,
+      "reply_sha256": "debe0217fe732fc203fe48edd2c71c725191eb53165cc244f6374f90576eaba5",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 3,
+      "ok": true,
+      "attempts_before": 2,
+      "attempts_after": 3,
+      "history_enabled": true,
+      "committed_turns": 3,
+      "elapsed_seconds": 8.018,
+      "reply_chars": 85,
+      "reply_sha256": "0969653b5359b91417c061fe7d48dd4d1e0a435e30de6c02f6cdc523726aafba",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 4,
+      "ok": true,
+      "attempts_before": 3,
+      "attempts_after": 4,
+      "history_enabled": true,
+      "committed_turns": 4,
+      "elapsed_seconds": 3.532,
+      "reply_chars": 40,
+      "reply_sha256": "e0aeefb470d60ff97c5690976b47cb3bf7c9f4b164c8c8de34ae6b6039620c92",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 5,
+      "ok": true,
+      "attempts_before": 4,
+      "attempts_after": 5,
+      "history_enabled": true,
+      "committed_turns": 5,
+      "elapsed_seconds": 8.8,
+      "reply_chars": 67,
+      "reply_sha256": "357b7a46a0a5105b7d9807e127888922bb2293e62ccba4afdaab713bf1d6f6e2",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 6,
+      "ok": true,
+      "attempts_before": 5,
+      "attempts_after": 6,
+      "history_enabled": true,
+      "committed_turns": 6,
+      "elapsed_seconds": 5.741,
+      "reply_chars": 73,
+      "reply_sha256": "49e2aec9edec0a0c3be00943bdca5c0ac09c0f3c08c62fa48d8b526289abe57a",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 7,
+      "ok": true,
+      "attempts_before": 6,
+      "attempts_after": 7,
+      "history_enabled": false,
+      "committed_turns": 7,
+      "elapsed_seconds": 5.318,
+      "reply_chars": 69,
+      "reply_sha256": "e9348ba1fcd13c0cbd95fa82cc4e473e231a5ad509f2105b401a5ddd0ef2248e",
+      "nonce_replay_zero_call": true
+    },
+    {
+      "turn": 8,
+      "ok": true,
+      "attempts_before": 7,
+      "attempts_after": 8,
+      "history_enabled": true,
+      "committed_turns": 8,
+      "elapsed_seconds": 6.548,
+      "reply_chars": 112,
+      "reply_sha256": "20f6cd7c9bef15514d4b1d6c6025b08770bbc17d8b2a1381d9182550e77448dd",
+      "nonce_replay_zero_call": true
+    }
+  ],
+  "audit": [
+    {
+      "ordinal": 0,
+      "request_digest": "c160c537b2e8865a050514e4a202d0459abcfd7cbb4f763787a183d4e3144663",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "3ff61497b81ffb00e262857d7dabb18be74e27e7de14ead517b7cd8e35856702"
+    },
+    {
+      "ordinal": 1,
+      "request_digest": "ff20c0eedcafc9914a95c9a2bdf166e85ede0292ba6561d64ab0d1971b4bb2f1",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "7941b1d60b4683bc1b97190fe35e6828e57a0664d2407a6659c6bec037291c9c"
+    },
+    {
+      "ordinal": 2,
+      "request_digest": "de48d72e5cc032a85b8c119c30c9adae8bb7bdd6dc564afd7a69ef8efc6d37b2",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "684406b98b7b13a36c1227b8c1f3cc51e9d7318349196ec54c0da7a2b4a77e6b"
+    },
+    {
+      "ordinal": 3,
+      "request_digest": "5ead3d615bd14e1919b6f505936c1219aafadada76970ec93e13758e5fcd2dbd",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "2b93baab4b5d5e67abde0bdb1891cf23ad51618d95946a3aa59e8cb84c71824f"
+    },
+    {
+      "ordinal": 4,
+      "request_digest": "5491ec24830af15188811030d35672842c9abb4df5fb914bd5c38b464a6a2b4d",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "c002cef98356f7af6badd1176e9a42c34bdf3b3b4263c0a34c78c132a7c7f3e1"
+    },
+    {
+      "ordinal": 5,
+      "request_digest": "e9398ed592981b0ca28b1707e2393ba2fc2f793bfaff272cf8069a0692ec6ed4",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "21de0a967f437881bd1f9cfb8b127cedeb27cfa3b0b56396751da8590cd899ef"
+    },
+    {
+      "ordinal": 6,
+      "request_digest": "cdd247d9e8ea344a6a877a11fd55003c5bd4edc3ff17da105a629537a79a8b31",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "b0c0ed64133e502f817679cf1ee28cf4177cfd8bfc9a0864879c7f1042468d75"
+    },
+    {
+      "ordinal": 7,
+      "request_digest": "4542c4f67361d44025ad059329bf3609f6b98f0852172b0f57f302c743893d5e",
+      "purpose": "original-character-whole-chat",
+      "status": "complete",
+      "output_digest": "be6f470b353da8ed0d6719af3bc1d3e50a14863c6ac355da5dc7ae94dde71a80"
+    }
+  ],
+  "canonical_projection_reconstruction": [
+    {
+      "turn": 1,
+      "history_enabled": true,
+      "has_prior_committed_exchange": false,
+      "complete_exchange_turns": 0,
+      "exchange_chars": 0,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 2,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 1,
+      "exchange_chars": 98,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 3,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 2,
+      "exchange_chars": 221,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 4,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 2,
+      "exchange_chars": 224,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 5,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 2,
+      "exchange_chars": 163,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 6,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 2,
+      "exchange_chars": 158,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 7,
+      "history_enabled": false,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 0,
+      "exchange_chars": 0,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    },
+    {
+      "turn": 8,
+      "history_enabled": true,
+      "has_prior_committed_exchange": true,
+      "complete_exchange_turns": 2,
+      "exchange_chars": 194,
+      "matches_actual_claimed_projection_digest": true,
+      "life_evidence_empty": true,
+      "core_units": 4,
+      "related_units": 0,
+      "persona_interpretations": 4
+    }
+  ]
+}

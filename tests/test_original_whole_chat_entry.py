@@ -1,0 +1,327 @@
+"""Thin entry lifecycle, async HTTP and draft recovery; no real model or account."""
+from dataclasses import replace
+import importlib.util
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+from threading import Thread
+from types import SimpleNamespace
+from urllib.error import HTTPError
+from urllib.request import Request, urlopen
+from uuid import uuid4
+
+import pytest
+
+from dynamic_subject_agent.application import ApplicationOperationResponse, ApplicationOperationStatus
+from dynamic_subject_agent.reviewed_character_chat import ReviewedCharacterChatStatus
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+class FakeWholeFacade:
+    def __init__(self):
+        self.state = ReviewedCharacterChatStatus("active", "合成测试人物", True, None, 0, None)
+        self.turns, self.submissions, self.waits, self.operations, self.finished = [], [], [], {}, set()
+
+    def reviewed_character_chat_status(self):
+        return self.state
+
+    def query(self, query):
+        return SimpleNamespace(status=SimpleNamespace(value="available"),
+            projection=SimpleNamespace(turns=tuple(self.turns)))
+
+    def submit(self, command, *, idempotency_key):
+        self.submissions.append((command, idempotency_key))
+        ref = self.operations.setdefault(idempotency_key, object())
+        if ref in self.finished:
+            return self.result("terminal", ref)
+        return self.result("pending", ref)
+
+    def wait(self, ref, *, timeout_seconds):
+        self.waits.append((ref, timeout_seconds))
+        if ref not in self.finished:
+            self.finished.add(ref)
+            command = next(command for command, key in self.submissions if self.operations[key] == ref)
+            self.turns.append(SimpleNamespace(user_text=command.utterance, assistant_text="合成回复。"))
+        return self.result("terminal", ref)
+
+    def set_reviewed_character_history(self, enabled):
+        self.state = replace(self.state, history_enabled=enabled)
+        return self.state
+
+    @staticmethod
+    def result(status, ref=None, *, text="合成回复。", failure=None):
+        projection = SimpleNamespace(expression_text=text, failure_code=failure) if status != "pending" else None
+        return ApplicationOperationResponse(ApplicationOperationStatus(status), ref, projection, None)
+
+
+@pytest.fixture
+def modules(monkeypatch):
+    monkeypatch.syspath_prepend(str(ROOT / "app/desktop"))
+    monkeypatch.syspath_prepend(str(ROOT / "scripts"))
+    import original_whole_chat
+    spec = importlib.util.spec_from_file_location("original_whole_entry_script", ROOT / "scripts/serve_original_whole_chat.py")
+    entry = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(entry)
+    return original_whole_chat, entry
+
+
+def fake_product(facade=None):
+    return SimpleNamespace(application=facade or FakeWholeFacade(), profile_id=str(uuid4()), timeline_id=str(uuid4()))
+
+
+def test_http_async_exact_input_nonce_read_only_status_and_no_extra_permissions(modules):
+    desktop, _ = modules
+    product, reopens = fake_product(), []
+    def reopen():
+        reopens.append(True)
+        return product
+    server = desktop.original_whole_server(product, reopen=reopen)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            page = response.read().decode()
+        token = re.search(r"TOKEN='([^']+)'", page).group(1)
+        def get(path):
+            with urlopen(base + path, timeout=5) as response:
+                return json.load(response)
+        def post(path, payload, **headers):
+            with urlopen(Request(base + path, data=json.dumps(payload).encode(),
+                headers={"Content-Type": "application/json", "X-Chat-Token": token, **headers}), timeout=5) as response:
+                return json.load(response)
+        assert get("/health") == dict(application=desktop.APPLICATION_ID)
+        assert get("/status")["history"]["turns"] == []
+        nonce = str(uuid4())
+        for payload in ({}, dict(text="消息", request_id=nonce, attachment="file"),
+            dict(text="", request_id=nonce), dict(text="a\x00b", request_id=nonce),
+            dict(text="字" * 1001, request_id=nonce), dict(text=True, request_id=nonce),
+            dict(text="消息", request_id="invalid")):
+            with pytest.raises(HTTPError) as error:
+                post("/send", payload)
+            assert error.value.code == 400
+        assert not product.application.submissions
+        payload = dict(text="  明确提交的合成消息\n", request_id=nonce)
+        first = post("/send", payload)
+        assert first["ok"] and first["pending"] and not first["settled"] and first["request_id"] == nonce
+        assert product.application.submissions[0][0].utterance == payload["text"]
+        status = get("/status")
+        assert status["pending_handle"] == first["pending"] and status["pending_request_id"] == nonce
+        assert not product.application.waits and len(product.application.operations) == 1
+        assert not post("/reload", {})["ok"] and not reopens
+        repeated = post("/send", payload)
+        assert repeated["pending"] == first["pending"] and len(product.application.operations) == 1
+        for handle in (None, {}, "foreign-operation"):
+            with pytest.raises(HTTPError) as error:
+                post("/operation", dict(handle=handle))
+            assert error.value.code == 400
+        terminal = post("/operation", dict(handle=first["pending"]))
+        assert terminal["ok"] and terminal["settled"] and terminal["request_id"] == nonce and not terminal["state"]["presentation_pending"]
+        assert product.application.waits == [(product.application.operations["original-whole-" + nonce], 0)]
+        assert post("/send", payload)["ok"] and len(product.application.operations) == 1
+        saved = terminal["state"]["history"]
+        assert post("/history", dict(enabled=False))["state"]["character"]["history_enabled"] is False
+        assert post("/reload", {})["state"]["history"] == saved and reopens == [True]
+        for path in ("/context-reset", "/simulate", "/heartbeat", "/controls", "/attachments"):
+            with pytest.raises(HTTPError) as error:
+                post(path, {})
+            assert error.value.code == 403
+        with pytest.raises(HTTPError) as error:
+            post("/send", payload, Origin="https://untrusted.example")
+        assert error.value.code == 403 and len(product.application.operations) == 1
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+def test_terminal_failure_clears_duplicate_handles_without_disclosing_unverified_history(modules):
+    desktop, _ = modules
+    product = fake_product()
+    adapter = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product)
+    first = adapter.send(dict(text="合成消息。", request_id=str(uuid4())))
+    ref = adapter.pending[first["pending"]]
+    adapter.pending["legacy-duplicate"] = ref
+    adapter.inflight.add("legacy-duplicate")
+    result = adapter._result(product.application.result("failed-closed", ref, text=None, failure="whole-history-unverified"),
+        first["pending"], first["request_id"])
+    assert not result["ok"] and result["settled"] and not result["pending"] and not adapter.inflight
+    assert "上下文" in result["message"] and "草稿" in result["message"]
+    product.application.query = lambda query: SimpleNamespace(status=SimpleNamespace(value="failed-closed"),
+        projection=SimpleNamespace(turns=[SimpleNamespace(user_text="不可核实", assistant_text="不可核实")]))
+    assert adapter.snapshot()["history"] == dict(status="failed-closed", turns=[])
+
+
+@pytest.mark.parametrize("status,settled", [("terminal", True), ("failed-closed", True),
+    ("unavailable", True), ("unknown", False)])
+def test_http_reports_known_failure_settlement_without_retrying(modules, status, settled):
+    desktop, _ = modules
+    product = fake_product()
+    calls = []
+    def fail(command, *, idempotency_key):
+        calls.append(idempotency_key)
+        return product.application.result(status, text=None, failure="synthetic-failure")
+    product.application.submit = fail
+    server = desktop.original_whole_server(product, reopen=lambda: product)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    base = f"http://127.0.0.1:{server.server_port}"
+    try:
+        with urlopen(base + "/", timeout=5) as response:
+            token = re.search(r"TOKEN='([^']+)'", response.read().decode()).group(1)
+        nonce = str(uuid4())
+        with urlopen(Request(base + "/send", data=json.dumps(dict(text="合成失败草稿。", request_id=nonce)).encode(),
+            headers={"Content-Type": "application/json", "X-Chat-Token": token}), timeout=5) as response:
+            result = json.load(response)
+        assert not result["ok"] and result["settled"] is settled and result["request_id"] == nonce
+        with urlopen(base + "/status", timeout=5) as response:
+            assert not json.load(response)["presentation_pending"]
+        assert calls == ["original-whole-" + nonce] and not product.application.waits
+    finally:
+        server.shutdown(); server.server_close(); thread.join(timeout=5)
+
+
+@pytest.fixture
+def fake_entry(modules, monkeypatch, tmp_path):
+    _, script = modules
+    package = tmp_path / "owned-synthetic-package.json"
+    package.write_text("synthetic-package-only", encoding="utf-8")
+    facade, calls, closed = FakeWholeFacade(), [], []
+    identity = str(uuid4()), str(uuid4())
+    def open_author(config, **kwargs):
+        calls.append("author-open")
+        config.state_path.write_text("synthetic-state", encoding="utf-8")
+        class Author:
+            def freeze_source_identity(self, request):
+                calls.append(("freeze", request))
+                return SimpleNamespace(status="created", view=SimpleNamespace(identity_id=identity[0]))
+            def select_local_identity(self, request):
+                calls.append(("select", request))
+                return SimpleNamespace(status="selected")
+            def __enter__(self):
+                return SimpleNamespace(application=self)
+            def __exit__(self, *args):
+                closed.append("author")
+        return Author()
+    def open_whole(config, **kwargs):
+        calls.append(("whole-open", kwargs))
+        return SimpleNamespace(application=facade, profile_id=identity[0], timeline_id=identity[1], close=lambda: closed.append("whole"))
+    def review(request):
+        calls.append(("review", request))
+        return SimpleNamespace(status="previewed", review_basis=script.APPROVED_BINDING["review_basis"])
+    monkeypatch.setattr(script, "open_local_product", open_author)
+    monkeypatch.setattr(script, "open_original_whole_product", open_whole)
+    monkeypatch.setattr(script.ApplicationFacade, "preview_original_character_whole_use_preparation", staticmethod(review))
+    options = dict(live=False, package_path=package, transport=object(), audit_path=tmp_path / "isolated-audit")
+    return script, tmp_path / "entry", options, facade, calls, closed
+
+
+def test_entry_freezes_only_first_open_and_recovers_without_package_or_messages(fake_entry):
+    script, root, options, facade, calls, closed = fake_entry
+    entry = script.OriginalWholeChatEntry(root, **options)
+    assert facade.turns == facade.submissions == []
+    pointer = (root / "current.json").read_bytes()
+    request = next(item[1] for item in calls if type(item) is tuple and item[0] == "freeze")
+    assert request.confirmed and request.rights_confirmed and request.preparation_json == "synthetic-package-only"
+    assert "synthetic-package-only" not in pointer.decode()
+    options["package_path"].unlink()  # Our own synthetic fixture, never product data.
+    entry.reopen()
+    entry.close()
+    recovered = script.OriginalWholeChatEntry(root, **options)
+    assert (root / "current.json").read_bytes() == pointer and not facade.submissions
+    assert sum(item == "author-open" for item in calls) == 1
+    assert sum(type(item) is tuple and item[0] == "review" for item in calls) == 1
+    recovered.close()
+
+
+def test_partial_entry_and_stale_binding_stop_without_recreating_or_opening_author(fake_entry):
+    script, root, options, _, calls, _ = fake_entry
+    partial = root.with_name("partial-entry")
+    partial.mkdir(); (partial / "initialized").mkdir()
+    with pytest.raises(ValueError, match="incomplete"):
+        script.OriginalWholeChatEntry(partial, **options)
+    assert not calls and not (partial / "current.json").exists()
+    entry = script.OriginalWholeChatEntry(root, **options); entry.close()
+    pointer = root / "current.json"
+    value = json.loads(pointer.read_text(encoding="utf-8")); value["binding"]["review_basis"] = "0" * 64
+    pointer.write_text(json.dumps(value), encoding="utf-8")
+    before, count = pointer.read_bytes(), len(calls)
+    with pytest.raises(ValueError, match="pointer changed"):
+        script.OriginalWholeChatEntry(root, **options)
+    assert pointer.read_bytes() == before and len(calls) == count
+
+
+def test_page_draft_nonce_recovery_ime_scope_and_read_only_refresh(modules):
+    desktop, _ = modules
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("Node is required for the repository's desktop JavaScript checks")
+    product = fake_product()
+    state = desktop.OriginalWholeChatAdapter(product, reopen=lambda: product).snapshot()
+    page = (ROOT / "app/desktop/static/original_whole_chat.html").read_text(encoding="utf-8")
+    script = re.search(r"<script>([\s\S]*?)</script>", page).group(1)
+    harness = r"""
+const assert=require('node:assert/strict'),vm=require('node:vm');
+const input=JSON.parse(require('node:fs').readFileSync(0,'utf8'));
+const storage=new Map(),calls=[],waiting=[],nodes=new Map();let status=input.state,nextId=0;
+const element=()=>({value:'',textContent:'',disabled:false,children:[],handlers:{},
+ append(...items){this.children.push(...items)},replaceChildren(){this.children=[]},
+ addEventListener(name,handler){this.handlers[name]=handler},focus(){throw Error('no focus')}});
+const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+function start(){nodes.clear();const sandbox={document:{getElementById:get,createElement:element},
+ sessionStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},
+ crypto:{randomUUID:()=> '00000000-0000-4000-8000-'+String(++nextId).padStart(12,'0')},
+ setTimeout:callback=>setImmediate(callback),fetch:async(path,options)=>{
+  if(path==='/status')return {ok:true,json:async()=>status};
+  calls.push({path,body:JSON.parse(options.body)});
+  return new Promise((resolve,reject)=>waiting.push({ok:value=>resolve({ok:true,json:async()=>value}),fail:()=>reject(Error('network'))}));
+ }};vm.createContext(sandbox);vm.runInContext(input.script,sandbox);
+ get('composer').requestSubmit=()=>get('composer').handlers.submit({preventDefault(){}})}
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+const draft=text=>{get('draft').value=text;get('draft').handlers.input()};
+const submit=()=>get('composer').requestSubmit();
+const key=extra=>get('draft').handlers.keydown({key:'Enter',preventDefault(){},...extra});
+const outcome=(id,ok=true,settled=true)=>({ok,settled,pending:null,request_id:id,state:input.state});
+(async()=>{
+ start();await flush();draft('合成未发送草稿');
+ key({shiftKey:true});key({isComposing:true});key({keyCode:229});
+ get('draft').handlers.compositionstart();key({});await submit();get('draft').handlers.compositionend();
+ assert.equal(calls.length,0);await get('refresh').handlers.click();assert.equal(get('draft').value,'合成未发送草稿');
+ const first=submit();const id=calls.at(-1).body.request_id;waiting.shift().fail();await first;
+ assert.equal(get('draft').value,'合成未发送草稿');assert.equal(get('send').disabled,true);
+ start();await flush();assert.equal(calls.length,1);assert.equal(get('send').textContent,'继续上次发送');
+ const retry=submit();assert.equal(calls.at(-1).body.request_id,id);waiting.shift().ok(outcome(id,false,false));await retry;
+ assert.equal(get('draft').value,'合成未发送草稿');assert.equal(get('send').textContent,'继续上次发送');
+ const again=submit();draft('后来的草稿');waiting.shift().ok(outcome(id));await again;
+ assert.equal(get('draft').value,'后来的草稿');
+ const changed=submit(),changedId=calls.at(-1).body.request_id;assert.notEqual(changedId,id);
+ waiting.shift().ok(outcome(changedId));await changed;assert.equal(get('draft').value,'');
+ draft('已知失败保留草稿');const known=submit(),knownId=calls.at(-1).body.request_id;
+ waiting.shift().ok(outcome(knownId,false));await known;
+ assert.equal(get('draft').value,'已知失败保留草稿');assert.equal(get('send').textContent,'发送');
+ const beforeNew=calls.length;await flush();assert.equal(calls.length,beforeNew);
+ const explicitNew=submit(),newId=calls.at(-1).body.request_id;assert.notEqual(newId,knownId);
+ waiting.shift().ok(outcome(newId));await explicitNew;assert.equal(get('draft').value,'');
+ draft('合成等待回复');const pending=submit(),pendingId=calls.at(-1).body.request_id;
+ const pendingState={...input.state,presentation_pending:true,pending_handle:'owned-handle',pending_request_id:pendingId};
+ waiting.shift().ok({ok:true,pending:'owned-handle',request_id:pendingId,state:pendingState});
+ await flush();await flush();assert.equal(calls.at(-1).path,'/operation');waiting.shift().fail();await pending;
+ status=pendingState;const sends=calls.filter(row=>row.path==='/send').length;start();await flush();await flush();
+ assert.equal(calls.filter(row=>row.path==='/send').length,sends);assert.equal(calls.at(-1).path,'/operation');
+ assert.equal(get('draft').value,'合成等待回复');waiting.shift().ok(outcome(pendingId,false));await flush();await flush();
+ assert.equal(get('draft').value,'合成等待回复');assert.equal(get('send').textContent,'发送');
+ const retryKnownPending=submit(),afterPendingId=calls.at(-1).body.request_id;assert.notEqual(afterPendingId,pendingId);
+ waiting.shift().ok(outcome(afterPendingId));await retryKnownPending;assert.equal(get('draft').value,'');
+ draft('旧范围草稿');status={...input.state,scope_key:'another-owned-scope'};start();await flush();
+ assert.equal(get('draft').value,'');status=input.state;start();await flush();assert.equal(get('draft').value,'旧范围草稿');
+ const history=get('history').handlers.change();assert.equal(calls.at(-1).path,'/history');
+ waiting.shift().ok({...outcome(null),request_id:null});await flush();await flush();
+ assert.equal(get('draft').value,'旧范围草稿');
+ process.stdout.write('original-whole-page-complete');
+})().catch(error=>{console.error(error);process.exitCode=1});
+"""
+    result = subprocess.run([node, "-e", harness], input=json.dumps(dict(script=script, state=state)).encode(),
+        capture_output=True, timeout=20)
+    assert result.returncode == 0, result.stderr.decode("utf-8", errors="replace")
+    assert result.stdout == b"original-whole-page-complete"

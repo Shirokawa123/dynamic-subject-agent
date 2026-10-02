@@ -149,9 +149,16 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
         from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
         from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+        from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        if loaded.qri.provider_authority == LIFE_AUTHORITY:
+        if loaded.qri.provider_authority == WHOLE_AUTHORITY:
+            if type(cognition) is not OriginalWholeChatCognition:
+                cognition = OriginalWholeChatCognition()
+            elif cognition.gateway is not None and getattr(cognition, "_whole_composition_witness", None) != loaded.qri.reviewed_chat_contract:
+                raise ValueError("original whole identity requires its exact production composition")
+        elif loaded.qri.provider_authority == LIFE_AUTHORITY:
             from dynamic_subject_agent.first_life_reply_routes import LOCAL_REPLY_POLICIES, REMOTE_REPLY_POLICIES as LIVE_REPLY_POLICIES
             selected = authority.first_life_runtime_policy(loaded.qri.profile_id)
             if selected in LOCAL_REPLY_POLICIES and (type(cognition) is not FirstLifeCognition
@@ -647,6 +654,34 @@ def open_evidence_extraction_lab(parent: Path, *, workspace: Path, approved_plan
     root.mkdir(parents=True, exist_ok=False)
     config = LocalProductConfig(root / "DynamicSubjectAgent/m0/experiments", root / "state.json", "off")
     return open_local_product(config, cognition=DormantDeepSeekCognition(), _evidence_extraction=lab)
+
+
+def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
+                                scope_digest=None, audit_path=None, _transport=None, observations=None):
+    """New exact whole qualification; opening/reopening performs no model call."""
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.original_whole_chat_audit import (
+        default_original_whole_audit_path, open_original_whole_audit, OriginalWholeDelivery)
+    from dynamic_subject_agent.original_whole_chat_provider import DeepSeekOriginalWholeAdapter
+    from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
+    binding = dict(APPROVED_BINDING, definition_basis=definition_basis, runtime_asset_sha=runtime_asset_sha,
+        persona_digest=persona_digest, review_basis=review_basis,
+        scope_digest=APPROVED_BINDING["scope_digest"] if scope_digest is None else scope_digest)
+    audit_path = default_original_whole_audit_path() if audit_path is None else audit_path
+    if not isinstance(audit_path, Path) or not audit_path.is_absolute():
+        raise ValueError("absolute dedicated whole audit required")
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_original_whole(binding=binding, audit_path=audit_path)
+    delivery = OriginalWholeDelivery(open_original_whole_audit(audit_path), contract=loaded.qri.reviewed_chat_contract,
+        state_path=config.state_path)
+    transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    adapter = DeepSeekOriginalWholeAdapter(transport=transport, delivery=delivery, envelope=loaded.reviewed_definition,
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
+        observations=observations)
+    cognition = OriginalWholeChatCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter), delivery=delivery,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
 def open_reviewed_character_chat_product(config, *, definition_basis, scope_digest, review_request_basis,

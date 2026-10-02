@@ -6,11 +6,11 @@ from pathlib import Path
 import re
 
 from dynamic_subject_agent.character_chat_context import MAX_KNOWLEDGE_CHARS, MAX_RELATED_UNITS, knowledge_chars, prepare_context
-from dynamic_subject_agent.character_personality import PERSONALITY_POLICY
+from dynamic_subject_agent.original_whole_chat import WHOLE_USE_POLICY
 from dynamic_subject_agent.character_communication_trial_provider import communication_protocol
 from dynamic_subject_agent.character_identity_preparation import CharacterIdentityPreparationView
 from dynamic_subject_agent.frozen_attempt import canonical_json
-from dynamic_subject_agent.reviewed_character_chat import HISTORY_POLICY, sealed_model
+from dynamic_subject_agent.reviewed_character_chat import sealed_model
 from dynamic_subject_agent.reviewed_character_definition import validate_character_preparation
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 
@@ -18,17 +18,6 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 REVIEW_VERSION = "original-character-whole-use-review-s126-1"
 SCOPE_VERSION = "original-character-whole-use-proposal-s126-1"
 SYNTHETIC_MESSAGE = "你好，想和你聊聊绘画，你现在想聊什么？"
-WHOLE_USE_POLICY = PERSONALITY_POLICY + HISTORY_POLICY + (
-    "以background.runtime_identity中的虚构人物自然交流，先回应turn.current_message，再选择相关背景。"
-    "background.self_knowledge保留事实或信念类型及成立/知情限定；personality是有边界的作者解释。"
-    "人物核心与资料不是每轮必说的清单，知情不等于愿意披露。"
-    "exchange仅用于理解本次实际提供的双方原话与理由，不建立新世界事实、关系或持久人格。"
-    "用户当前提到的细节不表示本人先前说过，回顾时先核对实际原话；构想仍作为构想承接。"
-    "当前可以提出意见或新设想，不补造过去、近期活动、画作完成、外部反馈或持续心理活动。"
-    "本拟用途不接生活系统，evidence的活动、方案和事件均为空，不依据时间或聊天轮数造经历。"
-    "使用第一人称自然中文短消息，通常两三句；不朗读档案、内部字段、审计流程或思考过程。"
-    "只返回JSON exact {reply_text,language}；language=zh，reply_text非空且最多1200字符。"
-)
 
 
 @dataclass(frozen=True)

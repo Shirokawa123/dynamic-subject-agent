@@ -1,5 +1,15 @@
 # 产品架构
 
+### Slice-127：准确原人物单阶段聊天
+
+用户批准S126纱雾whole用途后，新增独立 `original-character-whole-chat-deepseek-s127-1` authority/manifest/contract，精确绑定已审definition/asset/persona/review/scope；S126 review仍不可执行，旧chat/小林/生活资格和数据不升级。新 `open_original_whole_product` 是production composition入口，Authority独占封存后资格转换、registry、history revision与Host准备，桌面只消费Facade。
+
+provider-neutral `CHARACTER_ORIGINAL_WHOLE_REPLY`只发主动文字≤1000、最小身份/core/选中相关资料/persona/起点/渠道/披露，以及可关闭的本身份最多2完整committed轮≤4000；活动/方案/事件为空，不发送S1、整包来源或内部ID。每轮单请求、0自动重试、独立无次数上限metadata账。Sender每次重算完整封存内容，再比准确批准绑定，并用同一快照校验与装配投影；模型只提表达，六Domain均NoOp。
+
+发送和最终COMMIT核identity/history revision，off→on与身份出→回取消旧候选。保留schema1原子Publication，不迁移旧库；已完成receipt重取，冷pending或已冻结未提交尝试零模型终态FailedClosed，claim后的新终态fence防复活，不冒称prepared成功恢复。历史关闭仍核canonical完整性和真实控制，沿first-life有限控制predicate但不取得life权限。
+
+独立8785空历史入口实际8次请求全部提交；进程重开/同nonce/UI刷新与composition重开零新调用，真实投影摘要与canonical重建一致，旧审计保持。明确终态失败可保留草稿并由下一次用户点击发新轮；unknown/pending/网络不确定保留nonce且不自动重发。人物范围否定、披露与辨识度缺口、完整证据见[S127报告](reports/2026-10-02-slice-127/REPORT.md)，不宣称完整MVP通过。
+
 ### Slice-115：JSON输出示例的离线诊断候选
 
 `first_life_reply_protocol`复用S113 typed候选，仅给system追加合法输出JSON示例；其他材料/参数/原策略前缀与输出裁决不变。新值是不可执行preview，无sender、预算或runtime注册，不覆盖S111–114资格/字节。安全最终字段重放明确区别于原HTTP包，示例回声与结构合法分别标识，不据此证明语义或服务可靠性。来源、证据及尚未执行的8次范围见[S115报告](reports/2026-10-01-slice-115/REPORT.md)。

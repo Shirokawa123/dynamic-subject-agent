@@ -63,6 +63,10 @@ from dynamic_subject_agent.first_life_budget import FirstLifeBudget
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, ReviewedCharacterChatStatus
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
+from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, whole_contract,
+    validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest)
+from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
+from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
 
 _STATE_SCHEMA_VERSION = 1
 _LEGACY_AVERY_PUBLICATION_KEY = "local-product-deepseek-qri-v1"
@@ -349,6 +353,16 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             or metadata["contract"] != qri.reviewed_chat_contract or type(record.get("history_enabled")) is not bool):
             raise RuntimeError("reviewed-chat-activation-metadata-invalid")
         CharacterChatBudget(Path(metadata["budget_path"]), total=metadata["budget_total"], initial_used=metadata["initial_budget_used"]).counts()
+    if qri.provider_authority == WHOLE_AUTHORITY:
+        metadata = record.get("whole_chat_activation")
+        if (type(metadata) is not dict or set(metadata) != {"contract", "audit_path"}
+            or metadata["contract"] != qri.reviewed_chat_contract
+            or any(key in record for key in ("chat_activation", "pending_chat_activation", "life_activation", "pending_life_activation", "pending_whole_chat_activation"))
+            or type(record.get("history_enabled")) is not bool
+            or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
+            raise RuntimeError("original-whole-activation-invalid")
+        validate_whole_envelope(snapshot.reviewed_definition, metadata["contract"])
+        open_original_whole_audit(Path(metadata["audit_path"])).counts()
     if record.get("host_location") is not None:
         RuntimeHostRootRef.from_dict(record["host_location"])
     return _ValidatedLocalIdentity(
@@ -844,7 +858,8 @@ def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
-    dormant = (FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
+    dormant = (OriginalWholeChatCognition() if identity.qri.provider_authority == WHOLE_AUTHORITY else
+        FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
         FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
         ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
         else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition())
@@ -874,7 +889,8 @@ def _validate_host_binding(
     host = RuntimeHost.open(
         host_location,
         studio_location=identity.studio_location,
-        cognition=(FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
+        cognition=(OriginalWholeChatCognition() if identity.qri.provider_authority == WHOLE_AUTHORITY else
+            FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
             FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
             ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
             else ReviewedCharacterDormantCognition() if identity.reviewed_definition is not None else DormantDeepSeekCognition()),
@@ -1156,7 +1172,7 @@ class LocalIdentityAuthority:
             else snapshot_entries
         )
         reviewed_definition = None
-        if qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY, LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
+        if qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY, WHOLE_AUTHORITY, LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
             studio = SubjectStudio.open(studio_location, policy_kernel=PolicyKernel())
             try:
                 reviewed_definition = studio.query_snapshot(qri.genesis_snapshot_id).reviewed_definition
@@ -1224,6 +1240,88 @@ class LocalIdentityAuthority:
         record.pop("pending_chat_activation", None)
         _write_state(self._config.state_path, state)
         return self.load_active()
+
+    @_registry_mutation
+    def activate_original_whole(self, *, binding, audit_path):
+        contract = whole_contract(binding)
+        state, record, identity = self._active_chat_record()
+        validate_whole_envelope(identity.reviewed_definition, contract)
+        metadata = dict(contract=contract, audit_path=str(audit_path.resolve()))
+        existing = record.get("whole_chat_activation") or record.get("pending_whole_chat_activation")
+        if existing is not None and existing != metadata:
+            raise RuntimeError("original-whole-activation-conflict")
+        if identity.qri.provider_authority not in (REVIEWED_CHARACTER_AUTHORITY, WHOLE_AUTHORITY):
+            raise RuntimeError("original-whole-predecessor-invalid")
+        if any(key in record for key in ("chat_activation", "pending_chat_activation", "life_activation", "pending_life_activation")):
+            raise RuntimeError("original-whole-activation-conflict")
+        open_original_whole_audit(audit_path, initialize=existing is None)
+        if identity.qri.provider_authority == WHOLE_AUTHORITY:
+            if identity.qri.reviewed_chat_contract != contract:
+                raise RuntimeError("original-whole-contract-mismatch")
+            return self.load_active()
+        record["pending_whole_chat_activation"] = metadata
+        record.setdefault("history_enabled", True)
+        record.setdefault("history_revision", 0)
+        state.setdefault("chat_identity_revision", 0)
+        if (type(record["history_enabled"]) is not bool or type(record["history_revision"]) is not int
+            or record["history_revision"] < 0 or type(state["chat_identity_revision"]) is not int or state["chat_identity_revision"] < 0):
+            raise RuntimeError("original-whole-history-invalid")
+        _write_state(self._config.state_path, state)
+        predecessor = identity.qri
+        studio = SubjectStudio.open(identity.studio_location, policy_kernel=PolicyKernel())
+        try:
+            key = "original-character-whole-" + binding["definition_basis"] + "-" + binding["scope_digest"]
+            try:
+                successor = studio.query_qri(publication_key=key)
+            except Exception as error:
+                if getattr(error, "code", None) != "qri-not-found":
+                    raise
+                snapshot = studio.query_snapshot(predecessor.genesis_snapshot_id)
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.original_whole_chat(),
+                    validity_us=300_000_000, reviewed_chat_contract=contract)
+                successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
+                    predecessor_qualification_id=predecessor.qualification_id, reviewed_chat_contract=contract)
+            assembly = _CognitionAssembly._original_whole_transition(predecessor, successor)
+        finally:
+            studio.close()
+        if record.get("host_location") is None:
+            location, timeline = _create_identity_host(identity)
+            record["host_location"], record["timeline_id"] = location.to_dict(), timeline
+            _write_state(self._config.state_path, state)
+        host = RuntimeHost.open(RuntimeHostRootRef.from_dict(record["host_location"]), studio_location=identity.studio_location,
+            cognition=ReviewedCharacterDormantCognition(), _cognition_assembly=assembly, _runtime_identity=identity.runtime_identity)
+        try:
+            host.open_runtime(successor, timeline_id=record["timeline_id"])
+        finally:
+            host.close()
+        record["publication_key"] = successor.publication_key
+        record["whole_chat_activation"] = metadata
+        record.pop("pending_whole_chat_activation", None)
+        _write_state(self._config.state_path, state)
+        return self.load_active()
+
+    def _original_whole_authorization_from_record(self, state, record, identity):
+        if identity.qri.provider_authority != WHOLE_AUTHORITY:
+            raise RuntimeError("original-whole-authority-required")
+        return OriginalWholeAuthorization(identity.qri.profile_id, whole_digest(record["whole_chat_activation"]["contract"]),
+            record["history_enabled"], record["history_revision"], state["chat_identity_revision"])
+
+    def original_whole_authorization(self, expected_identity_id):
+        with self._history_lock:
+            return self._original_whole_authorization_from_record(*self._active_chat_record(expected_identity_id))
+
+    @contextmanager
+    def original_whole_guard(self, authorization):
+        if type(authorization) is not OriginalWholeAuthorization:
+            raise ValueError("exact original whole authorization required")
+        with self._history_lock:
+            state, record, identity = self._active_chat_record()
+            if state["active_identity_id"] != authorization.identity_id:
+                raise ShareAuthorizationChanged("original-whole-identity-changed")
+            current = self._original_whole_authorization_from_record(state, record, identity)
+            if current != authorization:
+                raise ShareAuthorizationChanged("original-whole-authorization-changed")
+            yield
 
     @_registry_mutation
     def activate_first_life(self, *, definition_basis, life_scope_digest, budget_path, budget_total=200, initial_budget_used=61,
@@ -1303,8 +1401,11 @@ class LocalIdentityAuthority:
         try:
             _, record, identity = self._active_chat_record(expected_identity_id)
             if identity.reviewed_definition is None: return ReviewedCharacterChatStatus("unavailable", problem_code="reviewed-character-required")
-            if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY):
+            if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY, WHOLE_AUTHORITY):
                 return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
+            if identity.qri.provider_authority == WHOLE_AUTHORITY:
+                total, used, remaining = open_original_whole_audit(Path(record["whole_chat_activation"]["audit_path"])).counts()
+                return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]
             if "live_reply_route" in metadata:
                 from dynamic_subject_agent.first_life_reply_live import resolve_reply_trial as approved_trial_from_witness
@@ -1318,7 +1419,7 @@ class LocalIdentityAuthority:
 
     def character_history_preference(self, expected_identity_id=None):
         _, record, identity = self._active_chat_record(expected_identity_id)
-        if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
+        if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY, WHOLE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
         return record["history_enabled"]
 
     def first_life_runtime_policy(self, expected_identity_id, *, runtime_policy=None, runtime_policy_digest=None):
@@ -1527,7 +1628,7 @@ class LocalIdentityAuthority:
         try:
             with self._history_lock:
                 state, record, identity = self._active_chat_record(expected_identity_id)
-                if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
+                if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY, WHOLE_AUTHORITY): raise RuntimeError("reviewed chat inactive")
                 revision = record["history_revision"] if "life_runtime_policy" in record else record.get("history_revision", 0)
                 if type(revision) is not int or revision < 0: raise RuntimeError("history revision invalid")
                 record["history_revision"] = revision + (record["history_enabled"] != enabled)

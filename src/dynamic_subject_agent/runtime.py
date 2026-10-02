@@ -837,6 +837,7 @@ class SubjectRuntime:
         self._cognition = cognition
         self._engine._life_share_guard = getattr(cognition, "share_guard", None)
         self._engine._life_chat_guard = getattr(cognition, "chat_guard", None)
+        self._engine._original_whole_publication_guard = getattr(cognition, "publication_guard", None)
         self._interrupt_at = interrupt_at
         self._domain_fault = domain_fault
         self._fault_hook = fault_hook
@@ -1129,6 +1130,14 @@ class SubjectRuntime:
     def pending_first_life_operations(self):
         return self._engine.pending_first_life_operations()
 
+    def recover_original_whole_pending(self):
+        pending = self._engine.pending_original_whole_operations()
+        for operation_ref in pending:
+            self._engine.freeze_attempt_basis(operation_ref)
+            self._engine.fail_operation(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
+                detail='Cold recovery closes an uncommitted whole attempt; schema 1 has no durable reply preparation and never retries the model.')
+        return len(pending)
+
     def recover_first_life_pending(self):
         """Cold-start only: settle prior admissions without invoking Cognition.
 
@@ -1354,6 +1363,12 @@ class SubjectRuntime:
                 publication_replayed=False,
             )
 
+        from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+        whole = getattr(self._context.authority, 'provider_authority', None) == WHOLE_AUTHORITY
+        if whole and self._engine.has_frozen_attempt(operation_ref):
+            self._fail_cycle(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
+                detail='An earlier whole attempt has no durable prepared reply; automatic model retry is unavailable.')
+
         if LIFE_SYSTEM_INTENT in self._context.authority.allowed_intents:
             prepared = self._engine.prepared_plan(operation_ref)
             if prepared is not None:
@@ -1469,7 +1484,7 @@ class SubjectRuntime:
         try:
             published = self._engine.publish(commit_plan)
         except CommitPlanRejected:
-            if LIFE_SYSTEM_INTENT not in self._context.authority.allowed_intents:
+            if LIFE_SYSTEM_INTENT not in self._context.authority.allowed_intents and not whole:
                 raise
             if self._engine.query(operation_ref).operation_state is OperationState.FAILED_CLOSED:
                 return self._observe(operation_ref, admission_replayed=admission_replayed)

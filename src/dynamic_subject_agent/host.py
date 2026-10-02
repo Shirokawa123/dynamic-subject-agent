@@ -105,6 +105,8 @@ from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACT
 from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, LIFE_RUNTIME_CONTRACT, LIFE_SYSTEM_INTENT
 from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
+from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
 
@@ -125,6 +127,7 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
         PROVIDER_AUTHORITY,
         REVIEWED_CHARACTER_AUTHORITY,
         CHAT_AUTHORITY,
+        WHOLE_AUTHORITY,
         LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
@@ -192,6 +195,8 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
+    if qri.provider_authority == WHOLE_AUTHORITY:
+        return qri.capabilities == CapabilityManifest.original_whole_chat() and qri.reviewed_chat_contract is not None
     if qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY):
         return qri.capabilities == (CapabilityManifest.first_life_active() if qri.provider_authority == LIFE_AUTHORITY else CapabilityManifest.first_life_dormant()) and qri.first_life_contract is not None
     if qri.provider_authority == CHAT_AUTHORITY:
@@ -217,6 +222,8 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
+    if cognition.provider_authority == WHOLE_AUTHORITY:
+        return type(cognition) is OriginalWholeChatCognition
     if cognition.provider_authority == LIFE_AUTHORITY:
         return type(cognition) is FirstLifeCognition
     if cognition.provider_authority == LIFE_DORMANT_AUTHORITY:
@@ -773,6 +780,18 @@ class _CognitionAssembly:
         instance._slots = (
             _CognitionAssemblySlot._from_qri(predecessor, ReviewedCharacterDormantCognition()),
             _CognitionAssemblySlot._from_qri(successor, ReviewedCharacterChatCognition()))
+        return instance
+
+    @classmethod
+    def _original_whole_transition(cls, predecessor, successor):
+        if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY or successor.provider_authority != WHOLE_AUTHORITY
+            or successor.predecessor_qualification_id != predecessor.qualification_id
+            or successor.profile_id != predecessor.profile_id or successor.genesis_snapshot_id != predecessor.genesis_snapshot_id
+            or successor.knowledge_snapshot_id != predecessor.knowledge_snapshot_id or successor.isolation_proof != predecessor.isolation_proof):
+            raise RuntimeHostRejected("original-whole-transition-invalid", "exact new dormant-to-whole qualification required")
+        instance = cls._prepared_control_only()
+        instance._slots = (_CognitionAssemblySlot._from_qri(predecessor, ReviewedCharacterDormantCognition()),
+            _CognitionAssemblySlot._from_qri(successor, OriginalWholeChatCognition()))
         return instance
 
     @classmethod
@@ -3308,6 +3327,13 @@ class RuntimeLease:
         if self.binding.runtime_contract_version != LIFE_RUNTIME_CONTRACT:
             raise RuntimeHostRejected("first-life-unavailable", "no life cold recovery for this runtime")
         return self._lane.worker.call("recover_first_life_pending")
+
+    def recover_original_whole_pending(self):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.provider_authority != WHOLE_AUTHORITY:
+            raise RuntimeHostRejected("original-whole-unavailable", "this is not the whole chat runtime")
+        return self._lane.worker.call("recover_original_whole_pending")
 
     def replay_first_life_request(self, request_id, request_digest):
         self._require_active()

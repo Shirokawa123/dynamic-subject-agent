@@ -27,6 +27,7 @@ from dynamic_subject_agent.first_life import (
     initial_life_record, adjudicate_life, event_summary,
 )
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -202,6 +203,12 @@ class _PreparedShareAuthorizationChanged(CommitPlanRejected):
         prefix = 'first-life-chat-' if chat else 'first-life-share-'
         super().__init__(prefix + ('authorization-unverified' if unverified else 'authorization-changed'),
             'The prepared operation no longer has its exact disclosure authorization.')
+
+
+class _OriginalWholeAuthorizationChanged(CommitPlanRejected):
+    def __init__(self, *, unverified=False):
+        super().__init__('original-whole-authorization-unverified' if unverified else 'original-whole-authorization-changed',
+            'The whole proposal no longer has its exact disclosure authorization.')
 
 
 class CommitPlanConflict(PublicationProblem):
@@ -3696,6 +3703,27 @@ class TimelineEngine:
                 raise PublicationFailedClosed('first-life-recovery-unresolved', 'an operation has no supported terminal or pending recovery state')
         return tuple(pending)
 
+    def pending_original_whole_operations(self):
+        """Schema-1 whole cold recovery verifies, then closes uncommitted work."""
+        self._require_open()
+        if getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY:
+            raise PreAdmissionRejected('original-whole-unavailable', 'this is not the whole runtime')
+        self._verified_publications()
+        pending = []
+        for (operation_id,) in self._writer.execute('SELECT operation_id FROM subject_operation ORDER BY admitted_at_us, operation_id').fetchall():
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            snapshot = self.query(ref)
+            self._query_command(ref)
+            if snapshot.operation_state is OperationState.ADMITTED_PENDING:
+                pending.append(ref)
+            elif snapshot.operation_state is OperationState.COMPLETED:
+                self.query_outcome(ref)
+            elif snapshot.operation_state is OperationState.FAILED_CLOSED:
+                self.query_failure(ref)
+            else:
+                raise PublicationFailedClosed('original-whole-recovery-unresolved', 'whole operation has an unsupported recovery state')
+        return tuple(pending)
+
     def _validate_authority(self, command: SubjectCommand) -> None:
         if type(command) is FirstLifeInput:
             self._validate_first_life_input(command)
@@ -4594,7 +4622,7 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PLAN_CLAIM)
             _begin(self._writer)
             life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents
-            if life and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
+            if (life or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot be claimed or published')
             existing = self._writer.execute(
                 """
@@ -4825,6 +4853,22 @@ class TimelineEngine:
     def _share_publication_guard(self, plan):
         authorization = plan.chat_authorization or plan.share_authorization
         if authorization is None:
+            if getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY:
+                guard = getattr(self, '_original_whole_publication_guard', None)
+                try:
+                    if guard is None:
+                        raise ValueError('whole publication guard missing')
+                    scope = guard(plan)
+                    scope.__enter__()
+                except ShareAuthorizationChanged:
+                    raise _OriginalWholeAuthorizationChanged() from None
+                except Exception:
+                    raise _OriginalWholeAuthorizationChanged(unverified=True) from None
+                try:
+                    yield
+                finally:
+                    scope.__exit__(None, None, None)
+                return
             yield
             return
         guard = getattr(self, '_life_chat_guard' if plan.chat_authorization is not None else '_life_share_guard', None)
@@ -5717,7 +5761,7 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PUBLICATION_TRANSACTION)
             _begin(self._writer)
             _require_publication_gate(self._writer, self._authority)
-            if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents
+            if ((LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY)
                 and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone()):
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot publish')
             existing = self._writer.execute(
@@ -5853,6 +5897,10 @@ class TimelineEngine:
         except _PreparedShareDayExpired:
             _rollback_if_needed(self._writer)
             self.cancel_prepared_if_stale(plan.operation_ref)
+            raise
+        except _OriginalWholeAuthorizationChanged as error:
+            _rollback_if_needed(self._writer)
+            self.fail_operation(plan.operation_ref, stage='publication', code=error.code, detail=error.detail)
             raise
         except StaleTimelineBasis as error:
             _rollback_if_needed(self._writer)
@@ -6457,7 +6505,7 @@ class TimelineEngine:
                 """,
                 (operation_id,),
             ).fetchone()
-            if claimed is not None or publication is not None:
+            if publication is not None or claimed is not None and getattr(self._authority, 'provider_authority', None) != WHOLE_AUTHORITY:
                 raise PublicationFailedClosed(
                     "operation-publication-already-started",
                     "a claimed or terminal Publication cannot become a cycle failure",
@@ -7522,11 +7570,12 @@ class TimelineEngine:
     def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+        whole = getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
-        if enabled or LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+        if enabled or LIFE_SYSTEM_INTENT in self._authority.allowed_intents or whole:
             verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
             if verified is None:
                 return CharacterDialogueBasis("unavailable", problem_code="character-history-unresolved")
@@ -7625,7 +7674,7 @@ class TimelineEngine:
 
     def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.recent_dialogue import is_dialogue_control
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) == WHOLE_AUTHORITY:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
 
         snapshot = self.query(operation_ref)

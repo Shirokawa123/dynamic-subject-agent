@@ -44,11 +44,17 @@ def _digest(value):
 class DevelopmentCallAudit:
     """No quantity limit: counts() is always (None, attempted_count, None)."""
 
+    purposes = PURPOSES
+
+    @staticmethod
+    def configuration():
+        return _configuration()
+
     def __init__(self, path: Path, *, initialize=False):
         if not isinstance(path, Path) or not path.is_absolute() or type(initialize) is not bool:
             raise ValueError("absolute development audit directory and exact initialization flag required")
         self.path = path
-        self.config = _configuration()
+        self.config = self.configuration()
         created = False
         if not path.exists():
             if not initialize:
@@ -93,22 +99,22 @@ class DevelopmentCallAudit:
         return sha256(canonical_json(value).encode()).hexdigest()
 
     def _chain(self, rows):
-        head = self._hash(_configuration())
+        head = self._hash(self.configuration())
         for row in rows:
             head = sha256((head + ":" + row[-1]).encode()).hexdigest()
         return head
 
     def _verified(self, db):
         try:
-            if (self.config != _configuration()
+            if (self.config != self.configuration()
                 or {row[0] for row in db.execute("SELECT name FROM sqlite_schema WHERE type='table'")} != _TABLES
-                or db.execute("SELECT singleton,body FROM audit_config").fetchall() != [(1, canonical_json(_configuration()))]):
+                or db.execute("SELECT singleton,body FROM audit_config").fetchall() != [(1, canonical_json(self.configuration()))]):
                 raise ValueError("development audit configuration invalid")
             rows = db.execute("SELECT ordinal,attempt_id,request_digest,purpose,run_digest,status,output_digest,record_digest FROM call_attempt ORDER BY ordinal").fetchall()
             seen = set()
             for index, row in enumerate(rows):
                 if (row[0] != index or row[1] in seen or not all(_digest(row[column]) for column in (1, 2, 4))
-                    or row[3] not in PURPOSES or row[5] not in _TERMINAL | {"claimed"}
+                    or row[3] not in self.purposes or row[5] not in _TERMINAL | {"claimed"}
                     or row[6] is not None and not _digest(row[6])
                     or row[5] == "claimed" and row[6] is not None
                     or row[7] != self._hash(list(row[:-1]))):
@@ -136,7 +142,7 @@ class DevelopmentCallAudit:
             return None if row is None else dict(zip(_FIELDS, row[:-1], strict=True))
 
     def claim(self, attempt_id, request_digest, *, purpose, run_digest):
-        if not all(_digest(value) for value in (attempt_id, request_digest, run_digest)) or purpose not in PURPOSES:
+        if not all(_digest(value) for value in (attempt_id, request_digest, run_digest)) or purpose not in self.purposes:
             raise ValueError("exact development attempt metadata and approved purpose required")
         with self._transaction() as db:
             rows = self._verified(db)

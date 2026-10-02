@@ -14,6 +14,7 @@ from dynamic_subject_agent.reviewed_character_definition import (
 
 from dynamic_subject_agent.first_life import (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, first_life_definition, first_life_source_refs, is_first_life_source, life_profile_id)
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_contract, matches_chat_source_contract
+from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope
 
 import hashlib
 import json
@@ -720,6 +721,13 @@ class CapabilityManifest:
             included=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
             certified=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "deepseek-two-stage-chat", "bounded-canonical-dialogue"),
             unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "life-events", "background-notifications"))
+
+    @classmethod
+    def original_whole_chat(cls):
+        return cls(manifest_version="original-whole-chat-capabilities-s127-1",
+            included=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "original-single-stage-whole-reply", "bounded-canonical-dialogue"),
+            certified=("host-authoring", "sealed-reviewed-character-definition", "private-character-chat", "original-single-stage-whole-reply", "bounded-canonical-dialogue"),
+            unavailable=("legacy-six-domain-cognition", "subject-tasks", "effect-dispatch", "life-events", "background-notifications", "persona-rewrite", "relationship-writeback"))
 
     @classmethod
     def first_life_dormant(cls):
@@ -1676,7 +1684,9 @@ class PolicyKernel:
         reviewed = (
             (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
              or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
-                 and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract)))
+                 and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract))
+             or (question.capability_manifest == CapabilityManifest.original_whole_chat()
+                 and matches_whole_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
             and question.isolation_proof.path_class in ("local-private-experimental", "system-temporary-experimental")
@@ -8798,11 +8808,16 @@ class SubjectStudio:
             "isolation_proof": isolation.to_dict(),
         }
         if reviewed_chat_contract is not None:
-            if (capabilities != CapabilityManifest.reviewed_character_chat() or not is_reviewed_source(profile.source)):
+            if capabilities == CapabilityManifest.original_whole_chat():
+                if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract):
+                    raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
+                expected = reviewed_chat_contract
+            elif capabilities == CapabilityManifest.reviewed_character_chat() and is_reviewed_source(profile.source):
+                expected = chat_contract(dict(definition_basis=profile.source.source_asset_refs[0].split(":", 1)[1],
+                    runtime_asset_sha=profile.source.source_asset_refs[1].split(":", 1)[1]),
+                    reviewed_chat_contract["scope_digest"], reviewed_chat_contract["review_request_basis"])
+            else:
                 raise StudioRejected("reviewed-chat-contract-invalid", "chat contract requires exact reviewed source")
-            expected = chat_contract(dict(definition_basis=profile.source.source_asset_refs[0].split(":", 1)[1],
-                runtime_asset_sha=profile.source.source_asset_refs[1].split(":", 1)[1]),
-                reviewed_chat_contract["scope_digest"], reviewed_chat_contract["review_request_basis"])
             if expected != reviewed_chat_contract: raise StudioRejected("reviewed-chat-contract-invalid", "chat scope or configuration changed")
             question_basis["reviewed_chat_contract"] = reviewed_chat_contract
         return PolicyQuestion(
@@ -9529,7 +9544,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                LIFE_AUTHORITY
+                WHOLE_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.original_whole_chat()
+                else LIFE_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.first_life_active()
                 else LIFE_DORMANT_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.first_life_dormant()
@@ -9666,6 +9683,8 @@ class SubjectStudio:
         if ("first_life_contract" in snapshot_hint or qri.first_life_contract is not None
             or qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY)):
             return self._verify_first_life_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
+        if qri.provider_authority == WHOLE_AUTHORITY or qri.capabilities == CapabilityManifest.original_whole_chat():
+            return self._verify_original_whole_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
         reviewed_contract = ("reviewed_definition" in snapshot_hint
             or qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
             or qri.publication_key.startswith("reviewed-character-")
@@ -9716,6 +9735,40 @@ class SubjectStudio:
                 policy_decision_id=qri.policy_decision_ids[-1], capability_manifest=qri.capabilities.to_dict()))
             if qri.compatibility_proof != expected_compatibility:
                 raise StudioFailedClosed("reviewed-qri-policy-invalid", "reviewed publication compatibility proof is invalid")
+        return qri
+
+    def _verify_original_whole_qri(self, qri, snapshot):
+        try:
+            contract = qri.reviewed_chat_contract
+            validate_whole_envelope(snapshot.reviewed_definition, contract)
+            predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
+            if (qri.provider_authority != WHOLE_AUTHORITY or qri.capabilities != CapabilityManifest.original_whole_chat()
+                or qri.first_life_contract is not None or snapshot.first_life_contract is not None
+                or qri.publication_key != "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
+                or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
+                or predecessor.genesis_snapshot_id != snapshot.snapshot_id
+                or qri.predecessor_qualification_id != predecessor.qualification_id
+                or qri.profile_id != snapshot.profile_id or qri.genesis_snapshot_id != snapshot.snapshot_id
+                or qri.knowledge_snapshot_id != snapshot.knowledge_snapshot_id or qri.genesis_branch_id != snapshot.branch_id
+                or qri.isolation_proof != predecessor.isolation_proof
+                or qri.policy_decision_ids != (snapshot.policy_decision_id, qri.policy_decision_ids[-1])
+                or qri.policy_decision_ids[-1] == snapshot.policy_decision_id):
+                raise ValueError("whole qualification lineage invalid")
+            for decision_id in qri.policy_decision_ids:
+                decision = self._read_policy_decision(decision_id)
+                sealing = decision_id == snapshot.policy_decision_id
+                manifest = CapabilityManifest.reviewed_character_dormant() if sealing else CapabilityManifest.original_whole_chat()
+                question = self._policy_question(snapshot.draft_id, manifest, None if sealing else contract)
+                if (decision.capability_manifest != manifest or decision.question_digest != question.question_digest
+                    or decision.disposition is not PolicyDisposition.QUALIFIED):
+                    raise ValueError("whole policy invalid")
+            expected = _digest(dict(contract_version=CONTRACT_VERSION, profile_id=snapshot.profile_id,
+                genesis_snapshot_id=snapshot.snapshot_id, knowledge_snapshot_id=snapshot.knowledge_snapshot_id,
+                policy_decision_id=qri.policy_decision_ids[-1], capability_manifest=qri.capabilities.to_dict()))
+            if qri.compatibility_proof != expected:
+                raise ValueError("whole compatibility invalid")
+        except Exception as error:
+            raise StudioFailedClosed("original-whole-qri-invalid", "whole qualification does not match the approved definition and purpose") from error
         return qri
 
     def _verify_first_life_qri(self, qri, snapshot):

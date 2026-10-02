@@ -1498,8 +1498,8 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
         )
     if state is OperationState.FAILED_CLOSED:
         failure = result.failure
-        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable", "first-life-character-credential-unavailable", "first-life-share-character-credential-unavailable", "first-life-budget-unavailable", "first-life-share-not-attempted")
-            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable", "first-life-transport-timeout", "first-life-transport-delivery-ambiguous", "first-life-share-transport-timeout", "first-life-share-transport-delivery-ambiguous")
+        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("original-whole-character-credential-unavailable", "reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable", "first-life-character-credential-unavailable", "first-life-share-character-credential-unavailable", "first-life-budget-unavailable", "first-life-share-not-attempted")
+            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("original-whole-transport-timeout", "original-whole-transport-delivery-ambiguous", "reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable", "first-life-transport-timeout", "first-life-transport-delivery-ambiguous", "first-life-share-transport-timeout", "first-life-share-transport-delivery-ambiguous")
             else ApplicationOperationStatus.FAILED_CLOSED)
         projection = AuthorizedOperationProjection(
             operation_kind=result.operation_ref.operation_kind,
