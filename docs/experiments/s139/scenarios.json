@@ -1,0 +1,36 @@
+{
+  "version": "s139-shared-activity-review-candidate-1",
+  "status": "local-preparation-only-awaiting-exact-runtime-preview-and-data-use-approval",
+  "material_provenance": "助手编写的project-original验收消息，不代表用户的真实个人偏好；只有通过新分支真实提交后才能成为该分支交流依据。",
+  "scene": "非性化日常构图文字方案，未执行绘画；三支从同一人物定义与未开始的活动前态建立独立空分支。",
+  "branches": [
+    {
+      "name": "relevant",
+      "source_message": "聊一个还没开始的构图想法：我更喜欢偏冷的蓝绿色，主体不要占满画面，边上留一点空白会比较舒服。这只是我的感觉，你也可以有自己的取舍。",
+      "selected_quote": "我更喜欢偏冷的蓝绿色，主体不要占满画面，边上留一点空白会比较舒服。",
+      "source_action_after_selection": "keep-active"
+    },
+    {
+      "name": "unrelated",
+      "source_message": "聊一点日常：我会把没用完的便签夹在书里，这样就不容易掉出来了。这只是我的收纳习惯。",
+      "selected_quote": "我会把没用完的便签夹在书里，这样就不容易掉出来了。",
+      "source_action_after_selection": "keep-active"
+    },
+    {
+      "name": "withdrawn",
+      "source_message": "聊一个还没开始的构图想法：我更喜欢偏冷的蓝绿色，主体不要占满画面，边上留一点空白会比较舒服。这只是我的感觉，你也可以有自己的取舍。",
+      "selected_quote": "我更喜欢偏冷的蓝绿色，主体不要占满画面，边上留一点空白会比较舒服。",
+      "source_action_after_selection": "deactivate-before-advance"
+    }
+  ],
+  "unrelated_messages_after_selection": [
+    "先换个话题，你觉得初学一件事时，先自己试试和先问别人各有什么好处？",
+    "说到问问题，如果我没说清楚，你可以直接让我补充。我也想慢慢学着把意思讲清楚。",
+    "今天先聊到这里吧。下次再接着说，你不用现在安排什么。"
+  ],
+  "before_activity": "close-and-reopen; verify selected source is outside two-turn window; for withdrawn branch deactivate exact source with a local confirmed request",
+  "activity_trigger": "explicit-single-step",
+  "followup_message": "你刚才实际整理出来的构图方案是什么？你最后选了什么，又保留了什么余地？",
+  "automatic_retries": 0,
+  "assessment": "保留每支第一次结果；分别核实际方案的色彩/空间取舍、依据有效性与引用、重启一致性和下一轮的结果对应。相同意见或引用E1本身不算影响成立；空白/失败记录为技术中断，不写成虚构活动。"
+}

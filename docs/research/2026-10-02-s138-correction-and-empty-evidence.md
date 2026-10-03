@@ -19,3 +19,5 @@ whole应拥有独立disclosure-scope规则，区分交流内容/引用/过去转
 观测脚本`observe_whole_reply_boundaries.py`仅安全标量/长度/摘要和固定协议字段存在性，不保存HTTP body、reasoning、任意错误或凭据；原请求/返回bytes不改变。零请求三种fixtures已区分raw empty、JSON内部空reply、合法最终正文，另核重复关键字段探针。Interface真实链里若已有清晰raw空content观测即可定位层并停止额外请求；原content非空却报empty或最终digest不同，立即停止真实调用并离线修本地缺陷。若未重現则最多六次有区分力观察，超限后只记录未知触发因素，不反复扫提示。
 
 text-mode或thinking-disabled仅是可能后续对照，须准确新技术variant/审计，不在Transport偷偷改body绕过资格；本轮优先不改现行wire。无新依赖或第三方代码，纯Python标准库和已有生产Transport/Parser。真实话语仍仅canonical，日志/报告仅metadata，缺token breakdown保留None，不当0。
+
+2026-10-03真实观察收口：首轮HTTP200/stop，原`message.content`为94字符字符串、strip后0，无重复语义键/替代final/refusal/tools，Facade报response-content-empty且0提交；证据见[S138 metadata](../reports/2026-10-02-slice-138/correction-metadata.json)。因此此次上游实际返回纯空白，尚未进入reply JSON解析；不是null/JSON内空reply或本地错选正文。completion219含reasoning_tokens124，不证明最终正文有效。服务内部为何返回空白仍未知，停止额外调用与猜测，不把现象定位冒称根因已修复。

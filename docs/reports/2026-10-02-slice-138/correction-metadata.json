@@ -1,0 +1,80 @@
+{
+  "version": "s138-correction-actual-1",
+  "automatic_retries": 0,
+  "raw_text_exported": false,
+  "turns": [
+    {
+      "step": 1,
+      "status": "failed-closed",
+      "failure_code": "original-whole-response-content-empty",
+      "observations": [
+        {
+          "task_kind": "character-original-whole-reply",
+          "purpose": "original-character-whole-chat",
+          "stage": "whole-reply",
+          "status": "failed-closed",
+          "request_digest": "536f6ba4e5ec5a73f86429f5397ead3773d0fec4b43bfd4d7dfa7e1a1a37dde9",
+          "wire_sha256": "c2f10a26db1b8338bc585440076827d549e01d9c99a97564472b5f6b73388612",
+          "error_code": "response-content-empty",
+          "model": "deepseek-flash",
+          "usage": {
+            "prompt_tokens": 2457,
+            "completion_tokens": 219,
+            "total_tokens": 2676,
+            "prompt_cache_hit_tokens": 2048,
+            "prompt_cache_miss_tokens": 409
+          },
+          "finish_reason": "stop",
+          "elapsed_seconds": 2.583847099999957
+        }
+      ],
+      "raw_boundary": [
+        {
+          "http_status": 200,
+          "body_bytes": 1180,
+          "envelope_json": true,
+          "duplicate_semantic_keys": false,
+          "choices_count": 1,
+          "final_json": false,
+          "exact_reply_schema": false,
+          "usage": {
+            "prompt_tokens": 2457,
+            "completion_tokens": 219,
+            "total_tokens": 2676
+          },
+          "reasoning_tokens": 124,
+          "finish_reason": "stop",
+          "delta_present": false,
+          "assistant_role": true,
+          "content": {
+            "state": "string",
+            "chars": 94,
+            "stripped_chars": 0
+          },
+          "reasoning": {
+            "state": "string",
+            "chars": 183,
+            "stripped_chars": 183
+          },
+          "undocumented_final": {
+            "state": "missing",
+            "chars": null,
+            "stripped_chars": null
+          },
+          "undocumented_refusal": {
+            "state": "missing",
+            "chars": null,
+            "stripped_chars": null
+          },
+          "tool_calls_count": null
+        }
+      ],
+      "elapsed_seconds": 3.814223800000036,
+      "reply_chars": 0,
+      "reply_sha256": null,
+      "committed_before": 0,
+      "committed_after": 0
+    }
+  ],
+  "stopped_on_failure": true
+}

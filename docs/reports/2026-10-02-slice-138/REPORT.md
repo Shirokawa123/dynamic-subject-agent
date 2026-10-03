@@ -1,6 +1,6 @@
 # S138：普通纠错接续与空白分层定位
 
-2026-10-02开工，2026-10-03接续。源修复已通过最终受影响验证与独立只读复核，真实人物五步链与空白观察尚未执行；下文严格区分工程与人物证据。
+2026-10-02开工，2026-10-03接续。源修复已通过最终受影响验证与独立只读复核并提交/push `98964e1`；首次真实链在首轮上游纯空白正文处停止，五步人物链未完成。空白已定位到原HTTP响应正文层，服务内部成因未知；不补抽，立即进入S139本地核心闭环。
 
 ## 已证问题与修复边界
 
@@ -20,10 +20,12 @@ whole改用独立的出站范围判断。普通纠错、措辞讨论、引用及
 
 ## 真实链及空白证据
 
-待在唯一自有s138开发root运行[五步验收消息](../../experiments/s138/chains.json)，同已审人物/DeepSeek/Windows slot/1000字主动文字/可关闭两整轮4000字，逐轮1请求、0自动重试，失败停链。正式8788与用户草稿不动。回复原文只留本地canonical，报告保metadata与语义判断。
+2026-10-03在唯一自有s138开发root执行[五步验收消息](../../experiments/s138/chains.json)，同已审人物/DeepSeek/Windows slot/1000字主动文字/可关闭两整轮4000字。第一轮即`original-whole-response-content-empty`，按预先固定规则停链，1请求/0重试/0提交，whole共享账59→60。没有为凑完整五步重新建分支或补抽；真实纠错及重启续聊未验成，工程五步链不冒充实聊结果。正式8788与用户草稿不动，自有失败分支保留。
 
-分层观察复用原Transport返回bytes而不改请求或响应，只记存在性、类型、长度、闭集finish/usage、最终reply摘要。raw空content、JSON内空reply及有效最终正文可区分，重复语义键有独立标志；不存HTTP body、reasoning值、任意error或凭据。真实一旦得到清晰raw空content信号，即停止额外空白调用；最多六个有区分力观察，不能定位服务内部根因则明确未知。开工证据与官方来源见[研究记录](../../research/2026-10-02-s138-correction-and-empty-evidence.md)。
+[原边界metadata](correction-metadata.json)显示HTTP200、finish=stop、单choice且无重复语义键；`content`为字符串，94字符、strip后0，因此是纯空白正文而不是缺字段/null，也不是JSON内部空reply。reasoning只记存在/183字符长度，usage为prompt2457/completion219/total2676、reasoning_tokens124；未读取为替代正文，未存内容。没有另一个final/refusal/tool-call正文。Facade同轮无expression，canonical0→0，未知服务内部触发原因，不能从stop或token数推断成功。
+
+分层观察复用原Transport返回bytes而不改请求或响应，只记存在性、类型、长度、闭集finish/usage、最终reply摘要。raw纯空白、JSON内空reply及有效最终正文可区分，重复语义键有独立标志；不存HTTP body、reasoning值、任意error或凭据。此次1次已定位原响应纯空白，排除重复键覆盖、本地JSON解析丢失非空reply和最终字段误选；没有非空真实回复可比较最终摘要，不宣称另两层的所有情况均已真实验证。按预先上限/停止条件结束诊断，不增加无区分力的调用。开工证据与官方来源见[研究记录](../../research/2026-10-02-s138-correction-and-empty-evidence.md)。
 
 ## 立即承接核心闭环
 
-修复及有限诊断收口后，立即切换[S139](../../slices/slice-139-shared-experience-activity-loop.md)。[设计合同](../../plans/shared-experience-activity-loop.md)和[三支场景候选](../../experiments/s139/scenarios.json)已准备：先完整LOCAL接口/prepared/源依赖过滤/准确投影，再集中确认新Provider用途；不继续扩辅助功能，不以待审方案声称核心闭环已经实现。
+修复及有限诊断阶段收口，立即切换[S139](../../slices/slice-139-shared-experience-activity-loop.md)。[设计合同](../../plans/shared-experience-activity-loop.md)和[三支场景候选](../../experiments/s139/scenarios.json)已准备：先完整LOCAL接口/prepared/源依赖过滤/准确投影，再集中确认新Provider用途；不继续扩辅助功能，不以待审方案声称核心闭环已经实现。源实施/测试与实际QA/文档分别唯一所有者，复核只读；本轮返工来自两个明确隐私反例及同根未闭引号，不用工程结果包装未完成的实聊。
