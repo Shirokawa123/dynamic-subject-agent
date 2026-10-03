@@ -1,6 +1,6 @@
 # S139：共同经历→活动选择→结果接话
 
-2026-10-03。完整LOCAL闭环、来源/权限/恢复边界、必要旧合同兼容和最终独立只读复核均已通过。本地阶段提交后，用户明确“批准上述准确用途，继续真实验收”，basis `8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a`，已以39cb7aa落盘/push。现继续独立LIVE资格/审计与三支首次真实链；下述LOCAL通过仍不代表人物因果效果，真实结果另补。
+2026-10-03收口。已交付一条真实共同原话→有据活动选择→文字方案→重启后同结果接话，并在同一成功分支完成普通纠错五步实聊。S139共12真实尝试、10提交（9聊天/1活动）、2首空白、0自动重试；完整三支因果对照与人物整体质量未通过。准确用途批准以39cb7aa落盘，LIVE源43833a4、首次真实证据aa6962e均已push；本报告将工程、实际闭环与仍有的限制分开。
 
 ## 已运行的完整结果
 
@@ -18,7 +18,7 @@
 
 [旧LOCAL样本零模型复核](legacy-local-read-metadata.json)三支均available，身份文件及全部业务表逐行摘要相同；旧record缺lineage时保守依赖先前用户轮，不回写或迁移。首次误用全库完全不变为判据而失败，随后假定gate_epoch只增1也过严；准确差异只有既有open/close生命周期的admission_gate.gate_epoch各增2、closed保持，业务数据未变。保留这两次探针判据失败，不把它们伪装成产品故障或删除证据。
 
-同一builder已接准确非执行wire/参数预览，六份样本逐值匹配；Pending grant只表示unapproved，未批准Adapter六次均typed拒绝，LOCAL入口在registry前拒绝remote，不读取凭据或发送。准确review basis为`8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a`；后续批准仍须独立激活与用途审计，不能沿旧whole或LIFE sender借许可。最终lineage修复未改builder/policy或原三支payload，因此不重复18LOCAL生成。
+同一builder先接准确非执行wire/参数预览，六份样本逐值匹配；Pending grant只表示unapproved，未批准Adapter六次均typed拒绝，LOCAL入口在registry前拒绝remote，不读取凭据或发送。准确review basis为`8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a`；其后用户批准才建立下节的独立LIVE激活与用途审计，没有借旧whole或LIFE许可。最终lineage修复未改builder/policy或原三支payload，因此不重复18LOCAL生成。
 
 源和本地验收已提交/push `f09eddd`。正式8788在初始只读检查中未监听，原因未知，本轮未停止它；最终已从原root隐藏恢复，加载包含S138修复的稳定源码。launcher PID45884的子进程45076监听127.0.0.1:8788，CIM准确脚本与父子关系、health应用标识均核实。只GET health/status，未打开浏览器、发送消息或操作草稿；[恢复metadata](formal-restore-metadata.json)显示同scope/active/0已提交聊天/history开启/无pending，whole账60不变。
 
@@ -30,7 +30,7 @@
 
 完整LOCAL18+首版LIVE10共28项172.43秒通过，最终LIVE13项66.33秒通过，独立复核正式放行。最终补齐活动首次和同nonce回取的unknown/unavailable区分、材料常量独立pin、payload重建、一次性票据、恢复与撤权。此前两项测试期望误把chat unknown/unavailable写成failed-closed，修正测试后仍保真实typed语义；review另发现活动路径的实际折叠，已修实现并验证。组间重叠，不累加成41个独立用例。
 
-[首次真实运行器](../../../scripts/run_s139_live_acceptance.py)已通过只读工具复核：先核review/scenario摘要，三独立fresh分支共享新audit，每次手动动作最多1请求/0重试，失败停本支且保首次；raw/canonical正文摘要不同则停止所有后续调用。仅metadata日志，文本只canonical供后续只读语义判断，正式8788不变。真实三支结果尚未执行，下文随后据首次结果补齐，不以本节工程通过代替人物效果。
+[首次真实运行器](../../../scripts/run_s139_live_acceptance.py)通过只读工具复核后执行：先核review/scenario摘要，三独立fresh分支共享新audit，每次手动动作最多1请求/0重试，失败停本支且保首次；raw/canonical正文摘要不同则停止所有后续调用。仅metadata日志，文本只canonical供后续只读语义判断，正式8788不变。下节记录首次结果，不以本节工程通过代替人物效果。
 
 ## 首次真实三支结果
 
@@ -41,3 +41,13 @@
 这是一条真实共同原话→有据取舍→实际文字结果→接话闭环；但便签话题实际可作为静物灵感，不是严格无关对照，另外两支也未形成choice，不能声称三支因果对照或稳定效果通过。初始回复编出具体文具/草稿收纳习惯，已审包的限定核查未见对应依据；最终回复仍带有证据规则的工程措辞。保留这些人物忠实/自然度问题，不把审计complete等同人物通过。
 
 为完成用户指定的五步实聊，沿这条已成功分支的正常结果接话追加一个[已冻结的有界后续](../../experiments/s139/correction-followup.json)：针对实际工程措辞纠正→澄清不是撤回→换题→重启续聊，最多4个新主动消息，首失败停、0重试、同root/audit，不重发旧失败或排查服务内部原因。结果随后单列。
+
+## 普通纠错五步的真实收口
+
+以成功分支上已经提交的正常结果接话为第一步，随后4个新消息全部首次提交成功，真实完成“正常聊→指出具体措辞不准确→澄清不是撤回→换题→关闭重开续聊”。[逐轮metadata](correction-followup-metadata.json)核实4条raw/final摘要一致、重开0模型且状态保持；没有把原S138首轮空白或另两支失败改写为成功，也没有重发它们。
+
+canonical只读判断：先承认措辞含糊，确认便签夹书来自用户原话，并区分习惯与画法；澄清后没有撤回或忘记来源，继续表达自己的画法；换题转到故事角色和画面，重启后解释同一故事偏好，没有被旧便签话题拖回。这里看到一次取舍和后续交流，不证明泛化自主性、人格发展或完整MVP质量。
+
+[最终独立审计](final-audit-metadata.json)为12（11 reply/1 choice），10 complete/2 failed-closed，对应9聊天与1活动提交；原先8行完全保持，新增恰好4行。全12次reported usage为prompt30533/completion5399/total35932，不推断费用；所有复核读回0模型，whole旧账60，原113＋84无上限账及旧有限账保持。当前无限账合计269。
+
+用户现有[原聊天入口](http://127.0.0.1:8788)保持active/0已提交聊天/无pending，未操作或发送草稿，提供已修复普通纠错的聊天。S139活动闭环实际运行在独立开发分支，通过Facade与上述运行器验收；尚未给该聊天界面添加活动按钮或自动生活，不能说用户窗口已启用这些能力。当前不追加模型请求；上游空白的服务内部原因、完整因果对照、无据习惯扩写与部分工程措辞保留为明确限制。

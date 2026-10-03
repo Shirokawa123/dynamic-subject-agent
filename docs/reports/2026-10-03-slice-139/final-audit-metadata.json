@@ -1,0 +1,70 @@
+{
+  "version": "s139-final-audit-1",
+  "shared_audit_counts": [
+    null,
+    12,
+    null
+  ],
+  "statuses": {
+    "failed-closed": 2,
+    "complete": 10
+  },
+  "purposes": {
+    "shared-activity-reply": 11,
+    "shared-activity-choice": 1
+  },
+  "initial_eight_rows_unchanged": true,
+  "additional_requests": 4,
+  "additional_rows": [
+    {
+      "ordinal": 8,
+      "attempt_id": "95644280071f440ba0a77492c47e423a7b0a6c4e43d62206eb719893ca8a87bd",
+      "request_digest": "843afce861326d9e31f55cfc8f94545e45433e7f59d3dd8669c62fe16a68db86",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "30fa115fb3e32d9360727a97578062121b13f7fb2ce7eb9bad278630d37ac9dc"
+    },
+    {
+      "ordinal": 9,
+      "attempt_id": "0716c68eec1f4016afe0f38b3f8dab7198e3f97a011846cb9c26495426f92f90",
+      "request_digest": "69ca8144b533b00cc65fdafbe9e7a9dd4c2b262f4150f6945b683a999705400d",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "b36a4d96d59bf45e1b4c9a22b0709f631580a9bbd79b4fd2b0ac01e279b73530"
+    },
+    {
+      "ordinal": 10,
+      "attempt_id": "457e70a32b604cc24774ef3c73d9b3824dbb8da4e0731dc4666a06905bb73419",
+      "request_digest": "cdc97c49c8d56d3a4ced5a8b2baaa554dce98dfe4c9d893b332d426c69661b07",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "9aadfa5271943804982baf40a9e4e32675a83d1fee5f6086892099d69b64717a"
+    },
+    {
+      "ordinal": 11,
+      "attempt_id": "89f4bd0624c3426e7b1e493a4f5d9695e2dd643dabd7bfb0b2bf8ff14dca7967",
+      "request_digest": "37ca63d31a4130ad236caddd8288e63550d5fb2b503da7a19cc5d61623d1fdfb",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "7cd7d147750d404b439eff3508ae18a1e1d8cffd9ed94b4e0d9adb75efde7142"
+    }
+  ],
+  "additional_usage": {
+    "requests_with_usage": 4,
+    "prompt_tokens": 10883,
+    "completion_tokens": 1741,
+    "total_tokens": 12624
+  },
+  "completed_five_step_chain": true,
+  "raw_final_digest_equal_for_all_four": true,
+  "canonical_readback_added_calls": 0,
+  "old_whole_audit_count": 60,
+  "formal_status": "active",
+  "formal_committed_turns": 0,
+  "formal_pending": false,
+  "automatic_retries": 0
+}
