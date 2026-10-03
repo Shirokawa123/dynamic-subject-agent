@@ -6,7 +6,7 @@ from dynamic_subject_agent.runtime import CognitionEngine, CognitionFailedClosed
 from dynamic_subject_agent.timeline import PreAdmissionRejected
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelGatewayFailure
 from dynamic_subject_agent.first_life_authorization import ShareAuthorizationChanged
-from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED, UNSUPPORTED
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, OriginalWholeAuthorization,
     projection_for_contract, validate_whole_reply, digest)
 from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
@@ -37,6 +37,8 @@ class OriginalWholeChatCognition(CognitionEngine):
             raise PreAdmissionRejected("original-whole-chat-unavailable", "The exact whole provider is not assembled.")
         if command.language != "zh" or not command.utterance.strip() or len(command.utterance) > 1000:
             raise PreAdmissionRejected("original-whole-message-invalid", "Whole chat accepts bounded submitted Chinese text.")
+        if whole_dialogue_scope(command.utterance) == UNSUPPORTED:
+            raise PreAdmissionRejected('original-whole-operation-unavailable', 'Whole chat cannot perform memory, goal or file operations.')
 
     @contextmanager
     def publication_guard(self, plan):
@@ -55,9 +57,11 @@ class OriginalWholeChatCognition(CognitionEngine):
             return self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary="已建立本地交流边界；人物、旧记录与历史开关保持。",
                 expression_candidate=ExpressionCandidate(CONTEXT_RECEIPT, "zh"))
+        scope = whole_dialogue_scope(command.utterance)
+        if scope in (WITHDRAWAL, UNRESOLVED):
+            code = 'original-whole-history-withdrawn' if scope == WITHDRAWAL else 'original-whole-history-control-unresolved'
+            raise CognitionFailedClosed('history', code, 'This disclosure act is not sent; no memory revision or deletion is claimed.')
         try:
-            if is_first_life_dialogue_control(command.utterance):
-                raise ValueError("current control must be resolved locally")
             authorization = self.authorization()
             if type(authorization) is not OriginalWholeAuthorization:
                 raise ValueError("exact whole authorization required")

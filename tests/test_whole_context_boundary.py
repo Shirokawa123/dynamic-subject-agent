@@ -132,15 +132,16 @@ def test_boundary_interruption_is_atomic_and_receipt_replays_without_model(conte
         assert send(restarted,'中断后正常新话题。','after-control-interruption').status=='terminal'
 
 
-def test_terminal_old_control_crosses_only_proven_boundary_and_new_control_still_closes(context_fixture):
+def test_terminal_old_control_crosses_proven_boundary_and_new_withdrawal_cuts_only_old_window(context_fixture):
     opening,_,_=context_fixture
     transport=WholeTransport(); product=opening(transport)
     assert send(product,'不要再使用之前的聊天。','old-control').status=='failed-closed'
     assert product.application.apply_whole_context_boundary(request_for(product)).status=='committed'
     assert send(product,'普通新话题。','safe-new').status=='terminal'
     assert send(product,'不要再使用之前的聊天。','new-control').status=='failed-closed'
-    assert send(product,'接着说吧。','still-closed').status=='failed-closed'
-    assert len(transport.calls)==1
+    assert send(product,'接着说吧。','after-new-withdrawal').status=='terminal'
+    assert len(transport.calls)==2
+    assert json.loads(transport.calls[-1]['messages'][1]['content'])['exchange']==[]
 
 
 def test_missing_boundary_record_is_not_a_permitted_nonchat_head(context_fixture):

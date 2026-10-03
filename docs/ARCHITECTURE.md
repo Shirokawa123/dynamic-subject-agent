@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-138：普通纠错和真实出站控制分开
+
+whole独立`whole_dialogue_scope`区分普通纠错/引用/过去转述、真实撤回、未能确定范围的控制和不支持的effect；普通纠错继续交流，不支持的effect在Admission前返回unavailable。真实撤回本轮0外发，后续仅取安全cutoff之后的窗口；未闭合的明确控制保守关闭。有限本地语法不是通用自然语言意图理解，也不取得记忆/文件/生活权限。
+
+旧失败仅在terminal、准确已知stage/code、完整frozen四项basis及canonical后继receipt证明成立时可继续；旧ordinary误拦保留合法窗口，已知reply失败和真实撤回截断。原失败与旧聊天不改写，unknown/pending/unfrozen/损坏继续关闭。旧v1/FirstLife、Provider字段/策略、schema/资格不变。源修复最终受影响检查和独立复核通过，真实五步链及空白分层观察见[S138报告](reports/2026-10-02-slice-138/REPORT.md)，工程通过不代替人物体验。
+
 ### Slice-137：待处理期间保留下一稿
 
 HTML仅在当前可核scope、presentation_pending及本页保存的request_id相符时开放编辑，提交/Enter仍拒busy/pending/context pending，原request_text/nonce与可变draft.text分开。success只清未改原稿，失败/unknown保后写文本，IME composition同scope暂空不被render复填。没有队列或自动发送；最终已知失败反馈明确点击发送提交输入区当前文字。

@@ -7932,14 +7932,15 @@ class TimelineEngine:
         return records, cutoff
 
     def _verified_whole_dialogue_at_basis(self, basis, *, exclude_operation_id=None):
-        from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED, known_whole_failure
         if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES or basis != _read_timeline_basis(self._writer):
             raise PublicationFailedClosed('whole-preview-basis-unverified', 'whole scope requires this actual complete canonical prefix')
         if _read_admission_gate(self._writer).authority != self._authority:
             raise PublicationFailedClosed('whole-preview-authority-unverified', 'whole scope no longer matches the exact canonical authority')
         self._verified_publications()
         records = self.list_conversation_turns(limit=2)
-        cutoff = self.whole_context_basis(expected_head=basis.head_sequence)['cutoff_sequence'] if CONTEXT_INTENT in self._authority.allowed_intents else 0
+        context_cutoff = self.whole_context_basis(expected_head=basis.head_sequence)['cutoff_sequence'] if CONTEXT_INTENT in self._authority.allowed_intents else 0
+        cutoff = context_cutoff
         if CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != basis.head_sequence:
             raise PublicationFailedClosed('dialogue-head-mismatch', 'whole dialogue does not match its canonical head')
         rows = self._writer.execute("""SELECT op.operation_id,op.contract_version,op.operation_kind,hex(op.payload_fingerprint),
@@ -7953,29 +7954,44 @@ class TimelineEngine:
             command = self._query_command(ref)
             if row[4] is None or row[5] is None or self.query(ref).operation_state is not OperationState.FAILED_CLOSED:
                 return None
-            self.query_failure(ref)
+            failure = self.query_failure(ref)
             if type(command) is WholeContextInput:
+                if not known_whole_failure(failure):
+                    return None
                 self._verify_whole_failed_prefix(ref, int(row[4]), basis)
                 continue
-            if int(row[4]) < cutoff:
-                self._verify_whole_failed_prefix(ref, int(row[4]))
+            if int(row[4]) < context_cutoff:
+                # The existing explicit SYSTEM boundary remains its own proof;
+                # an ordinary continuation never grants that permission.
+                self._verify_whole_failed_prefix(ref, int(row[4]), basis)
                 continue
-            if is_first_life_dialogue_control(command.utterance):
+            if not known_whole_failure(failure):
                 return None
+            self._verify_whole_failed_prefix(ref, int(row[4]), basis)
+            scope = whole_dialogue_scope(command.utterance)
+            if scope == UNRESOLVED:
+                return None
+            if failure.stage == 'history':
+                if failure.code == 'original-whole-history-withdrawn' and scope != WITHDRAWAL:
+                    return None
+                if scope != WITHDRAWAL:
+                    # The precise old history failure happened before any wire
+                    # and made no privacy act. Keep the verified legal window.
+                    continue
             cutoff = max(cutoff, int(row[4]))
         return records, cutoff
 
     def _whole_dialogue_from_prefix(self, message, enabled, verified):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
-        from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+        from dynamic_subject_agent.whole_dialogue_scope import is_whole_dialogue_control
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue
         if verified is None:
             return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved')
         records, cutoff = verified
-        if (is_first_life_dialogue_control(message)
-            or records and records[-1].head_sequence > cutoff and is_first_life_dialogue_control(records[-1].user_text)):
+        if (is_whole_dialogue_control(message)
+            or records and records[-1].head_sequence > cutoff and is_whole_dialogue_control(records[-1].user_text)):
             return CharacterDialogueBasis('restricted', bool(records), problem_code='character-history-restricted')
-        selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_first_life_dialogue_control) if enabled else ()
+        selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_whole_dialogue_control) if enabled else ()
         return CharacterDialogueBasis('available', bool(records), selected)
 
     def preview_whole_dialogue(self, message, enabled):
