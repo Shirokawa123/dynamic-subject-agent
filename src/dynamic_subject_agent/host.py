@@ -107,7 +107,7 @@ from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, First
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_RUNTIME_CONTRACT, CONTEXT_INTENT
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
@@ -130,7 +130,7 @@ _SUPPORTED_PROVIDER_AUTHORITIES = frozenset(
         REVIEWED_CHARACTER_AUTHORITY,
         CHAT_AUTHORITY,
         WHOLE_AUTHORITY,
-        CONTEXT_AUTHORITY, SHARED_AUTHORITY,
+        CONTEXT_AUTHORITY, *SHARED_AUTHORITIES,
         LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY,
         _DEEPSEEK_PROVIDER_AUTHORITY,
         _DORMANT_ARTIFACT_PROVIDER_AUTHORITY,
@@ -206,8 +206,9 @@ _BRANCH_RETIRED = "retired"
 
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
-    if qri.provider_authority == SHARED_AUTHORITY:
-        return qri.capabilities == CapabilityManifest.shared_activity_local() and qri.reviewed_chat_contract is not None
+    if qri.provider_authority in SHARED_AUTHORITIES:
+        expected = CapabilityManifest.shared_activity_live() if qri.provider_authority == SHARED_LIVE_AUTHORITY else CapabilityManifest.shared_activity_local()
+        return qri.capabilities == expected and qri.reviewed_chat_contract is not None
     if qri.provider_authority == CONTEXT_AUTHORITY:
         return qri.capabilities == CapabilityManifest.original_whole_context() and qri.reviewed_chat_contract is not None
     if qri.provider_authority == WHOLE_AUTHORITY:
@@ -237,7 +238,7 @@ def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
 def _cognition_contract_supported(cognition: object) -> bool:
     if not isinstance(cognition, CognitionEngine):
         return False
-    if cognition.provider_authority == SHARED_AUTHORITY:
+    if cognition.provider_authority in SHARED_AUTHORITIES:
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         return type(cognition) is SharedActivityCognition
     if cognition.provider_authority in WHOLE_AUTHORITIES:
@@ -814,8 +815,8 @@ class _CognitionAssembly:
 
     @classmethod
     def _original_whole_context_transition(cls, predecessor, successor):
-        shared = successor.provider_authority == SHARED_AUTHORITY
-        if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY or successor.provider_authority not in (CONTEXT_AUTHORITY, SHARED_AUTHORITY)
+        shared = successor.provider_authority in SHARED_AUTHORITIES
+        if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY or successor.provider_authority not in (CONTEXT_AUTHORITY, *SHARED_AUTHORITIES)
             or successor.predecessor_qualification_id != predecessor.qualification_id or successor.profile_id != predecessor.profile_id
             or successor.genesis_snapshot_id != predecessor.genesis_snapshot_id or successor.isolation_proof != predecessor.isolation_proof):
             raise RuntimeHostRejected('whole-context-transition-invalid', 'exact new context successor required')
@@ -826,7 +827,7 @@ class _CognitionAssembly:
         dormant.supports_shared_activity = shared
         if shared:
             from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
-            active = SharedActivityCognition()
+            active = SharedActivityCognition(provider_authority=successor.provider_authority)
         else:
             active = OriginalWholeChatCognition(provider_authority=CONTEXT_AUTHORITY)
         instance = cls._prepared_control_only()
@@ -7571,9 +7572,9 @@ class RuntimeHost:
 
     def _read_shared_activity(self, binding, request=None):
         from dynamic_subject_agent.timeline import _validate_idempotency_key
-        from dynamic_subject_agent.shared_activity import SharedActivityInput
+        from dynamic_subject_agent.shared_activity import SharedActivityInput, shared_failure_response
         self._require_open()
-        if binding.provider_authority != SHARED_AUTHORITY:
+        if binding.provider_authority not in SHARED_AUTHORITIES:
             raise RuntimeHostRejected('shared-activity-unavailable', 'this binding has no shared activity qualification')
         self._require_binding_permit(binding)
         cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
@@ -7598,7 +7599,11 @@ class RuntimeHost:
                     if engine.query(ref).operation_state is OperationState.COMPLETED:
                         outcome = engine.query_outcome(ref)
                         return dict(existing=dict(status='replayed', receipt=dict(operation_ref=ref, head_sequence=outcome.head_sequence))), authorization, cognition
-                    return dict(existing=dict(status='busy' if engine.query(ref).operation_state is OperationState.ADMITTED_PENDING else 'failed-closed', receipt=None)), authorization, cognition
+                    if engine.query(ref).operation_state is OperationState.ADMITTED_PENDING:
+                        existing = dict(status='busy', receipt=None)
+                    else:
+                        existing = dict(receipt=None, **shared_failure_response(engine.query_failure(ref)))
+                    return dict(existing=existing), authorization, cognition
             view = engine.shared_activity_basis(authorization)
             view['_source_texts'] = {out.head_sequence: command.utterance for out, command, _ in engine._verified_publications() if type(command) is SubjectCommand}
             if cognition.try_authorization() != authorization:
@@ -7619,7 +7624,8 @@ class RuntimeHost:
         return SharedActivityResponse('available', view=public)
 
     def apply_shared_activity(self, binding, request):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedActivityInput, SharedExperienceRequest
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedActivityInput, SharedExperienceRequest, shared_failure_response
+        from dynamic_subject_agent.runtime import CycleFailedClosed
         view, authorization, _ = self._read_shared_activity(binding, request)
         if 'existing' in view:
             return SharedActivityResponse(**view['existing'])
@@ -7640,16 +7646,19 @@ class RuntimeHost:
             if kind == 'select' and (command.source_head_sequence <= view['cutoff_sequence']
                 or command.quote not in view['_source_texts'].get(command.source_head_sequence, '')):
                 return SharedActivityResponse('unavailable', problem_code='shared-source-not-committed')
-            result = lane.worker.call('apply_whole_context_boundary', command, request.request_id)
+            try:
+                result = lane.worker.call('apply_whole_context_boundary', command, request.request_id)
+            except CycleFailedClosed as error:
+                return SharedActivityResponse(**shared_failure_response(error.failure))
             if result.outcome is None:
-                return SharedActivityResponse('failed-closed', problem_code='shared-operation-uncommitted')
+                return SharedActivityResponse(**shared_failure_response(result.failure))
             return SharedActivityResponse('committed', receipt=dict(operation_ref=result.operation_ref, head_sequence=result.outcome.head_sequence))
         finally:
             lane.lock.release()
 
     def _read_whole_context(self, binding, request=None):
         self._require_open()
-        if binding.provider_authority not in (CONTEXT_AUTHORITY, SHARED_AUTHORITY):
+        if binding.provider_authority not in (CONTEXT_AUTHORITY, *SHARED_AUTHORITIES):
             raise RuntimeHostRejected('whole-context-unavailable', 'this binding has no context control')
         self._require_binding_permit(binding)
         root = binding.timeline_root
@@ -7717,7 +7726,7 @@ class RuntimeHost:
         try:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=root.root_id, store_id=root.timeline_store_id, store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((5,) if binding.provider_authority == SHARED_AUTHORITY else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+            if reader.execute('PRAGMA user_version').fetchone() != ((5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('whole-archive-schema-unverified', 'archive requires its existing whole schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             return TimelineEngine(root, self._authority_for_binding(binding), reader, None).query_whole_chat_archive(request)

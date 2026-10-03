@@ -1,6 +1,6 @@
 # S139：共同经历→活动选择→结果接话
 
-2026-10-03。完整LOCAL闭环、来源/权限/恢复边界、必要旧合同兼容和最终独立只读复核均已通过；新增Provider用途未获批准，真实人物活动链尚未运行，S139在本地实施阶段收口后继续等待准确用途决定。
+2026-10-03。完整LOCAL闭环、来源/权限/恢复边界、必要旧合同兼容和最终独立只读复核均已通过。本地阶段提交后，用户明确“批准上述准确用途，继续真实验收”，basis `8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a`，已以39cb7aa落盘/push。现继续独立LIVE资格/审计与三支首次真实链；下述LOCAL通过仍不代表人物因果效果，真实结果另补。
 
 ## 已运行的完整结果
 
@@ -23,3 +23,11 @@
 源和本地验收已提交/push `f09eddd`。正式8788在初始只读检查中未监听，原因未知，本轮未停止它；最终已从原root隐藏恢复，加载包含S138修复的稳定源码。launcher PID45884的子进程45076监听127.0.0.1:8788，CIM准确脚本与父子关系、health应用标识均核实。只GET health/status，未打开浏览器、发送消息或操作草稿；[恢复metadata](formal-restore-metadata.json)显示同scope/active/0已提交聊天/history开启/无pending，whole账60不变。
 
 原入口三份保留的canonical业务表逐行摘要及current/state文件摘要在启动前后全部相同，无迁移、删改或新增调用；只允许既有运行门控生命周期变化。不启用S139新用途、生活、后台通知或新Sender。新的`.pytest-tmp-s138-core-20261003/`和两份原`.test-tmp-*`未跟踪目录均保留，未删除或进入提交；不宣称工作区只有原两份目录。
+
+## 获批后的独立LIVE实施
+
+用户准确批准后，独立LIVE资格、manifest/schema5、Approved grant、DeepSeek Adapter及两用途metadata账已实现；不会把旧LOCAL/whole/LIFE身份转换成LIVE。材料、policy、参数与review分别固定，每次从sealed和canonical重建准确投影，claim和单次票据控制实际发送，现Windows slot只作HTTPS Bearer。仍使用已审body/参数，不在Transport偷换wire或从reasoning补正文。
+
+完整LOCAL18+首版LIVE10共28项172.43秒通过，最终LIVE13项66.33秒通过，独立复核正式放行。最终补齐活动首次和同nonce回取的unknown/unavailable区分、材料常量独立pin、payload重建、一次性票据、恢复与撤权。此前两项测试期望误把chat unknown/unavailable写成failed-closed，修正测试后仍保真实typed语义；review另发现活动路径的实际折叠，已修实现并验证。组间重叠，不累加成41个独立用例。
+
+[首次真实运行器](../../../scripts/run_s139_live_acceptance.py)已通过只读工具复核：先核review/scenario摘要，三独立fresh分支共享新audit，每次手动动作最多1请求/0重试，失败停本支且保首次；raw/canonical正文摘要不同则停止所有后续调用。仅metadata日志，文本只canonical供后续只读语义判断，正式8788不变。真实三支结果尚未执行，下文随后据首次结果补齐，不以本节工程通过代替人物效果。

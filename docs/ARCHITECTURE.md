@@ -8,6 +8,8 @@
 
 18项最终接口、62项受影响兼容、独立复核及真实已审人物输入的三支18LOCAL固定合成流程通过；不是人物效果或新外发授权。准确pure wire已与同一builder核对，Pending grant只允许unapproved，Adapter恒typed拒绝且无transport/credential路径。新用途待[准确review](experiments/s139/REVIEW.md)集中批准，事实/限制见[S139报告](reports/2026-10-03-slice-139/REPORT.md)。
 
+后续同日用户已批准该review。新增独立`ApprovedSharedActivityGrant`、shared-live authority/manifest/schema5、`open_shared_activity_product_live`和两用途metadata审计；LOCAL及旧root不转换。grant分别pin材料、policy/协议与准确review，每次从sealed/canonical快照重建payload，唯一claim/同线程一次票据消费后才可用现Windows slot发送HTTPS；未知/凭据不可用保留typed状态，0自动重试。响应结构通过不等于Publication，最终提交仍核scope/history/head；prepared冷恢复不再调用模型。完整LOCAL18+首版LIVE10组28项及最终LIVE13项/独立复核通过，真实三支由S139报告继续承接。
+
 ### Slice-138：普通纠错和真实出站控制分开
 
 whole独立`whole_dialogue_scope`区分普通纠错/引用/过去转述、真实撤回、未能确定范围的控制和不支持的effect；普通纠错继续交流，不支持的effect在Admission前返回unavailable。真实撤回本轮0外发，后续仅取安全cutoff之后的窗口；未闭合的明确控制保守关闭。有限本地语法不是通用自然语言意图理解，也不取得记忆/文件/生活权限。

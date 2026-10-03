@@ -10,6 +10,8 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFieldDiff, adjudicate_life, validate_plan, event_summary
 
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
+SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
@@ -78,6 +80,20 @@ class SharedActivityResponse:
     view: object | None = None
     receipt: object | None = None
     problem_code: str = ""
+
+
+def shared_failure_response(failure):
+    """Expose only typed, safe whole-stage failures at the manual activity port."""
+    from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
+    safe = {'original-whole-' + code for code in REVIEW_DIAGNOSTIC_CODES | {
+        'character-credential-unavailable', 'structured-choice-invalid', 'expression-invalid', 'provider-failed',
+        'delivery-unverified', 'audit-failed', 'history-changed', 'authorization-changed', 'unprepared-interruption'}}
+    code = getattr(failure, 'code', '')
+    if code not in safe:
+        return dict(status='failed-closed', problem_code='shared-operation-uncommitted')
+    status = ('unavailable' if code == 'original-whole-character-credential-unavailable'
+        else 'unknown' if code in ('original-whole-transport-timeout', 'original-whole-transport-delivery-ambiguous') else 'failed-closed')
+    return dict(status=status, problem_code=code)
 
 
 @dataclass(frozen=True)

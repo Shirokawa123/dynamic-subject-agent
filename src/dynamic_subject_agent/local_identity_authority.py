@@ -66,7 +66,7 @@ from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, WHOLE_AUTHORITIES, whole_contract,
     validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest, whole_publication_key, contract_variant)
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, shared_contract
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, SHARED_AUTHORITIES, shared_contract
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
 
@@ -364,7 +364,11 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
             raise RuntimeError("original-whole-activation-invalid")
         validate_whole_envelope(snapshot.reviewed_definition, metadata["contract"])
-        open_original_whole_audit(Path(metadata["audit_path"])).counts()
+        if qri.provider_authority == SHARED_LIVE_AUTHORITY:
+            from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
+            open_shared_activity_audit(Path(metadata["audit_path"])).counts()
+        else:
+            open_original_whole_audit(Path(metadata["audit_path"])).counts()
     if record.get("host_location") is not None:
         RuntimeHostRootRef.from_dict(record["host_location"])
     return _ValidatedLocalIdentity(
@@ -857,9 +861,9 @@ def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListRespo
 
 
 def _whole_dormant_cognition(authority):
-    if authority == SHARED_AUTHORITY:
+    if authority in SHARED_AUTHORITIES:
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
-        return SharedActivityCognition()
+        return SharedActivityCognition(provider_authority=authority)
     return OriginalWholeChatCognition(provider_authority=authority)
 
 
@@ -1319,8 +1323,18 @@ class LocalIdentityAuthority:
         contract = shared_contract(binding)
         return self._activate_context_identity(contract, self._config.state_path.parent / 'shared-local-audit', identity_id)
 
+    @_registry_mutation
+    def activate_shared_activity_live(self, *, grant, audit_path, identity_id):
+        from dynamic_subject_agent.shared_activity_live import ApprovedSharedActivityGrant, shared_live_contract
+        from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+        if type(grant) is not ApprovedSharedActivityGrant:
+            raise ValueError('typed exact shared use approval required')
+        grant.validate()
+        return self._activate_context_identity(shared_live_contract(APPROVED_BINDING), audit_path, identity_id)
+
     def _activate_context_identity(self, contract, audit_path, identity_id):
-        shared = contract_variant(contract) == 'shared-local'
+        shared = contract_variant(contract) in ('shared-local', 'shared-live')
+        live = contract_variant(contract) == 'shared-live'
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding='utf-8')))
         if identity_id is None:
             identity_id = state['active_identity_id']
@@ -1331,13 +1345,17 @@ class LocalIdentityAuthority:
         existing = record.get('whole_chat_activation') or record.get('pending_whole_chat_activation')
         if existing is not None and existing != metadata:
             raise RuntimeError('whole-context-activation-conflict')
-        if identity.qri.provider_authority == (SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
+        if identity.qri.provider_authority == (SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
             if state['active_identity_id'] != identity_id:
                 raise RuntimeError('whole-context-selection-required')
             return self.load_active()
         if (identity.qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY or existing is None and record.get('host_location') is not None):
             raise RuntimeError('whole-context-requires-new-unserved-identity')
-        open_original_whole_audit(audit_path, initialize=existing is None)
+        if live:
+            from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
+            open_shared_activity_audit(audit_path, initialize=existing is None)
+        else:
+            open_original_whole_audit(audit_path, initialize=existing is None)
         record['pending_whole_chat_activation'] = metadata
         record.setdefault('history_enabled', True); record.setdefault('history_revision', 0)
         state.setdefault('chat_identity_revision', 0)
@@ -1351,7 +1369,7 @@ class LocalIdentityAuthority:
                 if getattr(error, 'code', None) != 'qri-not-found':
                     raise
                 snapshot = studio.query_snapshot(identity.qri.genesis_snapshot_id)
-                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
                     reviewed_chat_contract=contract, validity_us=300_000_000)
                 successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
                     predecessor_qualification_id=identity.qri.qualification_id, reviewed_chat_contract=contract)
@@ -1527,7 +1545,11 @@ class LocalIdentityAuthority:
             if identity.qri.provider_authority not in (CHAT_AUTHORITY, LIFE_AUTHORITY, *WHOLE_AUTHORITIES):
                 return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
             if identity.qri.provider_authority in WHOLE_AUTHORITIES:
-                total, used, remaining = open_original_whole_audit(Path(record["whole_chat_activation"]["audit_path"])).counts()
+                opener = open_original_whole_audit
+                if identity.qri.provider_authority == SHARED_LIVE_AUTHORITY:
+                    from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
+                    opener = open_shared_activity_audit
+                total, used, remaining = opener(Path(record["whole_chat_activation"]["audit_path"])).counts()
                 return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]
             if "live_reply_route" in metadata:
