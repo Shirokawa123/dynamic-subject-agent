@@ -1,0 +1,20 @@
+{
+  "version": "s139-formal-original-context-restored",
+  "source_commit": "f09eddd",
+  "application": "original-character-context-chat-s136",
+  "port": 8788,
+  "launcher_pid": 45884,
+  "listener_pid": 45076,
+  "identity_scope_preserved": true,
+  "canonical_business_and_identity_preserved": true,
+  "all_three_original_timelines_retained": true,
+  "history_status": "available",
+  "committed_turns": 0,
+  "history_enabled": true,
+  "pending": false,
+  "whole_audit_used": 60,
+  "new_model_calls": 0,
+  "browser_or_draft_operations": 0,
+  "only_health_and_status_http_reads": true,
+  "shared_remote_use_enabled": false
+}

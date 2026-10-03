@@ -20,4 +20,6 @@
 
 同一builder已接准确非执行wire/参数预览，六份样本逐值匹配；Pending grant只表示unapproved，未批准Adapter六次均typed拒绝，LOCAL入口在registry前拒绝remote，不读取凭据或发送。准确review basis为`8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a`；后续批准仍须独立激活与用途审计，不能沿旧whole或LIFE sender借许可。最终lineage修复未改builder/policy或原三支payload，因此不重复18LOCAL生成。
 
-正式8788在本次只读检查中未监听，原因未知，本轮未停止它。原入口三份保留的canonical数据库均无pending；已保存逐表逻辑摘要和身份文件摘要。待核心稳定后，计划沿原root隐藏启动并只读核对记录/身份/调用账；不触浏览器sessionStorage草稿，不自动发送消息。是否实际启用以收口事实为准。
+源和本地验收已提交/push `f09eddd`。正式8788在初始只读检查中未监听，原因未知，本轮未停止它；最终已从原root隐藏恢复，加载包含S138修复的稳定源码。launcher PID45884的子进程45076监听127.0.0.1:8788，CIM准确脚本与父子关系、health应用标识均核实。只GET health/status，未打开浏览器、发送消息或操作草稿；[恢复metadata](formal-restore-metadata.json)显示同scope/active/0已提交聊天/history开启/无pending，whole账60不变。
+
+原入口三份保留的canonical业务表逐行摘要及current/state文件摘要在启动前后全部相同，无迁移、删改或新增调用；只允许既有运行门控生命周期变化。不启用S139新用途、生活、后台通知或新Sender。新的`.pytest-tmp-s138-core-20261003/`和两份原`.test-tmp-*`未跟踪目录均保留，未删除或进入提交；不宣称工作区只有原两份目录。
