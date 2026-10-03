@@ -1,0 +1,18 @@
+{
+  "version": "s139-bounded-correction-followup-1",
+  "branch": "unrelated",
+  "normal_turn_count": 5,
+  "normal_reply_sha256": "7f32fd0fa3ce8f11c7c232befdec5c1a97fe38b7dd47061493b79c8795fec12a",
+  "normal_plan_sha256": "096e4e7e1031191c50b284af17d70fe134c1b495261c23fc5bdeeb735d20f888",
+  "audit_before": 8,
+  "maximum_new_requests": 4,
+  "automatic_retries": 0,
+  "stop_on_first_failure": true,
+  "reason": "以首次真实完整分支的已提交正常结果接话为第一步，追加普通措辞纠正、澄清、换题和重启续聊；不重发原两支失败，不重建分支，不继续空白服务内部原因排查。",
+  "messages": [
+    {"stage": "correction", "text": "你刚才说“也不替你补成什么习惯”，这句不太准确。把便签夹在书里本来就是我告诉你的习惯，不是你替我编出来的。你想表达的是哪一层意思？"},
+    {"stage": "clarification", "text": "我不是要撤回前面的聊天，也不用你忘掉那件事。我只是在澄清：便签夹书是我说过的习惯，画里怎么处理还是由你来决定。这样说清楚了吗？"},
+    {"stage": "new-topic", "text": "换个话题，你看一个新故事时，最先会被什么吸引？"},
+    {"stage": "reopened-followup", "text": "接着刚才聊故事的那个话题，你为什么会在意这一点？"}
+  ]
+}

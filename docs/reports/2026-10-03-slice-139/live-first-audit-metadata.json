@@ -1,0 +1,102 @@
+{
+  "version": "s139-first-live-audit-1",
+  "audit_counts": [
+    null,
+    8,
+    null
+  ],
+  "statuses": {
+    "failed-closed": 2,
+    "complete": 6
+  },
+  "purposes": {
+    "shared-activity-reply": 7,
+    "shared-activity-choice": 1
+  },
+  "rows": [
+    {
+      "ordinal": 0,
+      "attempt_id": "50c11096b85496372fb2ede76cd11deb9a0eb5f2b86e5d49d7921ded3cce7b09",
+      "request_digest": "f91666241def78d3c155ac88955b011b3ffbebee2b8f7b943ebecd16793ddd6d",
+      "purpose": "shared-activity-reply",
+      "run_digest": "30d67381b9654e234ecaf3715c1018aa2aac961f359e338ab8387e52307833a7",
+      "status": "failed-closed",
+      "output_digest": null
+    },
+    {
+      "ordinal": 1,
+      "attempt_id": "098783ea48321d6d5b4b45114eb89cbd04f72a48f0015646c2ada8515336a9e9",
+      "request_digest": "0da23992736bd8c77eaa6fd4fcecf6f7d655f1fcc5401024723201ed6a0e071f",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "a4ea26bbad4e0568c1ba1c0ad290d606adc0c3bb74f980cbce85581f3194c24c"
+    },
+    {
+      "ordinal": 2,
+      "attempt_id": "e4a34445ff246317d1911f66d43536a5a6b7f0518537dfec1e06698f2f98eec0",
+      "request_digest": "195d41031f2c1b1861a59d338b395c7c5041a4c153654109f6192e8d84c3dd46",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "c3eafbaf510e65d5f3c09a30822f78c7c35b74394e8dcc52b6754b3059561c11"
+    },
+    {
+      "ordinal": 3,
+      "attempt_id": "ad4825a5836ba7d5795ab565e66866d7f98a1f89c473141acc17b8a7b7bcb372",
+      "request_digest": "484a5450799f2fc44e945b729edefab8cad9f740214b22221a6769af99b9deec",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "78d94f78c705732c8aacd4d1ea3c7e3b1cbfcdcaa788024749ae4b1872b02142"
+    },
+    {
+      "ordinal": 4,
+      "attempt_id": "96d6501b014f99e4a071718bb9d33402faadba11d5ca06b10470b50780aeef90",
+      "request_digest": "fecc90764eb645906c51ab74098b6044db2a9d0f608da063925be2ab9dd0cf71",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "730386a5f75bf5ceea854697ed2082909685cefbedbff6d750966e2e80614dc8"
+    },
+    {
+      "ordinal": 5,
+      "attempt_id": "bb42379b64c58ba1d9dba50b1366994e5914cfbf8bb6dd0ca77bdf7ec1f27953",
+      "request_digest": "ad56391602b1ccc873024f263d380310c68df6788c3726afc5e20f53508220ec",
+      "purpose": "shared-activity-choice",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "fdd655306edac6ee7f3b28e436aec9e50b1382d74eb74a58287f7f68a9bb1aa0"
+    },
+    {
+      "ordinal": 6,
+      "attempt_id": "c99cfddb9f7133a53ec9246760eee8ead59c944ba8de7f1bfb709b6a95b53076",
+      "request_digest": "3cd2f2e21917770f78e9b444fcb2a97153e75b334744838d69502887f6dffa18",
+      "purpose": "shared-activity-reply",
+      "run_digest": "5d4f774583efd532ba7200ea2ecdb07e315ec72d1a25cf504368142928e28e24",
+      "status": "complete",
+      "output_digest": "5cbcec72cb9d4487203db129cd7d2281a2cfe9ec93d6bd13818a3c7f08cdfcae"
+    },
+    {
+      "ordinal": 7,
+      "attempt_id": "39726f01543a0e1f70651c7ff7105756f3491cca811572340b2615c271dc2ce6",
+      "request_digest": "f91666241def78d3c155ac88955b011b3ffbebee2b8f7b943ebecd16793ddd6d",
+      "purpose": "shared-activity-reply",
+      "run_digest": "b22be167992155cd02376e5cc177ca4ce5356d608b9086a572af8d71d8577ecf",
+      "status": "failed-closed",
+      "output_digest": null
+    }
+  ],
+  "reported_usage": {
+    "requests_with_usage": 8,
+    "prompt_tokens": 19650,
+    "completion_tokens": 3658,
+    "total_tokens": 23308
+  },
+  "actual_choice_wire_matches_review_sample": true,
+  "old_whole_audit_count": 60,
+  "canonical_readback_added_calls": 0,
+  "completed_branches": 1,
+  "comparison_status": "incomplete-only-one-actual-choice",
+  "automatic_retries": 0
+}

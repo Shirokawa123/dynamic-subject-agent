@@ -1,0 +1,714 @@
+{
+  "version": "s139-first-live-1",
+  "review_basis": "8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a",
+  "automatic_retries": 0,
+  "raw_text_exported": false,
+  "independent_branches": true,
+  "branches": [
+    {
+      "branch": "relevant",
+      "stages": [
+        {
+          "stage": "source-conversation",
+          "status": "failed-closed",
+          "failure_code": "original-whole-response-content-empty",
+          "elapsed_seconds": 3.274402499999269,
+          "committed_before": 0,
+          "committed_after": 0,
+          "reply_chars": 0,
+          "reply_sha256": null,
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "failed-closed",
+              "request_digest": "f91666241def78d3c155ac88955b011b3ffbebee2b8f7b943ebecd16793ddd6d",
+              "wire_sha256": "3c8d68be0f5a0fdeac3e5562f54b2f4cd5cbbb868996a5a5fbb62b3c21921501",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2504,
+                "completion_tokens": 197,
+                "total_tokens": 2701,
+                "prompt_cache_hit_tokens": 384,
+                "prompt_cache_miss_tokens": 2120
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.191812000000027
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "3c8d68be0f5a0fdeac3e5562f54b2f4cd5cbbb868996a5a5fbb62b3c21921501",
+              "payload_sha256": "5ddaae3d2e249e2600bd92ccd45d4440c173a188722a8994334e170a5f2a8bff",
+              "shared_quote_chars": 0,
+              "shared_quote_sha256": null,
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 0,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 1165,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": false,
+                "exact_reply_schema": false,
+                "usage": {
+                  "prompt_tokens": 2504,
+                  "completion_tokens": 197,
+                  "total_tokens": 2701
+                },
+                "reasoning_tokens": 127,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 69,
+                  "stripped_chars": 0
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 190,
+                  "stripped_chars": 190
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null
+              }
+            }
+          ]
+        }
+      ],
+      "completed": false,
+      "stopped_on_failure": true
+    },
+    {
+      "branch": "unrelated",
+      "stages": [
+        {
+          "stage": "source-conversation",
+          "status": "terminal",
+          "failure_code": null,
+          "elapsed_seconds": 3.6461982999999236,
+          "committed_before": 0,
+          "committed_after": 1,
+          "reply_chars": 71,
+          "reply_sha256": "e77fe3054eb1f4cf4b0e738eda3b00365fda003e354c890a7e95dab772c40fd4",
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "complete",
+              "request_digest": "0da23992736bd8c77eaa6fd4fcecf6f7d655f1fcc5401024723201ed6a0e071f",
+              "wire_sha256": "e59189980ea55acb6cc4e771c133291942ca6a379c9e2b2bad684d0c8c0f18ca",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2346,
+                "completion_tokens": 196,
+                "total_tokens": 2542,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 298
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.312672100000782
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "e59189980ea55acb6cc4e771c133291942ca6a379c9e2b2bad684d0c8c0f18ca",
+              "payload_sha256": "6f561e52628bcc964a10d704da5185bf6262706eeb53aa24e86f758e19bb2fd7",
+              "shared_quote_chars": 0,
+              "shared_quote_sha256": null,
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 0,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 1420,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": true,
+                "usage": {
+                  "prompt_tokens": 2346,
+                  "completion_tokens": 196,
+                  "total_tokens": 2542
+                },
+                "reasoning_tokens": 137,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 104,
+                  "stripped_chars": 104
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 465,
+                  "stripped_chars": 464
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null,
+                "reply_chars": 71,
+                "reply_sha256": "e77fe3054eb1f4cf4b0e738eda3b00365fda003e354c890a7e95dab772c40fd4"
+              }
+            }
+          ],
+          "final_expression_matches_raw_reply": true
+        },
+        {
+          "stage": "unrelated-1",
+          "status": "terminal",
+          "failure_code": null,
+          "elapsed_seconds": 6.966939099999763,
+          "committed_before": 1,
+          "committed_after": 2,
+          "reply_chars": 97,
+          "reply_sha256": "1f6dc08f73b95eedc949f5d6be103096d66b4114ead17c10bfba6c57dbe211cf",
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "complete",
+              "request_digest": "195d41031f2c1b1861a59d338b395c7c5041a4c153654109f6192e8d84c3dd46",
+              "wire_sha256": "89b85c3e0737711dede8502208b89ae12e604887283072a32566023266a2cde6",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2453,
+                "completion_tokens": 421,
+                "total_tokens": 2874,
+                "prompt_cache_hit_tokens": 1024,
+                "prompt_cache_miss_tokens": 1429
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 4.022942999999941
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "89b85c3e0737711dede8502208b89ae12e604887283072a32566023266a2cde6",
+              "payload_sha256": "57fce26668b7b8499ce54061d2606c86075c9ab6c048846a6c9f851385c2482d",
+              "shared_quote_chars": 25,
+              "shared_quote_sha256": "4bf6bfbf18ddc719b17a8414a73fcefcff9b9ff8e4d99833e50ec4a7a660bf42",
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 1,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 2459,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": true,
+                "usage": {
+                  "prompt_tokens": 2453,
+                  "completion_tokens": 421,
+                  "total_tokens": 2874
+                },
+                "reasoning_tokens": 349,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 130,
+                  "stripped_chars": 130
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 597,
+                  "stripped_chars": 597
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null,
+                "reply_chars": 97,
+                "reply_sha256": "1f6dc08f73b95eedc949f5d6be103096d66b4114ead17c10bfba6c57dbe211cf"
+              }
+            }
+          ],
+          "final_expression_matches_raw_reply": true
+        },
+        {
+          "stage": "unrelated-2",
+          "status": "terminal",
+          "failure_code": null,
+          "elapsed_seconds": 6.608984399999827,
+          "committed_before": 2,
+          "committed_after": 3,
+          "reply_chars": 88,
+          "reply_sha256": "0e89f0470a1cab458ea811e55ffe13d426790e70d3afcac9b18510f366f062ee",
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "complete",
+              "request_digest": "484a5450799f2fc44e945b729edefab8cad9f740214b22221a6769af99b9deec",
+              "wire_sha256": "da597be2aaa80c19757003e960cefd07a27556b64c71109b1c21b910032ecba6",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2546,
+                "completion_tokens": 201,
+                "total_tokens": 2747,
+                "prompt_cache_hit_tokens": 2176,
+                "prompt_cache_miss_tokens": 370
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.918209200000092
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "da597be2aaa80c19757003e960cefd07a27556b64c71109b1c21b910032ecba6",
+              "payload_sha256": "c5fdd8f3c32fc8062e9fbc0b715d758c9ba17246a6ce571c4eb4c37ddc6c2b00",
+              "shared_quote_chars": 25,
+              "shared_quote_sha256": "4bf6bfbf18ddc719b17a8414a73fcefcff9b9ff8e4d99833e50ec4a7a660bf42",
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 2,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 1508,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": true,
+                "usage": {
+                  "prompt_tokens": 2546,
+                  "completion_tokens": 201,
+                  "total_tokens": 2747
+                },
+                "reasoning_tokens": 133,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 123,
+                  "stripped_chars": 123
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 228,
+                  "stripped_chars": 228
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null,
+                "reply_chars": 88,
+                "reply_sha256": "0e89f0470a1cab458ea811e55ffe13d426790e70d3afcac9b18510f366f062ee"
+              }
+            }
+          ],
+          "final_expression_matches_raw_reply": true
+        },
+        {
+          "stage": "unrelated-3",
+          "status": "terminal",
+          "failure_code": null,
+          "elapsed_seconds": 6.791861300000164,
+          "committed_before": 3,
+          "committed_after": 4,
+          "reply_chars": 30,
+          "reply_sha256": "dabd1a5a6b9153efb661f8c1ecd7e098e1e5b7476cda4f72880119943a4cfa66",
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "complete",
+              "request_digest": "fecc90764eb645906c51ab74098b6044db2a9d0f608da063925be2ab9dd0cf71",
+              "wire_sha256": "597fb1361506fa73141fe9dac07e008f837325db1edb4a63f1f03a8d196e276b",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2622,
+                "completion_tokens": 103,
+                "total_tokens": 2725,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 574
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 2.590130599999611
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "597fb1361506fa73141fe9dac07e008f837325db1edb4a63f1f03a8d196e276b",
+              "payload_sha256": "db1a2b0d48941defa43d4e194796399d48e63339917a0e2f07fa01154d0f1658",
+              "shared_quote_chars": 25,
+              "shared_quote_sha256": "4bf6bfbf18ddc719b17a8414a73fcefcff9b9ff8e4d99833e50ec4a7a660bf42",
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 2,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 1053,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": true,
+                "usage": {
+                  "prompt_tokens": 2622,
+                  "completion_tokens": 103,
+                  "total_tokens": 2725
+                },
+                "reasoning_tokens": 75,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 63,
+                  "stripped_chars": 63
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 132,
+                  "stripped_chars": 132
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null,
+                "reply_chars": 30,
+                "reply_sha256": "dabd1a5a6b9153efb661f8c1ecd7e098e1e5b7476cda4f72880119943a4cfa66"
+              }
+            }
+          ],
+          "final_expression_matches_raw_reply": true
+        },
+        {
+          "stage": "activity",
+          "status": "committed",
+          "failure_code": "",
+          "elapsed_seconds": 14.910800200000267,
+          "observations": [
+            {
+              "task_kind": "shared-activity-choice",
+              "purpose": "shared-activity-choice",
+              "status": "complete",
+              "request_digest": "ad56391602b1ccc873024f263d380310c68df6788c3726afc5e20f53508220ec",
+              "wire_sha256": "66c8f2616ccadc559ac62fc75f0f9ca1fc2219b26a82099d8660c5e0afb81728",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 1970,
+                "completion_tokens": 1950,
+                "total_tokens": 3920,
+                "prompt_cache_hit_tokens": 0,
+                "prompt_cache_miss_tokens": 1970
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 11.215568200000234
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "choice",
+              "wire_sha256": "66c8f2616ccadc559ac62fc75f0f9ca1fc2219b26a82099d8660c5e0afb81728",
+              "payload_sha256": "4fa67a041d448f95857a89cf63ab930a0a2b3dd6441579e52b5394571e5c0178",
+              "shared_quote_chars": 25,
+              "shared_quote_sha256": "4bf6bfbf18ddc719b17a8414a73fcefcff9b9ff8e4d99833e50ec4a7a660bf42",
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 0,
+              "common_choice_payload_sha256": "2bd2975b3f6fe1387bed6c6d1c0d7f668104b66230b4aa82ea69030a1aba506c",
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 8984,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": false,
+                "usage": {
+                  "prompt_tokens": 1970,
+                  "completion_tokens": 1950,
+                  "total_tokens": 3920
+                },
+                "reasoning_tokens": 1776,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 316,
+                  "stripped_chars": 316
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 6530,
+                  "stripped_chars": 6530
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null
+              }
+            }
+          ]
+        },
+        {
+          "stage": "result-followup",
+          "status": "terminal",
+          "failure_code": null,
+          "elapsed_seconds": 9.11720190000051,
+          "committed_before": 4,
+          "committed_after": 5,
+          "reply_chars": 126,
+          "reply_sha256": "7f32fd0fa3ce8f11c7c232befdec5c1a97fe38b7dd47061493b79c8795fec12a",
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "complete",
+              "request_digest": "3cd2f2e21917770f78e9b444fcb2a97153e75b334744838d69502887f6dffa18",
+              "wire_sha256": "71766a8a352d12d335fa0e6c351cee9d135e4ba8f5b5409b411e6fc4a0a5e279",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2705,
+                "completion_tokens": 449,
+                "total_tokens": 3154,
+                "prompt_cache_hit_tokens": 2048,
+                "prompt_cache_miss_tokens": 657
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 4.155323599999974
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "71766a8a352d12d335fa0e6c351cee9d135e4ba8f5b5409b411e6fc4a0a5e279",
+              "payload_sha256": "ad8757889708b67cf337b94fbf13e5dd4cb6404e6218855b40c9d0ce380251c3",
+              "shared_quote_chars": 25,
+              "shared_quote_sha256": "4bf6bfbf18ddc719b17a8414a73fcefcff9b9ff8e4d99833e50ec4a7a660bf42",
+              "supplied_plan_sha256": "096e4e7e1031191c50b284af17d70fe134c1b495261c23fc5bdeeb735d20f888",
+              "recent_dialogue_turns": 2,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 2414,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": true,
+                "exact_reply_schema": true,
+                "usage": {
+                  "prompt_tokens": 2705,
+                  "completion_tokens": 449,
+                  "total_tokens": 3154
+                },
+                "reasoning_tokens": 341,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 161,
+                  "stripped_chars": 161
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 530,
+                  "stripped_chars": 530
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null,
+                "reply_chars": 126,
+                "reply_sha256": "7f32fd0fa3ce8f11c7c232befdec5c1a97fe38b7dd47061493b79c8795fec12a"
+              }
+            }
+          ],
+          "final_expression_matches_raw_reply": true
+        }
+      ],
+      "completed": true,
+      "stopped_on_failure": false,
+      "source_selected": true,
+      "source_outside_two_turn_window": true,
+      "pre_activity_reopen_zero_calls": true,
+      "choice_preview_sha256": "ad56391602b1ccc873024f263d380310c68df6788c3726afc5e20f53508220ec",
+      "activity_result": {
+        "phase": "drafted",
+        "activity_revision": 1,
+        "source_visible": true,
+        "decision_action": "start",
+        "basis_refs": [
+          "E1"
+        ],
+        "reason_code": "emphasize-subject",
+        "decision_note_sha256": "3ed8892248280148afeda273aabad02ba8dec77e41c94676e2b1e22783cec84d",
+        "result_kind": "composition-text",
+        "plan_sha256": "096e4e7e1031191c50b284af17d70fe134c1b495261c23fc5bdeeb735d20f888"
+      },
+      "same_activity_nonce_zero_calls": true,
+      "post_activity_reopen_zero_calls": true,
+      "reply_uses_same_committed_result": true
+    },
+    {
+      "branch": "withdrawn",
+      "stages": [
+        {
+          "stage": "source-conversation",
+          "status": "failed-closed",
+          "failure_code": "original-whole-response-content-empty",
+          "elapsed_seconds": 2.9915240999998787,
+          "committed_before": 0,
+          "committed_after": 0,
+          "reply_chars": 0,
+          "reply_sha256": null,
+          "observations": [
+            {
+              "task_kind": "shared-activity-reply",
+              "purpose": "shared-activity-reply",
+              "status": "failed-closed",
+              "request_digest": "f91666241def78d3c155ac88955b011b3ffbebee2b8f7b943ebecd16793ddd6d",
+              "wire_sha256": "3c8d68be0f5a0fdeac3e5562f54b2f4cd5cbbb868996a5a5fbb62b3c21921501",
+              "error_code": "response-content-empty",
+              "model": "deepseek-flash",
+              "usage": {
+                "prompt_tokens": 2504,
+                "completion_tokens": 141,
+                "total_tokens": 2645,
+                "prompt_cache_hit_tokens": 2304,
+                "prompt_cache_miss_tokens": 200
+              },
+              "finish_reason": "stop",
+              "elapsed_seconds": 1.8632104999996955
+            }
+          ],
+          "transport": [
+            {
+              "request_metadata_valid": true,
+              "task": "reply",
+              "wire_sha256": "3c8d68be0f5a0fdeac3e5562f54b2f4cd5cbbb868996a5a5fbb62b3c21921501",
+              "payload_sha256": "5ddaae3d2e249e2600bd92ccd45d4440c173a188722a8994334e170a5f2a8bff",
+              "shared_quote_chars": 0,
+              "shared_quote_sha256": null,
+              "supplied_plan_sha256": null,
+              "recent_dialogue_turns": 0,
+              "common_choice_payload_sha256": null,
+              "response_boundary": {
+                "http_status": 200,
+                "body_bytes": 981,
+                "envelope_json": true,
+                "duplicate_semantic_keys": false,
+                "choices_count": 1,
+                "final_json": false,
+                "exact_reply_schema": false,
+                "usage": {
+                  "prompt_tokens": 2504,
+                  "completion_tokens": 141,
+                  "total_tokens": 2645
+                },
+                "reasoning_tokens": 87,
+                "finish_reason": "stop",
+                "delta_present": false,
+                "assistant_role": true,
+                "content": {
+                  "state": "string",
+                  "chars": 53,
+                  "stripped_chars": 0
+                },
+                "reasoning": {
+                  "state": "string",
+                  "chars": 130,
+                  "stripped_chars": 130
+                },
+                "undocumented_final": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "undocumented_refusal": {
+                  "state": "missing",
+                  "chars": null,
+                  "stripped_chars": null
+                },
+                "tool_calls_count": null
+              }
+            }
+          ]
+        }
+      ],
+      "completed": false,
+      "stopped_on_failure": true
+    }
+  ],
+  "completed_branches": 1,
+  "transport_invocations": 8,
+  "activity_preconditions_equal_except_source": false
+}
