@@ -601,6 +601,49 @@ class _ApplicationRouter:
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
 
+    def query_shared_activity(self):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        try:
+            return self._host.query_shared_activity(self._binding)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='shared-state-unverified')
+
+    def preview_shared_activity_step(self):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        try:
+            return self._host.query_shared_activity(self._binding, preview=True)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='shared-preview-unverified')
+
+    def set_shared_experience(self, request):
+        from dynamic_subject_agent.shared_activity import SharedExperienceRequest
+        return self._apply_shared_activity(request, SharedExperienceRequest)
+
+    def advance_shared_activity(self, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityStepRequest
+        return self._apply_shared_activity(request, SharedActivityStepRequest)
+
+    def _apply_shared_activity(self, request, expected_type):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest
+        self._require_open()
+        if (type(request) is not expected_type or request.target_profile_id != self._binding.profile_id
+            or request.target_timeline_id != self._binding.timeline_id
+            or type(request.expected_revision) is not int or request.expected_revision < 0):
+            return SharedActivityResponse('unavailable', problem_code='shared-request-invalid')
+        if expected_type is SharedExperienceRequest:
+            if request.confirmed is False:
+                return SharedActivityResponse('cancelled')
+            if request.confirmed is not True:
+                return SharedActivityResponse('unavailable', problem_code='shared-confirmation-required')
+        try:
+            return self._host.apply_shared_activity(self._binding, request)
+        except PreAdmissionRejected as error:
+            return SharedActivityResponse('unavailable', problem_code=error.code)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='shared-operation-unverified')
+
     def query_whole_context_boundary(self, request=None):
         self._require_open()
         try:
@@ -1413,6 +1456,18 @@ class ApplicationFacade:
 
     def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
         return self.__router.lookup_subject_request(request)
+
+    def query_shared_activity(self):
+        return self.__router.query_shared_activity()
+
+    def preview_shared_activity_step(self):
+        return self.__router.preview_shared_activity_step()
+
+    def set_shared_experience(self, request):
+        return self.__router.set_shared_experience(request)
+
+    def advance_shared_activity(self, request):
+        return self.__router.advance_shared_activity(request)
 
     def query_whole_context_boundary(self, request=None):
         return self.__router.query_whole_context_boundary(request)

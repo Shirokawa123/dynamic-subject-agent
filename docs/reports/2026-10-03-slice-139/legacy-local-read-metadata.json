@@ -1,0 +1,61 @@
+{
+  "version": "s139-legacy-local-lineage-read-1",
+  "initial_overstrict_whole_store_assertion_failed": true,
+  "precise_criterion": "all business tables and identity exact; admission gate lifecycle separately recorded",
+  "branches": [
+    {
+      "branch": "relevant",
+      "status": "available",
+      "canonical_business_and_identity_unchanged": true,
+      "lifecycle_changes": [
+        {
+          "fields": [
+            "gate_epoch"
+          ],
+          "before_epoch": 10,
+          "after_epoch": 12,
+          "before_state": "closed",
+          "after_state": "closed"
+        }
+      ],
+      "local_model_calls": 0,
+      "remote_calls": 0
+    },
+    {
+      "branch": "unrelated",
+      "status": "available",
+      "canonical_business_and_identity_unchanged": true,
+      "lifecycle_changes": [
+        {
+          "fields": [
+            "gate_epoch"
+          ],
+          "before_epoch": 8,
+          "after_epoch": 10,
+          "before_state": "closed",
+          "after_state": "closed"
+        }
+      ],
+      "local_model_calls": 0,
+      "remote_calls": 0
+    },
+    {
+      "branch": "withdrawn",
+      "status": "available",
+      "canonical_business_and_identity_unchanged": true,
+      "lifecycle_changes": [
+        {
+          "fields": [
+            "gate_epoch"
+          ],
+          "before_epoch": 6,
+          "after_epoch": 8,
+          "before_state": "closed",
+          "after_state": "closed"
+        }
+      ],
+      "local_model_calls": 0,
+      "remote_calls": 0
+    }
+  ]
+}

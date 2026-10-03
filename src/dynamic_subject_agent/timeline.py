@@ -29,6 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -307,7 +308,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name not in ("life_record", "share_authorization", "chat_authorization") or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -1458,6 +1459,7 @@ class CycleCommitPlan:
     expression: Expression
     committed_effect_set: CommittedEffectSet
     life_record: LifeRecord | None = None
+    shared_record: SharedActivityRecord | None = None
     share_authorization: ShareAuthorization | None = None
     chat_authorization: ChatAuthorization | None = None
 
@@ -1576,6 +1578,7 @@ class CycleCommitPlan:
                     dispatch_state=EffectDispatchState(str(effects["dispatch_state"])),
                     reason=str(effects["reason"]),
                 ),
+                shared_record=(decode_shared_record(source["shared_record"]) if source.get("shared_record") is not None else None),
                 life_record=(decode_life_record(source["life_record"]) if source.get("life_record") is not None else None),
                 share_authorization=(decode_share_authorization(source["share_authorization"]) if source.get("share_authorization") is not None else None),
                 chat_authorization=(decode_chat_authorization(source["chat_authorization"]) if "chat_authorization" in source else None),
@@ -1607,6 +1610,7 @@ class TimelineOutcome:
     expression: Expression
     committed_effect_set: CommittedEffectSet
     life_record: LifeRecord | None = None
+    shared_record: SharedActivityRecord | None = None
 
 
 @dataclass(frozen=True)
@@ -2680,7 +2684,8 @@ def _bootstrap_timeline(
         whole_context = CONTEXT_INTENT in authority.allowed_intents
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
-        schema_version = 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
+        shared = SHARED_INTENT in authority.allowed_intents
+        schema_version = 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
             if life or whole_context:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
@@ -2697,6 +2702,10 @@ def _bootstrap_timeline(
         if life:
             for statement in _LIFE_DDL:
                 connection.execute(statement)
+        if shared:
+            for statement in SHARED_DDL:
+                connection.execute(statement)
+            connection.execute(_LIFE_DDL[1])
         if whole_context:
             for statement in CONTEXT_DDL:
                 connection.execute(statement)
@@ -2858,7 +2867,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2894,6 +2903,8 @@ def _verify_store_integrity(
         expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==4:
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary'}
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==5:
+        expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary', 'shared_activity_input', 'shared_activity_record', 'prepared_cycle_plan'}
     try:
         tables = frozenset(
             row[0]
@@ -3393,8 +3404,10 @@ class TimelineEngine:
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0]==4) != (CONTEXT_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5)) != (CONTEXT_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
+            if (writer.execute('PRAGMA user_version').fetchone()[0] == 5) != (SHARED_INTENT in authority.allowed_intents):
+                raise AdmissionFailedClosed('shared-contract-mismatch', 'Timeline version differs from shared activity authority')
             if authority.timeline_id != location.timeline_id:
                 raise AdmissionFailedClosed(
                     "store-identity-mismatch",
@@ -3572,6 +3585,14 @@ class TimelineEngine:
                 "OperationRef does not belong to this Timeline authority",
             )
         if operation_ref.operation_kind is OperationKind.SYSTEM:
+            if SHARED_INTENT in self._authority.allowed_intents:
+                row = self._writer.execute('SELECT input_json,payload_fingerprint FROM shared_activity_input WHERE operation_id=?', (UUID(operation_ref.operation_id).bytes,)).fetchone()
+                if row is not None:
+                    command = SharedActivityInput(**json.loads(row[0]))
+                    self._validate_authority(command)
+                    if _canonical_json(command) != row[0] or bytes(row[1]).hex() != command.payload_fingerprint or command.payload_fingerprint != operation_ref.admitted_payload_fingerprint:
+                        raise AdmissionFailedClosed('shared-input-invalid', 'shared input differs from admission')
+                    return command
             if CONTEXT_INTENT in self._authority.allowed_intents:
                 row = self._writer.execute('SELECT input_json,payload_fingerprint FROM whole_context_input WHERE operation_id=?',
                     (UUID(operation_ref.operation_id).bytes,)).fetchone()
@@ -3746,6 +3767,11 @@ class TimelineEngine:
         return tuple(pending)
 
     def _validate_authority(self, command: SubjectCommand) -> None:
+        if type(command) is SharedActivityInput:
+            if SHARED_INTENT not in self._authority.allowed_intents or command.target_profile_id != self._authority.profile_id or command.target_timeline_id != self._authority.timeline_id:
+                raise PreAdmissionRejected("shared-input-unavailable", "shared input requires its exact authority")
+            SharedActivityInput(**_canonical_value(command))
+            return
         if type(command) is WholeContextInput:
             if CONTEXT_INTENT not in self._authority.allowed_intents:
                 raise PreAdmissionRejected('whole-context-unavailable', 'no whole context permission')
@@ -3756,7 +3782,7 @@ class TimelineEngine:
         if type(command) is FirstLifeInput:
             self._validate_first_life_input(command)
             return
-        if command.declared_intent in (LIFE_SYSTEM_INTENT, CONTEXT_INTENT):
+        if command.declared_intent in (LIFE_SYSTEM_INTENT, CONTEXT_INTENT, SHARED_INTENT):
             raise PreAdmissionRejected('typed-system-input-required', 'a user utterance cannot impersonate a life input')
         if (
             command.target_profile_id != self._authority.profile_id
@@ -3810,7 +3836,7 @@ class TimelineEngine:
         _reserved_operation_id: str | None = None,
     ) -> Admitted:
         self._require_open()
-        if not isinstance(command, SubjectCommand) and type(command) not in (FirstLifeInput, WholeContextInput):
+        if not isinstance(command, SubjectCommand) and type(command) not in (FirstLifeInput, WholeContextInput, SharedActivityInput):
             raise PreAdmissionRejected(
                 "malformed-command",
                 "Admission requires a SubjectCommand",
@@ -3914,14 +3940,16 @@ class TimelineEngine:
                 (
                     operation_id,
                     self._authority.authority_scope_id,
-                    OperationKind.SYSTEM.value if type(command) in (FirstLifeInput, WholeContextInput) else OperationKind.SUBJECT.value,
+                    OperationKind.SYSTEM.value if type(command) in (FirstLifeInput, WholeContextInput, SharedActivityInput) else OperationKind.SUBJECT.value,
                     command.contract_version,
                     payload,
                     OperationState.ADMITTED_PENDING.value,
                     recorded_at,
                 ),
             )
-            if type(command) is WholeContextInput:
+            if type(command) is SharedActivityInput:
+                self._writer.execute('INSERT INTO shared_activity_input VALUES (?,?,?)', (operation_id, _canonical_json(command), payload))
+            elif type(command) is WholeContextInput:
                 self._writer.execute('INSERT INTO whole_context_input VALUES (?,?,?)', (operation_id, _canonical_json(command), payload))
             elif type(command) is FirstLifeInput:
                 self._writer.execute('INSERT INTO system_input VALUES (?,?,?)',
@@ -3965,7 +3993,7 @@ class TimelineEngine:
                     recorded_at_us
                 ) VALUES (?, ?, ?, ?)
                 """,
-                (event_id, operation_id, 'system-input-admitted' if type(command) in (FirstLifeInput, WholeContextInput) else 'command-admitted', recorded_at),
+                (event_id, operation_id, 'system-input-admitted' if type(command) in (FirstLifeInput, WholeContextInput, SharedActivityInput) else 'command-admitted', recorded_at),
             )
             self._writer.execute(
                 """
@@ -4210,6 +4238,14 @@ class TimelineEngine:
                 "commit-plan-invalid",
                 "Publication requires a complete CycleCommitPlan",
             )
+        if plan.shared_record is not None:
+            if SHARED_INTENT not in self._authority.allowed_intents:
+                raise CommitPlanRejected('shared-record-unavailable', 'this authority cannot write shared activity')
+            try:
+                if type(plan.shared_record) is not SharedActivityRecord or decode_shared_record(_canonical_value(plan.shared_record)) != plan.shared_record:
+                    raise ValueError('typed shared record required')
+            except Exception as error:
+                raise CommitPlanRejected('shared-record-invalid', 'shared activity record is invalid') from error
         if plan.chat_authorization is not None:
             self._require_life_authority()
             try:
@@ -4511,7 +4547,7 @@ class TimelineEngine:
             command = self._query_command(ref)
             if (outcome.head_sequence != row[0] or outcome.previous_outcome_digest != previous
                 or type(row[1]) is not int or row[1] <= 0
-                or (type(command) in (FirstLifeInput, WholeContextInput)) != (ref.operation_kind is OperationKind.SYSTEM)):
+                or (type(command) in (FirstLifeInput, WholeContextInput, SharedActivityInput)) != (ref.operation_kind is OperationKind.SYSTEM)):
                 raise PublicationFailedClosed('timeline-chain-invalid', 'global Publication lineage is invalid')
             result.append((outcome, command, row[1]))
             previous = outcome.outcome_digest
@@ -4529,7 +4565,7 @@ class TimelineEngine:
             FROM whole_context_boundary boundary LEFT JOIN timeline_outcome outcome USING(plan_id)
             WHERE boundary.cutoff_sequence<=? ORDER BY boundary.revision''', (head,)).fetchall()
         systems = self._writer.execute('''SELECT COUNT(*) FROM timeline_outcome outcome JOIN subject_operation operation USING(operation_id)
-            WHERE operation.operation_kind='system' AND outcome.head_sequence<=?''', (head,)).fetchone()[0]
+            WHERE operation.operation_kind='system' AND operation.operation_id IN (SELECT operation_id FROM whole_context_input) AND outcome.head_sequence<=?''', (head,)).fetchone()[0]
         if systems != len(rows):
             raise PublicationFailedClosed('whole-context-head-unverified', 'a non-chat head has no exact boundary proof')
         for plan_id, number, sequence, raw, checksum, operation_id in rows:
@@ -4570,6 +4606,125 @@ class TimelineEngine:
             proven = TimelineBasis(row[0], None if row[1] is None else bytes(row[1]).hex(), bytes(row[2]).hex(), bytes(row[3]).hex())
         if actual != proven:
             raise PublicationFailedClosed('whole-context-failure-unverified', 'old failure prefix does not match canonical proof')
+
+    def _read_shared_record(self, plan_id):
+        if SHARED_INTENT not in self._authority.allowed_intents:
+            return None
+        row = self._writer.execute('SELECT record_json,record_digest FROM shared_activity_record WHERE plan_id=?', (plan_id,)).fetchone()
+        if row is None:
+            raise PublicationFailedClosed('shared-record-missing', 'shared publication has no atomic record')
+        try:
+            record = decode_shared_record(json.loads(row[0]))
+            if _canonical_json(record) != row[0] or _publication_digest('shared-activity-record', record) != bytes(row[1]):
+                raise ValueError('shared record digest differs')
+            return record
+        except Exception as error:
+            raise PublicationFailedClosed('shared-record-invalid', 'shared record cannot be verified') from error
+
+    def shared_activity_basis(self, authorization, *, exclude_operation_id=None):
+        from dynamic_subject_agent.shared_activity import initial_record, visible_state
+        if SHARED_INTENT not in self._authority.allowed_intents:
+            raise PreAdmissionRejected('shared-activity-unavailable', 'this Timeline has no shared activity contract')
+        basis = _read_timeline_basis(self._writer)
+        publications = self._verified_publications()
+        record = initial_record()
+        dependencies = {}
+        for outcome, command, _ in publications:
+            current = outcome.shared_record
+            if current is None or current.revision != record.revision + 1:
+                raise PublicationFailedClosed('shared-prefix-invalid', 'shared record sequence differs from publications')
+            if current.kind == 'select':
+                source = current.source
+                candidates = [cmd for out, cmd, _ in publications if out.head_sequence == source.source_head_sequence]
+                if (source.selection_revision != current.revision or source.source_head_sequence >= outcome.head_sequence
+                    or len(candidates) != 1 or type(candidates[0]) is not SubjectCommand
+                    or not source.quote.strip() or len(source.quote) > 400 or source.quote not in candidates[0].utterance):
+                    raise PublicationFailedClosed('shared-source-invalid', 'source is not one committed user quote')
+            dependencies[outcome.head_sequence] = current.reply_dependencies
+            record = current
+        verified = self._verified_whole_dialogue_at_basis(basis, exclude_operation_id=exclude_operation_id)
+        if verified is None:
+            raise PublicationFailedClosed('shared-history-unverified', 'shared inputs require a verified dialogue prefix')
+        context = self.whole_context_basis()
+        cutoff = self._shared_source_cutoff(context['cutoff_sequence'])
+        visible = visible_state(record, enabled=authorization.history_enabled, cutoff=cutoff)
+        dialogue = self._whole_dialogue_from_prefix('', authorization.history_enabled, verified)
+        selected = {(row.user_text, row.assistant_text) for row in dialogue.recent_dialogue}
+        lineage = self._shared_dialogue_lineage(publications)
+        dialogue_dependencies = set()
+        for row in verified[0]:
+            if (row.user_text, row.assistant_text) in selected:
+                dialogue_dependencies.add(row.head_sequence)
+                dialogue_dependencies.update(lineage[row.head_sequence])
+        return dict(revision=record.revision, source=record.source, visible_source=visible['source'], phase=record.phase,
+            current_plan=visible['current_plan'], result=record.result, visible_result=visible['result'],
+            activity_revision=record.activity_revision, decision=record.decision, record=record,
+            basis=_canonical_value(basis), context_revision=context['context_revision'], cutoff_sequence=cutoff,
+            valid_sources=visible['valid_sources'], reply_dependencies=dependencies, dialogue_dependencies=tuple(sorted(dialogue_dependencies)))
+
+    def _shared_dialogue_lineage(self, publications):
+        earlier, result = set(), {}
+        for outcome, command, _ in publications:
+            if type(command) is SubjectCommand:
+                deps = outcome.shared_record.dialogue_dependencies
+                # Earlier unapproved LOCAL preparation records remain readable.
+                # Missing lineage is conservatively all earlier user turns,
+                # never a fabricated proof of independence or an in-place edit.
+                result[outcome.head_sequence] = set(earlier if deps is None else deps)
+                if not result[outcome.head_sequence] <= earlier:
+                    raise PublicationFailedClosed('shared-dialogue-lineage-invalid', 'dialogue source is not an earlier user turn')
+                earlier.add(outcome.head_sequence)
+        return result
+
+    def _shared_source_cutoff(self, context_cutoff):
+        """After whole-prefix verification, only actual privacy acts revoke E1.
+
+        A known expression failure cuts the short dialogue window, but is not
+        evidence that the selected user statement lost its permission.
+        """
+        from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL
+        cutoff = context_cutoff
+        rows = self._writer.execute("""SELECT failure.operation_id,frozen.head_sequence
+            FROM operation_failure failure JOIN attempt_cycle_basis frozen USING(operation_id)
+            WHERE failure.failure_stage='history' AND failure.failure_code IN ('original-whole-history-withdrawn','original-whole-history-unverified')""").fetchall()
+        for operation_id, head in rows:
+            ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
+            command = self._query_command(ref)
+            if type(command) is SubjectCommand and whole_dialogue_scope(command.utterance) == WITHDRAWAL:
+                cutoff = max(cutoff, head)
+        return cutoff
+
+    def _validate_shared_plan(self, plan):
+        if SHARED_INTENT not in self._authority.allowed_intents:
+            if plan.shared_record is not None:
+                raise CommitPlanRejected('shared-record-unavailable', 'shared result requires its independent authority')
+            return
+        from dynamic_subject_agent.shared_activity import build_record, choice_from_record
+        from dynamic_subject_agent.original_whole_chat import OriginalWholeAuthorization
+        try:
+            record = plan.shared_record
+            if record is None or decode_shared_record(_canonical_value(record)) != record:
+                raise ValueError('typed shared result required')
+            authorization = OriginalWholeAuthorization(**record.authorization)
+            view = self.shared_activity_basis(authorization, exclude_operation_id=plan.operation_ref.operation_id)
+            command = self._query_command(plan.operation_ref)
+            if type(command) in (SharedActivityInput, WholeContextInput) and command.authorization != record.authorization:
+                raise ValueError('shared control authorization changed after admission')
+            if type(command) is SharedActivityInput:
+                if command.expected_basis != _canonical_value(plan.expected_basis) or command.authorization != record.authorization:
+                    raise ValueError('shared admission basis changed')
+                if command.input_kind == 'select':
+                    source = next((cmd for out, cmd, _ in self._verified_publications() if out.head_sequence == command.source_head_sequence), None)
+                    if (type(source) is not SubjectCommand or command.quote not in source.utterance
+                        or command.source_head_sequence <= view['cutoff_sequence']):
+                        raise ValueError('source unavailable after disclosure cutoff')
+            expected = build_record(view['record'], command=command, authorization=authorization,
+                cutoff=view['cutoff_sequence'], context_revision=view['context_revision'], head_sequence=plan.expected_basis.head_sequence+1,
+                choice=choice_from_record(record) if record.kind == 'decision' else None, dialogue_dependencies=view['dialogue_dependencies'])
+            if record != expected:
+                raise ValueError('shared proposal differs from Python adjudication')
+        except Exception as error:
+            raise CommitPlanRejected('shared-plan-invalid', 'shared state, source or phase did not validate') from error
 
     def _validate_whole_boundary_plan(self, plan):
         command = self._query_command(plan.operation_ref)
@@ -4768,7 +4923,7 @@ class TimelineEngine:
                 self._validate_whole_boundary_plan(plan)
             self._hit(FaultPoint.BEFORE_PLAN_CLAIM)
             _begin(self._writer)
-            life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents
+            life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents
             if (life or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot be claimed or published')
             existing = self._writer.execute(
@@ -4900,6 +5055,7 @@ class TimelineEngine:
                 if plan.expected_basis != _read_timeline_basis(self._writer):
                     raise StaleTimelineBasis(plan.expected_basis, _read_timeline_basis(self._writer))
                 self._validate_life_plan(plan)
+                self._validate_shared_plan(plan)
 
             self._writer.execute(
                 """
@@ -4945,7 +5101,7 @@ class TimelineEngine:
             ) from error
 
     def prepared_plan(self, operation_ref):
-        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents:
+        if LIFE_SYSTEM_INTENT not in self._authority.allowed_intents and SHARED_INTENT not in self._authority.allowed_intents:
             return None
         operation_id = _publication_uuid_bytes(operation_ref.operation_id, 'operation_id')
         row = self._writer.execute('''SELECT prepared.plan_id, prepared.plan_json, prepared.plan_digest,
@@ -4984,7 +5140,7 @@ class TimelineEngine:
             raise PublicationFailedClosed('prepared-plan-invalid', 'complete prepared plan cannot be verified') from error
 
     def _share_day_expired(self, operation_ref):
-        if operation_ref.operation_kind is not OperationKind.SYSTEM:
+        if operation_ref.operation_kind is not OperationKind.SYSTEM or SHARED_INTENT in self._authority.allowed_intents:
             return False
         from dynamic_subject_agent.first_life import current_civil_day
         from datetime import date
@@ -5039,12 +5195,13 @@ class TimelineEngine:
         try:
             with self._share_publication_guard(plan):
                 return ''
-        except _PreparedShareAuthorizationChanged as error:
+        except (_PreparedShareAuthorizationChanged, _OriginalWholeAuthorizationChanged) as error:
             return error.code
 
     def cancel_prepared_if_stale(self, operation_ref, *, _authorization_failure=''):
         """Atomically terminate an obsolete schema-3 preparation, without publication."""
-        self._require_life_authority()
+        if SHARED_INTENT not in self._authority.allowed_intents:
+            self._require_life_authority()
         try:
             _begin(self._writer)
             plan = self.prepared_plan(operation_ref)
@@ -5703,6 +5860,7 @@ class TimelineEngine:
                 "expression": plan.expression,
                 "committed_effect_set": plan.committed_effect_set,
                 **({'life_record': plan.life_record} if plan.life_record is not None else {}),
+                **({'shared_record': plan.shared_record} if plan.shared_record is not None else {}),
             },
         )
         self._writer.execute(
@@ -5997,6 +6155,7 @@ class TimelineEngine:
 
             published_at = _utc_microseconds()
             self._validate_life_plan(plan)
+            self._validate_shared_plan(plan)
             self._insert_commit_plan_receipt(
                 plan,
                 plan_digest,
@@ -6008,6 +6167,8 @@ class TimelineEngine:
             self._insert_experience_and_subject_state_outcomes(plan)
             self._insert_agency_relationship_and_domain_set(plan)
             self._insert_revision_expression_and_effect_set(plan)
+            if plan.shared_record is not None:
+                self._writer.execute('INSERT INTO shared_activity_record VALUES (?,?,?)', (plan_id, _canonical_json(plan.shared_record), _publication_digest('shared-activity-record', plan.shared_record)))
             if plan.life_record is not None:
                 self._writer.execute('INSERT INTO life_record VALUES (?,?,?)',
                     (plan_id, _canonical_json(plan.life_record), _publication_digest('life-record', plan.life_record)))
@@ -6060,7 +6221,7 @@ class TimelineEngine:
             raise
         except StaleTimelineBasis as error:
             _rollback_if_needed(self._writer)
-            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents:
+            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents:
                 self.cancel_prepared_if_stale(plan.operation_ref)
             else:
                 self._record_stale_conflict(plan, error.observed_basis)
@@ -7955,7 +8116,7 @@ class TimelineEngine:
             if row[4] is None or row[5] is None or self.query(ref).operation_state is not OperationState.FAILED_CLOSED:
                 return None
             failure = self.query_failure(ref)
-            if type(command) is WholeContextInput:
+            if type(command) in (WholeContextInput, SharedActivityInput):
                 if not known_whole_failure(failure):
                     return None
                 self._verify_whole_failed_prefix(ref, int(row[4]), basis)
@@ -7991,6 +8152,18 @@ class TimelineEngine:
         if (is_whole_dialogue_control(message)
             or records and records[-1].head_sequence > cutoff and is_whole_dialogue_control(records[-1].user_text)):
             return CharacterDialogueBasis('restricted', bool(records), problem_code='character-history-restricted')
+        if SHARED_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.shared_activity import initial_record, visible_state
+            publications = self._verified_publications()
+            current = publications[-1][0].shared_record if publications else initial_record()
+            source_cutoff = self._shared_source_cutoff(self.whole_context_basis()['cutoff_sequence'])
+            valid = visible_state(current, enabled=enabled, cutoff=source_cutoff)['valid_sources']
+            dependencies = {out.head_sequence: out.shared_record.reply_dependencies for out, _, _ in publications}
+            blocked_heads = {out.shared_record.source.source_head_sequence for out, _, _ in publications
+                if out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
+            lineage = self._shared_dialogue_lineage(publications)
+            records = tuple(row for row in records if set(dependencies[row.head_sequence]) <= valid
+                and row.head_sequence not in blocked_heads and not lineage[row.head_sequence] & blocked_heads)
         selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_whole_dialogue_control) if enabled else ()
         return CharacterDialogueBasis('available', bool(records), selected)
 
@@ -8099,6 +8272,7 @@ class TimelineEngine:
             expression = self._read_expression(bytes(row[14]))
             effect_set = self._read_effect_set(bytes(row[15]))
             life_record = self._read_life_record(plan_id)
+            shared_record = self._read_shared_record(plan_id)
 
             domain_set = self._writer.execute(
                 """
@@ -8167,6 +8341,7 @@ class TimelineEngine:
                 expression=expression,
                 committed_effect_set=effect_set,
                 life_record=life_record,
+                shared_record=shared_record,
                 share_authorization=(self.prepared_plan(operation_ref).share_authorization
                     if LIFE_SYSTEM_INTENT in self._authority.allowed_intents else None),
                 chat_authorization=(self.prepared_plan(operation_ref).chat_authorization
@@ -8179,7 +8354,7 @@ class TimelineEngine:
                     "canonical-publication-integrity-mismatch",
                     "CycleCommitPlanReceipt digest does not match composing records",
                 )
-            if LIFE_SYSTEM_INTENT in self._authority.allowed_intents and self.prepared_plan(operation_ref) != plan:
+            if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents) and self.prepared_plan(operation_ref) != plan:
                 raise PublicationFailedClosed('prepared-publication-mismatch', 'published plan differs from durable preparation')
             claim = self._writer.execute(
                 """
@@ -8231,6 +8406,7 @@ class TimelineEngine:
                     "expression": expression,
                     "committed_effect_set": effect_set,
                     **({'life_record': life_record} if life_record is not None else {}),
+                    **({'shared_record': shared_record} if shared_record is not None else {}),
                 },
             )
             if expected_outcome_digest != bytes(row[6]):
@@ -8257,6 +8433,7 @@ class TimelineEngine:
                 expression=expression,
                 committed_effect_set=effect_set,
                 life_record=life_record,
+                shared_record=shared_record,
             )
         except PublicationProblem:
             raise

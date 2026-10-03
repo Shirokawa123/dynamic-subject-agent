@@ -10,9 +10,10 @@ from dynamic_subject_agent.reviewed_character_chat import HISTORY_POLICY, sealed
 from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_VERSION
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, shared_contract
 
 WHOLE_AUTHORITY = "original-character-whole-chat-deepseek-s127-1"
-WHOLE_AUTHORITIES = (WHOLE_AUTHORITY, CONTEXT_AUTHORITY)
+WHOLE_AUTHORITIES = (WHOLE_AUTHORITY, CONTEXT_AUTHORITY, SHARED_AUTHORITY)
 WHOLE_VERSION = "original-character-whole-chat-s127-1"
 APPROVED_POLICY_SHA = "4849cf2c42313b2dffe5b95e859ee8eb0d79e0a6ad85cab0b05b3ea064fb3218"
 APPROVED_BINDING = dict(
@@ -96,6 +97,10 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get("version") == "shared-activity-s139-1":
+        if contract != shared_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError("exact local shared activity contract required")
+        return "shared-local"
     variant = "baseline"
     if "technical_variant" in contract:
         witness = contract["technical_variant"]
@@ -122,6 +127,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == "shared-local":
+        return "original-shared-activity-local-s139-" + digest(contract)
     key = "original-character-whole-" + contract["definition_basis"] + "-" + contract["scope_digest"]
     if variant == "baseline":
         return key
@@ -134,6 +141,8 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
+    if variant == "shared-local":
+        raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)
     if sha256(policy.encode()).hexdigest() != contract["policy_sha"]:

@@ -154,7 +154,14 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        if loaded.qri.provider_authority in WHOLE_AUTHORITIES:
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY
+        from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+        if loaded.qri.provider_authority == SHARED_AUTHORITY:
+            if (type(cognition) is not SharedActivityCognition or cognition.gateway is None
+                or cognition.gateway.capabilities.local is not True
+                or getattr(cognition, '_whole_composition_witness', None) != loaded.qri.reviewed_chat_contract):
+                raise ValueError('shared activity requires its exact local composition')
+        elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
             if contract_variant(loaded.qri.reviewed_chat_contract) == "followup-legacy":
                 whole_receipts_only = True
                 if type(cognition) is OriginalWholeChatCognition and cognition.gateway is not None:
@@ -693,6 +700,21 @@ def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, 
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
         observations=observations)
     cognition = OriginalWholeChatCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter), delivery=delivery, provider_authority=loaded.qri.provider_authority,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_shared_activity_product_local(config, *, gateway, identity_id, binding=None):
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+    if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
+        raise ValueError('local-only shared activity gateway required')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_shared_activity_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+        contract=loaded.qri.reviewed_chat_contract,
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract

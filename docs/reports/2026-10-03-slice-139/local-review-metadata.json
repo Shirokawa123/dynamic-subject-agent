@@ -1,0 +1,47 @@
+{
+  "version": "s139-local-exact-review-1",
+  "simulated_outputs": true,
+  "remote_calls": 0,
+  "activity_preconditions_equal_except_source": true,
+  "scenario_sha256": "5f738378ede078d1995953d3795dc26cf65cacf13408801a81d32a57a255b275",
+  "review_sha256": "2c86a706ed2b3b438228a8d3c902c435807c67eb18a5bbb5a63ab3e323607c69",
+  "exact_local_preview_path": "C:\\Users\\30252\\AppData\\Local\\DynamicSubjectAgent\\shared-activity-development\\s139\\local-review-20261003-1\\exact-unsent-previews.json",
+  "branches": [
+    {
+      "branch": "relevant",
+      "local_model_calls": 6,
+      "source_outside_two_turn_window": true,
+      "reopen_zero_calls": true,
+      "step_preview_equals_task": true,
+      "repeated_step_zero_calls": true,
+      "reply_uses_committed_result": true,
+      "activity_phase": "drafted",
+      "choice_preview_sha256": "6fc6d5c89774139425ef09df05e6614e0acb14432907e453143a181b3f9626ef",
+      "reply_preview_sha256": "6cfaa501fd31eefec0d9d48ffef14db748b9c01dc026019532805844a11a494b"
+    },
+    {
+      "branch": "unrelated",
+      "local_model_calls": 6,
+      "source_outside_two_turn_window": true,
+      "reopen_zero_calls": true,
+      "step_preview_equals_task": true,
+      "repeated_step_zero_calls": true,
+      "reply_uses_committed_result": true,
+      "activity_phase": "drafted",
+      "choice_preview_sha256": "ad56391602b1ccc873024f263d380310c68df6788c3726afc5e20f53508220ec",
+      "reply_preview_sha256": "506688807540711c886338b2c1e340ee541dfd021c37c9f8c6a6167396a5b918"
+    },
+    {
+      "branch": "withdrawn",
+      "local_model_calls": 6,
+      "source_outside_two_turn_window": true,
+      "reopen_zero_calls": true,
+      "step_preview_equals_task": true,
+      "repeated_step_zero_calls": true,
+      "reply_uses_committed_result": true,
+      "activity_phase": "drafted",
+      "choice_preview_sha256": "efa91a6ef8e9f25588d99bad7a62494d97db0f846b7eb954d8e8f405d4b4186f",
+      "reply_preview_sha256": "bfb22d9dd56e474dcdc6498eae5a118fe5071bb7b8bb04b0dbc15acddcaf72b5"
+    }
+  ]
+}

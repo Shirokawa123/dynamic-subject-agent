@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-139：独立LOCAL共同经历与活动闭环
+
+`open_shared_activity_product_local`只接受LOCAL ModelGateway及独立新封存人物资格/manifest/schema5；旧whole/LIFE root不升级。Facade显式选择一条≤400字已提交用户连续原话、停用/替换、查询/准确预览和推进一步；来源只证明用户说过，不从助手台词造事实或人格。活动复用CompositionPlan/有限裁决/LifeEvent，模型提议，Python核阶段、真实方案差异、E1引用、head/权限后原子提交；后续聊天读取同一个已提交文字结果。
+
+判断/方案/回复保存本地来源依赖，每轮另存实际近期输入的传递head lineage；停用/换源/history-off/cutoff整项过滤派生产物和完整旧轮，包括选定前回显与同一head换片段。旧记录保留；缺lineage的旧LOCAL准备保守依赖此前用户轮并保持原字节，不迁移。prepared随claim同事务持久化，final Publication重核完整basis/授权/上下文，冷恢复只发布已核prepared或终止，0新模型。
+
+18项最终接口、62项受影响兼容、独立复核及真实已审人物输入的三支18LOCAL固定合成流程通过；不是人物效果或新外发授权。准确pure wire已与同一builder核对，Pending grant只允许unapproved，Adapter恒typed拒绝且无transport/credential路径。新用途待[准确review](experiments/s139/REVIEW.md)集中批准，事实/限制见[S139报告](reports/2026-10-03-slice-139/REPORT.md)。
+
 ### Slice-138：普通纠错和真实出站控制分开
 
 whole独立`whole_dialogue_scope`区分普通纠错/引用/过去转述、真实撤回、未能确定范围的控制和不支持的effect；普通纠错继续交流，不支持的effect在Admission前返回unavailable。真实撤回本轮0外发，后续仅取安全cutoff之后的窗口；未闭合的明确控制保守关闭。有限本地语法不是通用自然语言意图理解，也不取得记忆/文件/生活权限。

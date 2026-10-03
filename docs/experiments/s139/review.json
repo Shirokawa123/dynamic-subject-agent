@@ -1,0 +1,133 @@
+{
+  "review_basis": "8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a",
+  "review": {
+    "version": "s139-shared-activity-new-use-review-1",
+    "approval_status": "not-granted",
+    "material_binding": {
+      "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+      "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+      "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+      "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+      "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+      "subject_id": "sagiri",
+      "anchor_id": "v1-pre-broadcast"
+    },
+    "provider": "deepseek",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "credential_use": "existing-Windows-slot-HTTPS-Bearer-only-after-separate-approval",
+    "protocol": {
+      "model": "deepseek-flash",
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "enabled"
+      },
+      "reasoning_effort": "high",
+      "response_format": {
+        "type": "json_object"
+      },
+      "stream": false
+    },
+    "timeout_seconds": 30,
+    "requests_per_manual_action": 1,
+    "automatic_retries": 0,
+    "source": {
+      "maximum_count": 1,
+      "maximum_characters": 400,
+      "selection": "explicit-exact-contiguous-committed-user-quote",
+      "projection_fields": [
+        "label",
+        "quote"
+      ],
+      "label": "E1",
+      "absent": null
+    },
+    "choice_input_fields": [
+      "background",
+      "shared_experience",
+      "current_activity",
+      "current_plan"
+    ],
+    "activity_fields": [
+      "phase",
+      "allowed_actions"
+    ],
+    "plan_limits": {
+      "subject": 160,
+      "composition": 800,
+      "focus": 400
+    },
+    "reply_input_fields": [
+      "turn",
+      "background",
+      "exchange",
+      "evidence"
+    ],
+    "reply_evidence_fields": [
+      "shared_experience",
+      "activity_result"
+    ],
+    "result_fields": [
+      "kind",
+      "plan"
+    ],
+    "current_message_limit": 1000,
+    "recent_dialogue_complete_turns": 2,
+    "recent_dialogue_total_characters": 4000,
+    "output_note": {
+      "maximum_characters": 160,
+      "use": "local-visible-decision-only-never-subsequent-model-input"
+    },
+    "source_controls": "deactivate-replace-history-off-context-cutoff-filter-all-dependent-results-and-complete-dialogue-turns",
+    "excluded": [
+      "automatic-life",
+      "proactive-sharing",
+      "notifications",
+      "personality-rewrite",
+      "reflection",
+      "cloud",
+      "old-root-migration",
+      "new-credential-purpose",
+      "external-actions"
+    ],
+    "local_preview_sha256": "2c86a706ed2b3b438228a8d3c902c435807c67eb18a5bbb5a63ab3e323607c69",
+    "scenario_sha256": "5f738378ede078d1995953d3795dc26cf65cacf13408801a81d32a57a255b275",
+    "samples": [
+      {
+        "branch": "relevant",
+        "purpose": "shared-activity-choice",
+        "wire_sha256": "e51ab103ed841be21e2fe79d782c29636ba21b515ac26f5f1c2cc2d5498526f4",
+        "policy_sha256": "38e151620ff9e59eaa948fd378d0a70d917b47d73c585aca59490cca76018a21"
+      },
+      {
+        "branch": "relevant",
+        "purpose": "shared-activity-reply",
+        "wire_sha256": "5154ed12a4422793837eb27e22f624fa86b9d5c7a0a192d8feb347f6a71d58af",
+        "policy_sha256": "03f1e741159fc5a18e8fedc49aa56b17ed1ad48ec457baf64d2d3c5cf1fd800a"
+      },
+      {
+        "branch": "unrelated",
+        "purpose": "shared-activity-choice",
+        "wire_sha256": "66c8f2616ccadc559ac62fc75f0f9ca1fc2219b26a82099d8660c5e0afb81728",
+        "policy_sha256": "38e151620ff9e59eaa948fd378d0a70d917b47d73c585aca59490cca76018a21"
+      },
+      {
+        "branch": "unrelated",
+        "purpose": "shared-activity-reply",
+        "wire_sha256": "6457a1870e7e1ae2e3e08a27230436f9c0cd98c5a688103ac51d21a90d8338da",
+        "policy_sha256": "03f1e741159fc5a18e8fedc49aa56b17ed1ad48ec457baf64d2d3c5cf1fd800a"
+      },
+      {
+        "branch": "withdrawn",
+        "purpose": "shared-activity-choice",
+        "wire_sha256": "da487f4c82d03b56c8a687166beab176298b8aeb6bc1fb1ec9b8ee675999a017",
+        "policy_sha256": "38e151620ff9e59eaa948fd378d0a70d917b47d73c585aca59490cca76018a21"
+      },
+      {
+        "branch": "withdrawn",
+        "purpose": "shared-activity-reply",
+        "wire_sha256": "2c26fe6619a66ccb3d146a8e4568613320fb79efa3909162239731c37b3bab7c",
+        "policy_sha256": "03f1e741159fc5a18e8fedc49aa56b17ed1ad48ec457baf64d2d3c5cf1fd800a"
+      }
+    ]
+  }
+}

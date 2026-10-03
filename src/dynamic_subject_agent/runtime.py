@@ -18,6 +18,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.first_life import FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_INTENT, CONTEXT_AUTHORITY, WholeContextInput
+from dynamic_subject_agent.shared_activity import SHARED_INTENT, SharedActivityRecord
 
 from dynamic_subject_agent.domains import (
     AgencyAdjudicationRequest,
@@ -361,6 +362,7 @@ class CognitionRuntimeView:
     load_recent_dialogue: Callable[[], tuple[RecentDialogueTurn, ...]] | None = None
     load_character_dialogue: Callable[[bool], object] | None = None
     load_whole_context: Callable[[], object] | None = None
+    load_shared_activity: Callable | None = None
     load_first_life_followup: Callable[[bool], object] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
@@ -384,6 +386,7 @@ class CognitiveProposal:
     memory_continuation: ExpressionCandidate | None = None
     knowledge_continuation: ExpressionCandidate | None = None
     life_record: LifeRecord | None = None
+    shared_record: SharedActivityRecord | None = None
     share_authorization: object | None = None
     chat_authorization: object | None = None
 
@@ -1098,6 +1101,8 @@ class SubjectRuntime:
                 (lambda enabled: self._engine.character_dialogue_before(dialogue_operation, expected_head=dialogue_head, enabled=enabled))
                 if dialogue_operation is not None and dialogue_head is not None else None
             ),
+            load_shared_activity=((lambda authorization: self._engine.shared_activity_basis(authorization, exclude_operation_id=dialogue_operation.operation_id))
+                if SHARED_INTENT in self._context.authority.allowed_intents and dialogue_operation is not None else None),
             load_whole_context=((lambda: self._engine.whole_context_basis(expected_head=dialogue_head))
                 if CONTEXT_INTENT in self._context.authority.allowed_intents and dialogue_head is not None else None),
             load_recent_dialogue=(
@@ -1139,6 +1144,12 @@ class SubjectRuntime:
     def recover_original_whole_pending(self):
         pending = self._engine.pending_original_whole_operations()
         for operation_ref in pending:
+            if SHARED_INTENT in self._context.authority.allowed_intents:
+                prepared = self._engine.prepared_plan(operation_ref)
+                if prepared is not None:
+                    if not self._engine.cancel_prepared_if_stale(operation_ref):
+                        self._engine.publish(prepared)
+                    continue
             self._engine.freeze_attempt_basis(operation_ref)
             self._engine.fail_operation(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='Cold recovery closes an uncommitted whole attempt; schema 1 has no durable reply preparation and never retries the model.')
@@ -1377,6 +1388,13 @@ class SubjectRuntime:
 
         from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES
         whole = getattr(self._context.authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+        shared = SHARED_INTENT in self._context.authority.allowed_intents
+        if shared:
+            prepared = self._engine.prepared_plan(operation_ref)
+            if prepared is not None:
+                if not self._engine.cancel_prepared_if_stale(operation_ref):
+                    self._engine.publish(prepared)
+                return self._observe(operation_ref, admission_replayed=admission_replayed)
         if whole and self._engine.has_frozen_attempt(operation_ref):
             self._fail_cycle(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='An earlier whole attempt has no durable prepared reply; automatic model retry is unavailable.')
@@ -1814,6 +1832,7 @@ class SubjectRuntime:
                 reason='exact text save approved' if effect else "real committed-effect dispatch is unavailable in M0-A",
             ),
             life_record=proposal.life_record,
+            shared_record=proposal.shared_record,
             share_authorization=proposal.share_authorization,
             chat_authorization=proposal.chat_authorization,
         )

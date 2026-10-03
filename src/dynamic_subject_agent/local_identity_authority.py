@@ -66,6 +66,7 @@ from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, WHOLE_AUTHORITIES, whole_contract,
     validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest, whole_publication_key, contract_variant)
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, shared_contract
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
 
@@ -855,11 +856,18 @@ def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListRespo
     return LocalIdentityListResponse(LocalIdentityStatus.AVAILABLE, views)
 
 
+def _whole_dormant_cognition(authority):
+    if authority == SHARED_AUTHORITY:
+        from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+        return SharedActivityCognition()
+    return OriginalWholeChatCognition(provider_authority=authority)
+
+
 def _create_identity_host(
     identity: _ValidatedLocalIdentity,
 ) -> tuple[RuntimeHostRootRef, str]:
     timeline_id = str(uuid4())
-    dormant = (OriginalWholeChatCognition(provider_authority=identity.qri.provider_authority) if identity.qri.provider_authority in WHOLE_AUTHORITIES else
+    dormant = (_whole_dormant_cognition(identity.qri.provider_authority) if identity.qri.provider_authority in WHOLE_AUTHORITIES else
         FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
         FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
         ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
@@ -890,7 +898,7 @@ def _validate_host_binding(
     host = RuntimeHost.open(
         host_location,
         studio_location=identity.studio_location,
-        cognition=(OriginalWholeChatCognition(provider_authority=identity.qri.provider_authority) if identity.qri.provider_authority in WHOLE_AUTHORITIES else
+        cognition=(_whole_dormant_cognition(identity.qri.provider_authority) if identity.qri.provider_authority in WHOLE_AUTHORITIES else
             FirstLifeCognition() if identity.qri.provider_authority == LIFE_AUTHORITY else
             FirstLifeDormantCognition() if identity.qri.provider_authority == LIFE_DORMANT_AUTHORITY else
             ReviewedCharacterChatCognition() if identity.qri.provider_authority == CHAT_AUTHORITY
@@ -1306,7 +1314,13 @@ class LocalIdentityAuthority:
         _write_state(self._config.state_path, state)
         return self.load_active()
 
+    @_registry_mutation
+    def activate_shared_activity_local(self, *, binding, identity_id):
+        contract = shared_contract(binding)
+        return self._activate_context_identity(contract, self._config.state_path.parent / 'shared-local-audit', identity_id)
+
     def _activate_context_identity(self, contract, audit_path, identity_id):
+        shared = contract_variant(contract) == 'shared-local'
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding='utf-8')))
         if identity_id is None:
             identity_id = state['active_identity_id']
@@ -1317,7 +1331,7 @@ class LocalIdentityAuthority:
         existing = record.get('whole_chat_activation') or record.get('pending_whole_chat_activation')
         if existing is not None and existing != metadata:
             raise RuntimeError('whole-context-activation-conflict')
-        if identity.qri.provider_authority == CONTEXT_AUTHORITY:
+        if identity.qri.provider_authority == (SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
             if state['active_identity_id'] != identity_id:
                 raise RuntimeError('whole-context-selection-required')
             return self.load_active()
@@ -1337,7 +1351,7 @@ class LocalIdentityAuthority:
                 if getattr(error, 'code', None) != 'qri-not-found':
                     raise
                 snapshot = studio.query_snapshot(identity.qri.genesis_snapshot_id)
-                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.original_whole_context(),
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
                     reviewed_chat_contract=contract, validity_us=300_000_000)
                 successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
                     predecessor_qualification_id=identity.qri.qualification_id, reviewed_chat_contract=contract)
@@ -1346,6 +1360,7 @@ class LocalIdentityAuthority:
         assembly = _CognitionAssembly._original_whole_context_transition(identity.qri, successor)
         dormant = ReviewedCharacterDormantCognition()
         dormant.supports_whole_context = True
+        dormant.supports_shared_activity = shared
         if record.get('host_location') is None:
             host = RuntimeHost.create(identity.experiment_base, studio_location=identity.studio_location, cognition=dormant, _cognition_assembly=assembly)
             timeline = str(uuid4())
