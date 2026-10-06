@@ -37,7 +37,7 @@ class DeepSeekSharedActivityAdapter(ProviderAdapter):
         code = None
         try:
             actual = self.delivery.consume(task)
-            request = shared_remote_request_preview(actual)
+            request = shared_remote_request_preview(actual, technical_variant=self.delivery.grant.technical_variant)
             wire = canonical_json(request['body']).encode()
             if sha256(wire).hexdigest() != request['wire_sha256']:
                 raise ValueError('exact reviewed wire changed')

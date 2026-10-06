@@ -9,7 +9,7 @@ import re
 from dynamic_subject_agent.character_communication_trial_provider import communication_protocol
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTask, ModelTaskKind, ModelGatewayFailure
-from dynamic_subject_agent.shared_activity import CHOICE_POLICY, CHAT_POLICY
+from dynamic_subject_agent.shared_activity import CHOICE_POLICY, shared_reply_policy, SHARED_TECHNICAL_VARIANTS
 
 
 @dataclass(frozen=True)
@@ -22,17 +22,17 @@ class PendingSharedActivityGrant:
             raise ValueError('only a typed pending review can be represented before approval')
 
 
-def shared_remote_request_preview(task):
+def shared_remote_request_preview(task, *, technical_variant='baseline'):
     """The future single request's exact body, generated from the local builder.
 
     It remains review data. Passing this value never creates an execution ticket.
     """
-    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING, whole_contract, policy_for_contract
+    if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
+        raise ValueError('known exact shared technical variant required')
     if type(task) is not ModelTask or task.kind not in (ModelTaskKind.SHARED_ACTIVITY_CHOICE, ModelTaskKind.SHARED_ACTIVITY_REPLY):
         raise ValueError('typed shared activity task required')
     preview = task.payload
-    reply_policy = policy_for_contract(whole_contract(APPROVED_BINDING, technical_variant='grounded')).replace(
-        '本拟用途不接生活系统，evidence的活动、方案和事件均为空，不依据时间或聊天轮数造经历。', CHAT_POLICY)
+    reply_policy = shared_reply_policy(technical_variant)
     expected_policy = CHOICE_POLICY if task.kind is ModelTaskKind.SHARED_ACTIVITY_CHOICE else reply_policy
     if type(preview) is not dict or set(preview) != {'policy', 'payload'} or preview['policy'] != expected_policy:
         raise ValueError('candidate policy must be the exact local execution policy')

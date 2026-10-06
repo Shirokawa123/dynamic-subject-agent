@@ -601,11 +601,16 @@ class _ApplicationRouter:
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
 
-    def query_shared_activity(self):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+    def query_shared_activity(self, request=None):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest, SharedActivityStepRequest
         self._require_open()
+        if request is not None and (type(request) not in (SharedExperienceRequest, SharedActivityStepRequest)
+            or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id
+            or type(request.expected_revision) is not int or request.expected_revision < 0
+            or type(request) is SharedExperienceRequest and request.confirmed is not True):
+            return SharedActivityResponse('unavailable', problem_code='shared-request-invalid')
         try:
-            return self._host.query_shared_activity(self._binding)
+            return self._host.query_shared_activity(self._binding, request=request)
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='shared-state-unverified')
 
@@ -1457,8 +1462,8 @@ class ApplicationFacade:
     def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
         return self.__router.lookup_subject_request(request)
 
-    def query_shared_activity(self):
-        return self.__router.query_shared_activity()
+    def query_shared_activity(self, request=None):
+        return self.__router.query_shared_activity(request)
 
     def preview_shared_activity_step(self):
         return self.__router.preview_shared_activity_step()

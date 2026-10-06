@@ -1330,7 +1330,7 @@ class LocalIdentityAuthority:
         if type(grant) is not ApprovedSharedActivityGrant:
             raise ValueError('typed exact shared use approval required')
         grant.validate()
-        return self._activate_context_identity(shared_live_contract(APPROVED_BINDING), audit_path, identity_id)
+        return self._activate_context_identity(shared_live_contract(APPROVED_BINDING, technical_variant=grant.technical_variant), audit_path, identity_id)
 
     def _activate_context_identity(self, contract, audit_path, identity_id):
         shared = contract_variant(contract) in ('shared-local', 'shared-live')
@@ -1450,6 +1450,17 @@ class LocalIdentityAuthority:
             or record.get('timeline_id') != expected_timeline_id
             or contract_variant(identity.qri.reviewed_chat_contract) != 'context-boundary'):
             raise RuntimeError('context-entry-identity-unverified')
+
+    def validate_shared_activity_entry(self, expected_identity_id, expected_timeline_id, *, technical_variant='baseline'):
+        from dynamic_subject_agent.shared_activity import SHARED_TECHNICAL_VARIANTS, shared_variant_for_contract
+        if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
+            raise ValueError('known exact shared entry variant required')
+        _, record, identity = self._active_chat_record(expected_identity_id)
+        if (identity.qri.provider_authority != SHARED_LIVE_AUTHORITY
+            or record.get('timeline_id') != expected_timeline_id
+            or contract_variant(identity.qri.reviewed_chat_contract) != 'shared-live'
+            or shared_variant_for_contract(identity.qri.reviewed_chat_contract) != technical_variant):
+            raise RuntimeError('shared-entry-identity-unverified')
 
     @contextmanager
     def original_whole_guard(self, authorization):

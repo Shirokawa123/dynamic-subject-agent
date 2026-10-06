@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -7732,6 +7732,21 @@ class TimelineEngine:
                 if not request.query or request.query in command.utterance or request.query in outcome.expression.text:
                     rows.append(WholeChatArchiveRow('turn', outcome.head_sequence, revision,
                         command.utterance, outcome.expression.text, published_at))
+            elif type(command) is SharedActivityInput and SHARED_INTENT in self._authority.allowed_intents:
+                # Verified experience/activity Publications are system acts,
+                # not another user/assistant turn. They remain in canonical
+                # history and the activity view, while this archive lists chat.
+                record = outcome.shared_record
+                prepared = self.prepared_plan(outcome.operation_ref)
+                expected_kind = 'decision' if command.input_kind == 'advance' else command.input_kind
+                if (self._authority.provider_authority not in SHARED_AUTHORITIES or record is None
+                    or record.kind != expected_kind or record.revision != command.expected_revision + 1
+                    or record.authorization != command.authorization
+                    or command.expected_basis != _canonical_value(prepared.expected_basis)
+                    or prepared.expected_basis.head_sequence != outcome.head_sequence - 1
+                    or prepared.expected_basis.published_outcome_digest != outcome.previous_outcome_digest):
+                    raise PublicationFailedClosed('whole-archive-origin-unverified', 'shared system origin or frozen basis differs')
+                continue
             else:
                 raise PublicationFailedClosed('whole-archive-origin-unverified', 'archive has an unexpected Publication origin')
         # Stable sequence keys select the preceding page even after an append.

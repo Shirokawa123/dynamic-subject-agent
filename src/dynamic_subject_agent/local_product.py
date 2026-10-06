@@ -683,6 +683,11 @@ def validate_original_context_entry(config, *, profile_id, timeline_id):
     LocalIdentityAuthority(config).validate_original_context_entry(profile_id, timeline_id)
 
 
+def validate_shared_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):
+    """Validate the existing served shared identity before entry activation."""
+    LocalIdentityAuthority(config).validate_shared_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
+
+
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
                                 scope_digest=None, audit_path=None, _transport=None, observations=None, technical_variant="baseline", identity_id=None):
     """New exact whole qualification; opening/reopening performs no model call."""
@@ -727,12 +732,15 @@ def open_shared_activity_product_local(config, *, gateway, identity_id, binding=
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
-def open_shared_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None):
+def open_shared_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None,
+                                      technical_variant='baseline'):
     from dynamic_subject_agent.shared_activity import SHARED_LIVE_AUTHORITY
     from dynamic_subject_agent.shared_activity_live import ApprovedSharedActivityGrant, SharedActivityDelivery, open_shared_activity_audit
     from dynamic_subject_agent.shared_activity_provider import DeepSeekSharedActivityAdapter
     from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
-    if type(grant) is not ApprovedSharedActivityGrant:
+    from dynamic_subject_agent.shared_activity import SHARED_TECHNICAL_VARIANTS
+    if (type(grant) is not ApprovedSharedActivityGrant or type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS
+        or grant.technical_variant != technical_variant):
         raise ValueError('exact approved shared activity grant required')
     grant.validate()
     if not isinstance(audit_path, Path) or not audit_path.is_absolute():

@@ -11,7 +11,8 @@ from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelG
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
 from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
 from dynamic_subject_agent.shared_activity import (
-    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, SharedActivityInput, build_record, build_choice_preview, build_reply_preview)
+    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
+    shared_variant_for_contract)
 
 
 class SharedActivityCognition(OriginalWholeChatCognition):
@@ -37,8 +38,16 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 or self.snapshot_loader is None):
                 raise PreAdmissionRejected('shared-approved-gateway-required', 'exact live shared qualification is required')
             self.delivery.grant.validate()
+            from dynamic_subject_agent.original_whole_chat import contract_variant
+            if (contract_variant(self.contract) != 'shared-live' or self.contract != self.delivery.contract
+                or shared_variant_for_contract(self.contract) != self.delivery.grant.technical_variant):
+                raise ValueError('current shared live expression qualification changed')
         elif self.gateway is None or self.gateway.capabilities.local is not True:
             raise PreAdmissionRejected('shared-local-gateway-required', 'this qualification has no remote data grant')
+        else:
+            from dynamic_subject_agent.original_whole_chat import contract_variant
+            if contract_variant(self.contract) != 'shared-local':
+                raise ValueError('exact local preparation qualification required')
         if type(command) is SharedActivityInput:
             return
         return super().preflight(context=context, command=command)

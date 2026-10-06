@@ -15,6 +15,12 @@ SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
+SHARED_TECHNICAL_VARIANTS = ("baseline", "natural-expression")
+SHARED_LIVE_VERSION = "shared-activity-live-s139-1"
+SHARED_EXPRESSION_VERSION = "shared-activity-live-expression-s140-1"
+SHARED_EXPRESSION_POLICY_VERSION = "shared-natural-expression-s140-1"
+# Independent immutable pin for this frozen same-use technical candidate.
+SHARED_EXPRESSION_POLICY_SHA = "37df0ab3b66a519c83fbd6ac67fc2efb139dbc42f890798da7d7e159ba51a3bf"
 
 CHOICE_POLICY = (
     "这是本分支的日常构图文字活动，只形成文字方案，不是完成图片或发生外部故事。"
@@ -32,10 +38,51 @@ CHAT_POLICY = (
     "是本分支真实提交的构图文字方案，不能说成已画成图片；缺少结果时不编造活动。"
     "只返回JSON exact {reply_text,language}，language=zh，reply_text非空且最多1200字符。"
 )
+_LIFE_EXCLUSION_PARAGRAPH = "本拟用途不接生活系统，evidence的活动、方案和事件均为空，不依据时间或聊天轮数造经历。"
+NATURAL_EXPRESSION_SCOPE_PARAGRAPH = (
+    "先回应用户当前话题，以本人的当下看法说清具体理由或取舍，用自然的第一人称短消息交流。"
+    "本人过去的经历、具体习惯、常用物件和做法，只说background中有依据且在成立/知情范围内的内容；"
+    "概括的背景不能扩写成额外细节或原因。exchange中的双方原话只证明曾这样说，用户前提和自己旧话不自动成为生平事实；"
+    "旧话越界时修正具体说法并继续交流。缺少本人习惯的依据时，回到当前想法或拟议做法，"
+    "不要编造习惯，也不以资料缺项、永久人格或内部审计作为台词或解释；被直接问及无法确定的过去细节时，简短说明拿不准。"
+    "当前意见、不同看法和新构想可以自然表达，并说明与当前话题有关的理由；拟议画法保持将要尝试或假想的语气，"
+    "不说成已做过、持续在想、画完或收到外部反馈。shared_experience只证明用户说过这段原话，不是本人经历或事实真值。"
+    "activity_result若存在，只是本分支已经提交的构图文字方案，可谈它的安排和取舍，不能说成已画成图片；null时不编造活动。"
+)
 
 
 def digest(value):
     return sha256(canonical_json(value).encode()).hexdigest()
+
+
+def shared_reply_policy(technical_variant="baseline"):
+    """Resolve closed source text; never accept a caller-authored policy."""
+    from dynamic_subject_agent.original_whole_chat import (
+        APPROVED_BINDING, whole_contract, policy_for_contract, GROUNDED_SCOPE_PARAGRAPH)
+    if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
+        raise ValueError('known exact shared technical variant required')
+    policy = policy_for_contract(whole_contract(APPROVED_BINDING, technical_variant='grounded'))
+    if policy.count(_LIFE_EXCLUSION_PARAGRAPH) != 1:
+        raise ValueError('exact shared scope paragraph required')
+    if technical_variant == 'baseline':
+        return policy.replace(_LIFE_EXCLUSION_PARAGRAPH, CHAT_POLICY)
+    if policy.count(GROUNDED_SCOPE_PARAGRAPH) != 1:
+        raise ValueError('exact grounded expression paragraph required')
+    # Merge the existing assertion and shared-result scopes in one replacement,
+    # retaining the original format contract instead of appending more rules.
+    policy = policy.replace(GROUNDED_SCOPE_PARAGRAPH, NATURAL_EXPRESSION_SCOPE_PARAGRAPH, 1).replace(
+        _LIFE_EXCLUSION_PARAGRAPH, '', 1)
+    if sha256(policy.encode()).hexdigest() != SHARED_EXPRESSION_POLICY_SHA:
+        raise ValueError('pinned natural expression policy changed')
+    return policy
+
+
+def shared_variant_for_contract(contract):
+    """Verify the whole canonical witness before choosing expression text."""
+    from dynamic_subject_agent.original_whole_chat import contract_variant
+    if contract_variant(contract) not in ('shared-local', 'shared-live'):
+        raise ValueError('exact shared qualification required')
+    return 'natural-expression' if contract['version'] == SHARED_EXPRESSION_VERSION else 'baseline'
 
 
 def shared_contract(binding):
@@ -290,6 +337,7 @@ def choice_from_record(record):
 def build_choice_preview(envelope, identity, view, contract):
     from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING
     from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
+    shared_variant_for_contract(contract)
     # The same deterministic minimal character selection feeds local execution
     # and the review artifact. No sender or credential path is constructed.
     original = whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
@@ -302,7 +350,8 @@ def build_choice_preview(envelope, identity, view, contract):
 
 
 def build_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):
-    from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING, policy_for_contract
+    from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING
+    technical_variant = shared_variant_for_contract(contract)
     original = whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
     projection = projection_for_contract(envelope, identity, message, dialogue, enabled, original)
     payload = asdict(projection)
@@ -310,9 +359,7 @@ def build_reply_preview(envelope, identity, message, dialogue, enabled, view, co
     # Do not carry the old always-null life fields or duplicate any plan/event.
     payload['evidence'] = dict(shared_experience=None if source is None else dict(label='E1', quote=source.quote),
         activity_result=None if result is None else dict(kind=result.kind, plan=None if result.plan is None else asdict(result.plan)))
-    policy = policy_for_contract(original).replace(
-        '本拟用途不接生活系统，evidence的活动、方案和事件均为空，不依据时间或聊天轮数造经历。', CHAT_POLICY)
-    return dict(policy=policy, payload=payload)
+    return dict(policy=shared_reply_policy(technical_variant), payload=payload)
 
 
 SHARED_DDL = (

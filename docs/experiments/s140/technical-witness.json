@@ -1,0 +1,27 @@
+{
+  "version": "s140-same-use-expression-witness-1",
+  "approved_data_use_review_basis": "8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a",
+  "technical_adjustment_authorization": "2026-10-01 same approved materials/provider/credential purpose; 2026-10-05/06 continue S140",
+  "baseline_contract_sha256": "f37edb00aec3e999fc0ed0c09c5b30a9535a5e882054a3fc9c75db40e4666f66",
+  "candidate_contract_sha256": "20d3f2feac1019fc95094bace950203fba850df6c1e277d611a8f8c489372c6b",
+  "baseline_reply_policy_sha256": "03f1e741159fc5a18e8fedc49aa56b17ed1ad48ec457baf64d2d3c5cf1fd800a",
+  "candidate_reply_policy_sha256": "37df0ab3b66a519c83fbd6ac67fc2efb139dbc42f890798da7d7e159ba51a3bf",
+  "choice_policy_sha256_unchanged": "38e151620ff9e59eaa948fd378d0a70d917b47d73c585aca59490cca76018a21",
+  "scenario_canonical_sha256": "7fd7060f47c40fb2de031918ea43257e430b315a660527763babe39c5609613a",
+  "fields_material_selection_provider_protocol_credential_unchanged": true,
+  "old_roots_not_upgraded": true,
+  "semantic_effect_status": "awaiting-first-real-comparison",
+  "new_automatic_requests": false,
+  "maximum_requests_per_manual_action": 1,
+  "automatic_retries": 0,
+  "network_preflight": {
+    "no_credentials_no_model_no_materials": true,
+    "https_endpoint": "https://api.deepseek.com/chat/completions",
+    "unauthenticated_head_status": 401,
+    "unavailable_local_proxy": "127.0.0.1:7897",
+    "execution_process_only_no_proxy_hosts": ["127.0.0.1", "localhost", "api.deepseek.com"],
+    "tls_validation_unchanged": true,
+    "official_behavior_reference": "https://docs.python.org/3.13/library/urllib.request.html#urllib.request.ProxyHandler",
+    "context7_status": "tool-unavailable-official-documentation-fallback"
+  }
+}

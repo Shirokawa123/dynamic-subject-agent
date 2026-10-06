@@ -7554,8 +7554,8 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
                 store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
-                raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its existing schema-1 store')
+            if reader.execute('PRAGMA user_version').fetchone() != ((5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+                raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its exact qualified schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
             verifier = TimelineEngine(location, authority, reader, None)
@@ -7614,9 +7614,13 @@ class RuntimeHost:
                 reader.execute('ROLLBACK')
             reader.close()
 
-    def query_shared_activity(self, binding, *, preview=False):
+    def query_shared_activity(self, binding, *, preview=False, request=None):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
-        view, _, cognition = self._read_shared_activity(binding)
+        view, _, cognition = self._read_shared_activity(binding, request)
+        if request is not None:
+            # This is an observation only: no admission, claim, worker call,
+            # prepared recovery or model delivery, even for an absent nonce.
+            return SharedActivityResponse(**view.get('existing', dict(status='not-found', receipt=None)))
         if preview:
             identity = self._runtime_identity
             return SharedActivityResponse('previewed', view=cognition.choice_preview(identity, view))
@@ -7709,7 +7713,7 @@ class RuntimeHost:
             _verify_timeline_store_integrity(reader,expected_tables=_TIMELINE_TABLES)
             engine=TimelineEngine(root,self._authority_for_binding(binding),reader,None)
             dialogue,basis=engine.preview_whole_dialogue(message,enabled)
-            context=engine.whole_context_basis(expected_head=basis.head_sequence) if binding.provider_authority==CONTEXT_AUTHORITY else dict(context_revision=0,cutoff_sequence=0)
+            context=engine.whole_context_basis(expected_head=basis.head_sequence) if binding.provider_authority in (CONTEXT_AUTHORITY, *SHARED_AUTHORITIES) else dict(context_revision=0,cutoff_sequence=0)
             return dialogue,basis,context
         finally:
             if reader.in_transaction: reader.execute('ROLLBACK')
