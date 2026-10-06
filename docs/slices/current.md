@@ -11,3 +11,5 @@
 主窗口拥有docs、开发验收资源及提交/push；独立实现owner拥有入口及必要src/tests，研究/复核只读，不碰正式运行窗口。基线未跟踪的三个临时目录保持。上一片实际证据见[S139报告](../reports/2026-10-03-slice-139/REPORT.md)：12请求/10提交/2空白，另S1381空白；一条实际闭环及五步纠错成立，三支因果和人物质量未全过。
 
 2026-10-06源已冻结：独立入口、schema5 lookup/archive/cutoff随迁及闭集natural-expression候选完成；原S139 baseline/LOCAL合同保持，旧root不切variant。候选+已有shared37、入口旧兼容48及必要增量3/启动器2合成通过，0真实模型；核心和入口最终独立复核通过。场景/技术见证已冻结，stage source提交/push后经HTTP入口运行最多25个首次动作；完整失败/无方案与整轮停用证据保留，真实效果尚未通过。
+
+源e809c32已push；首轮真实11请求/7聊天提交/4纯空白/0重试，三支长链未进activity，firstmetadata保持。候选便签2/2以当次/条件意见接话，baseline无据习惯扩写+第2句空白；首payload同，不宣称通用改善。为不后移core，准备最多6个新activity/result动作（不重发失败聊天），沿既有source精确预检＋canonical/audit原前缀保持，独立复核放行，执行见[续接范围](../experiments/s140/ACTIVITY-CONTINUATION.md)。

@@ -24,7 +24,11 @@
 
 ## 首次真实结果
 
-待开发源和入口最终复核、阶段提交/push后执行[冻结场景](../../experiments/s140/scenarios.json)及[准确范围](../../experiments/s140/CONTRACT.md)。25请求是全首次实验结束条件，不恢复旧数量额度；失败停本支，合法defer无方案单列，不从reasoning补正文或挑样本。
+源e809c32已提交/push。通过真实HTTP入口完成[首轮metadata](live-entry-metadata.json)：11请求/7成功聊天提交/4纯空白/0自动重试。相关和无关支均source成功、首gap空白；停用支source与gap1成功、gap2空白，尚未实际停用或进入活动；三支均无choice，未完成原定三轮换题长链或因果对照。HTTP200/stop纯空白均先于本地JSON解析，不从reasoning补正文，不继续服务内部排查。
+
+同输入表达比较的首次payload摘要相等：baseline首句再次无据扩写自己的草稿/便签/速写本经历，下一句空白；candidate两个首次回复以条件和当次取舍承接，未见这项既往习惯扩写或规则朗读。真实结果支持本例采用candidate，不能证明通用忠实/自然性或空白修复。所有正文只canonical，经Facade0模型读取判断；原metadata canonical SHA `beded65fd780ee88db112e7ead0972a3a2a7af2bc8d60dc17c9d7d6747e56775`保持。
+
+按新证据调整，而非继续后移核心：[明确活动续接](../../experiments/s140/ACTIVITY-CONTINUATION.md)沿已提交逐字来源的三个自有root，先全面0模型核原root/原文/来源head/revision/canonical前缀/原audit；再每支一个新的明确choice与一个新结果询问，最多6请求，停用支先本地停用。不是重发失败聊天、不覆盖首次分支；原audit与canonical前缀必须完整保持。独立执行前复核已通过，不扩大字段或用途。原定正常三轮窗口淘汰未通过，与失败后的安全截断分别记录。
 
 ## 当前限制与后续
 
