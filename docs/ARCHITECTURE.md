@@ -1,5 +1,15 @@
 # 产品架构
 
+### Slice-141：本人的当次活动提议与版本承接
+
+闭集self-directed-activity只在新独立shared-live schema5资格使用；choice policy pin `7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f`，reply沿S140 natural pin。原S139/S140/LOCAL合同与正常wire保持，root不切旧资格；projection/selector/字段/模型协议/凭据用途不增加。channel说明不作当前用户发言，E1可选影响，已审关注可支持新构想而不回填本人既往；current_plan/focus承接下一具体取舍，合法defer仍由Python有限裁决而非强制开始。
+
+界面本地变化只显示有效结果的闭集field+after，失效时清空，不将before显示成当前参考。shared-choice原policy另加静态pin以守住旧资格；新grant/保存contract/claim/consume各自精确重建。候选/旧接口/必要UI合成与独立复核通过，真实人物结果由[S141报告](reports/2026-10-06-slice-141/REPORT.md)承接；自动生活/分享仍未开启。
+
+### Slice-140：共同经历活动接入独立聊天入口
+
+独立空root/marker/health复用Facade的逐字经历选定/停用/手动活动及实际文字方案，保whole草稿/原nonce/history/cutoff/依据/库存；补schema5 lookup/archive/preview随迁。known shared system Publication只在全链/typed input/record/frozen basis验证后从聊天库存跳过，未知/损坏关闭。natural-expression版本只融合替换回复范围段，旧root与原policy不改；实际16请求/10提交中一条方案重启回聊成立，长链/完整因果仍未过，见[S140报告](reports/2026-10-06-slice-140/REPORT.md)。
+
 ### Slice-139：独立LOCAL共同经历与活动闭环
 
 `open_shared_activity_product_local`只接受LOCAL ModelGateway及独立新封存人物资格/manifest/schema5；旧whole/LIFE root不升级。Facade显式选择一条≤400字已提交用户连续原话、停用/替换、查询/准确预览和推进一步；来源只证明用户说过，不从助手台词造事实或人格。活动复用CompositionPlan/有限裁决/LifeEvent，模型提议，Python核阶段、真实方案差异、E1引用、head/权限后原子提交；后续聊天读取同一个已提交文字结果。

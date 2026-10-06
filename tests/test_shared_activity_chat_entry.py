@@ -118,7 +118,7 @@ def advance(http):
     return result, payload
 
 
-@pytest.mark.parametrize('variant', ['baseline', 'natural-expression'])
+@pytest.mark.parametrize('variant', ['baseline', 'natural-expression', 'self-directed-activity'])
 def test_entry_starts_empty_schema5_and_reopens_without_package_or_model(entry_setup, variant):
     script, desktop, root, options, reviews, _ = entry_setup
     entry = script.SharedActivityChatEntry(root, **options, technical_variant=variant)
@@ -504,9 +504,20 @@ const flush=()=>new Promise(resolve=>setImmediate(resolve)),draft=text=>{get('dr
  vm.runInContext('chooseShared({head_sequence:1,user_text:"逐字<img src=x>原话。"})',sandbox);
  get('shared-quote').value='改写原话';get('shared-quote').handlers.input();assert.equal(get('shared-select-confirm').disabled,true);
  get('shared-quote').value='<img src=x>';get('shared-quote').handlers.input();assert.equal(get('shared-select-confirm').disabled,false);
+ // Actual local differences show only current after values. An unavailable
+ // source can leave before values in the saved record, never in this view.
+ const plan={subject:'窗边静物',composition:'减少背景线条<img src=x>',focus:'轮廓'},result={kind:'composition-text',plan,differences:[{field:'composition',before:'STOPPED_PRIVATE_OLD_SOURCE',after:plan.composition}]};
+ const revised={...input.state,shared_activity:{status:'available',view:{...input.state.shared_activity.view,phase:'revised',activity_revision:2,decision:{action:'revise',reason_code:'improve-readability',basis_refs:[],decision_note:'本次突出轮廓。'},result,visible_result:result}}};
+ vm.runInContext('render('+JSON.stringify(revised)+')',sandbox);
+ const textTree=element=>[element.textContent,...element.children.map(textTree)].join(' ');
+ assert(textTree(get('shared-changes')).includes('本次已提交变化'));assert(textTree(get('shared-changes')).includes('构图'));assert(textTree(get('shared-changes')).includes(plan.composition));
+ assert(!textTree(get('shared-changes')).includes('STOPPED_PRIVATE_OLD_SOURCE'));
+ vm.runInContext('render('+JSON.stringify({...revised,shared_activity:{status:'available',view:{...revised.shared_activity.view,visible_result:null}}})+')',sandbox);
+ assert.equal(get('shared-changes').children.length,0);
  const deferred={...input.state,shared_activity:{status:'available',view:{...input.state.shared_activity.view,phase:'deferred',decision:{action:'defer',reason_code:'defer-comparison',basis_refs:[],decision_note:'本次先不形成方案。'},result:{kind:'composition-text',plan:null},visible_result:{kind:'composition-text',plan:null}}}};
  vm.runInContext('render('+JSON.stringify(deferred)+')',sandbox);
  assert(get('shared-plan').children.some(row=>row.textContent.includes('没有形成新文字方案')));
+ assert(textTree(get('shared-changes')).includes('暂缓 · 本次没有提交新方案。'));
  process.stdout.write('shared-page-pending-draft-recovery-complete');
 })().catch(error=>{console.error(error);process.exitCode=1});
 """

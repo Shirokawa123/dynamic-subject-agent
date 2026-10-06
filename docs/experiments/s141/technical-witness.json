@@ -1,0 +1,17 @@
+{
+  "version": "self-directed-activity-s141-1",
+  "approved_data_use_review_basis": "8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a",
+  "baseline_main": "b9384db7f09aa3a3454175876b116914a97bdbb5",
+  "technical_adjustment_authorization": "existing same-purpose development approval plus 2026-10-06 continue",
+  "choice_policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+  "reply_policy_sha256_unchanged": "37df0ab3b66a519c83fbd6ac67fc2efb139dbc42f890798da7d7e159ba51a3bf",
+  "candidate_contract_sha256": "97a11924b8792755a3779d3379fd8dc07e639a5bdab25e429f88fd4f2b3f2820",
+  "scenario_canonical_sha256": "457832d5eb7aa3aa3b4bb83a6e87c65ddd66048d519cc1a6d83cd76d833db6dd",
+  "actual_null_source_payload_sha256_unchanged": "6eae23b60174bff9333ab2d9cb76da43a90f09203a796c3ca39bafd532827e25",
+  "material_fields_selector_protocol_provider_credential_unchanged": true,
+  "old_roots_and_contracts_unchanged": true,
+  "only_new_root_explicit_qualification": true,
+  "semantic_status": "awaiting-bounded-first-real-results",
+  "automatic_background_or_sharing_enabled": false,
+  "automatic_retries": 0
+}

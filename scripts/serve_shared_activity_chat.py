@@ -17,6 +17,7 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
 from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
 from dynamic_subject_agent.shared_activity_live import ApprovedSharedActivityGrant, APPROVED_SHARED_REVIEW
+from dynamic_subject_agent.shared_activity import SHARED_TECHNICAL_VARIANTS
 
 ENTRY_VERSION = 'shared-activity-chat-entry-s140-1'
 # Fixed loopback health must not inherit a user/system HTTP proxy. This local
@@ -25,7 +26,7 @@ urlopen = build_opener(ProxyHandler({})).open
 
 
 def default_entry_root(technical_variant='baseline'):
-    if technical_variant not in ('baseline', 'natural-expression'):
+    if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
         raise ValueError('closed shared entry variant required')
     local = Path(os.environ.get('LOCALAPPDATA') or Path.home() / 'AppData/Local')
     branch = local / 'DynamicSubjectAgent/shared-activity-chat'
@@ -39,14 +40,16 @@ class SharedActivityChatEntry(OriginalWholeChatEntry):
     def __init__(self, entry_root, *, live=True, package_path=DEFAULT_PACKAGE, transport=None, audit_path=None,
                  technical_variant='baseline'):
         root = Path(entry_root).resolve()
-        if (technical_variant not in ('baseline', 'natural-expression') or type(live) is not bool
+        if (type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS or type(live) is not bool
             or live and root != default_entry_root(technical_variant).resolve()
             or not live and (transport is None or audit_path is None
                 or any(root.is_relative_to(path.resolve()) for path in (
-                    default_entry_root(), default_entry_root('natural-expression'),
+                    *(default_entry_root(variant) for variant in SHARED_TECHNICAL_VARIANTS),
                     OriginalWholeChatEntry.default_entry_root(), context_entry_root())))):
             raise ValueError('exact independent shared activity entry required')
         self.root, self.technical_variant, self.product = root, technical_variant, None
+        if technical_variant == 'self-directed-activity':
+            self.ENTRY_VERSION = 'shared-activity-chat-entry-s141-1'
         self.config = LocalProductConfig(root / 'DynamicSubjectAgent/m0/experiments', root / 'state.json')
         self.transport = transport
         self.audit_path = root / 'provider-audit' if live else Path(audit_path).resolve()
@@ -119,7 +122,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', type=int, default=8790)
     parser.add_argument('--open-browser', action='store_true')
-    parser.add_argument('--technical-variant', choices=('baseline', 'natural-expression'), default='baseline')
+    parser.add_argument('--technical-variant', choices=SHARED_TECHNICAL_VARIANTS, default='baseline')
     args = parser.parse_args()
     application_id = shared_activity_application_id(args.technical_variant)
     absent = False

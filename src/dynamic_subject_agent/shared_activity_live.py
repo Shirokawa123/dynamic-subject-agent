@@ -7,8 +7,9 @@ from threading import RLock, get_ident
 from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.shared_activity import (
-    shared_contract, digest, CHOICE_POLICY, shared_reply_policy, SHARED_TECHNICAL_VARIANTS,
-    SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_EXPRESSION_POLICY_VERSION, SHARED_EXPRESSION_POLICY_SHA)
+    shared_contract, digest, shared_choice_policy, shared_reply_policy, SHARED_TECHNICAL_VARIANTS,
+    SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_EXPRESSION_POLICY_VERSION, SHARED_EXPRESSION_POLICY_SHA,
+    SHARED_SELF_DIRECTED_VERSION, SHARED_SELF_DIRECTED_CHOICE_POLICY_VERSION, SHARED_SELF_DIRECTED_CHOICE_POLICY_SHA)
 
 APPROVED_SHARED_REVIEW = '8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a'
 SHARED_APPROVAL = 'user-approved-shared-activity-use-2026-10-03'
@@ -38,16 +39,19 @@ class ApprovedSharedActivityGrant:
             raise ValueError('S139 approval does not cover a changed material binding')
         reply = shared_reply_policy('baseline')
         protocol = communication_protocol('thinking-high', 'low')
-        if ((sha256(CHOICE_POLICY.encode()).hexdigest(), sha256(reply.encode()).hexdigest()) != POLICY_HASHES
+        if ((sha256(shared_choice_policy().encode()).hexdigest(), sha256(reply.encode()).hexdigest()) != POLICY_HASHES
             or protocol['model'] != 'deepseek-flash'
             or protocol['expression'] != dict(max_tokens=4096, thinking={'type': 'enabled'}, reasoning_effort='high',
                 response_format={'type': 'json_object'}, stream=False)):
             raise ValueError('approved S139 policy or protocol changed')
         # S139 remains the approved data-use basis. The S140 same-use technical
         # candidate has a separate immutable expression pin, not a new review.
-        if (self.technical_variant == 'natural-expression'
+        if (self.technical_variant in ('natural-expression', 'self-directed-activity')
             and sha256(shared_reply_policy(self.technical_variant).encode()).hexdigest() != SHARED_EXPRESSION_POLICY_SHA):
             raise ValueError('pinned S140 expression policy changed')
+        if (self.technical_variant == 'self-directed-activity'
+            and sha256(shared_choice_policy(self.technical_variant).encode()).hexdigest() != SHARED_SELF_DIRECTED_CHOICE_POLICY_SHA):
+            raise ValueError('pinned S141 choice policy changed')
 
 
 def shared_live_contract(binding, *, technical_variant='baseline'):
@@ -59,9 +63,15 @@ def shared_live_contract(binding, *, technical_variant='baseline'):
         technical_variant=dict(base['technical_variant'], name='shared-live', approved_review_basis=APPROVED_SHARED_REVIEW))
     if technical_variant == 'baseline':
         return result
-    return dict(result, version=SHARED_EXPRESSION_VERSION, policy_sha=SHARED_EXPRESSION_POLICY_SHA,
+    expression = dict(result, version=SHARED_EXPRESSION_VERSION, policy_sha=SHARED_EXPRESSION_POLICY_SHA,
         technical_variant=dict(result['technical_variant'], expression_variant=technical_variant,
             policy_version=SHARED_EXPRESSION_POLICY_VERSION, chat_policy_sha=SHARED_EXPRESSION_POLICY_SHA))
+    if technical_variant == 'natural-expression':
+        return expression
+    return dict(expression, version=SHARED_SELF_DIRECTED_VERSION,
+        technical_variant=dict(expression['technical_variant'],
+            choice_variant='self-directed-activity', choice_policy_version=SHARED_SELF_DIRECTED_CHOICE_POLICY_VERSION,
+            choice_policy_sha=SHARED_SELF_DIRECTED_CHOICE_POLICY_SHA, expression_variant='natural-expression'))
 
 
 class SharedActivityCallAudit(DevelopmentCallAudit):

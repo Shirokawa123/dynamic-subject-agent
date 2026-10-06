@@ -1,6 +1,6 @@
 param(
     [string]$Python = $env:DSA_PYTHON,
-    [ValidateSet('baseline', 'natural-expression')][string]$TechnicalVariant = 'baseline',
+    [ValidateSet('baseline', 'natural-expression', 'self-directed-activity')][string]$TechnicalVariant = 'baseline',
     [int]$Port = 8790,
     [switch]$NoBrowser,
     [switch]$DirectProvider

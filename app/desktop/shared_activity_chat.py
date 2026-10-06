@@ -4,14 +4,16 @@ from uuid import UUID
 
 from character_chat import create_server
 from original_whole_chat import OriginalWholeChatAdapter
-from dynamic_subject_agent.shared_activity import SharedExperienceRequest, SharedActivityStepRequest, SharedActivityResponse
+from dynamic_subject_agent.shared_activity import SharedExperienceRequest, SharedActivityStepRequest, SharedActivityResponse, SHARED_TECHNICAL_VARIANTS
 
 APPLICATION_ID = 'shared-activity-chat-s140'
 
 
 def shared_activity_application_id(technical_variant='baseline'):
-    if technical_variant not in ('baseline', 'natural-expression'):
+    if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
         raise ValueError('closed shared entry variant required')
+    if technical_variant == 'self-directed-activity':
+        return 'shared-activity-chat-s141-self-directed-activity'
     return APPLICATION_ID if technical_variant == 'baseline' else APPLICATION_ID + '-natural-expression'
 
 

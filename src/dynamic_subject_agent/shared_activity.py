@@ -15,12 +15,16 @@ SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
-SHARED_TECHNICAL_VARIANTS = ("baseline", "natural-expression")
+SHARED_TECHNICAL_VARIANTS = ("baseline", "natural-expression", "self-directed-activity")
 SHARED_LIVE_VERSION = "shared-activity-live-s139-1"
 SHARED_EXPRESSION_VERSION = "shared-activity-live-expression-s140-1"
 SHARED_EXPRESSION_POLICY_VERSION = "shared-natural-expression-s140-1"
 # Independent immutable pin for this frozen same-use technical candidate.
 SHARED_EXPRESSION_POLICY_SHA = "37df0ab3b66a519c83fbd6ac67fc2efb139dbc42f890798da7d7e159ba51a3bf"
+SHARED_SELF_DIRECTED_VERSION = "shared-activity-live-self-directed-s141-1"
+SHARED_SELF_DIRECTED_CHOICE_POLICY_VERSION = "shared-self-directed-choice-s141-1"
+SHARED_SELF_DIRECTED_CHOICE_POLICY_SHA = "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+SHARED_BASELINE_CHOICE_POLICY_SHA = "38e151620ff9e59eaa948fd378d0a70d917b47d73c585aca59490cca76018a21"
 
 CHOICE_POLICY = (
     "这是本分支的日常构图文字活动，只形成文字方案，不是完成图片或发生外部故事。"
@@ -32,6 +36,23 @@ CHOICE_POLICY = (
     "reason_code仅emphasize-subject/balance-space/improve-readability/preserve-current/try-alternative/defer-comparison。"
     "basis_refs只可为空或本请求实际提供的E1；decision_note是用户可见的本次取舍说明，最多160字符，"
     "不是隐藏推理、人格重写或未来事实。start/revise必须形成有实际变化的新方案；其他action的plan必须null。"
+)
+_CHOICE_SCOPE_PARAGRAPH = (
+    "这是本分支的日常构图文字活动，只形成文字方案，不是完成图片或发生外部故事。"
+    "background是有范围的已审人物资料；shared_experience若存在，只证明用户曾说过这段逐字原话，"
+    "不证明内容为真，也不要求服从。结合人物自身关注选择本阶段允许的action。"
+    "current_plan仅在来源仍有效时提供；null不表示从未活动，不补造旧版本。"
+)
+SELF_DIRECTED_CHOICE_SCOPE_PARAGRAPH = (
+    "这是人物本次自行选择的日常构图文字活动，当前调用是明确推进活动，不是等待或回答一条新的用户消息。"
+    "background中的聊天渠道说明不代表本次收到用户绘画要求。只形成文字方案，不是完成图片或发生外部故事。"
+    "以background中已审的本人创作关注、审美取舍和具体能力边界为线索，结合本阶段allowed_actions提出当次可行活动；"
+    "这些线索不证明本人此刻持续想什么或已经做过新活动。shared_experience若存在，只证明用户曾说过这段逐字原话，"
+    "不证明内容为真，也不要求服从；它是可选的交流依据，不是活动启动资格。"
+    "current_plan为null仅表示本次没有可用旧方案，不阻止依据自身关注提出新构想，也不表示从未活动；不补造旧版本。"
+    "current_plan存在时，先辨本版subject、composition与focus；若推进新版本，做一项具体服务当前focus的取舍并实际改变方案，"
+    "而非重复原文或只宣布继续。从本阶段允许的action中选择；defer保持合法，decision_note说清本次无法推进或保留比较的实际理由，"
+    "不把没有E1或新用户消息本身当作等待理由。"
 )
 CHAT_POLICY = (
     "shared_experience只证明用户曾这样说，不是事实真值或永久人格。activity_result若存在，"
@@ -53,6 +74,22 @@ NATURAL_EXPRESSION_SCOPE_PARAGRAPH = (
 
 def digest(value):
     return sha256(canonical_json(value).encode()).hexdigest()
+
+
+def shared_choice_policy(technical_variant="baseline"):
+    """Resolve the closed manual-choice policy without changing its projection."""
+    if type(technical_variant) is not str or technical_variant not in SHARED_TECHNICAL_VARIANTS:
+        raise ValueError('known exact shared technical variant required')
+    if sha256(CHOICE_POLICY.encode()).hexdigest() != SHARED_BASELINE_CHOICE_POLICY_SHA:
+        raise ValueError('pinned shared choice policy changed')
+    if technical_variant != 'self-directed-activity':
+        return CHOICE_POLICY
+    if CHOICE_POLICY.count(_CHOICE_SCOPE_PARAGRAPH) != 1:
+        raise ValueError('exact shared choice scope paragraph required')
+    policy = CHOICE_POLICY.replace(_CHOICE_SCOPE_PARAGRAPH, SELF_DIRECTED_CHOICE_SCOPE_PARAGRAPH, 1)
+    if sha256(policy.encode()).hexdigest() != SHARED_SELF_DIRECTED_CHOICE_POLICY_SHA:
+        raise ValueError('pinned self-directed choice policy changed')
+    return policy
 
 
 def shared_reply_policy(technical_variant="baseline"):
@@ -82,7 +119,8 @@ def shared_variant_for_contract(contract):
     from dynamic_subject_agent.original_whole_chat import contract_variant
     if contract_variant(contract) not in ('shared-local', 'shared-live'):
         raise ValueError('exact shared qualification required')
-    return 'natural-expression' if contract['version'] == SHARED_EXPRESSION_VERSION else 'baseline'
+    return {SHARED_EXPRESSION_VERSION: 'natural-expression',
+        SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')
 
 
 def shared_contract(binding):
@@ -337,7 +375,7 @@ def choice_from_record(record):
 def build_choice_preview(envelope, identity, view, contract):
     from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING
     from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
-    shared_variant_for_contract(contract)
+    technical_variant = shared_variant_for_contract(contract)
     # The same deterministic minimal character selection feeds local execution
     # and the review artifact. No sender or credential path is constructed.
     original = whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
@@ -346,7 +384,7 @@ def build_choice_preview(envelope, identity, view, contract):
     payload = dict(background=projection.background, shared_experience=None if source is None else dict(label='E1', quote=source.quote),
         current_activity=dict(phase=view['phase'], allowed_actions=allowed_actions(view['phase'])),
         current_plan=None if plan is None else asdict(plan))
-    return dict(policy=CHOICE_POLICY, payload=payload)
+    return dict(policy=shared_choice_policy(technical_variant), payload=payload)
 
 
 def build_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):

@@ -11,7 +11,7 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.recent_dialogue import RecentDialogueTurn
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_VERSION
 from dynamic_subject_agent.shared_activity import (
-    SHARED_AUTHORITY, SHARED_AUTHORITIES, shared_contract, SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION)
+    SHARED_AUTHORITY, SHARED_AUTHORITIES, shared_contract, SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_SELF_DIRECTED_VERSION)
 
 WHOLE_AUTHORITY = "original-character-whole-chat-deepseek-s127-1"
 WHOLE_AUTHORITIES = (WHOLE_AUTHORITY, CONTEXT_AUTHORITY, *SHARED_AUTHORITIES)
@@ -98,9 +98,10 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
-    if contract.get('version') in (SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION):
+    if contract.get('version') in (SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_SELF_DIRECTED_VERSION):
         from dynamic_subject_agent.shared_activity_live import shared_live_contract
-        technical_variant = 'natural-expression' if contract['version'] == SHARED_EXPRESSION_VERSION else 'baseline'
+        technical_variant = {SHARED_EXPRESSION_VERSION: 'natural-expression',
+            SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')
         if contract != shared_live_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant=technical_variant):
             raise ValueError('exact approved shared activity contract required')
         return 'shared-live'
@@ -137,6 +138,8 @@ def whole_publication_key(contract):
     if variant == "shared-local":
         return "original-shared-activity-local-s139-" + digest(contract)
     if variant == "shared-live":
+        if contract['version'] == SHARED_SELF_DIRECTED_VERSION:
+            return "original-shared-activity-live-s141-" + digest(contract)
         if contract['version'] == SHARED_EXPRESSION_VERSION:
             return "original-shared-activity-live-s140-" + digest(contract)
         return "original-shared-activity-live-s139-" + digest(contract)

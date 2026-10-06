@@ -1,0 +1,23 @@
+{
+  "version": "s141-self-directed-first-1",
+  "material_provenance": "相同已审Sagiri资料，无预灌聊天、无E1；最后询问为助手编写的主动project-original验收文字",
+  "branches": [
+    {"name": "current-natural", "technical_variant": "natural-expression"},
+    {"name": "self-directed-a", "technical_variant": "self-directed-activity"},
+    {"name": "self-directed-b", "technical_variant": "self-directed-activity"}
+  ],
+  "start": "fresh-empty-independent-entry; history-on; zero-committed-user-turns; selected-source-null; phase-unstarted; current-plan-null",
+  "actions": ["explicit-first-manual-step", "close-and-reopen-zero-model", "explicit-next-manual-step", "new-result-question-if-text-plan-exists"],
+  "followup_message": "你这次最后形成的文字构图想突出什么？说说现在这个方案的具体安排和理由。这里只谈实际文字方案，不用补出已经画完的图片或过去的修改过程。",
+  "stop_on_first_technical_failure": true,
+  "stop_branch_when_first_defer_has_no_plan": true,
+  "automatic_retries": 0,
+  "maximum_first_requests": 9,
+  "assessment": {
+    "own_start": "无E1/新聊天时的具体提议由已有关注/能力支持；没有用户消息本身不能算启动资格缺失，合法暂缓单列",
+    "grounding": "不补造过去习惯、近期活动、外界反馈、永久偏好或把职业画师称新手；当次构想保持未画图片的范围",
+    "continuity": "下一选择具体服务同一已提交subject/composition/focus中的表现效果；非空diff/换题或重述不能单独证明承接",
+    "reply": "实际下一回复收到最终同plan，正文对应当前具体安排；本用途不发旧plan/diff，不要求模型断言未提供的修改过程；旧备注/隐藏推理不补正文",
+    "comparison": "首choice的payload与协议相同，仅choice policy不同；全部首次保留，单组差异不声称稳定心理/人格"
+  }
+}

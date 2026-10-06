@@ -9,7 +9,7 @@ import re
 from dynamic_subject_agent.character_communication_trial_provider import communication_protocol
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTask, ModelTaskKind, ModelGatewayFailure
-from dynamic_subject_agent.shared_activity import CHOICE_POLICY, shared_reply_policy, SHARED_TECHNICAL_VARIANTS
+from dynamic_subject_agent.shared_activity import shared_choice_policy, shared_reply_policy, SHARED_TECHNICAL_VARIANTS
 
 
 @dataclass(frozen=True)
@@ -33,7 +33,7 @@ def shared_remote_request_preview(task, *, technical_variant='baseline'):
         raise ValueError('typed shared activity task required')
     preview = task.payload
     reply_policy = shared_reply_policy(technical_variant)
-    expected_policy = CHOICE_POLICY if task.kind is ModelTaskKind.SHARED_ACTIVITY_CHOICE else reply_policy
+    expected_policy = shared_choice_policy(technical_variant) if task.kind is ModelTaskKind.SHARED_ACTIVITY_CHOICE else reply_policy
     if type(preview) is not dict or set(preview) != {'policy', 'payload'} or preview['policy'] != expected_policy:
         raise ValueError('candidate policy must be the exact local execution policy')
     protocol = communication_protocol('thinking-high', 'low')
