@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -308,7 +308,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies") or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies", "living", "living_permission", "living_trigger", "living_day", "target_event_id") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -2685,7 +2685,7 @@ def _bootstrap_timeline(
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
         shared = SHARED_INTENT in authority.allowed_intents
-        schema_version = 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
+        schema_version = 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
             if life or whole_context:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
@@ -2867,7 +2867,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4,5) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5,6) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2903,7 +2903,7 @@ def _verify_store_integrity(
         expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==4:
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary'}
-    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==5:
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0] in (5,6):
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary', 'shared_activity_input', 'shared_activity_record', 'prepared_cycle_plan'}
     try:
         tables = frozenset(
@@ -3404,10 +3404,12 @@ class TimelineEngine:
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5)) != (CONTEXT_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6)) != (CONTEXT_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] == 5) != (SHARED_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6)) != (SHARED_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('shared-contract-mismatch', 'Timeline version differs from shared activity authority')
+            if (writer.execute('PRAGMA user_version').fetchone()[0] == 6) != (LIVING_INTENT in authority.allowed_intents):
+                raise AdmissionFailedClosed('living-contract-mismatch', 'Living requires its independent schema6')
             if authority.timeline_id != location.timeline_id:
                 raise AdmissionFailedClosed(
                     "store-identity-mismatch",
@@ -3771,6 +3773,8 @@ class TimelineEngine:
             if SHARED_INTENT not in self._authority.allowed_intents or command.target_profile_id != self._authority.profile_id or command.target_timeline_id != self._authority.timeline_id:
                 raise PreAdmissionRejected("shared-input-unavailable", "shared input requires its exact authority")
             SharedActivityInput(**_canonical_value(command))
+            if (command.living_permission is not None) != (LIVING_INTENT in self._authority.allowed_intents):
+                raise PreAdmissionRejected('living-input-unavailable', 'Living use is independent of prior shared grants')
             return
         if type(command) is WholeContextInput:
             if CONTEXT_INTENT not in self._authority.allowed_intents:
@@ -3782,7 +3786,7 @@ class TimelineEngine:
         if type(command) is FirstLifeInput:
             self._validate_first_life_input(command)
             return
-        if command.declared_intent in (LIFE_SYSTEM_INTENT, CONTEXT_INTENT, SHARED_INTENT):
+        if command.declared_intent in (LIFE_SYSTEM_INTENT, CONTEXT_INTENT, SHARED_INTENT, LIVING_INTENT):
             raise PreAdmissionRejected('typed-system-input-required', 'a user utterance cannot impersonate a life input')
         if (
             command.target_profile_id != self._authority.profile_id
@@ -4642,12 +4646,17 @@ class TimelineEngine:
                     raise PublicationFailedClosed('shared-source-invalid', 'source is not one committed user quote')
             dependencies[outcome.head_sequence] = current.reply_dependencies
             record = current
+            if LIVING_INTENT in self._authority.allowed_intents and current.living is None:
+                raise PublicationFailedClosed('living-prefix-invalid', 'living record missing from schema6 Publication')
         verified = self._verified_whole_dialogue_at_basis(basis, exclude_operation_id=exclude_operation_id)
         if verified is None:
             raise PublicationFailedClosed('shared-history-unverified', 'shared inputs require a verified dialogue prefix')
         context = self.whole_context_basis()
         cutoff = self._shared_source_cutoff(context['cutoff_sequence'])
         visible = visible_state(record, enabled=authorization.history_enabled, cutoff=cutoff)
+        if LIVING_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.living_activity import living_valid_sources
+            visible['valid_sources'] = living_valid_sources(record, visible['valid_sources'], enabled=authorization.history_enabled, cutoff=cutoff)
         dialogue = self._whole_dialogue_from_prefix('', authorization.history_enabled, verified)
         selected = {(row.user_text, row.assistant_text) for row in dialogue.recent_dialogue}
         lineage = self._shared_dialogue_lineage(publications)
@@ -4718,9 +4727,26 @@ class TimelineEngine:
                     if (type(source) is not SubjectCommand or command.quote not in source.utterance
                         or command.source_head_sequence <= view['cutoff_sequence']):
                         raise ValueError('source unavailable after disclosure cutoff')
-            expected = build_record(view['record'], command=command, authorization=authorization,
-                cutoff=view['cutoff_sequence'], context_revision=view['context_revision'], head_sequence=plan.expected_basis.head_sequence+1,
-                choice=choice_from_record(record) if record.kind == 'decision' else None, dialogue_dependencies=view['dialogue_dependencies'])
+            expected = None
+            if LIVING_INTENT not in self._authority.allowed_intents:
+                expected = build_record(view['record'], command=command, authorization=authorization,
+                    cutoff=view['cutoff_sequence'], context_revision=view['context_revision'], head_sequence=plan.expected_basis.head_sequence+1,
+                    choice=choice_from_record(record) if record.kind == 'decision' else None, dialogue_dependencies=view['dialogue_dependencies'])
+            if LIVING_INTENT in self._authority.allowed_intents:
+                from dynamic_subject_agent.living_activity import build_living_record
+                if record.living is None:
+                    raise ValueError('schema6 living record required')
+                share = None
+                if record.kind == 'share':
+                    last = record.living['considered'][-1]
+                    share = dict(share=last['share'], reply_text=record.living['shares'][-1]['text'] if last['share'] else '', language='zh')
+                expected = build_living_record(view, command=command, authorization=authorization,
+                    permission=record.living['permission'], head_sequence=plan.expected_basis.head_sequence+1,
+                    choice=choice_from_record(record) if record.kind == 'decision' else None, share=share)
+                if record.kind == 'share':
+                    expected_text = share['reply_text'] if share['share'] else '本次保留分享；已记录这次考虑。'
+                    if plan.expression.text != expected_text:
+                        raise ValueError('share Publication expression differs from adjudication')
             if record != expected:
                 raise ValueError('shared proposal differs from Python adjudication')
         except Exception as error:
@@ -8173,9 +8199,15 @@ class TimelineEngine:
             current = publications[-1][0].shared_record if publications else initial_record()
             source_cutoff = self._shared_source_cutoff(self.whole_context_basis()['cutoff_sequence'])
             valid = visible_state(current, enabled=enabled, cutoff=source_cutoff)['valid_sources']
+            if LIVING_INTENT in self._authority.allowed_intents:
+                from dynamic_subject_agent.living_activity import living_valid_sources
+                valid = living_valid_sources(current, valid, enabled=enabled, cutoff=source_cutoff)
             dependencies = {out.head_sequence: out.shared_record.reply_dependencies for out, _, _ in publications}
             blocked_heads = {out.shared_record.source.source_head_sequence for out, _, _ in publications
                 if out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
+            if LIVING_INTENT in self._authority.allowed_intents:
+                blocked_heads.update(out.head_sequence for out, command, _ in publications
+                    if type(command) is SubjectCommand and not set(out.shared_record.reply_dependencies) <= valid)
             lineage = self._shared_dialogue_lineage(publications)
             records = tuple(row for row in records if set(dependencies[row.head_sequence]) <= valid
                 and row.head_sequence not in blocked_heads and not lineage[row.head_sequence] & blocked_heads)

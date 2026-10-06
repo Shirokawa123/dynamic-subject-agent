@@ -11,7 +11,10 @@ from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFie
 
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
 SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
-SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY)
+LIVING_AUTHORITY = 'original-living-activity-local-s142-1'
+LIVING_INTENT = 'living-activity-system-input'
+LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
@@ -226,6 +229,7 @@ class SharedActivityRecord:
     authorization: dict
     context_revision: int
     dialogue_dependencies: tuple[int, ...] | None = None
+    living: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -239,14 +243,27 @@ class SharedActivityInput:
     authorization: dict
     source_head_sequence: int | None = None
     quote: str = ""
+    living_permission: dict | None = None
+    living_trigger: str | None = None
+    living_day: str | None = None
+    target_event_id: str | None = None
 
     def __post_init__(self):
         from dynamic_subject_agent.whole_context_boundary import WholeContextInput
         # Reuse the existing exact UUID/four-component basis/auth validator.
         WholeContextInput(self.target_profile_id, self.target_timeline_id, self.request_digest,
             self.expected_revision, self.expected_basis, self.authorization)
-        if self.input_kind not in ("select", "disable", "advance"):
+        if self.input_kind not in ("select", "disable", "advance", "share"):
             raise ValueError("closed shared activity input required")
+        if self.living_permission is not None:
+            from dynamic_subject_agent.living_activity import validate_permission, valid_day
+            validate_permission(self.living_permission)
+            if self.living_trigger not in ('online', 'simulation', 'manual', 'share', 'source') or not valid_day(self.living_day):
+                raise ValueError('exact living trigger and local day required')
+            if (self.input_kind == 'share') != (type(self.target_event_id) is str and bool(self.target_event_id)):
+                raise ValueError('only sharing carries a target event')
+        elif self.input_kind == 'share' or any(x is not None for x in (self.living_trigger, self.living_day, self.target_event_id)):
+            raise ValueError('sharing requires independent living authority')
         if self.input_kind == "select":
             if (type(self.source_head_sequence) is not int or self.source_head_sequence <= 0
                 or type(self.quote) is not str or not self.quote.strip() or len(self.quote) > 400 or "\x00" in self.quote):
@@ -263,7 +280,8 @@ class SharedActivityInput:
 
     @property
     def payload_fingerprint(self):
-        return digest(dict(version=SHARED_VERSION, **asdict(self)))
+        value = {key: item for key, item in asdict(self).items() if not key.startswith('living_') and key != 'target_event_id' or item is not None}
+        return digest(dict(version=SHARED_VERSION, **value))
 
 
 def decode_record(value):
@@ -288,6 +306,9 @@ def decode_record(value):
         value[name] = tuple(value[name])
     if value.get('dialogue_dependencies') is not None:
         value['dialogue_dependencies'] = tuple(value['dialogue_dependencies'])
+    if value.get('living') is not None:
+        from dynamic_subject_agent.living_activity import validate_living
+        validate_living(value['living'])
     return SharedActivityRecord(**value)
 
 

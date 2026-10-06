@@ -622,6 +622,61 @@ class _ApplicationRouter:
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='shared-preview-unverified')
 
+    def query_living_activity(self, request=None):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if request is not None and not self._living_request_valid(request):
+            return SharedActivityResponse('unavailable', problem_code='living-request-invalid')
+        try:
+            return self._host.query_living_activity(self._binding, request)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='living-state-unverified')
+
+    def preview_living_activity(self, purpose='choice', text=''):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if purpose not in ('choice', 'share', 'reply') or purpose == 'reply' and (type(text) is not str or not text.strip() or len(text) > 1000 or '\x00' in text):
+            return SharedActivityResponse('unavailable', problem_code='living-preview-purpose-invalid')
+        try:
+            return self._host.query_living_activity(self._binding, preview=purpose, message=text)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='living-preview-unverified')
+
+    def _living_request_valid(self, request):
+        from dynamic_subject_agent.living_activity import LivingActionRequest
+        return (type(request) is LivingActionRequest and request.target_profile_id == self._binding.profile_id
+            and request.target_timeline_id == self._binding.timeline_id and type(request.expected_revision) is int
+            and request.expected_revision >= 0 and request.action in ('online', 'simulation', 'manual', 'share')
+            and type(request.request_id) is str and type(request.session_id) is str
+            and (request.action != 'online' or 16 <= len(request.session_id) <= 256))
+
+    def advance_living_activity(self, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if not self._living_request_valid(request):
+            return SharedActivityResponse('unavailable', problem_code='living-request-invalid')
+        try:
+            return self._host.apply_living_activity(self._binding, request)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='living-operation-unverified')
+
+    def set_living_controls(self, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        from dynamic_subject_agent.living_activity import LivingControlRequest
+        self._require_open()
+        if (type(request) is not LivingControlRequest or request.target_profile_id != self._binding.profile_id
+            or request.target_timeline_id != self._binding.timeline_id or type(request.expected_permission_revision) is not int
+            or request.expected_permission_revision < 0 or type(request.request_id) is not str
+            or any(value is not None and type(value) is not bool for value in (request.paused, request.sharing_enabled))
+            or request.paused is None and request.sharing_enabled is None):
+            return SharedActivityResponse('unavailable', problem_code='living-control-invalid')
+        if request.confirmed is not True:
+            return SharedActivityResponse('cancelled')
+        try:
+            return self._host.set_living_controls(self._binding, request)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='living-control-unverified')
+
     def set_shared_experience(self, request):
         from dynamic_subject_agent.shared_activity import SharedExperienceRequest
         return self._apply_shared_activity(request, SharedExperienceRequest)
@@ -1464,6 +1519,18 @@ class ApplicationFacade:
 
     def query_shared_activity(self, request=None):
         return self.__router.query_shared_activity(request)
+
+    def query_living_activity(self, request=None):
+        return self.__router.query_living_activity(request)
+
+    def preview_living_activity(self, purpose='choice', text=''):
+        return self.__router.preview_living_activity(purpose, text)
+
+    def advance_living_activity(self, request):
+        return self.__router.advance_living_activity(request)
+
+    def set_living_controls(self, request):
+        return self.__router.set_living_controls(request)
 
     def preview_shared_activity_step(self):
         return self.__router.preview_shared_activity_step()

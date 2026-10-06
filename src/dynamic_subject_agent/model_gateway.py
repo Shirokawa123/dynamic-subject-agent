@@ -36,6 +36,9 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    LIVING_ACTIVITY_CHOICE = 'living-activity-choice'
+    LIVING_ACTIVITY_SHARE = 'living-activity-share'
+    LIVING_ACTIVITY_REPLY = 'living-activity-reply'
     SHARED_ACTIVITY_CHOICE = "shared-activity-choice"
     SHARED_ACTIVITY_REPLY = "shared-activity-reply"
     CHARACTER_ORIGINAL_WHOLE_REPLY = "character-original-whole-reply"

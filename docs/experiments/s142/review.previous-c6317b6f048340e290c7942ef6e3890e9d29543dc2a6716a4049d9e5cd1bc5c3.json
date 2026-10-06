@@ -1,0 +1,495 @@
+{
+  "review_basis": "c6317b6f048340e290c7942ef6e3890e9d29543dc2a6716a4049d9e5cd1bc5c3",
+  "review": {
+    "version": "s142-living-sharing-new-use-review-1",
+    "approval_status": "not-granted",
+    "material_binding": {
+      "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+      "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+      "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+      "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+      "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+      "subject_id": "sagiri",
+      "anchor_id": "v1-pre-broadcast"
+    },
+    "material_scope": "same-reviewed-Sagiri-30-facts-4-author-interpretations-minimal-projection",
+    "timeline_schema": 6,
+    "local_authority": "original-living-activity-local-s142-1",
+    "executable_remote_grant": null,
+    "future_execution_qualification": "separate-exact-approved-live-qualification-on-new-independent-root;pending-and-local-do-not-upgrade",
+    "contract": {
+      "version": "living-activity-local-s142-1",
+      "authorization": "local-preparation-only-no-remote-grant",
+      "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+      "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+      "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+      "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+      "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+      "subject_id": "sagiri",
+      "anchor_id": "v1-pre-broadcast",
+      "provider": "local",
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "model": "deepseek-flash",
+      "credential_use": "none",
+      "max_current_chars": 1000,
+      "max_complete_turns": 2,
+      "max_exchange_chars": 4000,
+      "max_reply_chars": 1200,
+      "max_tokens": 4096,
+      "timeout_seconds": 30,
+      "thinking": "enabled",
+      "reasoning_effort": "high",
+      "max_requests_per_turn": 1,
+      "automatic_retries": 0,
+      "call_limit": null,
+      "policy_sha": "a2e86ae7b2cea52b580510dae71f6e6f631fd4ea7efe5d3af020f38ffd26577e",
+      "retention": "canonical-Timeline-only",
+      "excluded": "remote-background-service-notifications-offline-catchup-persona-rewrite-cloud-migration",
+      "technical_variant": {
+        "name": "living-local",
+        "timeline_schema": 6,
+        "choice_policy_sha": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+        "share_policy_sha": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d",
+        "reply_policy_sha": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00",
+        "opportunity_seconds": 900,
+        "session_lease_seconds": 15,
+        "max_new_topics_per_utc8_day": 2,
+        "max_share_chars": 400,
+        "max_followup_turns": 2
+      }
+    },
+    "contract_sha256": "5751e5ed7e56f3b1451c683fb96bcc762ca783219f7df72e352458b61930f4b4",
+    "provider": "deepseek",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "protocol": {
+      "model": "deepseek-flash",
+      "max_tokens": 4096,
+      "thinking": {
+        "type": "enabled"
+      },
+      "reasoning_effort": "high",
+      "response_format": {
+        "type": "json_object"
+      },
+      "stream": false
+    },
+    "credential_use": "existing-Windows-slot-HTTPS-Bearer-only-after-exact-separate-approval",
+    "timeout_seconds": 30,
+    "credential_slot": {
+      "provider_id": "deepseek",
+      "account_id": "default",
+      "backend": "Windows-Credential-Manager",
+      "authentication": "HTTPS-Bearer-only"
+    },
+    "requests_per_stage": 1,
+    "automatic_retries": 0,
+    "model_call_count_budget": null,
+    "purposes": {
+      "automatic_choice": {
+        "task_kind": "living-activity-choice",
+        "trigger": "900-cumulative-online-seconds-under-one-15-second-lease-or-explicit-labelled-simulation-opportunity",
+        "projection": "same-S141-choice-fields-and-limits",
+        "input_fields": [
+          "background",
+          "current_activity",
+          "current_plan",
+          "shared_experience"
+        ],
+        "default_paused": true,
+        "offline_catchup": false,
+        "output_contract": {
+          "fields": [
+            "action",
+            "plan",
+            "reason_code",
+            "basis_refs",
+            "decision_note"
+          ],
+          "action": "phase-allowed closed set",
+          "plan": {
+            "subject_max": 160,
+            "composition_max": 800,
+            "focus_max": 400
+          },
+          "basis_refs": [
+            [],
+            [
+              "E1"
+            ]
+          ],
+          "decision_note_max": 160
+        }
+      },
+      "independent_share": {
+        "task_kind": "living-activity-share",
+        "trigger": "separate-consider-action-after-new-committed-start-or-revise-text-plan",
+        "input_fields": [
+          "activity_result",
+          "background",
+          "shared_experience"
+        ],
+        "activity_result_fields": [
+          "action",
+          "plan"
+        ],
+        "default_enabled": false,
+        "output_contract": {
+          "fields": [
+            "share",
+            "reply_text",
+            "language"
+          ],
+          "share": "boolean",
+          "reply_text_max": 400,
+          "false_text": "",
+          "true_text": "nonempty",
+          "language": "zh"
+        },
+        "both_true_and_false_canonical_once": true,
+        "false_does_not_consume_new_topic": true,
+        "assistant_origin_no_fake_user_round": true,
+        "max_new_topics_per_utc8_day": 2,
+        "daily_limit_is_model_call_budget": false,
+        "awaiting_successful_ordinary_reply_suppresses_new_topics": true,
+        "preflight_zero_calls": [
+          "paused",
+          "sharing-disabled",
+          "no-new-eligible-plan",
+          "already-considered",
+          "awaiting-reply",
+          "daily-topic-limit",
+          "needs-attention",
+          "source-blocked"
+        ]
+      },
+      "ordinary_share_followup": {
+        "task_kind": "living-activity-reply",
+        "trigger": "explicit-ordinary-user-message",
+        "input_fields": [
+          "background",
+          "evidence",
+          "exchange",
+          "turn"
+        ],
+        "evidence_fields": [
+          "shared_experience",
+          "activity_result",
+          "latest_share"
+        ],
+        "latest_share": {
+          "maximum_count": 1,
+          "maximum_characters": 400,
+          "fields": [
+            "text"
+          ],
+          "maximum_successful_complete_ordinary_rounds_after_share_head": 2,
+          "absent": null,
+          "requires_history_enabled": true,
+          "failed_or_query_or_reopen_does_not_consume_window": true,
+          "answered_is_not_followup_window": true,
+          "complete_S1_dependent_dialogue_excluded_after_window": true
+        },
+        "output_contract": {
+          "fields": [
+            "reply_text",
+            "language"
+          ],
+          "reply_text_max": 1200,
+          "reply_text": "nonempty",
+          "language": "zh"
+        }
+      }
+    },
+    "source": {
+      "maximum_count": 1,
+      "maximum_characters": 400,
+      "selection": "explicit-exact-contiguous-committed-user-quote",
+      "fields": [
+        "label",
+        "quote"
+      ],
+      "label": "E1",
+      "absent": null
+    },
+    "plan_limits": {
+      "subject": 160,
+      "composition": 800,
+      "focus": 400
+    },
+    "current_message_limit": 1000,
+    "recent_dialogue_complete_turns": 2,
+    "recent_dialogue_total_characters": 4000,
+    "source_controls": "deactivate-replace-history-off-context-cutoff-filter-all-dependent-plan-result-share-and-complete-dialogue-turns",
+    "failure": "typed-failed-closed;pause-and-needs-attention;no-event;no-automatic-retry;explicit-control-required-for-resume",
+    "publication": "single-canonical-store-and-writer;atomic-prepared-claim-receipt;fresh-permission-head-source-day-fence;original-nonce-zero-model-recovery",
+    "excluded": [
+      "new-source-material",
+      "sealed-full-package-upload",
+      "old-root-migration",
+      "offline-catchup",
+      "system-background-service",
+      "system-notifications",
+      "personality-rewrite",
+      "reflection",
+      "cloud",
+      "new-provider",
+      "new-credential-purpose",
+      "external-actions",
+      "drafts",
+      "uncommitted-text",
+      "unselected-history",
+      "runtime-civil-time-online-seconds-publication-timestamps",
+      "internal-runtime-ids",
+      "local-decision-note-or-before-or-old-differences",
+      "raw-chain-of-thought"
+    ],
+    "local_preview_sha256": "00b011d740761a5d089a2a8bbcb19d780156686afe91efaa3295624de8e6143f",
+    "local_metadata_sha256": "22ba46e97f86780fe3bc7d903f371d4921c731e50744031a8c504f3a0e02b20c",
+    "scenario_sha256": "28d37c3ff2d3e4939de7cf7e3e6362aaa5a34d0a89fb1b87f3891cdc613f9315",
+    "real_first_scene": {
+      "start": "new-independent-empty-root;same-reviewed-material;no-E1;history-on;paused-true;sharing-false;zero-prior-chat",
+      "actions": [
+        "explicitly-unpause-and-enable-app-sharing",
+        "explicitly-labelled-simulated-opportunity-once",
+        "independent-share-consider-once-if-actual-new-start-or-revise-plan",
+        "close-and-reopen-zero-model",
+        "ordinary-followup-one-if-share-true",
+        "ordinary-followup-two-if-share-true",
+        "ordinary-topic-change-third-if-share-true"
+      ],
+      "time_is_simulated": true,
+      "stage_request_limit": 1,
+      "automatic_retries": 0,
+      "stop_on_first_technical_failure": true,
+      "stop_when_no_eligible_new_text_plan": true,
+      "stop_when_share_false": true,
+      "retain_first_result_without_resampling": true,
+      "maximum_first_requests": 5,
+      "assessment": "检查当前文字方案成立、true或false独立决定、助手归属、重启一致性和后两次普通成功轮收到同条原话，第三次不再收到；只有true才评具体分享及接话效果，false保留为合理结果。引用E1、结构有效或合成流转不证明人物体验。"
+    },
+    "policy_sha256": {
+      "living-activity-reply": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00",
+      "living-activity-choice": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+      "living-activity-share": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+    },
+    "samples": [
+      {
+        "branch": "online-share-followup",
+        "stage": "source-chat",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "95c2ada800df375c6ce0d04e21426536e536057b32b3378fa81d6d505fa0ca36",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "source-gap-1",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "497b8922d9767256ec1bb5dea09628287415f6d25de4f9d68d201101883150d5",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "source-gap-2",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "08f1b78217c0fcbb2b179b43407bc040ce995a5a0d9a18faaf96fa1df56791e8",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "source-gap-3",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "a83e5f61ee05aedb8b672bbbdb9d6a32f898ac26b6b690b7c5b6d8753cbf19ba",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "simulated-online-90",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "6031b19a2cb460fea6313b48784b6942868fb8c9b838b944f80be27e3af1ca41",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "independent-share-true",
+        "purpose": "living-activity-share",
+        "wire_sha256": "ae5a250ba0cf290876b2a11b5eab0f9f10f485508f03b59779f41a316d3d0d68",
+        "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "next-actual-plan-before-response",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "f6fd28890df7fdbb351969fb0cd301602c8229efdd5c156c65514a69053a0963",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "ordinary-followup-1",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "c5d496a95a9eb7f16ba3c73e0bdba124e79073672b11281d2c37473de718b2e8",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "ordinary-followup-2",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "1d5a0c62f5a36b8b407647317c0939950638bcdc39343a0bf4cdf938ace144c7",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "online-share-followup",
+        "stage": "ordinary-followup-3",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "ea181212acda8b84509544ef78ad2d2ad134630b0414f9dde4a3a6e648f8967e",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "false-and-no-change",
+        "stage": "new-plan",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "false-and-no-change",
+        "stage": "independent-share-false",
+        "purpose": "living-activity-share",
+        "wire_sha256": "fc4a94a92793534362c361eb6c8cd8f8ef1ac484c86126af77a51bd27623db83",
+        "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "source-chat",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "95c2ada800df375c6ce0d04e21426536e536057b32b3378fa81d6d505fa0ca36",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "source-gap-1",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "497b8922d9767256ec1bb5dea09628287415f6d25de4f9d68d201101883150d5",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "source-gap-2",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "08f1b78217c0fcbb2b179b43407bc040ce995a5a0d9a18faaf96fa1df56791e8",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "source-gap-3",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "a83e5f61ee05aedb8b672bbbdb9d6a32f898ac26b6b690b7c5b6d8753cbf19ba",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "dependent-plan",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "6031b19a2cb460fea6313b48784b6942868fb8c9b838b944f80be27e3af1ca41",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "dependent-share",
+        "purpose": "living-activity-share",
+        "wire_sha256": "ae5a250ba0cf290876b2a11b5eab0f9f10f485508f03b59779f41a316d3d0d68",
+        "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "dependent-followup",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "9d176418fe68b778267caa702109f5cb138137419f79f9b97b25b3d09f7223d1",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "source-deactivated",
+        "stage": "after-source-deactivation",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "1c29c8726578b5a80bf9dde21b5a511274b140374e81470779aa56970249fcc0",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "paused-and-failure",
+        "stage": "first-plan",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "paused-and-failure",
+        "stage": "simulated-technical-failure",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "c4b000cb150af611b5d801d2ba95d1cb4518f667884b7b6e99d958f851968e1e",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "paused-and-failure",
+        "stage": "new-opportunity-after-explicit-resume",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "c4b000cb150af611b5d801d2ba95d1cb4518f667884b7b6e99d958f851968e1e",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "new-plan-1",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "new-topic-1",
+        "purpose": "living-activity-share",
+        "wire_sha256": "fc4a94a92793534362c361eb6c8cd8f8ef1ac484c86126af77a51bd27623db83",
+        "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "answer-1",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "7fb59ee1c51c7fad12581921ebb520cc0dd7fc72e8c7c6ff1b7fe46b49df36e5",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "new-plan-2",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "c4b000cb150af611b5d801d2ba95d1cb4518f667884b7b6e99d958f851968e1e",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "new-topic-2",
+        "purpose": "living-activity-share",
+        "wire_sha256": "09e579d01bbddcae6f63c770760c2c4268de2f7d9fa5195a7b2903c28ecfbd48",
+        "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "answer-2",
+        "purpose": "living-activity-reply",
+        "wire_sha256": "424cfab9da4d7d9ef8b0a86935671f1e55d063b6f4a0145958d4392753c68552",
+        "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "keep-no-new-text-version",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "54d8a8652a8608bcfa925ad24d8b84a5049440a542671019dc45181719490967",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      },
+      {
+        "branch": "daily-topic-limit",
+        "stage": "third-new-plan",
+        "purpose": "living-activity-choice",
+        "wire_sha256": "9db5c737388d8759e36d8aed191e6a48c6fe68839054d6a68d72d9cf193dc791",
+        "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f"
+      }
+    ]
+  }
+}

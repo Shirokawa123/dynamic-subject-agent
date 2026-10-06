@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'living-activity-local-s142-1':
+        from dynamic_subject_agent.living_activity import living_contract
+        if contract != living_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact living LOCAL contract required')
+        return 'living-local'
     if contract.get('version') in (SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_SELF_DIRECTED_VERSION):
         from dynamic_subject_agent.shared_activity_live import shared_live_contract
         technical_variant = {SHARED_EXPRESSION_VERSION: 'natural-expression',
@@ -135,6 +140,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == 'living-local':
+        return 'original-living-activity-local-s142-' + digest(contract)
     if variant == "shared-local":
         return "original-shared-activity-local-s139-" + digest(contract)
     if variant == "shared-live":
@@ -155,7 +162,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("shared-local", "shared-live"):
+    if variant in ("shared-local", "shared-live", "living-local"):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)

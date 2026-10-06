@@ -732,6 +732,30 @@ def open_shared_activity_product_local(config, *, gateway, identity_id, binding=
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
+def open_living_activity_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):
+    """Independent schema6 LOCAL composition; reject remote before registry access."""
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.shared_activity import LIVING_AUTHORITY
+    from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+    from dynamic_subject_agent.living_activity import LivingClock, utc8_day
+    if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
+        raise ValueError('LOCAL-only living gateway required before any identity access')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_living_activity_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_AUTHORITY,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
+    cognition.living_controls = lambda request: authority.change_living_permission(loaded.qri.profile_id, request)
+    cognition.living_failure = lambda: authority.change_living_permission(loaded.qri.profile_id, attention=True)
+    cognition.living_revoke = lambda block_source=None: authority.change_living_permission(loaded.qri.profile_id, revoke=True, block_source=block_source)
+    cognition.living_clock = LivingClock() if clock is None else clock
+    cognition.living_day = utc8_day if day is None else day
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
 def open_shared_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None,
                                       technical_variant='baseline'):
     from dynamic_subject_agent.shared_activity import SHARED_LIVE_AUTHORITY

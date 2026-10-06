@@ -17,7 +17,7 @@ from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_c
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope, whole_publication_key
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY
 
 import hashlib
 import json
@@ -746,6 +746,14 @@ class CapabilityManifest:
             included=(*old.included, "shared-experience-selection", "manual-composition-choice"),
             certified=(*old.certified, "shared-experience-selection", "manual-composition-choice"),
             unavailable=(*old.unavailable, "remote-provider", "automatic-life"))
+
+    @classmethod
+    def living_activity_local(cls):
+        old = cls.shared_activity_local()
+        return cls(manifest_version='living-activity-local-capabilities-s142-1',
+            included=(*old.included, 'local-online-opportunity', 'local-assistant-origin-sharing'),
+            certified=(*old.certified, 'local-online-opportunity', 'local-assistant-origin-sharing'),
+            unavailable=(*old.unavailable, 'remote-living-use', 'offline-catchup'))
 
     @classmethod
     def shared_activity_live(cls):
@@ -1711,7 +1719,7 @@ class PolicyKernel:
             (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
              or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
                  and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract))
-             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live())
+             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local())
                  and matches_whole_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
@@ -8834,12 +8842,13 @@ class SubjectStudio:
             "isolation_proof": isolation.to_dict(),
         }
         if reviewed_chat_contract is not None:
-            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live()):
+            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local()):
                 if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract, allow_legacy=True):
                     raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
                 variant = contract_variant(reviewed_chat_contract)
                 if ((capabilities == CapabilityManifest.original_whole_context()) != (variant == "context-boundary")
                     or (capabilities == CapabilityManifest.shared_activity_local()) != (variant == "shared-local")
+                    or (capabilities == CapabilityManifest.living_activity_local()) != (variant == "living-local")
                     or (capabilities == CapabilityManifest.shared_activity_live()) != (variant == "shared-live")):
                     raise StudioRejected("original-whole-contract-invalid", "local context qualification must match its contract")
                 expected = reviewed_chat_contract
@@ -9575,7 +9584,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                SHARED_LIVE_AUTHORITY
+                LIVING_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.living_activity_local()
+                else SHARED_LIVE_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.shared_activity_live()
                 else SHARED_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.shared_activity_local()
@@ -9779,11 +9790,12 @@ class SubjectStudio:
             contract = qri.reviewed_chat_contract
             validate_whole_envelope(snapshot.reviewed_definition, contract)
             context = contract_variant(contract) == "context-boundary"
+            living = contract_variant(contract) == 'living-local'
             shared = contract_variant(contract) == "shared-local"
             live = contract_variant(contract) == "shared-live"
-            expected_manifest = CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
+            expected_manifest = CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
-            if (qri.provider_authority != (SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
+            if (qri.provider_authority != (LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
                 or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY

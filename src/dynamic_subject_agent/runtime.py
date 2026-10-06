@@ -18,7 +18,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from dynamic_subject_agent.first_life import FirstLifeInput, LifeRecord, LIFE_SYSTEM_INTENT
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_INTENT, CONTEXT_AUTHORITY, WholeContextInput
-from dynamic_subject_agent.shared_activity import SHARED_INTENT, SharedActivityRecord
+from dynamic_subject_agent.shared_activity import SHARED_INTENT, LIVING_INTENT, SharedActivityRecord
 
 from dynamic_subject_agent.domains import (
     AgencyAdjudicationRequest,
@@ -1147,12 +1147,17 @@ class SubjectRuntime:
             if SHARED_INTENT in self._context.authority.allowed_intents:
                 prepared = self._engine.prepared_plan(operation_ref)
                 if prepared is not None:
-                    if not self._engine.cancel_prepared_if_stale(operation_ref):
+                    canceled = self._engine.cancel_prepared_if_stale(operation_ref)
+                    if not canceled:
                         self._engine.publish(prepared)
+                    elif LIVING_INTENT in self._context.authority.allowed_intents:
+                        self._cognition.living_failure()
                     continue
             self._engine.freeze_attempt_basis(operation_ref)
             self._engine.fail_operation(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='Cold recovery closes an uncommitted whole attempt; schema 1 has no durable reply preparation and never retries the model.')
+            if LIVING_INTENT in self._context.authority.allowed_intents:
+                self._cognition.living_failure()
         return len(pending)
 
     def apply_whole_context_boundary(self, command, key):

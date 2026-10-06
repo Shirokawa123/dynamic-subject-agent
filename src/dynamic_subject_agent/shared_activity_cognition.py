@@ -11,7 +11,7 @@ from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelG
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
 from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
 from dynamic_subject_agent.shared_activity import (
-    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
+    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
     shared_variant_for_contract)
 
 
@@ -27,9 +27,19 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if provider_authority == SHARED_LIVE_AUTHORITY:
             self.adapter_version = 'shared-activity-live-cognition-s139-1'
         self.contract = contract
+        self.supports_living_activity = provider_authority == LIVING_AUTHORITY
         self.delivery, self.snapshot_loader = delivery, snapshot_loader
 
     def preflight(self, *, context, command):
+        if self.provider_authority == LIVING_AUTHORITY:
+            from dynamic_subject_agent.original_whole_chat import contract_variant
+            if self.gateway is None or self.gateway.capabilities.local is not True or contract_variant(self.contract) != 'living-local':
+                raise PreAdmissionRejected('living-local-gateway-required', 'no remote living data grant exists')
+            if type(command) is SharedActivityInput:
+                if command.living_permission is None:
+                    raise PreAdmissionRejected('living-permission-required', 'living action requires exact permission')
+                return
+            return OriginalWholeChatCognition.preflight(self, context=context, command=command)
         live = self.provider_authority == SHARED_LIVE_AUTHORITY
         if live:
             from dynamic_subject_agent.shared_activity_live import SharedActivityDelivery
@@ -60,9 +70,17 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if self._context_revision_at(plan.expected_basis.head_sequence) != record.context_revision:
             raise ShareAuthorizationChanged('shared-context-revision-changed')
         with self.guard(OriginalWholeAuthorization(**record.authorization)):
+            if self.provider_authority == LIVING_AUTHORITY:
+                if record.living is None or record.living['permission'] != self.living_permission():
+                    raise ShareAuthorizationChanged('living-permission-changed')
+                if record.kind == 'share' and record.living['considered'][-1]['day'] != self.living_day():
+                    raise ShareAuthorizationChanged('living-share-day-changed')
             yield
 
     def choice_preview(self, identity, view):
+        if self.provider_authority == LIVING_AUTHORITY:
+            from dynamic_subject_agent.living_activity import build_living_choice_preview
+            return build_living_choice_preview(self.envelope, identity, view, self.contract)
         return build_choice_preview(self.envelope, identity, view, self.contract)
 
     def _execute(self, task, *, plan, context, command, authorization):
@@ -89,6 +107,8 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         return self.gateway.execute(task).value
 
     def propose(self, *, plan, context, command, basis):
+        if self.provider_authority == LIVING_AUTHORITY:
+            return self._propose_living(plan=plan, context=context, command=command, basis=basis)
         if type(command) not in (SharedActivityInput, WholeContextInput):
             scope = whole_dialogue_scope(command.utterance)
             if scope in (WITHDRAWAL, UNRESOLVED):
@@ -134,3 +154,55 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 code = 'provider-failed'
             raise CognitionFailedClosed('whole-reply', 'original-whole-' + code,
                 'The shared proposal failed; no activity event or automatic retry is produced.') from None
+
+    def _propose_living(self, *, plan, context, command, basis):
+        from dynamic_subject_agent.living_activity import (
+            build_living_record, build_share_preview, build_living_reply_preview, validate_share)
+        if type(command) not in (SharedActivityInput, WholeContextInput):
+            scope = whole_dialogue_scope(command.utterance)
+            if scope in (WITHDRAWAL, UNRESOLVED):
+                code = 'original-whole-history-withdrawn' if scope == WITHDRAWAL else 'original-whole-history-control-unresolved'
+                raise CognitionFailedClosed('history', code, 'No disclosure control is sent.')
+        try:
+            authorization = self.authorization()
+            permission = self.living_permission()
+            effective = replace(authorization, history_enabled=False) if permission['source_blocked'] else authorization
+            view = context.load_shared_activity(effective)
+            choice = share = None
+            if type(command) is WholeContextInput:
+                text = CONTEXT_RECEIPT
+            elif type(command) is SharedActivityInput and command.input_kind in ('select', 'disable'):
+                text = '已更新共同依据；原记录保留。'
+            elif type(command) is SharedActivityInput:
+                if command.living_permission != permission or permission['paused'] or permission['needs_attention']:
+                    raise ShareAuthorizationChanged('living-permission-changed')
+                if command.input_kind == 'share':
+                    preview = build_share_preview(self.envelope, context.runtime_identity, view, self.contract)
+                    share = validate_share(self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_SHARE, preview)).value)
+                    text = share['reply_text'] if share['share'] else '本次保留分享；已记录这次考虑。'
+                else:
+                    preview = self.choice_preview(context.runtime_identity, view)
+                    choice = self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_CHOICE, preview)).value
+                    text = '本次活动取舍已提交。'
+            else:
+                dialogue = context.load_character_dialogue(effective.history_enabled)
+                preview = build_living_reply_preview(self.envelope, context.runtime_identity, command.utterance,
+                    dialogue, effective.history_enabled, view, self.contract)
+                text = validate_whole_reply(self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_REPLY, preview)).value)
+            if self.authorization() != authorization or self.living_permission() != permission:
+                raise ShareAuthorizationChanged('living-permission-changed')
+            record = build_living_record(view, command=command, authorization=authorization, permission=permission,
+                head_sequence=plan.expected_basis.head_sequence+1, choice=choice, share=share)
+            if record.kind == 'decision':
+                text = record.result.event.summary
+            proposal = self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='LOCAL提交活动或助手主动分享；模拟时间不证明现实已发生。',
+                expression_candidate=ExpressionCandidate(text, 'zh'))
+            return replace(proposal, shared_record=record)
+        except Exception as error:
+            if isinstance(error, CognitionFailedClosed):
+                raise
+            self.living_failure()
+            code = 'history-changed' if isinstance(error, ShareAuthorizationChanged) else 'provider-failed'
+            raise CognitionFailedClosed('whole-reply', 'original-whole-' + code,
+                'Living operation stopped for attention, without fabricated event or retry.') from None

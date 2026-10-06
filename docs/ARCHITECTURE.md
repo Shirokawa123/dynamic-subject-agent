@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-142：独立LOCAL在线生活、分享和两轮接话准备
+
+新LOCAL living资格/schema6复用SharedActivityRecord/Publication/来源依赖，仅本地允许模型提议。短monotonic lease累计900秒给一次活动机会，默认暂停/分享关闭、查询0模型不恢复、离线不补；心跳本身不写业务事件。成功start/revise新方案独立consider-share，true助手-origin、false已考虑，不伪user轮；未回、日两已提交true话题、无新结果/关闭/已考虑先0请求。
+
+reply沿current1000/可关闭2完整轮4000/E1/当前结果，准备另加最新≤400分享仅其后2成功普通轮；计数不靠answered或过滤后窗口，第三S1与传递旧轮整体失活，before/diff/decisionnote不出站。权限registry唯一权威、source_blocked先隔离后canonical停用，完整prepared/日/permission/source/head/history/identity fence与原nonce恢复保持。schema6 lookup/库存/旧sender闭锁随迁，旧schema与root不升级。
+
+必要LOCAL与受影响旧行为通过，独立核心与scope复核两P2已关闭；实际已审资料五支31LOCAL合成/31purewire/Pending31拒绝，0新用途remote/credential。准确待批basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`及[S142报告](reports/2026-10-06-slice-142/REPORT.md)承接。没有可执行LIVE资格、真实人物效果或自动后台/通知批准。
+
 ### Slice-141：本人的当次活动提议与版本承接
 
 闭集self-directed-activity只在新独立shared-live schema5资格使用；choice policy pin `7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f`，reply沿S140 natural pin。原S139/S140/LOCAL合同与正常wire保持，root不切旧资格；projection/selector/字段/模型协议/凭据用途不增加。channel说明不作当前用户发言，E1可选影响，已审关注可支持新构想而不回填本人既往；current_plan/focus承接下一具体取舍，合法defer仍由Python有限裁决而非强制开始。

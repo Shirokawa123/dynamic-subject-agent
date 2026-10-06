@@ -39,6 +39,8 @@ class DeepSeekOriginalWholeAdapter(ProviderAdapter):
             or (credential_ref.backend_id, credential_ref.key_id) != (DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID)):
             raise ValueError("approved whole transport, slot and delivery required")
         validate_whole_envelope(envelope, delivery.contract)
+        if contract_variant(delivery.contract) == 'living-local':
+            raise ValueError('LOCAL living has no original-whole remote delivery authority')
         if contract_variant(delivery.contract) == "followup-legacy":
             raise ValueError("legacy followup qualification is receipt-only; no sender is available")
         self.transport, self.credential_ref, self.delivery, self.envelope = transport, credential_ref, delivery, envelope
