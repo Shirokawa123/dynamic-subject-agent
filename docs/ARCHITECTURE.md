@@ -6,6 +6,8 @@
 
 LIVE只接受900秒在线机会或明确simulation；旧手动共享活动及LOCAL不变。每stage最多1请求、0自动重试；空白/解析拒绝FailedClosed、凭据不可用unavailable、发送超时UNKNOWN分开，失败停后续自动动作并needs_attention。`query_living_controls`仅只读Authority权限元数据，在canonical未知时仍可说明暂停状态；不授予发送资格、不放宽原完整query/history/coldprepared未知前缀闭锁。首次固定真实场景最多5次首次stage，失败/false/无新方案结束，事实由报告承接。
 
+冻结首场景实际5请求/5提交/0重试/0空白拒绝：start新文字方案→true152字助手分享→重启0调用→两次完整接话→第三次换题；actual wire/raw final/audit/canonical摘要一致，第三latest_share=null且exchange=[]。机会明确模拟，无E1，单场景通过不证明真实900秒/稳定人物质量或旧空白内因解决；新生活分享界面仍待接入，旧8790/8791不升级。
+
 新LOCAL living资格/schema6复用SharedActivityRecord/Publication/来源依赖，仅本地允许模型提议。短monotonic lease累计900秒给一次活动机会，默认暂停/分享关闭、查询0模型不恢复、离线不补；心跳本身不写业务事件。成功start/revise新方案独立consider-share，true助手-origin、false已考虑，不伪user轮；未回、日两已提交true话题、无新结果/关闭/已考虑先0请求。
 
 reply沿current1000/可关闭2完整轮4000/E1/当前结果，准备另加最新≤400分享仅其后2成功普通轮；计数不靠answered或过滤后窗口，第三S1与传递旧轮整体失活，before/diff/decisionnote不出站。权限registry唯一权威、source_blocked先隔离后canonical停用，完整prepared/日/permission/source/head/history/identity fence与原nonce恢复保持。schema6 lookup/库存/旧sender闭锁随迁，旧schema与root不升级。
