@@ -1,6 +1,6 @@
 # 当前工作
 
-唯一执行：[S142](slice-142-local-living-sharing-loop.md)，2026-10-06已完成LOCAL闭环/必要验证/独立复核/准确用途对象，主窗口阶段提交push后集中请求人类批准。基线414e8eb与远端一致；此轮新用途remote0、credential0，不把合成模型/模拟时间说成人物实测。旧8790/8791、root/记录/用户草稿、旧合同保持。
+唯一执行：[S142](slice-142-local-living-sharing-loop.md)，LOCAL闭环/必要验证/独立复核/准确用途对象已完成并提交push2404458，远端一致。2026-10-06用户对basis153bc6e8…e08f06明确“批准上述准确范围，继续真实验收”，现在建立独立LIVE资格/一次票据/三用途审计，经必要0调用验证和复核后执行固定首场景最多5首次stage。LOCAL对象不转换，旧8790/8791/记录/草稿/合同保持。此前LOCAL阶段remote/key0是历史阶段事实，不冒称最终真实效果。
 
 ## 已完成结果
 
@@ -14,7 +14,7 @@ reply准备current1000/可关闭两完整4000/一已提交逐字E1≤400/当前k
 
 当前[REVIEW](../experiments/s142/REVIEW.md)/[review.json](../experiments/s142/review.json) basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`。原c6317b6f对象/旧资源完整保留；checkpoint改helper见证不改fields/material/policy/wire，最终独立重算完整一致，不重跑无新业务疑点的31。数据、触发、输出、Source权限窗、协议/slot、真实首次固定≤5stage停止条件均冻结。首次5只是有限验收终止条件，不新增永久模型预算。
 
-三个新用途是同已审Sagiri30/4/现DeepSeek Windows默认slot的自动活动机会、应用内分享生成、普通接话有限share原话；默认暂停/分享关闭、在线不补离线，每stage最多1请求0retry、失败停、UTC8最多2新分享话题/未回不新分享。尚无可执行LIVE grant/自动sender，审批对象本身不可执行。准备完成后只集中问一次准确范围，不逐步问继续；批准后须新独立LIVE资格与claims/audit及首次真实验收，不把LOCAL或旧root直接转换。
+三个新用途已按准确问题批准：同Sagiri30/4/现DeepSeek Windows默认slot的自动活动机会、应用内分享生成、普通接话有限share原话；默认暂停/分享关闭、在线不补离线，每stage最多1请求0retry、失败停、UTC8最多2新分享话题/未回不新分享。原Pending/LOCAL仍不可远程；现在创建新的精确Approved grant/manifest/authority和三用途metadata audit，sealed+canonical材料/policy/协议独立pin、claim/consume即时重建、同线程一次票据才用existing slot HTTPS。只有最终Publication成立才是活动或分享，coldprepared0重发，权限/日/source/head最后复核不削弱。固定首链在fresh独立devroot执行，原文只canonical、metadata报告，失败/false/无方案保首即停，不补抽。
 
 ## 边界与未解
 
