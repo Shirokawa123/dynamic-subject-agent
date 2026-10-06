@@ -10,7 +10,7 @@
   "scenario_canonical_sha256": "7fd7060f47c40fb2de031918ea43257e430b315a660527763babe39c5609613a",
   "fields_material_selection_provider_protocol_credential_unchanged": true,
   "old_roots_not_upgraded": true,
-  "semantic_effect_status": "awaiting-first-real-comparison",
+  "semantic_effect_status": "one-first-two-message-example-improved-not-general-validation",
   "new_automatic_requests": false,
   "maximum_requests_per_manual_action": 1,
   "automatic_retries": 0,

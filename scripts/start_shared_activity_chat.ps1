@@ -2,11 +2,17 @@ param(
     [string]$Python = $env:DSA_PYTHON,
     [ValidateSet('baseline', 'natural-expression')][string]$TechnicalVariant = 'baseline',
     [int]$Port = 8790,
-    [switch]$NoBrowser
+    [switch]$NoBrowser,
+    [switch]$DirectProvider
 )
 $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $env:PYTHONPATH = Join-Path $repositoryRoot 'src'
+if ($DirectProvider) {
+    # This process only, for the exact existing HTTPS provider. TLS, credential
+    # slot and model protocol stay unchanged; system proxy settings remain.
+    $env:NO_PROXY = (($env:NO_PROXY + ',127.0.0.1,localhost,api.deepseek.com').Trim(','))
+}
 $candidates = @()
 if ($Python) {
     $candidates = @($Python)

@@ -1,0 +1,24 @@
+{
+  "version": "s140-final-delivery-metadata-1",
+  "application": "shared-activity-chat-s140-natural-expression",
+  "service_port": 8790,
+  "entry_variant": "natural-expression",
+  "empty_entry": true,
+  "character_status": "active",
+  "pending": false,
+  "history_enabled": true,
+  "shared_status": "available",
+  "activity_phase": "unstarted",
+  "entry_model_claims": 0,
+  "development_audits": {
+    "relevant": 4,
+    "unrelated-closed-acknowledgement": 3,
+    "disabled": 5,
+    "expression-baseline": 2,
+    "expression-natural-expression": 2
+  },
+  "development_claims_total": 16,
+  "first_metadata_canonical_sha256": "beded65fd780ee88db112e7ead0972a3a2a7af2bc8d60dc17c9d7d6747e56775",
+  "no_user_draft_operations": true,
+  "no_model_qa_calls": true
+}
