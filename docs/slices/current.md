@@ -10,7 +10,7 @@ reply准备current1000/可关闭两完整4000/一已提交逐字E1≤400/当前k
 
 23必要S142行为及既有107+lookup9兼容通过（分组有重叠不当效果总分）。独立core发现schema6 lookup遗漏，已6/5/4/1精确修复与必要readonly回取验证；scope发现runner缺partial留证已checkpoint修复，均复核关闭。最终五支31LOCAL合成Task，模拟90×10秒/分享/重启/两轮/第三过滤/False/源停用/失败恢复/日限通过，actualpreview=Task=wire31，Pending31全typed拒，LOCAL registry前拒remote，0key。
 
-## 准确待批对象
+## 已批准的准确对象
 
 当前[REVIEW](../experiments/s142/REVIEW.md)/[review.json](../experiments/s142/review.json) basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`。原c6317b6f对象/旧资源完整保留；checkpoint改helper见证不改fields/material/policy/wire，最终独立重算完整一致，不重跑无新业务疑点的31。数据、触发、输出、Source权限窗、协议/slot、真实首次固定≤5stage停止条件均冻结。首次5只是有限验收终止条件，不新增永久模型预算。
 
@@ -18,4 +18,4 @@ reply准备current1000/可关闭两完整4000/一已提交逐字E1≤400/当前k
 
 ## 边界与未解
 
-实际人物主动分享是否自然、有事值得说、真实两句追问/稳定连续交付待获批后验收；S140/141旧空白和结构拒绝不被本片本地通过掩盖。系统通知、后台系统服务、离线补算、人格重写/Reflection、其他Provider/key用途、云、更多资料与旧数据迁移未开启。900秒等是技术工作假设，最终持续生活/离线相处目标保留。所有临时目录、旧资源、原canonical/失败保持。完整证据见[S142报告](../reports/2026-10-06-slice-142/REPORT.md)。
+实际人物主动分享是否自然、有事值得说、真实两句追问/稳定连续交付将在本轮固定首景验收；S140/141旧空白和结构拒绝不被本片本地通过掩盖。系统通知、后台系统服务、离线补算、人格重写/Reflection、其他Provider/key用途、云、更多资料与旧数据迁移未开启。900秒等是技术工作假设，最终持续生活/离线相处目标保留。所有临时目录、旧资源、原canonical/失败保持。完整证据见[S142报告](../reports/2026-10-06-slice-142/REPORT.md)。

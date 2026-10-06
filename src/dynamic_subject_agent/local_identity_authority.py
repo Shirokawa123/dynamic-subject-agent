@@ -67,7 +67,7 @@ from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, WHOLE_AUTHORITIES, whole_contract,
     validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest, whole_publication_key, contract_variant)
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, SHARED_AUTHORITIES, shared_contract
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_AUTHORITIES, SHARED_AUTHORITIES, shared_contract
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
 
@@ -365,7 +365,7 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             or type(record.get("history_revision")) is not int or record["history_revision"] < 0):
             raise RuntimeError("original-whole-activation-invalid")
         validate_whole_envelope(snapshot.reviewed_definition, metadata["contract"])
-        if qri.provider_authority == LIVING_AUTHORITY:
+        if qri.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.living_activity import validate_permission
             validate_permission(record['living_permission'])
             receipts = record['living_control_receipts']
@@ -376,6 +376,9 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
         if qri.provider_authority == SHARED_LIVE_AUTHORITY:
             from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
             open_shared_activity_audit(Path(metadata["audit_path"])).counts()
+        elif qri.provider_authority == LIVING_LIVE_AUTHORITY:
+            from dynamic_subject_agent.living_activity_live import open_living_activity_audit
+            open_living_activity_audit(Path(metadata['audit_path'])).counts()
         else:
             open_original_whole_audit(Path(metadata["audit_path"])).counts()
     if record.get("host_location") is not None:
@@ -1338,6 +1341,15 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(living_contract(binding), self._config.state_path.parent / 'living-local-audit', identity_id)
 
     @_registry_mutation
+    def activate_living_activity_live(self, *, grant, audit_path, identity_id):
+        from dynamic_subject_agent.living_activity_live import ApprovedLivingActivityGrant, living_live_contract
+        from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+        if type(grant) is not ApprovedLivingActivityGrant:
+            raise ValueError('exact S142 human approval is required')
+        grant.validate()
+        return self._activate_context_identity(living_live_contract(APPROVED_BINDING), audit_path, identity_id)
+
+    @_registry_mutation
     def activate_shared_activity_live(self, *, grant, audit_path, identity_id):
         from dynamic_subject_agent.shared_activity_live import ApprovedSharedActivityGrant, shared_live_contract
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
@@ -1347,8 +1359,9 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(shared_live_contract(APPROVED_BINDING, technical_variant=grant.technical_variant), audit_path, identity_id)
 
     def _activate_context_identity(self, contract, audit_path, identity_id):
-        living = contract_variant(contract) == 'living-local'
-        shared = contract_variant(contract) in ('shared-local', 'shared-live', 'living-local')
+        living_live = contract_variant(contract) == 'living-live'
+        living = contract_variant(contract) in ('living-local', 'living-live')
+        shared = contract_variant(contract) in ('shared-local', 'shared-live', 'living-local', 'living-live')
         live = contract_variant(contract) == 'shared-live'
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding='utf-8')))
         if identity_id is None:
@@ -1360,13 +1373,16 @@ class LocalIdentityAuthority:
         existing = record.get('whole_chat_activation') or record.get('pending_whole_chat_activation')
         if existing is not None and existing != metadata:
             raise RuntimeError('whole-context-activation-conflict')
-        if identity.qri.provider_authority == (LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
+        if identity.qri.provider_authority == (LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
             if state['active_identity_id'] != identity_id:
                 raise RuntimeError('whole-context-selection-required')
             return self.load_active()
         if (identity.qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY or existing is None and record.get('host_location') is not None):
             raise RuntimeError('whole-context-requires-new-unserved-identity')
-        if live:
+        if living_live:
+            from dynamic_subject_agent.living_activity_live import open_living_activity_audit
+            open_living_activity_audit(audit_path, initialize=existing is None)
+        elif live:
             from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
             open_shared_activity_audit(audit_path, initialize=existing is None)
         else:
@@ -1387,7 +1403,7 @@ class LocalIdentityAuthority:
                 if getattr(error, 'code', None) != 'qri-not-found':
                     raise
                 snapshot = studio.query_snapshot(identity.qri.genesis_snapshot_id)
-                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
                     reviewed_chat_contract=contract, validity_us=300_000_000)
                 successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
                     predecessor_qualification_id=identity.qri.qualification_id, reviewed_chat_contract=contract)
@@ -1427,7 +1443,7 @@ class LocalIdentityAuthority:
     def living_permission(self, expected_identity_id):
         from dynamic_subject_agent.living_activity import validate_permission
         state, record, identity = self._active_chat_record(expected_identity_id)
-        if identity.qri.provider_authority != LIVING_AUTHORITY:
+        if identity.qri.provider_authority not in LIVING_AUTHORITIES:
             raise RuntimeError('independent-living-authority-required')
         return validate_permission(record['living_permission'])
 
@@ -1435,7 +1451,7 @@ class LocalIdentityAuthority:
     def change_living_permission(self, expected_identity_id, request=None, *, attention=False, revoke=False, block_source=None):
         from dynamic_subject_agent.living_activity import validate_permission
         state, record, identity = self._active_chat_record(expected_identity_id)
-        if identity.qri.provider_authority != LIVING_AUTHORITY:
+        if identity.qri.provider_authority not in LIVING_AUTHORITIES:
             raise RuntimeError('independent-living-authority-required')
         permission = validate_permission(record['living_permission'])
         if request is not None:
@@ -1490,7 +1506,8 @@ class LocalIdentityAuthority:
                 raise RuntimeError('whole-scope-changed')
             from copy import deepcopy
             return dict(envelope=deepcopy(identity.reviewed_definition), contract=deepcopy(identity.qri.reviewed_chat_contract),
-                identity=identity.runtime_identity, authorization=self._original_whole_authorization_from_record(state,record,identity))
+                identity=identity.runtime_identity, authorization=self._original_whole_authorization_from_record(state,record,identity),
+                **(dict(living_permission=deepcopy(record['living_permission'])) if identity.qri.provider_authority in LIVING_AUTHORITIES else {}))
         finally:
             self._history_lock.release()
 
@@ -1618,6 +1635,9 @@ class LocalIdentityAuthority:
                 if identity.qri.provider_authority == SHARED_LIVE_AUTHORITY:
                     from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
                     opener = open_shared_activity_audit
+                elif identity.qri.provider_authority == LIVING_LIVE_AUTHORITY:
+                    from dynamic_subject_agent.living_activity_live import open_living_activity_audit
+                    opener = open_living_activity_audit
                 total, used, remaining = opener(Path(record["whole_chat_activation"]["audit_path"])).counts()
                 return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]

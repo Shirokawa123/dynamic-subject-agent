@@ -1,0 +1,30 @@
+{
+  "version": "s142-live-first-scene-1",
+  "review_basis": "153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06",
+  "approved_scenario_sha256": "28d37c3ff2d3e4939de7cf7e3e6362aaa5a34d0a89fb1b87f3891cdc613f9315",
+  "material_binding_sha256": "30715f56be4a693835739645f7d8c07be264f3a2396790f82113503a00f0b44c",
+  "scene": {
+    "start": "new-independent-empty-root;same-reviewed-material;no-E1;history-on;paused-true;sharing-false;zero-prior-chat",
+    "actions": ["explicitly-unpause-and-enable-app-sharing", "explicitly-labelled-simulated-opportunity-once", "independent-share-consider-once-if-actual-new-start-or-revise-plan", "close-and-reopen-zero-model", "ordinary-followup-one-if-share-true", "ordinary-followup-two-if-share-true", "ordinary-topic-change-third-if-share-true"],
+    "time_is_simulated": true,
+    "stage_request_limit": 1,
+    "automatic_retries": 0,
+    "stop_on_first_technical_failure": true,
+    "stop_when_no_eligible_new_text_plan": true,
+    "stop_when_share_false": true,
+    "retain_first_result_without_resampling": true,
+    "maximum_first_requests": 5,
+    "assessment": "检查当前文字方案成立、true或false独立决定、助手归属、重启一致性和后两次普通成功轮收到同条原话，第三次不再收到；只有true才评具体分享及接话效果，false保留为合理结果。引用E1、结构有效或合成流转不证明人物体验。"
+  },
+  "followup_messages": ["你刚才分享的文字构图方案，具体想突出什么？只谈现在的文字安排。", "接着刚才的安排说说，你留白时最想保留哪个效果？", "换个话题：开始学一件新事时，你会怎样比较不同做法？"],
+  "protocol": {"model": "deepseek-flash", "max_tokens": 4096, "thinking": {"type": "enabled"}, "reasoning_effort": "high", "response_format": {"type": "json_object"}, "stream": false},
+  "policy_sha256": {
+    "living-activity-choice": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+    "living-activity-share": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d",
+    "living-activity-reply": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00"
+  },
+  "resource": "LOCALAPPDATA/DynamicSubjectAgent/living-activity-development/s142/live-first-20261006-1",
+  "interface": "ApplicationFacade-only-no-HTTP-entry-or-browser",
+  "request_policy": "at-most-one-request-per-stage;five-first-stages-only;zero-retries;no-resampling;stop-on-failure-no-eligible-plan-or-false",
+  "raw_text_retention": "canonical-Timeline-only;no-prompt-or-response-or-reasoning-text-in-report"
+}

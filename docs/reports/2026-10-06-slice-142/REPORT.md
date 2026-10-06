@@ -1,4 +1,12 @@
-# S142：持续生活与主动分享的LOCAL闭环准备
+# S142：持续生活、主动分享与接话闭环
+
+2026-10-06实施承接：用户已明确“批准上述准确范围，继续真实验收”，绑定准确basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`。LOCAL成果提交/push2404458、批准事实提交/push8b0ebb3；下文LOCAL的0真实/0key及尚待批准都是该历史阶段事实。新LIVE采用独立资格、三用途审计和同线程一次票据，原review.json、Pending/LOCAL、旧8790/8791与记录不升级。
+
+本轮完成条件：独立LIVE只能发送已批三用途的当前有效最小材料；必要闭锁与兼容检查、独立复核通过并阶段提交/push后，执行唯一固定首次场景。每阶段1请求、0重试，最多5首次请求；技术失败、无新eligible文字方案或false即收口。只有实际完整成功的方案→分享→重启→两轮接话→第三轮完整过滤才记为真实链通过；否则记录已验证阶段、失败事实和未验证部分，不无限补抽。首次机会明确模拟，不冒称已等待真实900秒在线。
+
+LIVE实施必要验证已完成：`tests/test_living_activity_live.py` 14项通过（68.76s）；受影响LOCAL/旧S139兼容选集14项通过、22项未选（90.29s），两次进程均exit0。证据分别保留`.tmp-s142-live-core/base-five`与`base-six`，没有真实请求、凭据读取或旧端口动作。验证了完整三用途wire与重启窗口、原Pending/LOCAL/改材料拒绝、policy/协议literal pin、空白/timeout/凭据三型及needs_attention、coldprepared不重发、同client/thread/kind一次票据、claim后权限/来源/日/payload变化在transport前拒绝、动态endpoint/slot与闭集字段。独立源码及首景scope复核承接；测试成功本身不算人物体验。
+
+LIVE源码独立复核已通过，无可行动发现；root另阅关键差异并接纳。首景scope核原review、scene、三条追问、最小material/protocol/policy均逐项一致，发现后置保存/最终关闭未知可能仍报complete的P2，已补checked_save和收口unverified/非0退出。四个纯fixture验证步骤后保存、main后保存、final保存失败及close未知；0产品/模型/key，无raw异常正文导出。已收到响应后的观测I/O仍不改变模型业务结果，但证据不可核不能报告本轮完整验收成功。
 
 基线main414e8eb与远端核对一致。本片完成新独立LOCAL资格/schema6、在线机会→实际文字方案→分享决定/助手消息→重启接话，以及具体可审Provider用途。0新用途真实调用、0凭据读取；所有模型输出与时间推进均为明确合成/模拟，不能说真实人物生活已验收。原8790/8791、聊天、草稿和旧数据合同未改。
 

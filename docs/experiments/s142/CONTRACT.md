@@ -1,5 +1,7 @@
 # S142 LOCAL闭环与待审新增用途合同
 
+2026-10-06批准承接：用户已明确“批准上述准确范围，继续真实验收”，绑定basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`，按[最新方向决定](../../plans/character-chat-direction.md)与[current](../../slices/current.md)进入独立LIVE资格/一次票据/三用途审计及固定首场景最多5请求。下文“尚未批准/0远程”保留为冻结前历史；`review.json`和旧对象不改，Pending/LOCAL仍不升级、旧root不迁移。主窗口完成源验证及独立复核后统一真实执行。
+
 2026-10-06：LOCAL最终五支完整样本与准确未发送wire已冻结，当前basis为`153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`，见[准确审阅](REVIEW.md)和[review.json](review.json)。原`c6317b6f…`对象完整保留为历史，新对象仅增脚本SHA与安全检查点合同，31样本及全部用途/材料/字段/policy/wire/场景不变，没有重跑产品或模型。新增用途尚未批准；最终独立复核和整体接纳由主窗口承接后集中请求批准。`current`限定0新增用途远程调用、0凭据读取。本文件、Pending对象和纯wire预览均不产生可执行grant，LOCAL资格不会因批准自动转远程。
 
 拟审三用途为：同S141最小投影的自动活动机会；新实际start/revise文字结果的独立分享考虑；普通聊天中最新≤400字符已提交分享原话的两整轮接续。原同Sagiri30项事实/4项作者解释、E1最多一条连续已提交用户原话≤400、current≤1000、可关闭历史最多2完整轮≤4000不扩大。新root/schema6，原root和旧S105/S108用途/200预算不作为新批准依据。

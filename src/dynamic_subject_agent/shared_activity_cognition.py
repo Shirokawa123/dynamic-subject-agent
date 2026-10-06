@@ -11,7 +11,7 @@ from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelG
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
 from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
 from dynamic_subject_agent.shared_activity import (
-    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
+    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_AUTHORITIES, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
     shared_variant_for_contract)
 
 
@@ -27,17 +27,30 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if provider_authority == SHARED_LIVE_AUTHORITY:
             self.adapter_version = 'shared-activity-live-cognition-s139-1'
         self.contract = contract
-        self.supports_living_activity = provider_authority == LIVING_AUTHORITY
+        self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
+        if provider_authority == LIVING_LIVE_AUTHORITY:
+            self.adapter_version = 'living-activity-live-cognition-s142-1'
         self.delivery, self.snapshot_loader = delivery, snapshot_loader
 
     def preflight(self, *, context, command):
-        if self.provider_authority == LIVING_AUTHORITY:
+        if self.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.original_whole_chat import contract_variant
-            if self.gateway is None or self.gateway.capabilities.local is not True or contract_variant(self.contract) != 'living-local':
-                raise PreAdmissionRejected('living-local-gateway-required', 'no remote living data grant exists')
+            live = self.provider_authority == LIVING_LIVE_AUTHORITY
+            if live:
+                from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
+                if (self.gateway is None or self.gateway.capabilities.local is not False
+                    or self.gateway.capabilities.provider_id != 'deepseek' or type(self.delivery) is not LivingActivityDelivery
+                    or self.snapshot_loader is None or contract_variant(self.contract) != 'living-live'
+                    or self.contract != self.delivery.contract):
+                    raise PreAdmissionRejected('living-approved-gateway-required', 'exact S142 live composition required')
+                self.delivery.grant.validate()
+            elif self.gateway is None or self.gateway.capabilities.local is not True or contract_variant(self.contract) != 'living-local':
+                raise PreAdmissionRejected('living-local-gateway-required', 'LOCAL never converts to a remote grant')
             if type(command) is SharedActivityInput:
                 if command.living_permission is None:
                     raise PreAdmissionRejected('living-permission-required', 'living action requires exact permission')
+                if live and command.input_kind == 'advance' and command.living_trigger not in ('online', 'simulation'):
+                    raise PreAdmissionRejected('living-approved-opportunity-trigger-required', 'exact approved S142 opportunity required')
                 return
             return OriginalWholeChatCognition.preflight(self, context=context, command=command)
         live = self.provider_authority == SHARED_LIVE_AUTHORITY
@@ -70,7 +83,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if self._context_revision_at(plan.expected_basis.head_sequence) != record.context_revision:
             raise ShareAuthorizationChanged('shared-context-revision-changed')
         with self.guard(OriginalWholeAuthorization(**record.authorization)):
-            if self.provider_authority == LIVING_AUTHORITY:
+            if self.provider_authority in LIVING_AUTHORITIES:
                 if record.living is None or record.living['permission'] != self.living_permission():
                     raise ShareAuthorizationChanged('living-permission-changed')
                 if record.kind == 'share' and record.living['considered'][-1]['day'] != self.living_day():
@@ -78,7 +91,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             yield
 
     def choice_preview(self, identity, view):
-        if self.provider_authority == LIVING_AUTHORITY:
+        if self.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.living_activity import build_living_choice_preview
             return build_living_choice_preview(self.envelope, identity, view, self.contract)
         return build_choice_preview(self.envelope, identity, view, self.contract)
@@ -107,7 +120,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         return self.gateway.execute(task).value
 
     def propose(self, *, plan, context, command, basis):
-        if self.provider_authority == LIVING_AUTHORITY:
+        if self.provider_authority in LIVING_AUTHORITIES:
             return self._propose_living(plan=plan, context=context, command=command, basis=basis)
         if type(command) not in (SharedActivityInput, WholeContextInput):
             scope = whole_dialogue_scope(command.utterance)
@@ -178,17 +191,20 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                     raise ShareAuthorizationChanged('living-permission-changed')
                 if command.input_kind == 'share':
                     preview = build_share_preview(self.envelope, context.runtime_identity, view, self.contract)
-                    share = validate_share(self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_SHARE, preview)).value)
+                    share = validate_share(self._execute_living(ModelTask(ModelTaskKind.LIVING_ACTIVITY_SHARE, preview),
+                        plan=plan, context=context, command=command, authorization=authorization, permission=permission))
                     text = share['reply_text'] if share['share'] else '本次保留分享；已记录这次考虑。'
                 else:
                     preview = self.choice_preview(context.runtime_identity, view)
-                    choice = self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_CHOICE, preview)).value
+                    choice = self._execute_living(ModelTask(ModelTaskKind.LIVING_ACTIVITY_CHOICE, preview),
+                        plan=plan, context=context, command=command, authorization=authorization, permission=permission)
                     text = '本次活动取舍已提交。'
             else:
                 dialogue = context.load_character_dialogue(effective.history_enabled)
                 preview = build_living_reply_preview(self.envelope, context.runtime_identity, command.utterance,
                     dialogue, effective.history_enabled, view, self.contract)
-                text = validate_whole_reply(self.gateway.execute(ModelTask(ModelTaskKind.LIVING_ACTIVITY_REPLY, preview)).value)
+                text = validate_whole_reply(self._execute_living(ModelTask(ModelTaskKind.LIVING_ACTIVITY_REPLY, preview),
+                    plan=plan, context=context, command=command, authorization=authorization, permission=permission))
             if self.authorization() != authorization or self.living_permission() != permission:
                 raise ShareAuthorizationChanged('living-permission-changed')
             record = build_living_record(view, command=command, authorization=authorization, permission=permission,
@@ -203,6 +219,49 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             if isinstance(error, CognitionFailedClosed):
                 raise
             self.living_failure()
-            code = 'history-changed' if isinstance(error, ShareAuthorizationChanged) else 'provider-failed'
+            from dynamic_subject_agent.reply_review_diagnostics import REVIEW_DIAGNOSTIC_CODES
+            code = error.code if isinstance(error, ModelGatewayFailure) else 'history-changed' if isinstance(error, ShareAuthorizationChanged) else 'provider-failed'
+            if code not in REVIEW_DIAGNOSTIC_CODES | {'character-credential-unavailable', 'structured-choice-invalid',
+                'expression-invalid', 'audit-failed', 'delivery-unverified', 'history-changed'}:
+                code = 'provider-failed'
             raise CognitionFailedClosed('whole-reply', 'original-whole-' + code,
                 'Living operation stopped for attention, without fabricated event or retry.') from None
+
+    def _execute_living(self, task, *, plan, context, command, authorization, permission):
+        if self.provider_authority == LIVING_LIVE_AUTHORITY:
+            from dynamic_subject_agent.original_whole_chat import validate_whole_envelope
+            from dynamic_subject_agent.living_activity import (build_living_choice_preview,
+                build_share_preview, build_living_reply_preview, sharing_gate, validate_permission)
+            def rebuild():
+                # The Authority returns a verified value snapshot and releases
+                # its registry lock before this worker reads canonical state.
+                snapshot = self.snapshot_loader()
+                fresh = validate_permission(snapshot['living_permission'])
+                if (snapshot['authorization'] != authorization or fresh != permission
+                    or snapshot['contract'] != self.delivery.contract or self.contract != self.delivery.contract):
+                    raise ValueError('living sealed authorization or permission changed')
+                validate_whole_envelope(snapshot['envelope'], snapshot['contract'])
+                effective = replace(authorization, history_enabled=False) if fresh['source_blocked'] else authorization
+                view = context.load_shared_activity(effective)
+                if view['basis'] != asdict(plan.expected_basis):
+                    raise ValueError('living complete canonical prefix changed')
+                if task.kind in (ModelTaskKind.LIVING_ACTIVITY_CHOICE, ModelTaskKind.LIVING_ACTIVITY_SHARE):
+                    if command.living_permission != fresh or fresh['paused'] or fresh['needs_attention']:
+                        raise ValueError('living action permission changed')
+                if task.kind is ModelTaskKind.LIVING_ACTIVITY_CHOICE:
+                    return build_living_choice_preview(snapshot['envelope'], snapshot['identity'], view, snapshot['contract'])
+                if task.kind is ModelTaskKind.LIVING_ACTIVITY_SHARE:
+                    if (command.living_day != self.living_day() or sharing_gate(view, fresh, command.living_day)
+                        or view['visible_result'].event.event_id != command.target_event_id):
+                        raise ValueError('living share day, result or eligibility changed')
+                    return build_share_preview(snapshot['envelope'], snapshot['identity'], view, snapshot['contract'])
+                if task.kind is not ModelTaskKind.LIVING_ACTIVITY_REPLY:
+                    raise ValueError('closed living purpose required')
+                dialogue = context.load_character_dialogue(effective.history_enabled)
+                return build_living_reply_preview(snapshot['envelope'], snapshot['identity'], command.utterance,
+                    dialogue, effective.history_enabled, view, snapshot['contract'])
+            try:
+                self.delivery.claim(plan.operation_ref.operation_id+':'+plan.attempt_id, task, rebuild)
+            except Exception:
+                raise ModelGatewayFailure('delivery-unverified') from None
+        return self.gateway.execute(task).value

@@ -632,6 +632,14 @@ class _ApplicationRouter:
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='living-state-unverified')
 
+    def query_living_controls(self):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        try:
+            return self._host.query_living_controls(self._binding)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='living-permission-query-unverified')
+
     def preview_living_activity(self, purpose='choice', text=''):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         self._require_open()
@@ -1522,6 +1530,9 @@ class ApplicationFacade:
 
     def query_living_activity(self, request=None):
         return self.__router.query_living_activity(request)
+
+    def query_living_controls(self):
+        return self.__router.query_living_controls()
 
     def preview_living_activity(self, purpose='choice', text=''):
         return self.__router.preview_living_activity(purpose, text)

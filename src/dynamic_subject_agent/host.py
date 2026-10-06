@@ -107,7 +107,7 @@ from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, First
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_RUNTIME_CONTRACT, CONTEXT_INTENT
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_INTENT, LIVING_RUNTIME_CONTRACT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, LIVING_RUNTIME_CONTRACT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
@@ -211,7 +211,7 @@ _BRANCH_RETIRED = "retired"
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
     if qri.provider_authority in SHARED_AUTHORITIES:
-        expected = CapabilityManifest.living_activity_local() if qri.provider_authority == LIVING_AUTHORITY else CapabilityManifest.shared_activity_live() if qri.provider_authority == SHARED_LIVE_AUTHORITY else CapabilityManifest.shared_activity_local()
+        expected = CapabilityManifest.living_activity_live() if qri.provider_authority == LIVING_LIVE_AUTHORITY else CapabilityManifest.living_activity_local() if qri.provider_authority == LIVING_AUTHORITY else CapabilityManifest.shared_activity_live() if qri.provider_authority == SHARED_LIVE_AUTHORITY else CapabilityManifest.shared_activity_local()
         return qri.capabilities == expected and qri.reviewed_chat_contract is not None
     if qri.provider_authority == CONTEXT_AUTHORITY:
         return qri.capabilities == CapabilityManifest.original_whole_context() and qri.reviewed_chat_contract is not None
@@ -829,7 +829,7 @@ class _CognitionAssembly:
         # still denies every input until the exact qualified successor is bound.
         dormant.supports_whole_context = True
         dormant.supports_shared_activity = shared
-        dormant.supports_living_activity = successor.provider_authority == LIVING_AUTHORITY
+        dormant.supports_living_activity = successor.provider_authority in LIVING_AUTHORITIES
         if shared:
             from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
             active = SharedActivityCognition(provider_authority=successor.provider_authority)
@@ -7559,7 +7559,7 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
                 store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority == LIVING_AUTHORITY else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its exact qualified schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
@@ -7590,7 +7590,7 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=root.root_id, store_id=root.timeline_store_id, store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
-            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority == LIVING_AUTHORITY else (5,)):
+            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,)):
                 raise ValueError('exact shared schema required')
             engine = TimelineEngine(root, self._authority_for_binding(binding), reader, None)
             if request is not None:
@@ -7609,7 +7609,7 @@ class RuntimeHost:
                     else:
                         existing = dict(receipt=None, **shared_failure_response(engine.query_failure(ref)))
                     return dict(existing=existing), authorization, cognition
-            permission = cognition.living_permission() if binding.provider_authority == LIVING_AUTHORITY else None
+            permission = cognition.living_permission() if binding.provider_authority in LIVING_AUTHORITIES else None
             effective = replace(authorization, history_enabled=False) if permission is not None and permission['source_blocked'] else authorization
             view = engine.shared_activity_basis(effective)
             view['_source_texts'] = {out.head_sequence: command.utterance for out, command, _ in engine._verified_publications() if type(command) is SubjectCommand}
@@ -7640,7 +7640,7 @@ class RuntimeHost:
         from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedActivityInput, SharedExperienceRequest, shared_failure_response
         from dynamic_subject_agent.runtime import CycleFailedClosed
         source_fenced = False
-        if binding.provider_authority == LIVING_AUTHORITY and type(request) is SharedExperienceRequest:
+        if binding.provider_authority in LIVING_AUTHORITIES and type(request) is SharedExperienceRequest:
             from dynamic_subject_agent.timeline import _validate_idempotency_key
             _validate_idempotency_key(request.request_id)
             try:
@@ -7668,7 +7668,7 @@ class RuntimeHost:
             raise
         if 'existing' in view:
             return SharedActivityResponse(**view['existing'])
-        if binding.provider_authority == LIVING_AUTHORITY:
+        if binding.provider_authority in LIVING_AUTHORITIES:
             if type(request) is not SharedExperienceRequest:
                 from dynamic_subject_agent.living_activity import LivingActionRequest
                 converted = LivingActionRequest(request.target_profile_id, request.target_timeline_id,
@@ -7689,7 +7689,7 @@ class RuntimeHost:
                 request.expected_revision, view['basis'], asdict(authorization), request.source_head_sequence if select else None,
                 request.quote if select else '',
                 **(dict(living_permission=cognition.living_permission(), living_trigger='source', living_day=cognition.living_day())
-                    if binding.provider_authority == LIVING_AUTHORITY else {}))
+                    if binding.provider_authority in LIVING_AUTHORITIES else {}))
             if kind == 'select' and (command.source_head_sequence <= view['cutoff_sequence']
                 or command.quote not in view['_source_texts'].get(command.source_head_sequence, '')):
                 return SharedActivityResponse('unavailable', problem_code='shared-source-not-committed')
@@ -7699,7 +7699,7 @@ class RuntimeHost:
                 return SharedActivityResponse(**shared_failure_response(error.failure))
             if result.outcome is None:
                 return SharedActivityResponse(**shared_failure_response(result.failure))
-            if binding.provider_authority == LIVING_AUTHORITY and select:
+            if binding.provider_authority in LIVING_AUTHORITIES and select:
                 cognition.living_revoke(block_source=False)
             return SharedActivityResponse('committed', receipt=dict(operation_ref=result.operation_ref, head_sequence=result.outcome.head_sequence))
         finally:
@@ -7708,7 +7708,7 @@ class RuntimeHost:
     def query_living_activity(self, binding, request=None, *, preview=None, message=''):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         from dynamic_subject_agent.living_activity import build_share_preview, latest_share, sharing_gate
-        if binding.provider_authority != LIVING_AUTHORITY:
+        if binding.provider_authority not in LIVING_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
         view, _, cognition = self._read_shared_activity(binding, request)
         if request is not None:
@@ -7741,9 +7741,20 @@ class RuntimeHost:
             latest_share=latest_share(view, cognition.try_authorization().history_enabled),
             share_gate=sharing_gate(view, permission, cognition.living_day()), online_seconds=cognition.living_clock.seconds))
 
+    def query_living_controls(self, binding):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        if binding.provider_authority not in LIVING_AUTHORITIES:
+            return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
+        cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
+        authorization = cognition.try_authorization()
+        permission = cognition.living_permission()
+        if cognition.try_authorization() != authorization or cognition.living_permission() != permission:
+            return SharedActivityResponse('failed-closed', problem_code='living-permission-query-changed')
+        return SharedActivityResponse('available', view=permission)
+
     def set_living_controls(self, binding, request):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
-        if binding.provider_authority != LIVING_AUTHORITY:
+        if binding.provider_authority not in LIVING_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
         from dynamic_subject_agent.timeline import _validate_idempotency_key
         _validate_idempotency_key(request.request_id)
@@ -7756,8 +7767,10 @@ class RuntimeHost:
         from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedActivityInput, shared_failure_response
         from dynamic_subject_agent.living_activity import sharing_gate
         from dynamic_subject_agent.runtime import CycleFailedClosed
-        if binding.provider_authority != LIVING_AUTHORITY:
+        if binding.provider_authority not in LIVING_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
+        if binding.provider_authority == LIVING_LIVE_AUTHORITY and request.action == 'manual':
+            return SharedActivityResponse('unavailable', problem_code='living-approved-opportunity-trigger-required')
         view, authorization, cognition = self._read_shared_activity(binding, request)
         if 'existing' in view:
             return SharedActivityResponse(**view['existing'])
@@ -7870,7 +7883,7 @@ class RuntimeHost:
         try:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=root.root_id, store_id=root.timeline_store_id, store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority == LIVING_AUTHORITY else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+            if reader.execute('PRAGMA user_version').fetchone() != ((6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('whole-archive-schema-unverified', 'archive requires its existing whole schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             return TimelineEngine(root, self._authority_for_binding(binding), reader, None).query_whole_chat_archive(request)
@@ -7884,7 +7897,7 @@ class RuntimeHost:
         scope = self._read_whole_context(binding, request)
         if 'existing' in scope:
             return WholeContextBoundaryResponse(**scope['existing'])
-        if binding.provider_authority == LIVING_AUTHORITY:
+        if binding.provider_authority in LIVING_AUTHORITIES:
             cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
             cognition.living_revoke(block_source=True)
         lane = self._lanes.get((binding.profile_id, binding.timeline_id))
@@ -7903,7 +7916,7 @@ class RuntimeHost:
             result = lane.worker.call('apply_whole_context_boundary', command, request.request_id)
             if result.outcome is None:
                 return WholeContextBoundaryResponse('failed-closed', problem_code='whole-context-uncommitted')
-            if binding.provider_authority == LIVING_AUTHORITY:
+            if binding.provider_authority in LIVING_AUTHORITIES:
                 cognition.living_revoke(block_source=False)
             return WholeContextBoundaryResponse('committed', receipt=dict(operation_ref=result.operation_ref,
                 context_revision=request.expected_revision+1, cutoff_sequence=result.outcome.head_sequence, request_digest=request.request_digest))

@@ -12,9 +12,11 @@ from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFie
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
 SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
 LIVING_AUTHORITY = 'original-living-activity-local-s142-1'
+LIVING_LIVE_AUTHORITY = 'original-living-activity-deepseek-s142-1'
+LIVING_AUTHORITIES = (LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY)
 LIVING_INTENT = 'living-activity-system-input'
 LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
-SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY)
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *LIVING_AUTHORITIES)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"

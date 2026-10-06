@@ -1,12 +1,16 @@
 # 产品架构
 
-### Slice-142：独立LOCAL在线生活、分享和两轮接话准备
+### Slice-142：独立在线生活、分享和两轮接话
+
+2026-10-06后续批准与实施：用户准确批准basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`的三用途。新增独立`original-living-activity-deepseek-s142-1` authority、manifest/schema6、`ApprovedLivingActivityGrant`及`open_living_activity_product_live`；旧LOCAL、Pending和旧root保持。grant分别literal pin原审材料、LOCAL合同、三policy、协议/slot，每次从sealed、canonical及当前permission/source/day重建请求，同client/同线程一次票据消费后才可HTTPS发送，三purpose独立metadata audit。
+
+LIVE只接受900秒在线机会或明确simulation；旧手动共享活动及LOCAL不变。每stage最多1请求、0自动重试；空白/解析拒绝FailedClosed、凭据不可用unavailable、发送超时UNKNOWN分开，失败停后续自动动作并needs_attention。`query_living_controls`仅只读Authority权限元数据，在canonical未知时仍可说明暂停状态；不授予发送资格、不放宽原完整query/history/coldprepared未知前缀闭锁。首次固定真实场景最多5次首次stage，失败/false/无新方案结束，事实由报告承接。
 
 新LOCAL living资格/schema6复用SharedActivityRecord/Publication/来源依赖，仅本地允许模型提议。短monotonic lease累计900秒给一次活动机会，默认暂停/分享关闭、查询0模型不恢复、离线不补；心跳本身不写业务事件。成功start/revise新方案独立consider-share，true助手-origin、false已考虑，不伪user轮；未回、日两已提交true话题、无新结果/关闭/已考虑先0请求。
 
 reply沿current1000/可关闭2完整轮4000/E1/当前结果，准备另加最新≤400分享仅其后2成功普通轮；计数不靠answered或过滤后窗口，第三S1与传递旧轮整体失活，before/diff/decisionnote不出站。权限registry唯一权威、source_blocked先隔离后canonical停用，完整prepared/日/permission/source/head/history/identity fence与原nonce恢复保持。schema6 lookup/库存/旧sender闭锁随迁，旧schema与root不升级。
 
-必要LOCAL与受影响旧行为通过，独立核心与scope复核两P2已关闭；实际已审资料五支31LOCAL合成/31purewire/Pending31拒绝，0新用途remote/credential。准确待批basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`及[S142报告](reports/2026-10-06-slice-142/REPORT.md)承接。没有可执行LIVE资格、真实人物效果或自动后台/通知批准。
+LOCAL阶段必要与受影响旧行为通过，独立核心与scope复核两P2已关闭；实际已审资料五支31LOCAL合成/31purewire/Pending31拒绝，当时0新用途remote/credential。已批准对象及后续LIVE事实见[S142报告](reports/2026-10-06-slice-142/REPORT.md)。模拟流转不证明人物效果；后台系统服务与系统通知未启用。
 
 ### Slice-141：本人的当次活动提议与版本承接
 

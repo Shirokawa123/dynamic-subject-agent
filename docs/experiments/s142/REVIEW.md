@@ -1,5 +1,7 @@
 # S142：持续生活、主动分享与两轮接话的准确用途审阅
 
+2026-10-06批准承接：用户对集中问题明确答复“批准上述准确范围，继续真实验收”，准确绑定basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`。当前进入新的独立LIVE资格、一次票据、三用途审计及固定首次最多5stage；批准事实见[方向记录](../../plans/character-chat-direction.md)和[current](../../slices/current.md)。下文保留批准前的审阅历史与LOCAL证据，`review.json`及原对象不改；原Pending/LOCAL仍不可远程，不因批准自动升级，也不迁移旧root。源验证和最终独立复核后，由主窗口统一执行真实首场景。
+
 2026-10-06，真实已审材料的新独立LOCAL资格已完成五支合成闭环，31个LOCAL ModelTask；0远程请求、0凭据读取。三用途的只读builder预览均逐值等于实际任务，普通回复另核完整canonical轮/head及原输出。准确对象在[review.json](review.json)冻结，当前basis为`153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`；尚未批准，也没有可执行远程grant。最终独立复核和整体接纳由主窗口承接。
 
 独立复核要求LOCAL运行在非预期失败时保留已完成证据，已增逐阶段/分支/任务的安全检查点：摘要仅status/error_type/累计计数/任务SHA及已完成安全步骤，精确Task只写自有本机partial文件；main/finally保存failed-partial，不重建canonical或回显异常正文。检查点I/O失败不会改变ModelResult/业务返回，失败或未核检查点不能冻结新审阅。仅用仓库合成fixture核过此前完成步骤、下一断言失败与I/O失败，0产品/模型调用。新basis绑定两个helper SHA；31已通过样本不重跑，全部旧字段逐项保持。原basis `c6317b6f048340e290c7942ef6e3890e9d29543dc2a6716a4049d9e5cd1bc5c3`的[完整审阅对象](review.previous-c6317b6f048340e290c7942ef6e3890e9d29543dc2a6716a4049d9e5cd1bc5c3.json)和原wire均保留。
