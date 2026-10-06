@@ -1,17 +1,11 @@
 # 当前工作
 
-唯一执行：[S141](slice-141-self-directed-activity-continuity.md)。2026-10-06用户在S140交付后的“人物自己的活动选择和后续版本承接，再接持续生活触发”建议上明确“继续”。基线main b9384db；先核现有材料投影和已有能力，已完成纠错/入口不重复改。
+唯一执行：[S141](slice-141-self-directed-activity-continuity.md)已完成实现、首次真实验收与独立候选入口交付，主窗口进行最终接纳/证据提交push；没有建立另一执行片。2026-10-06用户“继续”承接的结果为人物自身活动选择及后续版本承接，基线b9384db、源冻结236d686已push。详见[报告](../reports/2026-10-06-slice-141/REPORT.md)。
 
-用户结果：没有新的用户绘画提示、没有选定E1时，也能依据已有自身关注提出当次文字活动；已提交方案经重启后影响下一步具体取舍，并进入后续交流。合法暂缓仍允许，不把模型强制start、E1引用、测试数或计划文档当作自主性证据。
+无E1/空聊天的三支首次共7请求/7transport、5提交（4活动决定＋1回复）、0重试/补抽；一候选完成start→重启→具体revise→重启→最终方案回聊。canonical核对确认笔从脸旁移至书侧、双手抱本，牺牲动态换五官与手部清楚，具体服务同一focus；最终reply只收当前plan，未要求或编造旧diff。当前natural也可无E1自行start，随后defer不成新版本；另一候选非空JSON首结构拒绝、对照回复95字符纯空白，具体拒绝原因未留。7stop/0length不抹去S140旧截断，不能证明更稳定、长期人格或全MVP。
 
-实施前核S140 disabled/defer真实事实及实际choice background，定向复用研究。优先一个闭集同用途self-directed-activity技术候选，明确当前活动是人物自己的提议，区分新增构想和本人既往事实；复用当前plan/focus表达下一版本，不增加Provider字段/材料选择/记忆画像。原baseline/natural-expression/LOCAL合同与roots保持；新候选独立资格/精确pin/新root，不能偷偷改旧policy或强迫成功。
+新独立[8791](http://127.0.0.1:8791)为self-directed-activity空root，health/active、0聊天/无pending/history on/未开始、model claims0；开发模型文本不预灌。隐藏UI只读展开/下一步预览/取消已核，未发送或推进。旧8790/root/草稿/原CMD默认保持；[使用说明](../experiments/s141/USE.md)。
 
-完成条件：可观察的“无E1且无聊天→明确推进→新方案或有实际理由的暂缓→重启→下一次具体选择→结果回聊”；对同输入当前版留首次对照，不排除模型随机性，不泛化长期人格。必要Facade/入口/恢复/原nonce/来源停用/出站边界验证及独立复核后，执行有界首次真实链，每动作最多1请求0自动重试，首失败停，所有结果保持；空白不无限排查，旧S116 text路线不无依据重复。
+同S139已批basis 8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a、Sagiri30/4、当前文字1000/可关闭两整轮4000、最多1条已提交逐字E1≤400、有限phase/actions/plan，同DeepSeek及Windows slot。choice新pin7737b3fd…，reply/字段/selector/协议不变；新独立资格不转换旧合同，模型提议仍由Python裁决。候选8、旧56、最后11合成通过（重叠不相加）及独立复核保持；三root收尾Facade查询/重开/audit精确匹配首metadata，0模型。
 
-已批准S139用途basis 8bb95a501eb44827e939ea41376cbda0eea6463a266b2983581d36f65494301a、Sagiri30/4、当前文字1000/可关闭两整轮4000、最多1条已提交逐字E1≤400、有限phase/actions/plan，同DeepSeek与Windows slot，同用途次数不限。原8790与用户草稿不碰，先独立开发root/端口。主窗口拥有docs/实际验收资源/git；实现owner贯通src与入口和必要测试，研究/复核只读。
-
-同步准备持续生活/分享下一阶段的具体触发和投影方案，但不以“继续”泛化自动后台/通知、人格重写/Reflection、新出站/凭据用途、云或删除迁移批准。目标不后移为永久禁用，本轮先改善活动自身的出发点。
-
-S140实际证据见报告：16真实10提交/5纯空白stop+1length/0重试，1实际冷蓝绿/留白方案重启回聊，完整长链和三支因果未过；所有旧成果/原前缀/临时目录保留。新入口0调用启动及源最终b9384db push成功，末次远端读取曾网络失败，开工需重新只读核对。
-
-S141源已冻结：实际choice投影SHA与S140一致，材料已含关注；新choice pin7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f，reply/fields/selector/协议不变，独立新root。候选8、受影响旧56、最后pin/UI11合成通过（重叠不相加）；核心/规格/真实runner各独立复核放行。开工远端已确认b9384db；stage提交/push后运行冻结3支≤9首次，无方案/首技术失败停，模型效果尚未验收。
+下一合理工作是持续生活/分享的准确本地准备：[NEXT-LIFE-REVIEW-DRAFT](../experiments/s141/NEXT-LIFE-REVIEW-DRAFT.md)仅pending助手草案，无可执行grant。先完成精确policies/payload/LOCAL完整情景再集中审新自动活动/分享用途；此次“继续”不授权后台通知、人格重写/Reflection、新Provider/凭据用途、云或删除迁移。持续生活/离线目标保留，所有旧失败、记录与临时目录保留。

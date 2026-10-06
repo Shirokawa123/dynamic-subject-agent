@@ -11,7 +11,16 @@
   "material_fields_selector_protocol_provider_credential_unchanged": true,
   "old_roots_and_contracts_unchanged": true,
   "only_new_root_explicit_qualification": true,
-  "semantic_status": "awaiting-bounded-first-real-results",
+  "semantic_status": "one-bounded-candidate-version-and-reply-loop-established; stability-and-long-term-life-unverified",
+  "first_requests": 7,
+  "committed_activity_decisions": 4,
+  "committed_chat_replies": 1,
+  "candidate_version_reply_loops_completed": 1,
+  "first_failures_retained": "one-blank-reply-and-one-nonempty-choice-structure-rejection",
+  "canonical_assessment": "../../reports/2026-10-06-slice-141/semantic-metadata.json",
+  "independent_candidate_entry_port": 8791,
+  "independent_candidate_entry_initial_model_claims": 0,
+  "next_life_review_draft_status": "pending-assistant-proposal-no-executable-grant",
   "automatic_background_or_sharing_enabled": false,
   "automatic_retries": 0
 }

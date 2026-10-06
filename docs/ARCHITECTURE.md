@@ -4,7 +4,9 @@
 
 闭集self-directed-activity只在新独立shared-live schema5资格使用；choice policy pin `7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f`，reply沿S140 natural pin。原S139/S140/LOCAL合同与正常wire保持，root不切旧资格；projection/selector/字段/模型协议/凭据用途不增加。channel说明不作当前用户发言，E1可选影响，已审关注可支持新构想而不回填本人既往；current_plan/focus承接下一具体取舍，合法defer仍由Python有限裁决而非强制开始。
 
-界面本地变化只显示有效结果的闭集field+after，失效时清空，不将before显示成当前参考。shared-choice原policy另加静态pin以守住旧资格；新grant/保存contract/claim/consume各自精确重建。候选/旧接口/必要UI合成与独立复核通过，真实人物结果由[S141报告](reports/2026-10-06-slice-141/REPORT.md)承接；自动生活/分享仍未开启。
+界面本地变化只显示有效结果的闭集field+after，失效时清空，不将before显示成当前参考。shared-choice原policy另加静态pin以守住旧资格；新grant/保存contract/claim/consume各自精确重建。reply实际只发当前kind/plan，不发旧diff/decision_note，版本承接从下一choice及canonical真实差异判定，不要求回复编造修改历史。
+
+真实三支首次7请求/5提交（4活动决定＋1回复）/0重试，一候选start→重启→具体修改→重启→同最终方案回聊成立；当前版也可无E1开始后暂缓，另一候选非空结构拒绝、对照回复纯空白，7stop/0length不证明稳定性。新独立8791 self-directed-activity空root0模型交付，旧8790/默认启动器保持；实际效果由[S141报告](reports/2026-10-06-slice-141/REPORT.md)承接，自动生活/分享及NEXT-LIFE草案未取得可执行资格。
 
 ### Slice-140：共同经历活动接入独立聊天入口
 
