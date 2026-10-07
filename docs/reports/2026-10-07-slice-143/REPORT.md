@@ -1,0 +1,33 @@
+# S143：生活、分享与聊天入口
+
+2026-10-07，用户明确继续实际界面接入；基线main0462756与远端一致。唯一current已承接，开工证据见[浏览器生命周期与仓库比较](../../research/2026-10-07-s143-entry-lifecycle-evidence.md)。本片沿S142准确三用途/资料/DeepSeek/Windows默认slot；新独立入口默认暂停、分享关闭，不升级旧root或迁移记录。
+
+开工只读health：8790、8791、8792均连接被拒绝。本轮没有停止或重启旧服务，也没有查其退出原因；不能据上一片的服务事实宣称今天仍在线。8792待新入口完成后初开验收；所有旧资源和临时目录保留。
+
+本片的完成条件是实际页面可开启/暂停在线生活、控制分享、看到真实方案及助手-origin消息并接话；草稿/原请求/刷新/重启/多窗口不重复发送，查询不推进，默认空入口0模型。真实900秒HTTP驱动验收与浏览器可见持续15分钟分别报告；合成时钟不冒充现实等待，单链成功不证明长期人物质量。每stage1请求0retry、首次失败保留并停，不无限补抽。
+
+当前在实施新入口、薄Adapter、只读归属和界面，并准备唯一独立DEV真实验收；尚未完成源复核或真实新运行。实际结果及源/证据提交由后续事实更新承接。
+
+## 源码阶段已完成
+
+独立entry和runner复核均通过，已发现的reload race与replayed误判P2均关闭。presence与has_prior最终源增量已接纳，root另读关键Host/Adapter/clock接口后接纳；没有Provider材料、字段、协议或权限扩张。正式初开、真实900和实际画面仍待此阶段提交/push后由root执行。
+
+必要验证：新entry11去重用例按首批/修后全部通过，最终3项并发重核通过；49个S142/档案/composition/旧shared受影响行为通过（338.64s）。presence后4个新增/修改Interface和Node行为通过，最后旧S142直接online和准确三用途wire/重开窗口两项smoke通过（62.57s）；组间有重叠，不汇总成产品效果分数。全部合成transport、0真实/0key/0用户焦点，临时目录保留。
+
+pending20虚拟秒验证先前10秒累计保留且只有原reply一次，presence无模型/DB与registry字节不变；90次合成presence到900不消费，wrong revision不消费、空闲仅一次choice，其他owner/暂停/断租/重开守界。Node证明独立timer不被pending阻塞、草稿不发送、隐藏停止；第三准确preview/wire exchange空而has_prior仍true。曾因测试中canonical_path探针排队model lane导致fixture超时，已将路径获取移到pending前，未放宽业务或抹去失败。
+
+## 实施中已定位的接缝
+
+新HTTP并发检查定位到状态查询与stage初始授权短锁竞争，可在发送前错误失败（0transport）。修复方向是pending只呈现已核cache，不拿cache做发送依据；纯权限查询仅由Authority验证当前active living identity并双次读取，不竞争普通历史锁。fullcanonical/UNKNOWN/资料及发送资格仍关闭；foreign nonce在已有stage期间只返回busy，等结束再查精确canonical。
+
+UNKNOWN后的新入口应显示真实needs_attention，而非因旧whole entry读取失败直接退出。仅新living入口处理Facade精确typed状态，主聊天显示presentation_blocked，不把archive可读已提交前缀当作下一请求可发送；不修改旧Entry/原记录或未知恢复fence。
+
+独立runner复核发现异步成功canonical回取为replayed却被误判失败，已最小修两处：接纳成功回取，同时两种成功状态均独立核真实elapsed≥900；恰1transport/audit与raw/value/canonical摘要核对保持。纯fixture/preflight0模型通过，增量复核接纳，runner冻结SHA `897dc71eee825f7e39aa7559a2a8c49d36ae341ae04774500dbf37e34767ca5a`。
+
+独立entry复核另发现reload在父类解锁后清请求map，可能擦掉另一窗口刚登记的新nonce；实现owner正在将整个override收在同一临界区，再做必要验证与增量接纳。旧手动按钮由新HTML明确隐藏，未把隐藏残留当可操作缺陷。合成日限fixture曾先走到合法keep导致无新方案，已修fixture按真实阶段再revise，未放宽业务gate。
+
+上述第一版增量复核已接纳，49个S142/旧受影响行为通过（338.64s），新Entry11去重用例及最后3定向修复复核通过，全部synthetic/0key/0真实。随后root评估代码证据发现pending>15会丢此前累计，不将“必须静默900秒”留作产品要求；在本片内补模型-free presence与活动请求分离，必要新行为完成后再次freeze/增量接纳再提交真实验收。原已通过旧集不因测试数量再全部重复。
+
+presence已实现为Facade-only typed接口与独立5秒页面pulse，只续租/累计，不消费机会或读取fullcanonical/模型。stage空闲后online action才fresh核验并消费；客户端恢复/隐藏不补算。另按既有S132“仍表示此前确实交流过”合同修正verified原records的has_prior，第三完整历史过滤后仍为true；不新增字段、投影用途或人格事实。相关Interface/Node行为待最终结果承接。
+
+真实验收helper随presence作技术适配：等待900为独立max_requests0/transport arm0 stage，再独立choice一次，原≤5首次/0retry/首失败或无方案/false停止保持。新runner SHA `f69b2d4f04bbc2eee1037c5dcf245f6cbb2ea8841d2f2150e59ff6d8df7859a6`、scene canonical SHA `badb3381b75958adb20c18bd7b54d24bb467dff3175ba5e7ecdb3e3149eda508`，只读增量复核通过；S142准确对象/observer原字节保留。纯fixture验证900、断租和提前due均符合闭锁，0新LIVE/模型/key。

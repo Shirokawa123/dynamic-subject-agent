@@ -690,6 +690,11 @@ def validate_shared_activity_entry(config, *, profile_id, timeline_id, technical
     LocalIdentityAuthority(config).validate_shared_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
+def validate_living_activity_entry(config, *, profile_id, timeline_id):
+    """Validate the exact current living-live identity before entry activation."""
+    LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id)
+
+
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
                                 scope_digest=None, audit_path=None, _transport=None, observations=None, technical_variant="baseline", identity_id=None):
     """New exact whole qualification; opening/reopening performs no model call."""
@@ -749,6 +754,7 @@ def open_living_activity_product_local(config, *, gateway, identity_id, binding=
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
+    cognition.living_presence_permission = lambda: authority.living_permission(loaded.qri.profile_id, loaded.timeline_id)
     cognition.living_controls = lambda request: authority.change_living_permission(loaded.qri.profile_id, request)
     cognition.living_failure = lambda: authority.change_living_permission(loaded.qri.profile_id, attention=True)
     cognition.living_revoke = lambda block_source=None: authority.change_living_permission(loaded.qri.profile_id, revoke=True, block_source=block_source)
@@ -783,6 +789,7 @@ def open_living_activity_product_live(config, *, identity_id, grant, audit_path,
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
+    cognition.living_presence_permission = lambda: authority.living_permission(loaded.qri.profile_id, loaded.timeline_id)
     cognition.living_controls = lambda request: authority.change_living_permission(loaded.qri.profile_id, request)
     cognition.living_failure = lambda: authority.change_living_permission(loaded.qri.profile_id, attention=True)
     cognition.living_revoke = lambda block_source=None: authority.change_living_permission(loaded.qri.profile_id, revoke=True, block_source=block_source)

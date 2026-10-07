@@ -249,6 +249,14 @@ class LivingActionRequest:
 
 
 @dataclass(frozen=True)
+class LivingPresenceRequest:
+    """Ephemeral presence only; no nonce, admission or Publication."""
+    target_profile_id: str
+    target_timeline_id: str
+    session_id: str
+
+
+@dataclass(frozen=True)
 class LivingControlRequest:
     target_profile_id: str
     target_timeline_id: str
@@ -270,7 +278,7 @@ class LivingClock:
         self.owner = None
         self.last = self.expires = self.seconds = 0.0
 
-    def heartbeat(self, session, *, paused):
+    def heartbeat(self, session, *, paused, allow_step=True):
         with self.lock:
             now = self.clock()
             if self.owner is None or now >= self.expires:
@@ -283,6 +291,30 @@ class LivingClock:
             self.seconds = 0.0 if paused else min(900.0, self.seconds+elapsed)
             if paused or self.seconds < 900:
                 return False, 'paused' if paused else 'no-decision-boundary'
+            if not allow_step:
+                return True, 'online-ready'
+            self.seconds -= 900
+            return True, 'online-step'
+
+    def presence(self, session, *, paused):
+        with self.lock:
+            if paused:
+                self.reset_session()
+                return False, 'paused'
+            return self.heartbeat(session, paused=False, allow_step=False)
+
+    def consume_opportunity(self, session, *, paused):
+        """Claim only an already accumulated, still owned online opportunity."""
+        with self.lock:
+            if paused:
+                self.seconds = 0.0
+                return False, 'paused'
+            if self.owner != session:
+                return False, 'another-life-window'
+            if self.clock() >= self.expires:
+                return False, 'online-session-expired'
+            if self.seconds < 900:
+                return False, 'no-decision-boundary'
             self.seconds -= 900
             return True, 'online-step'
 
@@ -290,3 +322,14 @@ class LivingClock:
         with self.lock:
             self.seconds = 0.0
             self.last = self.clock()
+
+    def reset_session(self):
+        """Composition reopen discards presence as well as elapsed opportunity."""
+        with self.lock:
+            self.owner = None
+            self.last = self.expires = self.seconds = 0.0
+
+    def snapshot_seconds(self):
+        """Read presence without renewing or mutating an expired lease."""
+        with self.lock:
+            return self.seconds if self.owner is not None and self.clock() < self.expires else 0.0

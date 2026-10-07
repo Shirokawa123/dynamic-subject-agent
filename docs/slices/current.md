@@ -1,25 +1,15 @@
 # 当前工作
 
-唯一执行：[S142](slice-142-local-living-sharing-loop.md)已完成LOCAL准备、准确批准、独立LIVE实现及固定首次真实验收，现收口提交/push证据。LOCAL源2404458、批准事实8b0ebb3、LIVE源f33e51b均已push远端一致；basis153bc6e8…e08f06原对象保留。旧8790/8791/记录/草稿/合同保持，不转换LOCAL资格。
+唯一执行：[S143：生活与分享接入实际聊天入口](slice-143-living-sharing-chat-entry.md)。2026-10-07用户对S142交付后的界面接入建议明确“那就继续”。基线main0462756；先核远端，完成定向开工证据后，在既有S142三用途内实现独立新入口，不逐步骤询问继续。
 
-固定首景5首次真实/5实际提交（1活动决定start＋1助手分享true152字＋3完整普通回复136/91/90字），0重试/0空白或结构拒绝，全部HTTP200/stop。重启与choice/share/reply原nonce/query0模型，前两轮同share原文，第三实际latest_share=null/exchange=[]，原始final→audit→canonical SHA一致，runner exit0/留证完整。机会明确simulation，不宣称已等待真实900秒。见[首景metadata](../reports/2026-10-06-slice-142/live-first-metadata.json)。
+完整用户结果：进入新独立聊天页面，默认暂停且分享关闭；明确开启后，同一在线owner累计900秒提供活动机会，有实际新方案才单独考虑分享，助手分享可见并可接话。暂停/分享开关/失败需检查/未回/日限可理解；刷新、重启、其他窗口、草稿和原请求回取不重复发送或覆盖。原8790/8791、记录和草稿保持，默认启动器不迁移。
 
-## 已完成结果
+接入证据调整：第一版pending时停advance心跳，>15秒等待会断租并丢之前累计，不能代表边聊边用的在线生活。本片新增Facade-only模型-free在场接口与独立页面timer，仅续在场/累计、不consume900或执行模型；空闲advance仍freshcanonical/once。查询不续租、不补离线，Provider字段/policy/用途不变；不是新增永久静默条件。
 
-新独立LOCAL authority/schema6，默认paused=true/share=false。monotonic短租累计900秒只1choice机会，普通heartbeat只内存累计0写/0模型，query不推进/不恢复，离线不补。成功start/revise新文字方案后独立consider-share（一stage1请求）；false也canonical考虑一次、无消息/不耗日话题；true为助手-origin≤400不伪user轮。无变化/已考虑/关闭/未回/日UTC8两true话题先0请求，未回不停止人物生活。
+已批basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`：同Sagiri30事实/4作者解释最小资料、现DeepSeek及Windows默认slot；choice、share和有限latest_share普通reply三用途。每stage1请求/0自动重试/技术失败停，默认暂停/分享关闭，离线不补，UTC8最多2已提交true新话题，未回只抑制新分享；latest_share仅后2成功普通轮，第三完整派生历史过滤。原Pending/LOCAL、旧root及原冻结review不升级。调用次数不限的既有同用途授权保持，旧首景5仅已完成场景停止条件。
 
-reply准备current1000/可关闭两完整4000/一已提交逐字E1≤400/当前kindplan＋latestshare.text≤400仅后2成功完整user轮；third完整S1派生旧轮及传递lineage失活，不借history续命。source/history/cutoff停用整item过滤，before/diff/decisionnote不Provider。Authority permissionRev/source_blocked先隔离再canonical，暂停/off-on/跨日/head/identity/source/history final/coldprepared fence不复活；失败needsattention停新自动动作，不重抽/不造生活。
+S142已提交push0462756，真实首景5请求/5提交/0重试/0空白，机会明确simulation；重启、两轮分享接话、第三完整历史过滤成立。该事实不证明真实900秒、长程稳定性或人物自然度，旧空白内因仍未确定。报告见[上一片](../reports/2026-10-06-slice-142/REPORT.md)。
 
-23必要S142行为及既有107+lookup9兼容通过（分组有重叠不当效果总分）。独立core发现schema6 lookup遗漏，已6/5/4/1精确修复与必要readonly回取验证；scope发现runner缺partial留证已checkpoint修复，均复核关闭。最终五支31LOCAL合成Task，模拟90×10秒/分享/重启/两轮/第三过滤/False/源停用/失败恢复/日限通过，actualpreview=Task=wire31，Pending31全typed拒，LOCAL registry前拒remote，0key。
+本片验收按完整界面行为与真实运行证据接纳：新入口初开0模型、默认开关、实际方案与助手分享归属、来源停用/暂停、在线owner与断租/重启不补算、草稿/请求/刷新恢复。优先后台服务接口；需要画面检查只用自有隐藏页，不抢焦点或碰用户草稿。明确区分合成时钟、真实在线等待及模型正文质量；失败保首、记录未验证部分，不无限补抽。
 
-## 已批准的准确对象
-
-当前[REVIEW](../experiments/s142/REVIEW.md)/[review.json](../experiments/s142/review.json) basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`。原c6317b6f对象/旧资源完整保留；checkpoint改helper见证不改fields/material/policy/wire，最终独立重算完整一致，不重跑无新业务疑点的31。数据、触发、输出、Source权限窗、协议/slot、真实首次固定≤5stage停止条件均冻结。首次5只是有限验收终止条件，不新增永久模型预算。
-
-三个新用途已按准确问题批准：同Sagiri30/4/现DeepSeek Windows默认slot的自动活动机会、应用内分享生成、普通接话有限share原话；默认暂停/分享关闭、在线不补离线，每stage最多1请求0retry、失败停、UTC8最多2新分享话题/未回不新分享。原Pending/LOCAL仍不可远程；新的精确Approved grant/manifest/authority和三用途metadata audit已实现，sealed+canonical材料/policy/协议独立pin、claim/consume即时重建、同线程一次票据才用existing slot HTTPS。14必要LIVE与14兼容选集通过，独立源码和runner scope接纳；后置留证或close未知明确unverified/非0退出P2已修，四纯fixture0模型。原文只canonical，首景不补抽；typed failure、Publication/final/coldprepared fence保持。
-
-## 边界与未解
-
-一次真实分享接话链成立，人物自然度/值得分享的普遍质量、真实900秒在线及长程稳定性未验证；S140/141旧空白和结构拒绝的内部原因仍未知。首景无E1，不冒称新的共同经历因果对照。系统通知、后台系统服务、离线补算、人格重写/Reflection、其他Provider/key用途、云、更多资料与旧数据迁移未开启。所有临时目录、旧资源、原canonical/失败保留。完整证据见[S142报告](../reports/2026-10-06-slice-142/REPORT.md)。
-
-下一项完整用户结果：接通新独立聊天入口的在线owner/心跳、默认暂停和分享关闭、实际方案及助手分享显示、失败需检查、重启/草稿/有限接话。沿既有三用途准备和实现，不以新研究文档替代核心能力；旧入口不迁移。S142尚未交付该界面，不将Facade/CLI首链称为完整MVP。
+root负责整体合同/文档/真实资源/提交推送，一个实现owner贯通src/scripts/tests和必要启动器，独立研究/复核按策略组织。只在需要新数据/凭据用途、云、系统服务/通知、删除或迁移时集中确认；本片不启用这些操作、人格重写或Reflection。阶段验证完成提交并push既有远端，STATUS每次最多5行事实。

@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -7759,9 +7759,9 @@ class TimelineEngine:
                     rows.append(WholeChatArchiveRow('turn', outcome.head_sequence, revision,
                         command.utterance, outcome.expression.text, published_at))
             elif type(command) is SharedActivityInput and SHARED_INTENT in self._authority.allowed_intents:
-                # Verified experience/activity Publications are system acts,
-                # not another user/assistant turn. They remain in canonical
-                # history and the activity view, while this archive lists chat.
+                # Verified experience/activity Publications are system acts.
+                # A true living share is a separately typed assistant message,
+                # never a manufactured SubjectCommand/user turn.
                 record = outcome.shared_record
                 prepared = self.prepared_plan(outcome.operation_ref)
                 expected_kind = 'decision' if command.input_kind == 'advance' else command.input_kind
@@ -7772,6 +7772,15 @@ class TimelineEngine:
                     or prepared.expected_basis.head_sequence != outcome.head_sequence - 1
                     or prepared.expected_basis.published_outcome_digest != outcome.previous_outcome_digest):
                     raise PublicationFailedClosed('whole-archive-origin-unverified', 'shared system origin or frozen basis differs')
+                if command.input_kind == 'share' and self._authority.provider_authority in LIVING_AUTHORITIES:
+                    from dynamic_subject_agent.living_activity import validate_living
+                    living = validate_living(record.living)
+                    shares = [row for row in living['shares'] if row['head_sequence'] == outcome.head_sequence]
+                    if len(shares) > 1 or shares and shares[0]['text'] != outcome.expression.text:
+                        raise PublicationFailedClosed('whole-archive-origin-unverified', 'assistant share differs from its Publication')
+                    if shares and (not request.query or request.query in shares[0]['text']):
+                        rows.append(WholeChatArchiveRow('assistant-share', outcome.head_sequence, revision,
+                            assistant_text=shares[0]['text'], published_at_us=published_at, label='纱雾主动分享'))
                 continue
             else:
                 raise PublicationFailedClosed('whole-archive-origin-unverified', 'archive has an unexpected Publication origin')
@@ -8190,9 +8199,12 @@ class TimelineEngine:
         if verified is None:
             return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved')
         records, cutoff = verified
+        # Source/lineage filtering controls which words may be disclosed. It
+        # does not erase the verified fact that a prior exchange committed.
+        has_prior = bool(records)
         if (is_whole_dialogue_control(message)
             or records and records[-1].head_sequence > cutoff and is_whole_dialogue_control(records[-1].user_text)):
-            return CharacterDialogueBasis('restricted', bool(records), problem_code='character-history-restricted')
+            return CharacterDialogueBasis('restricted', has_prior, problem_code='character-history-restricted')
         if SHARED_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.shared_activity import initial_record, visible_state
             publications = self._verified_publications()
@@ -8212,7 +8224,7 @@ class TimelineEngine:
             records = tuple(row for row in records if set(dependencies[row.head_sequence]) <= valid
                 and row.head_sequence not in blocked_heads and not lineage[row.head_sequence] & blocked_heads)
         selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_whole_dialogue_control) if enabled else ()
-        return CharacterDialogueBasis('available', bool(records), selected)
+        return CharacterDialogueBasis('available', has_prior, selected)
 
     def preview_whole_dialogue(self, message, enabled):
         if type(enabled) is not bool:

@@ -1,5 +1,15 @@
 # 产品架构
 
+### Slice-143：在线生活与分享的独立聊天入口
+
+新独立living-live entry/root/health/8792与启动器适配S142，不转换旧8790/8791或其记录。Adapter只调用Facade；新entry validator由Authority校验active identity、timeline和精确living-live资格，Host/canonical/Provider装配仍在local_product。默认暂停、分享关闭，初开与查读不调用模型。
+
+在线在场与活动选择分离：`LivingPresenceRequest`经Facade/Host仅核Authority双次active scope/permission，续单窗口monotonic短租并累计到900；0canonical写/0模型、不消费机会，不取wholehistory锁。独立页面5秒pulse在等待回复时继续，隐藏/断租/重开不补；空闲online advance再经lane、freshcanonical/revision/permission及owner/lease核验消费一次。原heartbeat默认消费语义与S142 caller保持，未新增Provider字段/policy/用途。
+
+pending只显示已核cache，foreign请求/范围预览等stage结束后才读canonical，不以cache授予发送资格。reload与请求map清理持同一锁；未知时新入口可显示Authority权限，但正文presentation_blocked且禁止发送，不把可读已提交archive前缀当恢复资格。真share在新schema6档案按assistant-share排序，不伪Subject/user轮，false无消息。verified原交流的has_prior布尔在原话/lineage过滤之前保留，过滤窗为空不等于初识；第三整share历史过滤保持。
+
+实际验收与提交由[S143报告](reports/2026-10-07-slice-143/REPORT.md)承接。HTTP真实900、浏览器可见状态和人物内容质量分别报告，不以合成时钟或接口检查证明MVP。
+
 ### Slice-142：独立在线生活、分享和两轮接话
 
 2026-10-06后续批准与实施：用户准确批准basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`的三用途。新增独立`original-living-activity-deepseek-s142-1` authority、manifest/schema6、`ApprovedLivingActivityGrant`及`open_living_activity_product_live`；旧LOCAL、Pending和旧root保持。grant分别literal pin原审材料、LOCAL合同、三policy、协议/slot，每次从sealed、canonical及当前permission/source/day重建请求，同client/同线程一次票据消费后才可HTTPS发送，三purpose独立metadata audit。

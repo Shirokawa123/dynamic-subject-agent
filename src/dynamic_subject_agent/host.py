@@ -7739,16 +7739,18 @@ class RuntimeHost:
             phase=view['phase'], current_plan=view['current_plan'], visible_result=view['visible_result'],
             source=view['visible_source'], shares=state['shares'], considered=state['considered'],
             latest_share=latest_share(view, cognition.try_authorization().history_enabled),
-            share_gate=sharing_gate(view, permission, cognition.living_day()), online_seconds=cognition.living_clock.seconds))
+            share_gate=sharing_gate(view, permission, cognition.living_day()), online_seconds=cognition.living_clock.snapshot_seconds()))
 
     def query_living_controls(self, binding):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         if binding.provider_authority not in LIVING_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
         cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
-        authorization = cognition.try_authorization()
+        # Permission is independently verified by the Authority against the
+        # exact active living identity. A metadata read need not acquire the
+        # ordinary chat history lock used by stage admission and publication.
         permission = cognition.living_permission()
-        if cognition.try_authorization() != authorization or cognition.living_permission() != permission:
+        if cognition.living_permission() != permission:
             return SharedActivityResponse('failed-closed', problem_code='living-permission-query-changed')
         return SharedActivityResponse('available', view=permission)
 
@@ -7762,6 +7764,27 @@ class RuntimeHost:
         result = cognition.living_controls(request)
         cognition.living_clock.reset()
         return SharedActivityResponse(result['status'], view=result['permission'])
+
+    def heartbeat_living_presence(self, binding, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if binding.provider_authority not in LIVING_AUTHORITIES:
+            return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
+        cognition = self._cognition_assembly.select(self._qri_for_binding(binding))
+        permission = cognition.living_presence_permission()
+        due, code = cognition.living_clock.presence(request.session_id,
+            paused=permission['paused'] or permission['needs_attention'])
+        try:
+            current_permission = cognition.living_presence_permission()
+        except Exception:
+            cognition.living_clock.reset_session()
+            raise
+        if current_permission != permission:
+            cognition.living_clock.reset_session()
+            return SharedActivityResponse('failed-closed', problem_code='living-presence-permission-changed')
+        return SharedActivityResponse('available', problem_code=code, view=dict(
+            session_owner=code != 'another-life-window' and code != 'paused',
+            opportunity_due=due, online_seconds=cognition.living_clock.snapshot_seconds(), permission=permission))
 
     def apply_living_activity(self, binding, request):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedActivityInput, shared_failure_response
@@ -7777,7 +7800,7 @@ class RuntimeHost:
         permission = cognition.living_permission()
         if request.action == 'online':
             due, code = cognition.living_clock.heartbeat(request.session_id,
-                paused=permission['paused'] or permission['needs_attention'])
+                paused=permission['paused'] or permission['needs_attention'], allow_step=False)
             if not due:
                 return SharedActivityResponse('no-op', problem_code=code)
         if permission['paused'] or permission['needs_attention']:
@@ -7792,6 +7815,11 @@ class RuntimeHost:
             if request.expected_revision != view['revision']:
                 return SharedActivityResponse('conflict', problem_code='living-revision-changed')
             permission, day = cognition.living_permission(), cognition.living_day()
+            if request.action == 'online':
+                due, code = cognition.living_clock.consume_opportunity(request.session_id,
+                    paused=permission['paused'] or permission['needs_attention'])
+                if not due:
+                    return SharedActivityResponse('no-op', problem_code=code)
             kind = 'share' if request.action == 'share' else 'advance'
             if kind == 'share':
                 gate = sharing_gate(view, permission, day)

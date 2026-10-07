@@ -1440,10 +1440,11 @@ class LocalIdentityAuthority:
         _write_state(self._config.state_path, state)
         return self.load_active()
 
-    def living_permission(self, expected_identity_id):
+    def living_permission(self, expected_identity_id, expected_timeline_id=None):
         from dynamic_subject_agent.living_activity import validate_permission
         state, record, identity = self._active_chat_record(expected_identity_id)
-        if identity.qri.provider_authority not in LIVING_AUTHORITIES:
+        if (identity.qri.provider_authority not in LIVING_AUTHORITIES
+            or expected_timeline_id is not None and record.get('timeline_id') != expected_timeline_id):
             raise RuntimeError('independent-living-authority-required')
         return validate_permission(record['living_permission'])
 
@@ -1536,6 +1537,14 @@ class LocalIdentityAuthority:
             or contract_variant(identity.qri.reviewed_chat_contract) != 'shared-live'
             or shared_variant_for_contract(identity.qri.reviewed_chat_contract) != technical_variant):
             raise RuntimeError('shared-entry-identity-unverified')
+
+    def validate_living_activity_entry(self, expected_identity_id, expected_timeline_id):
+        """Pure sealed scope check before the living entry opens or recovers."""
+        _, record, identity = self._active_chat_record(expected_identity_id)
+        if (identity.qri.provider_authority != LIVING_LIVE_AUTHORITY
+            or record.get('timeline_id') != expected_timeline_id
+            or contract_variant(identity.qri.reviewed_chat_contract) != 'living-live'):
+            raise RuntimeError('living-entry-identity-unverified')
 
     @contextmanager
     def original_whole_guard(self, authorization):
