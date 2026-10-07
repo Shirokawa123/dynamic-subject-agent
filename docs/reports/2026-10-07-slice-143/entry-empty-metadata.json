@@ -1,0 +1,26 @@
+{
+  "version": "s143-formal-empty-1",
+  "health": {
+    "application": "living-activity-chat-s143"
+  },
+  "character_status": "active",
+  "history_enabled": true,
+  "chat_message_count": 0,
+  "phase": "unstarted",
+  "current_plan": null,
+  "source": null,
+  "share_count": 0,
+  "permission": {
+    "paused": true,
+    "sharing_enabled": false,
+    "revision": 0,
+    "needs_attention": false,
+    "source_blocked": false
+  },
+  "raw_text_exported": false,
+  "browser_opened": false,
+  "character_counter_fields": {
+    "budget_used": 0,
+    "budget_remaining": null
+  }
+}

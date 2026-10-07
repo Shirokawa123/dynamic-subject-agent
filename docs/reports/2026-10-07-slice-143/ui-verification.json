@@ -1,0 +1,15 @@
+{
+  "version": "s143-ui-empty-verification-1",
+  "port": 8792,
+  "browser_background": true,
+  "initial_draft_empty": true,
+  "own_draft_edited_without_send": true,
+  "refresh_preserved_own_draft": true,
+  "reopen_preserved_own_draft": true,
+  "own_draft_cleared": true,
+  "formal_chat_message_count": 0,
+  "formal_budget_used": 0,
+  "permission_unchanged": true,
+  "raw_model_text_exported": false,
+  "screenshot": "entry-empty.jpg"
+}

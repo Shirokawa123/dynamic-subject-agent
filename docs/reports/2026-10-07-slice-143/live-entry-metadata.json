@@ -1,0 +1,479 @@
+{
+  "version": "s143-entry-http-first-live-2",
+  "review_basis": "153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06",
+  "approved_scenario_sha256": "28d37c3ff2d3e4939de7cf7e3e6362aaa5a34d0a89fb1b87f3891cdc613f9315",
+  "first_scene_sha256": "badb3381b75958adb20c18bd7b54d24bb467dff3175ba5e7ecdb3e3149eda508",
+  "runner_sha256": "f69b2d4f04bbc2eee1037c5dcf245f6cbb2ea8841d2f2150e59ff6d8df7859a6",
+  "independent_root": "C:\\Users\\30252\\AppData\\Local\\DynamicSubjectAgent\\living-activity-development\\s143\\live-http-first-20261007-1",
+  "status": "stopped-on-first-technical-failure",
+  "time_is_simulated": false,
+  "synthetic_outputs": false,
+  "maximum_first_requests": 5,
+  "requests_per_stage": 1,
+  "automatic_retries": 0,
+  "raw_text_exported": false,
+  "reasoning_text_exported": false,
+  "stages": [
+    {
+      "stage": "create-own-entry-and-http-defaults",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 0,
+      "audit_after": 0,
+      "initial_page_sha256": "3f95b6ac3e806f4e12aa03f10ee1846c6b8f0e896135d7988509c941198b196c"
+    },
+    {
+      "stage": "initial-http-reload-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 0,
+      "audit_after": 0
+    },
+    {
+      "stage": "explicit-http-unpause-enable-sharing",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 0,
+      "audit_after": 0
+    },
+    {
+      "stage": "real-monotonic-http-model-free-presence",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 0,
+      "online_owner_seconds_before_choice": 900.0603903000001,
+      "heartbeat_count": 181,
+      "canonical_business_unchanged": true,
+      "audit_after": 0
+    },
+    {
+      "stage": "one-http-online-choice-after-presence-due",
+      "status": "replayed",
+      "error_type": null,
+      "time_is_simulated": false,
+      "purpose": "living-activity-choice",
+      "request_id": "897f2179-9269-47d6-9387-87ce24050f5a",
+      "audit_before": 0,
+      "maximum_requests": 1,
+      "expected_task_sha256": "3c70411a6937aa150d7e3b9de67f1ee3aea67cbb5aa43b791b382756f14cd8aa",
+      "expected_wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+      "expected_payload_sha256": "6eae23b60174bff9333ab2d9cb76da43a90f09203a796c3ca39bafd532827e25",
+      "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+      "audit_after": 1,
+      "transport_count": 1,
+      "observations": [
+        {
+          "task_kind": "living-activity-choice",
+          "purpose": "living-activity-choice",
+          "status": "complete",
+          "request_digest": "3c70411a6937aa150d7e3b9de67f1ee3aea67cbb5aa43b791b382756f14cd8aa",
+          "wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+          "model": "deepseek-flash",
+          "finish_reason": "stop",
+          "elapsed_seconds": 31.18804910000017,
+          "usage": {
+            "prompt_tokens": 2107,
+            "completion_tokens": 1640,
+            "total_tokens": 3747,
+            "prompt_cache_hit_tokens": 1920,
+            "prompt_cache_miss_tokens": 187
+          }
+        }
+      ],
+      "raw_final_matches_completed_audit": true,
+      "online_owner_seconds_before_choice": 900.0603903000001,
+      "heartbeat_count": 181,
+      "action": "start",
+      "plan_sha256": "3e337785310fedeabc3aac35686d4ae6cc92008e61528a90530eaf5fdfaa5dc7",
+      "simulated_event": false,
+      "canonical_actual_plan_matches_raw": true,
+      "canonical_choice_value_sha256": "0f487852eb62225eb0bca7ed82df6a83a1254617759603fc32a5568ebda2399d"
+    },
+    {
+      "stage": "http-choice-nonce-replay-query-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 1,
+      "audit_after": 1
+    },
+    {
+      "stage": "independent-http-share-consider",
+      "status": "replayed",
+      "error_type": null,
+      "time_is_simulated": false,
+      "purpose": "living-activity-share",
+      "request_id": "428fb61e-652a-459f-923a-dd5b419fa5cd",
+      "audit_before": 1,
+      "maximum_requests": 1,
+      "expected_task_sha256": "2eb332cc16b1ea1bd00f47ae94f94adef10157e13f1636b1440d24ad954854c9",
+      "expected_wire_sha256": "1a0a158e22fdb7f88281ed7de9b66d50f0c5899206b53adbfe7f00a64599f562",
+      "expected_payload_sha256": "88158e9a883fa3752db5750d719c4bf4201204f63507099c71004b7d61558190",
+      "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d",
+      "audit_after": 2,
+      "transport_count": 1,
+      "observations": [
+        {
+          "task_kind": "living-activity-share",
+          "purpose": "living-activity-share",
+          "status": "complete",
+          "request_digest": "2eb332cc16b1ea1bd00f47ae94f94adef10157e13f1636b1440d24ad954854c9",
+          "wire_sha256": "1a0a158e22fdb7f88281ed7de9b66d50f0c5899206b53adbfe7f00a64599f562",
+          "model": "deepseek-flash",
+          "finish_reason": "stop",
+          "elapsed_seconds": 28.841931599999953,
+          "usage": {
+            "prompt_tokens": 2045,
+            "completion_tokens": 1264,
+            "total_tokens": 3309,
+            "prompt_cache_hit_tokens": 0,
+            "prompt_cache_miss_tokens": 2045
+          }
+        }
+      ],
+      "raw_final_matches_completed_audit": true,
+      "share": true,
+      "share_chars": 126,
+      "assistant_origin_no_fake_user_turn": true,
+      "raw_share_equals_canonical": true,
+      "canonical_share_value_sha256": "62005dc768963fbd3c0c517a1b94832612a2ec4d0c6e2e788bd2d29bd8226569"
+    },
+    {
+      "stage": "http-share-nonce-replay-query-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 2,
+      "audit_after": 2
+    },
+    {
+      "stage": "http-share-restart-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 2,
+      "audit_after": 2
+    },
+    {
+      "stage": "http-choice-after-restart-query-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 2,
+      "audit_after": 2
+    },
+    {
+      "stage": "http-share-after-restart-query-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 2,
+      "audit_after": 2
+    },
+    {
+      "stage": "ordinary-http-followup-1",
+      "status": "unverified",
+      "error_type": "AcceptanceStopped",
+      "time_is_simulated": false,
+      "purpose": "living-activity-reply",
+      "request_id": "24b9c5c1-86b8-4fb0-997b-6abe01db5671",
+      "audit_before": 2,
+      "maximum_requests": 1,
+      "expected_task_sha256": "1336887682eb56df1f2d0151f2d0d473460f67e33c3fbffbe51e7f4c81ac2420",
+      "expected_wire_sha256": "de21a90c5105508d10deee7f0a9858a8f24b13c01069ebd2a0493b8f6c3bb001",
+      "expected_payload_sha256": "008f9c5b9136d3d5078cbf7036b50220d3de80572dab9167851526d1da2373be",
+      "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00",
+      "audit_after": 3,
+      "transport_count": 1,
+      "observations": [
+        {
+          "task_kind": "living-activity-reply",
+          "purpose": "living-activity-reply",
+          "status": "failed-closed",
+          "request_digest": "1336887682eb56df1f2d0151f2d0d473460f67e33c3fbffbe51e7f4c81ac2420",
+          "wire_sha256": "de21a90c5105508d10deee7f0a9858a8f24b13c01069ebd2a0493b8f6c3bb001",
+          "error_code": "response-content-empty",
+          "model": "deepseek-flash",
+          "finish_reason": "stop",
+          "elapsed_seconds": 24.186357399999906,
+          "usage": {
+            "prompt_tokens": 2880,
+            "completion_tokens": 257,
+            "total_tokens": 3137,
+            "prompt_cache_hit_tokens": 2304,
+            "prompt_cache_miss_tokens": 576
+          }
+        }
+      ]
+    },
+    {
+      "stage": "final-explicit-http-pause-shareoff-zero-model",
+      "status": "complete",
+      "error_type": null,
+      "time_is_simulated": false,
+      "maximum_requests": 0,
+      "audit_before": 3,
+      "audit_after": 3
+    }
+  ],
+  "transport": [
+    {
+      "stage": "one-http-online-choice-after-presence-due",
+      "status": "response-received",
+      "error_type": null,
+      "purpose": "living-activity-choice",
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "wire_sha256": "cd47db932ca232f218131450caef4beee33c68bed870b6a7b3488fd8af847a26",
+      "task_sha256": "3c70411a6937aa150d7e3b9de67f1ee3aea67cbb5aa43b791b382756f14cd8aa",
+      "payload_sha256": "6eae23b60174bff9333ab2d9cb76da43a90f09203a796c3ca39bafd532827e25",
+      "policy_sha256": "7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f",
+      "response_boundary": {
+        "http_status": 200,
+        "body_bytes": 7803,
+        "envelope_json": true,
+        "duplicate_semantic_keys": false,
+        "choices_count": 1,
+        "final_json": true,
+        "exact_reply_schema": false,
+        "usage": {
+          "prompt_tokens": 2107,
+          "completion_tokens": 1640,
+          "total_tokens": 3747
+        },
+        "reasoning_tokens": 1409,
+        "finish_reason": "stop",
+        "delta_present": false,
+        "assistant_role": true,
+        "content": {
+          "state": "string",
+          "chars": 416,
+          "stripped_chars": 416
+        },
+        "reasoning": {
+          "state": "string",
+          "chars": 4750,
+          "stripped_chars": 4750
+        },
+        "undocumented_final": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "undocumented_refusal": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "tool_calls_count": null,
+        "exact_task_schema": true,
+        "final_value_sha256": "0f487852eb62225eb0bca7ed82df6a83a1254617759603fc32a5568ebda2399d",
+        "plan_sha256": "3e337785310fedeabc3aac35686d4ae6cc92008e61528a90530eaf5fdfaa5dc7",
+        "reply_sha256": null,
+        "reply_chars": null,
+        "action": "start",
+        "share": null
+      },
+      "elapsed_seconds": 31.016380000000026
+    },
+    {
+      "stage": "independent-http-share-consider",
+      "status": "response-received",
+      "error_type": null,
+      "purpose": "living-activity-share",
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "wire_sha256": "1a0a158e22fdb7f88281ed7de9b66d50f0c5899206b53adbfe7f00a64599f562",
+      "task_sha256": "2eb332cc16b1ea1bd00f47ae94f94adef10157e13f1636b1440d24ad954854c9",
+      "payload_sha256": "88158e9a883fa3752db5750d719c4bf4201204f63507099c71004b7d61558190",
+      "policy_sha256": "eaa2d6877df8edf70282e599049c4faef6b6cf50dfa823c564190e47d4823f4d",
+      "response_boundary": {
+        "http_status": 200,
+        "body_bytes": 6346,
+        "envelope_json": true,
+        "duplicate_semantic_keys": false,
+        "choices_count": 1,
+        "final_json": true,
+        "exact_reply_schema": false,
+        "usage": {
+          "prompt_tokens": 2045,
+          "completion_tokens": 1264,
+          "total_tokens": 3309
+        },
+        "reasoning_tokens": 1160,
+        "finish_reason": "stop",
+        "delta_present": false,
+        "assistant_role": true,
+        "content": {
+          "state": "string",
+          "chars": 172,
+          "stripped_chars": 172
+        },
+        "reasoning": {
+          "state": "string",
+          "chars": 2071,
+          "stripped_chars": 2071
+        },
+        "undocumented_final": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "undocumented_refusal": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "tool_calls_count": null,
+        "exact_task_schema": true,
+        "final_value_sha256": "62005dc768963fbd3c0c517a1b94832612a2ec4d0c6e2e788bd2d29bd8226569",
+        "plan_sha256": null,
+        "reply_sha256": "bc34f9c8ec45ac7d091ff352cb3a272d8e195a91338f4af291989ab2d8170567",
+        "reply_chars": 126,
+        "action": null,
+        "share": true
+      },
+      "elapsed_seconds": 28.475759899999503
+    },
+    {
+      "stage": "ordinary-http-followup-1",
+      "status": "response-received",
+      "error_type": null,
+      "purpose": "living-activity-reply",
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "wire_sha256": "de21a90c5105508d10deee7f0a9858a8f24b13c01069ebd2a0493b8f6c3bb001",
+      "task_sha256": "1336887682eb56df1f2d0151f2d0d473460f67e33c3fbffbe51e7f4c81ac2420",
+      "payload_sha256": "008f9c5b9136d3d5078cbf7036b50220d3de80572dab9167851526d1da2373be",
+      "policy_sha256": "ded5c6dd9b06f57ada4f42461c992cea43f9ad328388c4b89e86df4880cf7f00",
+      "response_boundary": {
+        "http_status": 200,
+        "body_bytes": 1486,
+        "envelope_json": true,
+        "duplicate_semantic_keys": false,
+        "choices_count": 1,
+        "final_json": false,
+        "exact_reply_schema": false,
+        "usage": {
+          "prompt_tokens": 2880,
+          "completion_tokens": 257,
+          "total_tokens": 3137
+        },
+        "reasoning_tokens": 184,
+        "finish_reason": "stop",
+        "delta_present": false,
+        "assistant_role": true,
+        "content": {
+          "state": "string",
+          "chars": 72,
+          "stripped_chars": 0
+        },
+        "reasoning": {
+          "state": "string",
+          "chars": 317,
+          "stripped_chars": 317
+        },
+        "undocumented_final": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "undocumented_refusal": {
+          "state": "missing",
+          "chars": null,
+          "stripped_chars": null
+        },
+        "tool_calls_count": null,
+        "exact_task_schema": false,
+        "final_value_sha256": null,
+        "plan_sha256": null,
+        "reply_sha256": null,
+        "reply_chars": null,
+        "action": null,
+        "share": null
+      },
+      "elapsed_seconds": 23.383550800000194
+    }
+  ],
+  "checks": {
+    "fresh-empty-http-default-paused-sharing-off-zero-model": true,
+    "real-900-http-owner-single-choice-no-lease-reset": true
+  },
+  "audit": [
+    {
+      "ordinal": 0,
+      "attempt_id": "d66b04771994891876ab1df4e12e542973a7f365292c52ed23dc81bb72bc75a6",
+      "request_digest": "3c70411a6937aa150d7e3b9de67f1ee3aea67cbb5aa43b791b382756f14cd8aa",
+      "purpose": "living-activity-choice",
+      "run_digest": "26d13d820f4d0c9be8794bc84c937467851b7e0e8ba7d50e1b16387a771046c0",
+      "status": "complete",
+      "output_digest": "0f487852eb62225eb0bca7ed82df6a83a1254617759603fc32a5568ebda2399d"
+    },
+    {
+      "ordinal": 1,
+      "attempt_id": "0abe2581202b58784b4b9a02bc711e162984897eb4132ee2c831d2a87fba7ca1",
+      "request_digest": "2eb332cc16b1ea1bd00f47ae94f94adef10157e13f1636b1440d24ad954854c9",
+      "purpose": "living-activity-share",
+      "run_digest": "26d13d820f4d0c9be8794bc84c937467851b7e0e8ba7d50e1b16387a771046c0",
+      "status": "complete",
+      "output_digest": "62005dc768963fbd3c0c517a1b94832612a2ec4d0c6e2e788bd2d29bd8226569"
+    },
+    {
+      "ordinal": 2,
+      "attempt_id": "654c51af76bc9c656b11bb6260b759b290eeb849b1c3af85042ddfa6f7c7cc97",
+      "request_digest": "1336887682eb56df1f2d0151f2d0d473460f67e33c3fbffbe51e7f4c81ac2420",
+      "purpose": "living-activity-reply",
+      "run_digest": "26d13d820f4d0c9be8794bc84c937467851b7e0e8ba7d50e1b16387a771046c0",
+      "status": "failed-closed",
+      "output_digest": null
+    }
+  ],
+  "audit_count": 3,
+  "safe_observer_sha256": "50e9998db00185271a0c20464bf05aef2fd885760864f6c932662b7d833efd64",
+  "http_driven_online": true,
+  "browser_visible_900_seconds_verified": false,
+  "independent_model_free_presence": true,
+  "presence_consumes_opportunity": false,
+  "draft_browser_behavior_verified": false,
+  "automatic_system_service": false,
+  "progress": {
+    "heartbeat_count": 181,
+    "uninterrupted_owner_seconds": 900.0603903000001,
+    "heartbeat_gap_seconds": 5.000485900000058,
+    "presence_online_seconds": 900.0,
+    "opportunity_due": true,
+    "presence_status": "available"
+  },
+  "checkpoint_io_error_types": [],
+  "server_port": 62149,
+  "stopped_stage": "ordinary-http-followup-1",
+  "runner_exit_code": 1,
+  "error_type": "AcceptanceStopped",
+  "stop_code": "first-http-technical-failure",
+  "permission_before_final_pause": {
+    "paused": true,
+    "sharing_enabled": true,
+    "revision": 2,
+    "needs_attention": true,
+    "source_blocked": false
+  },
+  "final_permission": {
+    "paused": true,
+    "sharing_enabled": false,
+    "revision": 3,
+    "needs_attention": false,
+    "source_blocked": false
+  },
+  "own_http_server_closed": true,
+  "entry_product_closed": true
+}

@@ -6,7 +6,34 @@
 
 本片的完成条件是实际页面可开启/暂停在线生活、控制分享、看到真实方案及助手-origin消息并接话；草稿/原请求/刷新/重启/多窗口不重复发送，查询不推进，默认空入口0模型。真实900秒HTTP驱动验收与浏览器可见持续15分钟分别报告；合成时钟不冒充现实等待，单链成功不证明长期人物质量。每stage1请求0retry、首次失败保留并停，不无限补抽。
 
-当前在实施新入口、薄Adapter、只读归属和界面，并准备唯一独立DEV真实验收；尚未完成源复核或真实新运行。实际结果及源/证据提交由后续事实更新承接。
+源码阶段提交/push `dd62bc8fa50e6d9c78421eb920d56c71d9353506`，远端核对一致后，root已唯一执行真实900秒场景并交付新8792空入口。实际结果如下；后文实施检查按其历史阶段读取，不冒称整链/MVP通过。
+
+## 实际交付与真实结果
+
+新入口[http://127.0.0.1:8792](http://127.0.0.1:8792)，启动器[Start-LivingActivityChat.cmd](../../../app/desktop/Start-LivingActivityChat.cmd)。实际独立正式root为`C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-activity-chat/entry`，默认暂停/分享关闭、history开启、空聊天/无E1/无方案/0模型，health为living-activity-chat-s143。后台启动未打开浏览器或抢焦点；旧默认启动器及旧root保持。
+
+自有隐藏IAB页面检查空态与中文控件，输入自有非私人测试草稿后点击刷新和本地重开，原草稿保留且未发送；只清理精确匹配的自有草稿，没有碰用户草稿。复核正式入口仍0消息/0模型、permission revision0及默认开关完全不变；[初开摘要](entry-empty-metadata.json)、[UI摘要](ui-verification.json)、[空页面画面](entry-empty.jpg)已保存。截图不含模型正文。验证的是桌面可用画面及恢复，未做风格重设计或全部窄屏/缩放审查。
+
+真实DEV root独立为`C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-activity-development/s143/live-http-first-20261007-1`。未缩短或注入时钟：181次5秒间隔presence、实际elapsed `900.0603903`秒，server累计900/due=true；等待阶段audit与transport始终0、无canonical活动，之后才消费一次机会。此证据是**真实HTTP驱动在线**，不是浏览器连续可见15分钟的证明；pending保持在场由Interface/Node合成行为另证。
+
+| 首次阶段 | 实际结果 | 证据与限制 |
+| --- | --- | --- |
+| 活动选择 | start，新文字构图方案实际提交 | wire/raw final/audit/canonical摘要一致；真实事件simulated=false |
+| 独立分享 | true，126字助手消息实际提交 | 无假user轮；重启及原nonce回取保持0调用 |
+| 首次追问 | FailedClosed，未提交普通回复 | HTTP200/stop，content72字符且strip后0；非JSON正文，error=response-content-empty |
+| 第二/第三追问 | 未执行 | 首技术失败即停；本轮不冒称两轮接话/第三真实过滤通过 |
+
+共**3首次真实请求、2提交（1活动/1分享）、1上游纯空白、0重试**。第一次追问reasoning通道非空（只保长度/用量，不保存内容），未发现另一final/refusal/tool_calls；不是被普通控制词误拦，也不是应用解析删掉了已有中文正文。已证明问题位于Provider响应的最终正文边界，服务内部为何输出空白仍未知；不推断协议、采样或模型内部根因，不补抽、不伪造reply、不把这次失败抹成完成。
+
+首失败后暂停且needs_attention；runner最后明确控制为paused=true/share=false，revision3、attention清除仅表示本次显式收口控制，不表示回复故障已解决。自有HTTP服务及product正常close，exit1为首技术失败，留证完整、无I/O/关闭未知。正式8792新用户入口仍空/暂停/关闭，实际失败没有塞进用户窗口。完整[安全metadata](live-entry-metadata.json)仅计数、usage、边界与摘要，正文仍只canonical。
+
+root只读核独立audit逐值等于metadata（2complete+1failed-closed），另用全部生成POST关闭且transport拒绝任意请求的临时观察页查看已提交内容，观察前后audit仍3，0新增调用。画面中的消息确为assistant-share，当前方案及分享重点一致，保持构思想法语义，没有宣称已完成图片或催促回复。内容围绕原创人物草图、可爱优先与不熟悉武器画法的取舍；细节复述偏多，仍较像方案说明，不记为人物自然度通过。原文未另存报告/截图；临时观察服务已关闭。
+
+安全首景/空态/UI metadata最后独立只读复核接纳，五层摘要一致、失败与exit1/最终控制记录一致，无新事实矛盾；未读取正文或追加模型。首景metadata SHA `c18eeda0d76627c3f2e58f557351fd4ae02f4509a9c1d18f12de7d5fde175184`。root语义判断与复核者的工程摘要结论分开，不让只读metadata证明自然度。
+
+## 未解决与下一步
+
+UI闭环和真实900触发/分享已成立，当前完整连续接话、上游空白稳定性和人物自然度未通过；S142旧五阶段成功证据保持但不能覆盖本片失败。下一优先在既有用途内有界改善最终正文交付与分享后的自然接话，使用真实内容和界面整体评，不继续堆规则或后移人物体验。浏览器真正持续可见15分钟、长程活动、离线生活仍分别需要验收/具体合同，未启系统服务/通知、Reflection/人格重写、云、删除迁移或新资料/凭据用途。
 
 ## 源码阶段已完成
 
