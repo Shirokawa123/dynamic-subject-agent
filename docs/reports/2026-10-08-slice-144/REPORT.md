@@ -6,7 +6,36 @@
 
 固定有界验收：一个同源初始pair（baseline1、candidate1），只有普通输出协议模式不同；候选成功后同branch明确simulation choice→eligible独立share→重启→两追问/第三换题。最多7首次请求、各stage1/0retry；baseline独立首结果保留，candidate首失败/false/noeligible立即结束，不换分支补抽。S143真实900已验证，本次simulation明确、不重等或冒称真实在线。
 
-当前为source与helper实施阶段，0本片真实调用。必要Interface与旧兼容检查、独立复核完成并阶段commit/push后由root唯一执行。自然正文/raw envelope与规范封装、audit和canonical原文摘要核对；旧review/pins和失败资源保留，不因新技术版本伪称新exact人类批准。
+准备阶段历史：当时source/helper实施、0本片真实调用。必要Interface/兼容与独立复核后源码阶段提交push，由root唯一执行；实际7次首验见下，不把历史0调用当当前事实。旧review/pins和失败资源保留，新技术版本不冒称新exact人类批准。
+
+## 实际真实结果
+
+源码阶段提交/push `779648fba1d65d7f96157fa6c0bad13dd4e7d15b`、远端一致后，root唯一运行冻结runner/scene。最初仅预检因本进程NO_PROXY缺IPv6 loopback `::1`停止（0root/0Model/0key）；补足已要求的进程内四项名单后才开始首次真实，不属于模型重试、没有改系统配置。
+
+**7首次真实/7实际提交，0空白/格式拒绝、0重试，exit0。** baseline1 ordinary/candidate6（4 ordinary＋1活动＋1分享），均HTTP200/stop；27个查读、nonce、重开与控制步骤0新增模型，两分支最终明确暂停/分享关闭、服务与product正常关闭，无留证I/O错误。完整[安全metadata](live-acceptance-metadata.json) SHA `e4b4ee0563308fabb1d647bee95f8fee1b65b1a3024d6cae1fcbb1cc67a66c5b`，没有真实prompt/响应/COT副本。
+
+| 阶段 | 实际结果 | 证据边界 |
+| --- | --- | --- |
+| 同源初始pair | JSON baseline85字、text candidate122字均提交 | payload逐值相同；只system格式策略与response_format模式差，不是单字段或可靠性因果证明 |
+| 候选活动 | start新方案提交 | 明确simulation，choice wire仍旧字节；不重复或冒称真实900秒 |
+| 独立分享 | true、79字助手-origin消息提交 | 一项视线流动取舍开口，无假user轮；JSON value/audit/canonical一致 |
+| 首追问 | 144字普通正文提交 | S1同share SHA，exchange1；raw final原文=规范封装/audit/canonical |
+| 第二追问 | 125字普通正文提交 | 同S1 SHA，exchange2，重开与原nonce0模型 |
+| 换题第三轮 | 97字普通正文提交 | latest_share=null、exchange=[]、prior=true；两S1派生旧轮完整过滤、不回填旧initial |
+
+Root另只读核两独立audit snapshot逐值等于metadata（baseline1/candidate6全complete）；全部生成POST关闭、transport拒绝任何请求的临时观察页读取实际canonical内容，前后仍7调用、0额外Model/key，观察服务已关闭。metadata最后独立只读复核接纳，无事实矛盾，S143失败与旧helpers SHA未变；复核只依据摘要，语义判断由root另做。
+
+实际内容判断：baseline初聊也能简洁给当下构图意见；candidate初聊解释较多，不能仅按字数说更自然。候选分享围绕让视线从人物脸/笔移向小兽的一项布局并征求意见，没有逐字段播报整份方案；两次追问延续同一布局、保持构思想法而非成图或外部反馈。第三换题回到学习做法的当前意见，其中母亲教画与童年绘画开心均有原已审起点前/本人知情资料依据，没有从无据习惯造答案。仍有技术解释/重复，计划里叼笔与拿笔动作的表达有可澄清之处；这是有限相处接纳，不是完整人物自然度或事实审查已穷尽。
+
+一次候选完整链无空白，而初始pair两边都成功；**不能据此说JSON空白根因已解决或text长期更可靠**。Provider服务内部原因仍未知，本轮有界到此结束，不加样本补抽。source/history/cutoff active停用因果为Interface合成验证，真实链无E1、未新增空disable Publication；不能冒称新的共同经历因果或浏览器持续可见/离线生活通过。
+
+## 交付入口与待确认启动
+
+新独立候选启动器[Start-LivingFinalTextChat.cmd](../../../app/desktop/Start-LivingFinalTextChat.cmd)及[服务入口](../../../scripts/serve_living_final_text_chat.py)已实现、必要验证并独立复核；计划端口8793、root `C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-final-text-chat/entry`、health living-final-text-chat-s144。默认空聊天、暂停且分享关闭；旧8792/root/启动器不迁移、不切版。真实首验使用自有DEV端口和独立root，未灌入用户窗口。
+
+Root尝试隐藏持续启动8793时，自动审批明确拒绝，原话理由：“该命令会隐藏启动并持续运行新的本地8793后台服务；S142明确禁止后台服务，且没有可信用户消息批准这一例外，故不能以‘新入口试用’替代具体授权。”命令未执行，没有采用间接启动绕过。开发/真实首验/代码交付已完成；**8793目前不能声称已运行**，持续启动动作保留为唯一集中确认项。
+
+具体可审启动动作：只启动本仓已复核CLI监听127.0.0.1:8793，使用上述独立root、默认暂停/分享关闭0模型，不开放LAN，不创建Windows系统服务/开机任务/系统通知，不改凭据或原8792。隐藏窗口避免抢用户焦点；模型仍只在已批purpose和用户明确操作/可见页在场条件下各stage一次，0retry。审批只涉及本地持续进程，不涉及新模型数据用途、云、迁移或删除。
 
 实施阶段事实：新Facade首检查通过（5.21s），原文首尾空白、规范封装/audit/canonical、nonce/重开0调用以及旧grant/entry/audit隔离成立。新增故障检查中fixture曾读取错误属性failure，实际应projection.failure_code；短nonce也被既有规则拒绝，已修fixture不放宽业务。text-only strict入口补拒choice.delta与非空message.final，空final允许，不读取第二正文补答，旧JSON默认路径保持。
 
