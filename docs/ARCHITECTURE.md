@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-144：独立自然正文与重点分享技术候选
+
+沿已批S142三用途及2026-10-07同用途继续开发承接，新增独立final-text authority/manifest/schema6、`LivingFinalTextDevelopmentGrant`、variant audit与8793入口。旧exact S142 grant/资格/policy/wire/8792/root不变；新grant引用原人类用途basis与开发授权tag，独立literal pins新策略及每kind协议，不冒称新技术hash获人类exact批准。
+
+普通reply仅候选移除系统JSON外壳/例/PERSONALITY外壳句及response_format，严格读取最终content原文并以reply_text/language封装，首尾空白不trim。text-only拒重复envelope键、错role/finish、非空refusal/tool、choice.delta与非空message.final；reasoning丢弃，不补答、不fakefallback、不retry。原Python非空/1200/NUL/权限/canonical/依赖/窗及Publication裁决保持；旧JSON解码默认不扩变。choice原字节，share仍JSON但表达只一项真实取舍，投影字段/上限不增。
+
+源码必要新增28行为实例与66旧兼容通过，独立源与有界runner复核接纳；真实初始pair及候选完整链待源码阶段commit/push后执行。第三先取最近2再剔S1，exchange为空/priortrue，不回填旧initial。实际人物交付/稳定性/内容以[S144报告](reports/2026-10-08-slice-144/REPORT.md)为准，不因本地通过宣称空白根因或MVP解决。
+
 ### Slice-143：在线生活与分享的独立聊天入口
 
 新独立living-live entry/root/health/8792与启动器适配S142，不转换旧8790/8791或其记录。Adapter只调用Facade；新entry validator由Authority校验active identity、timeline和精确living-live资格，Host/canonical/Provider装配仍在local_product。默认暂停、分享关闭，初开与查读不调用模型。

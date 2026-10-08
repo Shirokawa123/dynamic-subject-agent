@@ -107,7 +107,7 @@ from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, First
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_RUNTIME_CONTRACT, CONTEXT_INTENT
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, LIVING_RUNTIME_CONTRACT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, LIVING_AUTHORITIES, LIVING_INTENT, LIVING_RUNTIME_CONTRACT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_RUNTIME_CONTRACT
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.reviewed_character_cognition import ReviewedCharacterDormantCognition
@@ -211,7 +211,7 @@ _BRANCH_RETIRED = "retired"
 
 def _qri_provider_contract_matches(qri: QualifiedRuntimeInput) -> bool:
     if qri.provider_authority in SHARED_AUTHORITIES:
-        expected = CapabilityManifest.living_activity_live() if qri.provider_authority == LIVING_LIVE_AUTHORITY else CapabilityManifest.living_activity_local() if qri.provider_authority == LIVING_AUTHORITY else CapabilityManifest.shared_activity_live() if qri.provider_authority == SHARED_LIVE_AUTHORITY else CapabilityManifest.shared_activity_local()
+        expected = CapabilityManifest.living_final_text_live() if qri.provider_authority == LIVING_FINAL_TEXT_AUTHORITY else CapabilityManifest.living_activity_live() if qri.provider_authority == LIVING_LIVE_AUTHORITY else CapabilityManifest.living_activity_local() if qri.provider_authority == LIVING_AUTHORITY else CapabilityManifest.shared_activity_live() if qri.provider_authority == SHARED_LIVE_AUTHORITY else CapabilityManifest.shared_activity_local()
         return qri.capabilities == expected and qri.reviewed_chat_contract is not None
     if qri.provider_authority == CONTEXT_AUTHORITY:
         return qri.capabilities == CapabilityManifest.original_whole_context() and qri.reviewed_chat_contract is not None
@@ -7792,7 +7792,7 @@ class RuntimeHost:
         from dynamic_subject_agent.runtime import CycleFailedClosed
         if binding.provider_authority not in LIVING_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-living-authority-required')
-        if binding.provider_authority == LIVING_LIVE_AUTHORITY and request.action == 'manual':
+        if binding.provider_authority in LIVING_LIVE_AUTHORITIES and request.action == 'manual':
             return SharedActivityResponse('unavailable', problem_code='living-approved-opportunity-trigger-required')
         view, authorization, cognition = self._read_shared_activity(binding, request)
         if 'existing' in view:

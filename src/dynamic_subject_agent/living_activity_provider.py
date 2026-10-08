@@ -3,7 +3,7 @@ from hashlib import sha256
 from time import perf_counter
 
 from dynamic_subject_agent.cognition import CredentialRef
-from dynamic_subject_agent.deepseek import (DeepSeekTransport, _post_json_reply_content, DeepSeekResponseDiagnosticFailure,
+from dynamic_subject_agent.deepseek import (DeepSeekTransport, _post_json_reply_content, _post_text_reply_content, DeepSeekResponseDiagnosticFailure,
     DEEPSEEK_ENDPOINT, DEEPSEEK_TIMEOUT_SECONDS, DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID)
 from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
 from dynamic_subject_agent.first_life_reply_live_provider import _ObservedTransport
@@ -35,6 +35,8 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             raise ValueError('exact S142 approved transport, slot and delivery required')
         delivery.grant.validate()
         self.transport, self.credential_ref, self.delivery = transport, credential_ref, delivery
+        if delivery.technical_variant == 'final-text':
+            self.capabilities = ProviderCapabilities('deepseek', 'deepseek-flash', False, (StructuredOutputMode.JSON_OBJECT, StructuredOutputMode.TEXT))
         self.observations = LivingActivityObservations() if observations is None else observations
 
     def invoke(self, task):
@@ -45,7 +47,7 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
         code = None
         try:
             actual = self.delivery.consume(task)
-            request = living_remote_request_preview(actual)
+            request = living_remote_request_preview(actual, technical_variant=self.delivery.technical_variant)
             wire = canonical_json(request['body']).encode()
             if sha256(wire).hexdigest() != request['wire_sha256']:
                 raise ValueError('exact S142 wire changed')
@@ -58,8 +60,11 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             raise ModelGatewayFailure('delivery-unverified') from None
         try:
             observed = _ObservedTransport(self.transport)
-            value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
-                require_complete=True, discard_reasoning=True, safe_diagnostics=True)
+            if self.delivery.technical_variant == 'final-text' and actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+                value = dict(reply_text=_post_text_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096), language='zh')
+            else:
+                value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
+                    require_complete=True, discard_reasoning=True, safe_diagnostics=True)
             if actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
                 validate_whole_reply(value)
             elif actual.kind is ModelTaskKind.LIVING_ACTIVITY_SHARE:
@@ -76,7 +81,8 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             code = error.diagnostic_code
             row['status'] = 'unknown' if code in ('transport-timeout', 'transport-delivery-ambiguous') else 'failed-closed'
         except Exception:
-            code = 'structured-choice-invalid'
+            code = 'expression-invalid' if (self.delivery.technical_variant == 'final-text'
+                and actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY) else 'structured-choice-invalid'
         try:
             self.delivery.record(row['status'], value if code is None else None)
         except Exception:

@@ -1,21 +1,13 @@
 # 当前工作
 
-唯一执行：[S143：生活与分享接入实际聊天入口](slice-143-living-sharing-chat-entry.md)已完成实现、必要验证/独立复核及有界真实首验，现收口证据。2026-10-07用户对S142交付后的建议明确“那就继续”；基线main0462756核远端一致，源码dd62bc8已push。新8792入口可用，默认暂停/分享关闭、空聊天0模型，旧root/启动器不迁移。
+唯一执行：[S144：最终正文交付与分享后自然接话](slice-144-final-text-and-share-dialogue.md)。2026-10-07用户对S143交付后“优先改善空白回复和分享后的自然交流”明确“继续”。基线main81c599f，远端一致；旧8792/root/草稿/失败保持。沿已批S142三用途和同资料/Provider/Windows默认slot进行必要同用途技术调整，不逐轮询问调用或继续。
 
-实际真实900.060秒/181次presence/等待0模型，随后3首次请求/2提交（start方案＋126字true分享）/1首次追问上游纯空白/0重试。HTTP200/stop最终content72字符strip0，app typed失败未提交；内部原因未知，后两轮未执行。自有DEV已明确暂停/关闭分享并close，失败原样保留；旧S142成功不掩盖本片接话未过。报告与[metadata](../reports/2026-10-07-slice-143/live-entry-metadata.json)完整，首景不补抽。
+已证实问题：S143真实900秒后活动与126字分享提交，首追问HTTP200/stop的content72字符全空白、非JSON、无第二final/refusal/toolcall；app failedclosed没有提交正文，后两轮未执行。上游内部原因未知，不能把Root解析/控制修复再重复做。S116只取消JSON开关却仍要求JSON曾3/4且1普通中文被严格拒绝，disabled思考没有可靠性优势且语义反例；不重跑旧大矩阵。
 
-自有隐藏页已验证正式空态和未发送草稿refresh/reopen保持，准确清自有草稿后正式仍0消息/0模型/revision0默认权限；[画面](../reports/2026-10-07-slice-143/entry-empty.jpg)不含模型正文。只读观察实际DEV方案/分享（关闭生成routes＋RejectTransport）确认内容符合方案、未冒称成图，但偏方案说明；审计观察前后3无新增请求。
+本片预测：JSON模式偶发空正文是官方已知现象，但不足以证明单次空白根因。普通reply候选一致改为自然text输出（系统格式指令与HTTP response_format一同匹配），Python仅以原文封装reply_text/language，不改变意思、不拿reasoning作正文、不重试或放宽空白/长度/角色/完整性裁决；choice/share仍JSON和Python裁决。另分享候选只选一个实际取舍开口，避免逐字段播报；原输入字段/上限与两个完整历史窗、E1/result/latestshare有效依赖保持。
 
-完整用户结果：进入新独立聊天页面，默认暂停且分享关闭；明确开启后，同一在线owner累计900秒提供活动机会，有实际新方案才单独考虑分享，助手分享可见并可接话。暂停/分享开关/失败需检查/未回/日限可理解；刷新、重启、其他窗口、草稿和原请求回取不重复发送或覆盖。原8790/8791、记录和草稿保持，默认启动器不迁移。
+先核仓库与官方协议/相关交流研究，形成开工证据，再实现独立技术variant/资格/审计及准确预览，旧基线/对象不被更改或升级。每个写入目标一个owner；root docs/资源/git，强耦合src/入口/tests一个owner，验收helper独立目标。先必要0调用行为和独立复核，阶段commit/push后执行有界真实同源first对照与完整候选闭环；失败原样保留，不用补抽选成功或增加规则代替人物效果。
 
-接入证据调整：第一版pending时停advance心跳，>15秒等待会断租并丢之前累计，不能代表边聊边用的在线生活。本片新增Facade-only模型-free在场接口与独立页面timer，仅续在场/累计、不consume900或执行模型；空闲advance仍freshcanonical/once。查询不续租、不补离线，Provider字段/policy/用途不变；不是新增永久静默条件。
+验收结论分别记协议交付与人物内容：首对照同材料同current/evidence仅协议模式差；候选初聊→明确simulation活动→有新plan才独立share→重启→两轮接话→第三换题整S1历史过滤/has_prior保留。每stage1请求/0retry，各独立场景首失败/无eligible/false结束；本轮预定最多一个初始pair和一条候选连续链，不循环试到成功。Provider内因无法由现证据确定则到此收口事实/假设；raw正文只canonical、report仅metadata与判断。
 
-已批basis `153bc6e8bfe766a8cfc7a852b4ae295ea7acf8e2e20ea960d2ad7d7a91e08f06`：同Sagiri30事实/4作者解释最小资料、现DeepSeek及Windows默认slot；choice、share和有限latest_share普通reply三用途。每stage1请求/0自动重试/技术失败停，默认暂停/分享关闭，离线不补，UTC8最多2已提交true新话题，未回只抑制新分享；latest_share仅后2成功普通轮，第三完整派生历史过滤。原Pending/LOCAL、旧root及原冻结review不升级。调用次数不限的既有同用途授权保持，旧首景5仅已完成场景停止条件。
-
-S142已提交push0462756，真实首景5请求/5提交/0重试/0空白，机会明确simulation；重启、两轮分享接话、第三完整历史过滤成立。该事实不证明真实900秒、长程稳定性或人物自然度，旧空白内因仍未确定。报告见[上一片](../reports/2026-10-06-slice-142/REPORT.md)。
-
-必要entry/并发/来源/日限/失败/nonce/UI行为、49旧兼容、presence4与最后旧2smoke均通过；新presence保留pending>15先前累计，0模型/0canonical，due不消费直到fresh闲lane；第三合成preview/wire保持has_priortrue但整旧原话过滤。双独立源/runner及真实metadata复核接纳。分组有重叠不当效果总分；真实HTTP900不证明浏览器连续可见，pending续在场及两轮窗为Interface/Node合成验证。本片真实接话链和人物自然度未过，不称完整MVP。
-
-下一项完整用户结果：在既有用途内有界改善上游最终正文交付和分享后的自然交流，以真实内容/页面一起验；不再用规则、字段或文档数量代替人物效果。离线生活/长程目标保留，需要新资料/凭据用途或后台系统服务等时才具体审阅。
-
-root负责整体合同/文档/真实资源/提交推送，一个实现owner贯通src/scripts/tests和必要启动器，独立研究/复核按策略组织。只在需要新数据/凭据用途、云、系统服务/通知、删除或迁移时集中确认；本片不启用这些操作、人格重写或Reflection。阶段验证完成提交并push既有远端，STATUS每次最多5行事实。
+不新增资料/数据用途/Provider/key用途，不启背景系统服务/通知/云/人格重写/Reflection，不删或迁移旧记录。若候选真实链与内容没过，不切正式8792。若过，以新独立空入口交付，仍不迁移旧branch；是否改默认入口根据证据，技术假设不是永久禁令。模型次数不限但自动重试与场景终止不取消。STATUS每次≤5行事实，每阶段commit/push既有远端。

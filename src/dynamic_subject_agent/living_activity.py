@@ -28,6 +28,37 @@ REPLY_POLICY = shared_reply_policy('self-directed-activity') + (
     'evidence.latest_share若存在，是本分支已经提交的最新一条主动分享原话，只供接续它的具体安排；'
     '它不是用户消息、事实来源或本人完成图片的证据。没有该原话时不要补造分享内容。'
 )
+LIVING_TECHNICAL_VARIANTS = ('baseline', 'final-text')
+FINAL_TEXT_LIVE_VERSION = 'living-final-text-live-s144-1'
+_SHARE_EXPRESSION = '分享时自然第一人称短消息说具体安排或取舍，不编造过去习惯、持续心理活动或用户未回复的原因，不催促。'
+_FINAL_TEXT_SHARE_EXPRESSION = (
+    '分享时只选这版方案里一个本人想尝试的具体安排或取舍，用自然第一人称短消息打开交流，不逐项播报整个方案。'
+    '不编造过去习惯、持续心理活动或用户未回复的原因，不催促。')
+
+
+def living_policies(technical_variant='baseline'):
+    """Closed same-use output protocols; material projections remain identical."""
+    if type(technical_variant) is not str or technical_variant not in LIVING_TECHNICAL_VARIANTS:
+        raise ValueError('closed living technical variant required')
+    if technical_variant == 'baseline':
+        return shared_choice_policy('self-directed-activity'), SHARE_POLICY, REPLY_POLICY
+    from dynamic_subject_agent.original_whole_chat import JSON_EXAMPLE_SUFFIX
+    shell = 'conversation保持原action/fact_refs或reply_text/language契约，不输出分析、档案或内部规则。'
+    output = '只返回JSON exact {reply_text,language}；language=zh，reply_text非空且最多1200字符。'
+    if (REPLY_POLICY.count(shell) != 1 or REPLY_POLICY.count(output) != 1
+        or REPLY_POLICY.count(JSON_EXAMPLE_SUFFIX) != 1 or SHARE_POLICY.count(_SHARE_EXPRESSION) != 1):
+        raise ValueError('exact living output paragraphs required')
+    reply = REPLY_POLICY.replace(shell, '不输出分析、档案或内部规则。', 1).replace(output,
+        '只输出给用户的自然中文消息正文，不要为协议额外加JSON包裹、字段名、代码块或格式示例；正文非空且最多1200字符。', 1).replace(JSON_EXAMPLE_SUFFIX, '', 1)
+    return shared_choice_policy('self-directed-activity'), SHARE_POLICY.replace(_SHARE_EXPRESSION, _FINAL_TEXT_SHARE_EXPRESSION, 1), reply
+
+
+def living_variant_for_contract(contract):
+    from dynamic_subject_agent.original_whole_chat import contract_variant
+    variant = contract_variant(contract)
+    if variant not in ('living-local', 'living-live', 'living-final-text-live'):
+        raise ValueError('exact living qualification required')
+    return 'final-text' if variant == 'living-final-text-live' else 'baseline'
 
 
 def living_contract(binding):
@@ -143,7 +174,7 @@ def build_living_choice_preview(envelope, identity, view, contract):
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     old = shared_contract({key: contract[key] for key in APPROVED_BINDING})
     result = build_choice_preview(envelope, identity, view, old)
-    result['policy'] = shared_choice_policy('self-directed-activity')
+    result['policy'] = living_policies(living_variant_for_contract(contract))[0]
     return result
 
 
@@ -152,7 +183,7 @@ def build_share_preview(envelope, identity, view, contract):
     result = view['visible_result']
     if result is None or result.plan is None or result.event.kind not in ('start', 'revise'):
         raise ValueError('actual new plan required for share preview')
-    return dict(policy=SHARE_POLICY, payload=dict(background=choice['payload']['background'],
+    return dict(policy=living_policies(living_variant_for_contract(contract))[1], payload=dict(background=choice['payload']['background'],
         shared_experience=choice['payload']['shared_experience'],
         activity_result=dict(action=result.event.kind, plan=asdict(result.plan))))
 
@@ -162,7 +193,7 @@ def build_living_reply_preview(envelope, identity, message, dialogue, enabled, v
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     old = shared_contract({key: contract[key] for key in APPROVED_BINDING})
     result = build_reply_preview(envelope, identity, message, dialogue, enabled, view, old)
-    result['policy'] = REPLY_POLICY
+    result['policy'] = living_policies(living_variant_for_contract(contract))[2]
     share = latest_share(view, enabled)
     result['payload']['evidence']['latest_share'] = None if share is None else dict(text=share['text'])
     return result

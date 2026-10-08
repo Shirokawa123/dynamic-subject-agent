@@ -108,6 +108,11 @@ def contract_variant(contract):
         if contract != living_live_contract({key: contract[key] for key in APPROVED_BINDING}):
             raise ValueError('exact approved living LIVE contract required')
         return 'living-live'
+    if contract.get('version') == 'living-final-text-live-s144-1':
+        from dynamic_subject_agent.living_activity_live import living_final_text_contract
+        if contract != living_final_text_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact continued final-text living contract required')
+        return 'living-final-text-live'
     if contract.get('version') in (SHARED_LIVE_VERSION, SHARED_EXPRESSION_VERSION, SHARED_SELF_DIRECTED_VERSION):
         from dynamic_subject_agent.shared_activity_live import shared_live_contract
         technical_variant = {SHARED_EXPRESSION_VERSION: 'natural-expression',
@@ -149,6 +154,8 @@ def whole_publication_key(contract):
         return 'original-living-activity-local-s142-' + digest(contract)
     if variant == 'living-live':
         return 'original-living-activity-live-s142-' + digest(contract)
+    if variant == 'living-final-text-live':
+        return 'original-living-final-text-live-s144-' + digest(contract)
     if variant == "shared-local":
         return "original-shared-activity-local-s139-" + digest(contract)
     if variant == "shared-live":
@@ -169,7 +176,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("shared-local", "shared-live", "living-local", "living-live"):
+    if variant in ("shared-local", "shared-live", "living-local", "living-live", "living-final-text-live"):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)

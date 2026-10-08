@@ -20,7 +20,8 @@ from dynamic_subject_agent.application import ApplicationQuery, ApplicationQuery
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
 from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
-from dynamic_subject_agent.living_activity_live import ApprovedLivingActivityGrant, APPROVED_LIVING_REVIEW
+from dynamic_subject_agent.living_activity_live import (ApprovedLivingActivityGrant, APPROVED_LIVING_REVIEW,
+    LivingFinalTextDevelopmentGrant, FINAL_TEXT_DEVELOPMENT_AUTHORIZATION)
 from dynamic_subject_agent.shared_activity import SHARED_TECHNICAL_VARIANTS
 
 ENTRY_VERSION = 'living-activity-chat-entry-s143-1'
@@ -32,16 +33,22 @@ def default_entry_root():
     return local / 'DynamicSubjectAgent/living-activity-chat/entry'
 
 
+def final_text_entry_root():
+    local = Path(os.environ.get('LOCALAPPDATA') or Path.home() / 'AppData/Local')
+    return local / 'DynamicSubjectAgent/living-final-text-chat/entry'
+
+
 class LivingActivityChatEntry(OriginalWholeChatEntry):
     ENTRY_VERSION = ENTRY_VERSION
+    TECHNICAL_VARIANT = 'baseline'
     default_entry_root = staticmethod(default_entry_root)
 
     def __init__(self, entry_root, *, live=True, package_path=DEFAULT_PACKAGE,
                  transport=None, audit_path=None, clock=None, day=None, observations=None):
         root = Path(entry_root).resolve()
-        protected = (default_entry_root(), OriginalWholeChatEntry.default_entry_root(),
+        protected = (default_entry_root(), final_text_entry_root(), OriginalWholeChatEntry.default_entry_root(),
             context_entry_root(), *(shared_entry_root(variant) for variant in SHARED_TECHNICAL_VARIANTS))
-        if (type(live) is not bool or live and (root != default_entry_root().resolve() or clock is not None or day is not None)
+        if (type(live) is not bool or live and (root != self.default_entry_root().resolve() or clock is not None or day is not None)
             or not live and (transport is None or audit_path is None
                 or any(root.is_relative_to(path.resolve()) for path in protected))):
             raise ValueError('exact independent living activity entry required')
@@ -82,7 +89,7 @@ class LivingActivityChatEntry(OriginalWholeChatEntry):
     def _read_pointer(self):
         value = super()._read_pointer()
         # The base parser pins version, approved material and exact UUID scope.
-        if value['version'] != ENTRY_VERSION:
+        if value['version'] != self.ENTRY_VERSION:
             raise ValueError('living entry pointer changed')
         return value
 
@@ -98,11 +105,12 @@ class LivingActivityChatEntry(OriginalWholeChatEntry):
             self.clock.reset_session()
         return open_living_activity_product_live(self.config,
             identity_id=self.__dict__.pop('_fresh_identity_id', self.identity[0] if hasattr(self, 'identity') else None),
-            grant=ApprovedLivingActivityGrant(APPROVED_LIVING_REVIEW, True), audit_path=self.audit_path,
+            grant=(ApprovedLivingActivityGrant(APPROVED_LIVING_REVIEW, True) if self.TECHNICAL_VARIANT == 'baseline'
+                else LivingFinalTextDevelopmentGrant(APPROVED_LIVING_REVIEW, FINAL_TEXT_DEVELOPMENT_AUTHORIZATION)), audit_path=self.audit_path,
             _transport=self.transport, clock=self.clock, day=self.day, observations=self.observations)
 
     def _validate_current_identity(self):
-        validate_living_activity_entry(self.config, profile_id=self.identity[0], timeline_id=self.identity[1])
+        validate_living_activity_entry(self.config, profile_id=self.identity[0], timeline_id=self.identity[1], technical_variant=self.TECHNICAL_VARIANT)
 
     @staticmethod
     def _history_state(product):

@@ -10,6 +10,7 @@ from dynamic_subject_agent.shared_activity import SharedActivityResponse
 from dynamic_subject_agent.whole_chat_archive import WholeChatArchiveRequest
 
 APPLICATION_ID = 'living-activity-chat-s143'
+FINAL_TEXT_APPLICATION_ID = 'living-final-text-chat-s144'
 
 
 class LivingActivityChatAdapter(SharedActivityChatAdapter):
@@ -222,9 +223,11 @@ class LivingActivityChatAdapter(SharedActivityChatAdapter):
             return result
 
 
-def living_activity_server(product, *, reopen, port=0, allow_simulation=False):
+def living_activity_server(product, *, reopen, port=0, allow_simulation=False, application_id=APPLICATION_ID):
+    if application_id not in (APPLICATION_ID, FINAL_TEXT_APPLICATION_ID):
+        raise ValueError('closed living entry application required')
     adapter = LivingActivityChatAdapter(product, reopen=reopen, allow_simulation=allow_simulation)
-    return create_server(None, port=port, adapter=adapter, page_name='living_activity_chat.html', application_id=APPLICATION_ID,
+    return create_server(None, port=port, adapter=adapter, page_name='living_activity_chat.html', application_id=application_id,
         post_routes={'/send': adapter.send, '/operation': adapter.poll, '/request-result': adapter.lookup,
             '/context-boundary-query': adapter.boundary_query, '/context-boundary': adapter.boundary_apply,
             '/character-basis': adapter.character_basis, '/message-scope': adapter.message_scope,

@@ -556,15 +556,22 @@ def _safe_transport_diagnostic(error):
     return "transport-network"
 
 
-def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reasoning, require_complete):
-    """Check envelope/finish before content, discard reasoning, return JSON only."""
+def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reasoning, require_complete, final_text=False):
+    """Check final envelope before decoding; text has one strict raw-content path."""
     def fail(code):
         raise DeepSeekResponseDiagnosticFailure(ProviderFailureCode.INVALID_OUTPUT, code) from None
 
     if type(response.body) is not bytes or len(response.body) > 65536:
         fail("response-size")
+    def unique_object(pairs):
+        value = {}
+        for key, item in pairs:
+            if key in value:
+                raise ValueError('duplicate response key')
+            value[key] = item
+        return value
     try:
-        payload = json.loads(response.body.decode("utf-8"))
+        payload = json.loads(response.body.decode("utf-8"), **({'object_pairs_hook': unique_object} if final_text else {}))
     except (ValueError, UnicodeError):
         fail("response-envelope")
     if type(payload) is not dict:
@@ -576,6 +583,11 @@ def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reaso
     message = choices[0]["message"]
     if message.get("role") != "assistant":
         fail("response-envelope")
+    if final_text and ('delta' in choices[0] or message.get('final') not in (None, '')):
+        # This is a non-stream response with exactly one final content source.
+        # Empty final markers are harmless; a delta envelope or another final
+        # body cannot be selected or combined into a canonical reply.
+        fail('response-envelope')
     if payload.get("model") not in _ACCEPTED_RESPONSE_MODELS:
         fail("response-model")
     if choices[0].get("finish_reason") == "length":
@@ -590,6 +602,8 @@ def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reaso
     reasoning = None
     if message.get("tool_calls") not in (None, []):
         fail("response-tools")
+    if final_text and message.get('refusal') not in (None, ''):
+        fail('response-envelope')
     usage = payload.get("usage")
     if (type(usage) is not dict or type(usage.get("prompt_tokens")) is not int
             or type(usage.get("completion_tokens")) is not int
@@ -601,6 +615,9 @@ def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reaso
         fail("response-content-json")
     if not message["content"].strip():
         fail("response-content-empty")
+    if final_text:
+        # No trimming, JSON extraction, semantic rewrite or reasoning fallback.
+        return message['content']
     try:
         content = json.loads(message["content"])
     except ValueError:
@@ -610,7 +627,7 @@ def _diagnostic_json_reply_content(response, *, max_output_tokens, discard_reaso
     return content
 
 
-def _post_json_reply_content(
+def _post_reply_content(
     transport: DeepSeekTransport,
     credential_ref: CredentialRef,
     body: bytes,
@@ -619,8 +636,10 @@ def _post_json_reply_content(
     require_complete: bool = False,
     discard_reasoning: bool = False,
     safe_diagnostics: bool = False,
-) -> dict[str, object]:
+    final_text: bool = False,
+):
     if (type(safe_diagnostics) is not bool or type(discard_reasoning) is not bool or type(max_output_tokens) is not int
+            or type(final_text) is not bool or final_text and not (safe_diagnostics and discard_reasoning and require_complete)
             or not 1 <= max_output_tokens <= (4096 if discard_reasoning else 2048)):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     try:
@@ -665,7 +684,7 @@ def _post_json_reply_content(
         raise ProviderFailure(ProviderFailureCode.UNAVAILABLE)
     if safe_diagnostics:
         return _diagnostic_json_reply_content(response, max_output_tokens=max_output_tokens,
-            discard_reasoning=discard_reasoning, require_complete=require_complete)
+            discard_reasoning=discard_reasoning, require_complete=require_complete, final_text=final_text)
     try:
         if discard_reasoning and (type(response.body) is not bytes or len(response.body) > 65536):
             raise ValueError("bounded thinking response required")
@@ -702,6 +721,19 @@ def _post_json_reply_content(
     ):
         raise ProviderFailure(ProviderFailureCode.INVALID_OUTPUT)
     return content
+
+
+def _post_json_reply_content(transport, credential_ref, body, *, max_output_tokens,
+    require_complete=False, discard_reasoning=False, safe_diagnostics=False):
+    """Original JSON decoder; all existing callers retain their exact protocol."""
+    return _post_reply_content(transport, credential_ref, body, max_output_tokens=max_output_tokens,
+        require_complete=require_complete, discard_reasoning=discard_reasoning, safe_diagnostics=safe_diagnostics)
+
+
+def _post_text_reply_content(transport, credential_ref, body, *, max_output_tokens):
+    """Strict completed final text only; reasoning is discarded, never a reply."""
+    return _post_reply_content(transport, credential_ref, body, max_output_tokens=max_output_tokens,
+        require_complete=True, discard_reasoning=True, safe_diagnostics=True, final_text=True)
 
 
 def _identity_reply_result(

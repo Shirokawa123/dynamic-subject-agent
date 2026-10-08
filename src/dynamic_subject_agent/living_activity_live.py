@@ -8,7 +8,8 @@ from threading import RLock, get_ident
 from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.shared_activity import digest, shared_choice_policy
-from dynamic_subject_agent.living_activity import living_contract, SHARE_POLICY, REPLY_POLICY
+from dynamic_subject_agent.living_activity import (living_contract, SHARE_POLICY, REPLY_POLICY,
+    living_policies, FINAL_TEXT_LIVE_VERSION, LIVING_TECHNICAL_VARIANTS)
 
 # Each approval object is independent of source-generated witnesses. Changing
 # a builder, material, policy or protocol cannot silently grant the new object.
@@ -23,6 +24,32 @@ APPROVED_LIVING_POLICY_HASHES = (
 LIVING_APPROVAL = 'user-approved-living-sharing-followup-use-2026-10-06'
 LIVING_LIVE_VERSION = 'living-activity-live-s142-1'
 PURPOSES = frozenset(('living-activity-choice', 'living-activity-share', 'living-activity-reply'))
+FINAL_TEXT_DEVELOPMENT_AUTHORIZATION = 'user-continued-same-use-final-text-development-2026-10-07'
+FINAL_TEXT_POLICY_HASHES = ('7737b3fdacad632414d0f09a29ef1a49f36fa0cea0c17277e7643bb1703ebc4f',
+    '4df535d7abf64f946a721d634efa179ee095f65bb2d29f7aff31e808976de671',
+    '7a429342805e6095f425864750ef4047782dd4f354e61d9d64dfc74f01b8534a')
+FINAL_TEXT_PROTOCOL_HASHES = ('3c1bd02909292fd4a835a663d9c3d5e28ff81c1bbaadf6564fed03290dda7450',
+    '3c1bd02909292fd4a835a663d9c3d5e28ff81c1bbaadf6564fed03290dda7450',
+    '6cb5917026e0a98048608b2fc8ae7901385e12241d713b54767e1b4020420d31')
+
+
+def living_protocol_for_kind(kind, *, technical_variant='baseline'):
+    if (type(technical_variant) is not str or technical_variant not in LIVING_TECHNICAL_VARIANTS
+        or type(kind) is not ModelTaskKind or kind.value not in PURPOSES):
+        raise ValueError('closed living purpose and protocol required')
+    result = deepcopy(current_living_protocol())
+    if technical_variant == 'final-text' and kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+        # Ordinary final content is text by default. No unverified text enum.
+        del result['protocol']['response_format']
+    return result
+
+
+def living_grant_variant(grant):
+    if type(grant) is ApprovedLivingActivityGrant:
+        return 'baseline'
+    if type(grant) is LivingFinalTextDevelopmentGrant:
+        return 'final-text'
+    raise ValueError('exact independently scoped living grant required')
 
 
 def current_living_protocol():
@@ -60,6 +87,31 @@ class ApprovedLivingActivityGrant:
             raise ValueError('independently pinned living protocol or slot changed')
 
 
+@dataclass(frozen=True)
+class LivingFinalTextDevelopmentGrant:
+    """Existing human data-use approval plus later same-use development decision.
+
+    The new technical hashes are independently pinned below; they are not an
+    assertion that a human separately approved their exact bytes.
+    """
+    review_basis: str
+    development_authorization: str
+
+    def __post_init__(self):
+        if (self.review_basis != APPROVED_LIVING_REVIEW
+            or self.development_authorization != FINAL_TEXT_DEVELOPMENT_AUTHORIZATION):
+            raise ValueError('existing S142 use and exact continued development decision required')
+
+    def validate(self):
+        self.__post_init__()
+        ApprovedLivingActivityGrant(self.review_basis, True).validate()
+        if tuple(sha256(policy.encode()).hexdigest() for policy in living_policies('final-text')) != FINAL_TEXT_POLICY_HASHES:
+            raise ValueError('independently pinned final-text policy changed')
+        kinds = (ModelTaskKind.LIVING_ACTIVITY_CHOICE, ModelTaskKind.LIVING_ACTIVITY_SHARE, ModelTaskKind.LIVING_ACTIVITY_REPLY)
+        if tuple(digest(living_protocol_for_kind(kind, technical_variant='final-text')) for kind in kinds) != FINAL_TEXT_PROTOCOL_HASHES:
+            raise ValueError('independently pinned final-text protocol or slot changed')
+
+
 def living_live_contract(binding):
     ApprovedLivingActivityGrant(APPROVED_LIVING_REVIEW, True).validate()
     base = living_contract(binding)
@@ -68,6 +120,29 @@ def living_live_contract(binding):
         excluded='background-service-notifications-offline-catchup-persona-rewrite-cloud-migration-new-material',
         technical_variant=dict(base['technical_variant'], name='living-live',
             approved_review_basis=APPROVED_LIVING_REVIEW, protocol_sha=APPROVED_LIVING_PROTOCOL_SHA))
+
+
+def living_final_text_contract(binding):
+    LivingFinalTextDevelopmentGrant(APPROVED_LIVING_REVIEW, FINAL_TEXT_DEVELOPMENT_AUTHORIZATION).validate()
+    base = living_contract(binding)
+    return dict(base, version=FINAL_TEXT_LIVE_VERSION, authorization=LIVING_APPROVAL,
+        development_authorization=FINAL_TEXT_DEVELOPMENT_AUTHORIZATION, provider='deepseek',
+        credential_use='existing-Windows-slot-HTTPS-Bearer-only',
+        excluded='background-service-notifications-offline-catchup-persona-rewrite-cloud-migration-new-material',
+        technical_variant=dict(base['technical_variant'], name='living-final-text-live',
+            inherited_use_review_basis=APPROVED_LIVING_REVIEW,
+            choice_policy_sha=FINAL_TEXT_POLICY_HASHES[0], share_policy_sha=FINAL_TEXT_POLICY_HASHES[1],
+            reply_policy_sha=FINAL_TEXT_POLICY_HASHES[2],
+            purpose_protocol_sha=dict(zip(('choice', 'share', 'reply'), FINAL_TEXT_PROTOCOL_HASHES, strict=True)),
+            final_content='natural-text-original-wrapper-zh'))
+
+
+def living_live_contract_for_variant(binding, *, technical_variant='baseline'):
+    if technical_variant == 'baseline':
+        return living_live_contract(binding)
+    if technical_variant == 'final-text':
+        return living_final_text_contract(binding)
+    raise ValueError('closed living technical variant required')
 
 
 class LivingActivityCallAudit(DevelopmentCallAudit):
@@ -84,18 +159,29 @@ class LivingActivityCallAudit(DevelopmentCallAudit):
             return tuple(dict(zip(fields, row[:-1], strict=True)) for row in self._verified(db))
 
 
-def open_living_activity_audit(path, *, initialize=False):
+class LivingFinalTextCallAudit(LivingActivityCallAudit):
+    @staticmethod
+    def configuration():
+        return dict(version='living-final-text-call-audit-s144-1', authorization=LIVING_APPROVAL,
+            development_authorization=FINAL_TEXT_DEVELOPMENT_AUTHORIZATION,
+            inherited_use_review_basis=APPROVED_LIVING_REVIEW, provider='deepseek', purposes=sorted(PURPOSES), limit=None)
+
+
+def open_living_activity_audit(path, *, initialize=False, technical_variant='baseline'):
     if not isinstance(path, Path) or not path.is_absolute():
         raise ValueError('absolute independent living audit required')
+    if type(technical_variant) is not str or technical_variant not in LIVING_TECHNICAL_VARIANTS:
+        raise ValueError('closed living audit variant required')
+    audit_type = LivingActivityCallAudit if technical_variant == 'baseline' else LivingFinalTextCallAudit
     witness = path.with_name(path.name + '-initialized')
     if witness.exists():
         if not witness.is_dir() or not path.is_dir():
             raise ValueError('living audit witness missing')
-        return LivingActivityCallAudit(path)
+        return audit_type(path)
     if path.exists() or not initialize:
         raise ValueError('living audit cannot be recreated or repurposed')
     witness.mkdir(parents=True, exist_ok=False)
-    return LivingActivityCallAudit(path, initialize=True)
+    return audit_type(path, initialize=True)
 
 
 @dataclass(frozen=True)
@@ -110,18 +196,21 @@ class _LivingTicket:
 class LivingActivityDelivery:
     def __init__(self, *, grant, audit, contract, state_path):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if type(grant) is not ApprovedLivingActivityGrant or type(audit) is not LivingActivityCallAudit:
+        variant = living_grant_variant(grant)
+        expected_audit = LivingActivityCallAudit if variant == 'baseline' else LivingFinalTextCallAudit
+        if type(audit) is not expected_audit:
             raise ValueError('exact living grant and independent three-purpose audit required')
         grant.validate()
-        if contract != living_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+        if contract != living_live_contract_for_variant({key: contract[key] for key in APPROVED_BINDING}, technical_variant=variant):
             raise ValueError('exact living LIVE contract required')
-        self.grant, self.audit, self.contract = grant, audit, deepcopy(contract)
+        self.grant, self.audit, self.contract, self.technical_variant = grant, audit, deepcopy(contract), variant
         self.run_digest = digest(dict(contract=contract, state_path=str(state_path.resolve()), audit_path=str(audit.path.resolve())))
         self._lock, self._ticket, self._pending, self._poisoned = RLock(), None, None, False
 
     def _validate_contract(self):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if self.contract != living_live_contract({key: self.contract[key] for key in APPROVED_BINDING}):
+        if (living_grant_variant(self.grant) != self.technical_variant
+            or self.contract != living_live_contract_for_variant({key: self.contract[key] for key in APPROVED_BINDING}, technical_variant=self.technical_variant)):
             raise ValueError('current living contract differs from independently pinned approval')
 
     def claim(self, operation, task, rebuild):
@@ -136,7 +225,7 @@ class LivingActivityDelivery:
             if task.payload != rebuild():
                 raise ValueError('living task differs from current sealed and canonical input')
             validate_living_request_payload(task)
-            living_remote_request_preview(task)
+            living_remote_request_preview(task, technical_variant=self.technical_variant)
             request = digest(task.payload)
             attempt = digest(dict(run=self.run_digest, operation=operation, purpose=task.kind.value))
             self.audit.claim(attempt, request, purpose=task.kind.value, run_digest=self.run_digest)

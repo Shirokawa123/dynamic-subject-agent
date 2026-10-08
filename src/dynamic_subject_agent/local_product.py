@@ -154,10 +154,10 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, SHARED_AUTHORITIES
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
-            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY)
+            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
             if (type(cognition) is not SharedActivityCognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
                 or cognition.gateway.capabilities.local is not (not live)
@@ -166,7 +166,7 @@ def _open_loaded_local_product(
             if live:
                 from dynamic_subject_agent.shared_activity_live import SharedActivityDelivery
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
-                expected_delivery = LivingActivityDelivery if loaded.qri.provider_authority == LIVING_LIVE_AUTHORITY else SharedActivityDelivery
+                expected_delivery = LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -690,9 +690,9 @@ def validate_shared_activity_entry(config, *, profile_id, timeline_id, technical
     LocalIdentityAuthority(config).validate_shared_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
-def validate_living_activity_entry(config, *, profile_id, timeline_id):
+def validate_living_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):
     """Validate the exact current living-live identity before entry activation."""
-    LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id)
+    LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
@@ -766,25 +766,25 @@ def open_living_activity_product_local(config, *, gateway, identity_id, binding=
 
 def open_living_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None, clock=None, day=None):
     """New independently approved LIVE root; LOCAL and legacy roots never convert."""
-    from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY
-    from dynamic_subject_agent.living_activity_live import ApprovedLivingActivityGrant, LivingActivityDelivery, open_living_activity_audit
+    from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY
+    from dynamic_subject_agent.living_activity_live import LivingActivityDelivery, open_living_activity_audit, living_grant_variant
     from dynamic_subject_agent.living_activity_provider import DeepSeekLivingActivityAdapter
     from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
     from dynamic_subject_agent.living_activity import LivingClock, utc8_day
-    if type(grant) is not ApprovedLivingActivityGrant:
-        raise ValueError('exact approved S142 living grant required before identity access')
+    variant = living_grant_variant(grant)
+    provider_authority = LIVING_LIVE_AUTHORITY if variant == 'baseline' else LIVING_FINAL_TEXT_AUTHORITY
     grant.validate()
     if not isinstance(audit_path, Path) or not audit_path.is_absolute():
         raise ValueError('absolute independent S142 three-purpose audit required')
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_living_activity_live(grant=grant, audit_path=audit_path, identity_id=identity_id)
-    delivery = LivingActivityDelivery(grant=grant, audit=open_living_activity_audit(audit_path),
+    delivery = LivingActivityDelivery(grant=grant, audit=open_living_activity_audit(audit_path, technical_variant=variant),
         contract=loaded.qri.reviewed_chat_contract, state_path=config.state_path)
     transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
     adapter = DeepSeekLivingActivityAdapter(transport=transport, delivery=delivery,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID), observations=observations)
     cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter),
-        contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_LIVE_AUTHORITY, delivery=delivery,
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=provider_authority, delivery=delivery,
         snapshot_loader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)

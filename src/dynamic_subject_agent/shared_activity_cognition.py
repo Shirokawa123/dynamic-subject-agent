@@ -11,7 +11,7 @@ from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelG
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
 from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
 from dynamic_subject_agent.shared_activity import (
-    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_AUTHORITIES, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
+    SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, LIVING_AUTHORITIES, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
     shared_variant_for_contract)
 
 
@@ -28,19 +28,20 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             self.adapter_version = 'shared-activity-live-cognition-s139-1'
         self.contract = contract
         self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
-        if provider_authority == LIVING_LIVE_AUTHORITY:
-            self.adapter_version = 'living-activity-live-cognition-s142-1'
+        if provider_authority in LIVING_LIVE_AUTHORITIES:
+            self.adapter_version = ('living-final-text-live-cognition-s144-1' if provider_authority == LIVING_FINAL_TEXT_AUTHORITY
+                else 'living-activity-live-cognition-s142-1')
         self.delivery, self.snapshot_loader = delivery, snapshot_loader
 
     def preflight(self, *, context, command):
         if self.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.original_whole_chat import contract_variant
-            live = self.provider_authority == LIVING_LIVE_AUTHORITY
+            live = self.provider_authority in LIVING_LIVE_AUTHORITIES
             if live:
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
                 if (self.gateway is None or self.gateway.capabilities.local is not False
                     or self.gateway.capabilities.provider_id != 'deepseek' or type(self.delivery) is not LivingActivityDelivery
-                    or self.snapshot_loader is None or contract_variant(self.contract) != 'living-live'
+                    or self.snapshot_loader is None or contract_variant(self.contract) != ('living-final-text-live' if self.provider_authority == LIVING_FINAL_TEXT_AUTHORITY else 'living-live')
                     or self.contract != self.delivery.contract):
                     raise PreAdmissionRejected('living-approved-gateway-required', 'exact S142 live composition required')
                 self.delivery.grant.validate()
@@ -228,7 +229,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 'Living operation stopped for attention, without fabricated event or retry.') from None
 
     def _execute_living(self, task, *, plan, context, command, authorization, permission):
-        if self.provider_authority == LIVING_LIVE_AUTHORITY:
+        if self.provider_authority in LIVING_LIVE_AUTHORITIES:
             from dynamic_subject_agent.original_whole_chat import validate_whole_envelope
             from dynamic_subject_agent.living_activity import (build_living_choice_preview,
                 build_share_preview, build_living_reply_preview, sharing_gate, validate_permission)

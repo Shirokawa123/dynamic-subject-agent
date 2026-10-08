@@ -7,7 +7,7 @@ from dynamic_subject_agent.character_communication_trial_provider import communi
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import (
     ModelTask, ModelTaskKind, ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelGatewayFailure)
-from dynamic_subject_agent.living_activity import SHARE_POLICY, REPLY_POLICY
+from dynamic_subject_agent.living_activity import SHARE_POLICY, REPLY_POLICY, living_policies
 from dynamic_subject_agent.shared_activity import shared_choice_policy
 
 SHARE_OUTPUT_SCHEMA = dict(type='object', additionalProperties=False,
@@ -39,24 +39,33 @@ class PendingLivingActivityGrant:
             raise ValueError('only an exact unapproved living review may be represented')
 
 
-def living_remote_request_preview(task):
-    policies = {ModelTaskKind.LIVING_ACTIVITY_CHOICE: shared_choice_policy('self-directed-activity'),
-        ModelTaskKind.LIVING_ACTIVITY_SHARE: SHARE_POLICY, ModelTaskKind.LIVING_ACTIVITY_REPLY: REPLY_POLICY}
+def living_remote_request_preview(task, *, technical_variant='baseline'):
+    choice, share, reply = living_policies(technical_variant)
+    policies = {ModelTaskKind.LIVING_ACTIVITY_CHOICE: choice,
+        ModelTaskKind.LIVING_ACTIVITY_SHARE: share, ModelTaskKind.LIVING_ACTIVITY_REPLY: reply}
     if type(task) is not ModelTask or task.kind not in policies:
         raise ValueError('typed closed living task required')
     if type(task.payload) is not dict or set(task.payload) != {'policy', 'payload'} or task.payload['policy'] != policies[task.kind]:
         raise ValueError('exact actual living policy required')
-    protocol = communication_protocol('thinking-high', 'low')
-    body = dict(model=protocol['model'], messages=[dict(role='system', content=policies[task.kind]),
-        dict(role='user', content=canonical_json(task.payload['payload']))], **protocol['expression'])
+    from dynamic_subject_agent.living_activity_live import living_protocol_for_kind
+    protocol = living_protocol_for_kind(task.kind, technical_variant=technical_variant)
+    body = dict(model=protocol['protocol']['model'], messages=[dict(role='system', content=policies[task.kind]),
+        dict(role='user', content=canonical_json(task.payload['payload']))],
+        **{key: value for key, value in protocol['protocol'].items() if key != 'model'})
     wire = canonical_json(body).encode()
     if len(wire) > 65536:
         raise ValueError('bounded living wire required')
+    output_contract = OUTPUT_CONTRACTS[task.kind]
+    if technical_variant == 'final-text' and task.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+        output_contract = dict(final_content='natural-text', nonempty=True, max_chars=1200,
+            local_wrapper=dict(reply_text='original-final-content', language='zh'))
     return dict(status='unapproved-preview-only', purpose=task.kind.value,
         endpoint='https://api.deepseek.com/chat/completions', body=body, timeout_seconds=30,
-        requests_per_action=1, automatic_retries=0, output_contract=OUTPUT_CONTRACTS[task.kind],
+        requests_per_action=1, automatic_retries=0, output_contract=output_contract,
         credential_use='existing-Windows-slot-HTTPS-Bearer-only-after-exact-separate-approval',
-        wire_sha256=sha256(wire).hexdigest())
+        wire_sha256=sha256(wire).hexdigest(),
+        **(dict(technical_variant='final-text', final_content='natural-text-original-wrapper-zh')
+            if technical_variant == 'final-text' else {}))
 
 
 class UnapprovedLivingActivityAdapter(ProviderAdapter):
