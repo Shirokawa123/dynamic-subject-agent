@@ -29,13 +29,17 @@ Root另只读核两独立audit snapshot逐值等于metadata（baseline1/candidat
 
 一次候选完整链无空白，而初始pair两边都成功；**不能据此说JSON空白根因已解决或text长期更可靠**。Provider服务内部原因仍未知，本轮有界到此结束，不加样本补抽。source/history/cutoff active停用因果为Interface合成验证，真实链无E1、未新增空disable Publication；不能冒称新的共同经历因果或浏览器持续可见/离线生活通过。
 
-## 交付入口与待确认启动
+## 交付入口与启动批准
 
 新独立候选启动器[Start-LivingFinalTextChat.cmd](../../../app/desktop/Start-LivingFinalTextChat.cmd)及[服务入口](../../../scripts/serve_living_final_text_chat.py)已实现、必要验证并独立复核；计划端口8793、root `C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-final-text-chat/entry`、health living-final-text-chat-s144。默认空聊天、暂停且分享关闭；旧8792/root/启动器不迁移、不切版。真实首验使用自有DEV端口和独立root，未灌入用户窗口。
 
-Root尝试隐藏持续启动8793时，自动审批明确拒绝，原话理由：“该命令会隐藏启动并持续运行新的本地8793后台服务；S142明确禁止后台服务，且没有可信用户消息批准这一例外，故不能以‘新入口试用’替代具体授权。”命令未执行，没有采用间接启动绕过。开发/真实首验/代码交付已完成；**8793目前不能声称已运行**，持续启动动作保留为唯一集中确认项。
+启动前历史：Root尝试隐藏持续启动8793时，自动审批明确拒绝，原话理由：“该命令会隐藏启动并持续运行新的本地8793后台服务；S142明确禁止后台服务，且没有可信用户消息批准这一例外，故不能以‘新入口试用’替代具体授权。”原命令未执行，没有采用间接启动绕过。当时开发/真实首验/代码交付已完成，8793未运行，持续启动动作作为唯一集中确认项。
 
 具体可审启动动作：只启动本仓已复核CLI监听127.0.0.1:8793，使用上述独立root、默认暂停/分享关闭0模型，不开放LAN，不创建Windows系统服务/开机任务/系统通知，不改凭据或原8792。隐藏窗口避免抢用户焦点；模型仍只在已批purpose和用户明确操作/可见页在场条件下各stage一次，0retry。审批只涉及本地持续进程，不涉及新模型数据用途、云、迁移或删除。
+
+2026-10-08用户对上述具体启动问题明确答复“同意”，已先同步唯一current与[用户决定](../../plans/character-chat-direction.md)。在原root确实不存在后执行准确批准的Start-Process/隐藏窗口，本仓CLI通过 `D:/anaconda3/python.exe` 启动PID26852，21:05:46创建；只对当前进程设置真实LOCALAPPDATA、PYTHONPATH及既有直连NO_PROXY名单，没有改系统配置或凭据用途。实际监听 `127.0.0.1:8793`、health `living-final-text-chat-s144`，启动stdout只显示地址/stderr0字节；仅新增独立root，没有操作原8792。
+
+首次页面GET与重复status查读通过，人物active、0提交轮/0消息，控制paused=true/sharing_enabled=false/revision0、needs_attention=false/source_blocked=false，模拟关闭、无pending/展示故障。调用审计用SQLite `mode=ro`及既有链校验读取，前后都0；[启动安全metadata](entry-startup-metadata.json)只记录状态/计数/页面哈希，不含聊天正文、推理文本或凭据。观察脚本首次仅漏掉实际Facade响应的receipt=null/problem_code空串两个字段导致断言失败，补齐观察预期后通过；产品默认设置没有被改动，也未请求模型。右侧页面打开工具返回queued，仅证明已提交打开请求，不冒称浏览器当前可见或15分钟在线体验已完成。
 
 实施阶段事实：新Facade首检查通过（5.21s），原文首尾空白、规范封装/audit/canonical、nonce/重开0调用以及旧grant/entry/audit隔离成立。新增故障检查中fixture曾读取错误属性failure，实际应projection.failure_code；短nonce也被既有规则拒绝，已修fixture不放宽业务。text-only strict入口补拒choice.delta与非空message.final，空final允许，不读取第二正文补答，旧JSON默认路径保持。
 

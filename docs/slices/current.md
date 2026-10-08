@@ -1,10 +1,10 @@
 # 当前工作
 
-唯一执行：[S144：最终正文交付与分享后自然接话](slice-144-final-text-and-share-dialogue.md)已完成开发、必要验证/复核及有界真实首验，现收口证据并集中确认唯一启动动作。2026-10-07用户明确继续，开工接续10月8日；基线main81c599f核远端一致，源码779648f已push。旧8792/root/草稿/失败保持。
+唯一执行：[S144：最终正文交付与分享后自然接话](slice-144-final-text-and-share-dialogue.md)已完成开发、必要验证/复核、有界真实首验及用户批准后的8793启动交付；源码779648f与首验证据ec807d7均已push，现提交推送启动证据收口。2026-10-08用户对唯一具体启动问题明确答复“同意”；旧8792/root/草稿/失败保持。
 
 真实7首次/7提交/0空白0retry：samepayload初始JSON85字/text122字均成功，候选simulationstart→79字true分享→重启→144/125/97字接话完整；前两同S1、third exchange=[]/latestshare=null/priortrue，raw final原文/封装/audit/canon一致。27个零调用步骤通过，最终pause/shareoff+close，S143失败与旧helpers未改。协议无空白单链不证明根因或长期可靠性；root看实际内容接纳有限试用，仍有技术复述/姿态措辞可澄清，不称完整MVP。
 
-新候选8793启动器/独立root/health已准备，root隐藏持续启动被自动审批拒绝（判为未单独获批后台服务），命令未执行、未绕过。新8793不能报已在线；[完整报告与具体启动范围](../reports/2026-10-08-slice-144/REPORT.md)已备，最终只确认本仓CLI在127.0.0.1持续进程、默认暂停/分享关闭0模型、无WindowsService/开机任务/通知/云/迁移/新data用途。启动器代码可审，旧8792不切。
+新候选8793先前隐藏持续启动被自动审批拒绝，原命令未执行、未绕过；用户补足准确批准后已正常启动PID26852，实际仅监听127.0.0.1:8793、health living-final-text-chat-s144。独立root `C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-final-text-chat/entry`，active/0历史0消息、paused=true/sharing=false/revision0，页面与重复查读通过，readonly审计前后0调用。无WindowsService/开机任务/通知/云/迁移/新data用途；右侧打开请求queued，不声称页面可见性已验收，见[报告](../reports/2026-10-08-slice-144/REPORT.md)。
 
 已证实问题：S143真实900秒后活动与126字分享提交，首追问HTTP200/stop的content72字符全空白、非JSON、无第二final/refusal/toolcall；app failedclosed没有提交正文，后两轮未执行。上游内部原因未知，不能把Root解析/控制修复再重复做。S116只取消JSON开关却仍要求JSON曾3/4且1普通中文被严格拒绝，disabled思考没有可靠性优势且语义反例；不重跑旧大矩阵。
 

@@ -8,7 +8,7 @@
 
 源码必要新增28行为实例与66旧兼容通过，独立源与有界runner复核接纳；真实初始pair及候选完整链已在源码阶段commit/push后执行。第三先取最近2再剔S1，exchange为空/priortrue，不回填旧initial。实际人物交付/稳定性/内容以[S144报告](reports/2026-10-08-slice-144/REPORT.md)为准，不因本地通过宣称空白根因或MVP解决。
 
-实际源码779648f已push，固定初始pair＋候选链7请求/7提交/0空白0retry，JSON85/text122初聊双成功、candidate start/79字share/reopen/144-125-97接话，third整过滤/priortrue；单样本不能证JSON空白内因或text稳定性优势。候选内容可有限试用，旧8792/root保持；新8793持续隐藏启动被自动审批拒绝，代码已备、进程未由root启动，具体可审范围见报告。
+实际源码779648f已push，固定初始pair＋候选链7请求/7提交/0空白0retry，JSON85/text122初聊双成功、candidate start/79字share/reopen/144-125-97接话，third整过滤/priortrue；单样本不能证JSON空白内因或text稳定性优势。候选内容可有限试用，旧8792/root保持；新8793先前持续隐藏启动被自动审批拒绝，2026-10-08用户补足准确批准后已启动仅loopback本地应用进程（不注册系统服务或自启动），默认暂停/分享关闭、空聊天、打开查读0调用，具体证据见报告。
 
 ### Slice-143：在线生活与分享的独立聊天入口
 

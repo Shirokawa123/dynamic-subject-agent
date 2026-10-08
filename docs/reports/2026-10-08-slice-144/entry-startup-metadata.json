@@ -1,0 +1,35 @@
+{
+  "version": "s144-production-entry-startup-observation-1",
+  "observed_at_utc": "2026-10-08T13:08:02.149715+00:00",
+  "health": {
+    "application": "living-final-text-chat-s144"
+  },
+  "page_http_status": 200,
+  "page_sha256": "4bfb76f6442b2ce532c9887c873c0d431dd22cd9dccfdc6289ef715d019e2343",
+  "repeated_status_reads": 2,
+  "character_status": "active",
+  "history_status": "available",
+  "committed_turn_count": 0,
+  "chat_message_count": 0,
+  "living_controls": {
+    "status": "available",
+    "view": {
+      "paused": true,
+      "sharing_enabled": false,
+      "revision": 0,
+      "needs_attention": false,
+      "source_blocked": false
+    },
+    "receipt": null,
+    "problem_code": ""
+  },
+  "simulation_enabled": false,
+  "presentation_pending": false,
+  "presentation_blocked": false,
+  "audit_integrity_verified": true,
+  "model_attempt_count_before": 0,
+  "model_attempt_count_after": 0,
+  "mutation_endpoints_used": 0,
+  "raw_text_exported": false,
+  "reasoning_text_exported": false
+}
