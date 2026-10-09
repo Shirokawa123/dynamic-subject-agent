@@ -1,0 +1,254 @@
+{
+  "version": "s145-local-review-metadata-1",
+  "status": "complete",
+  "error_type": null,
+  "synthetic_outputs": true,
+  "simulated_day": true,
+  "remote_calls": 0,
+  "real_cross_day_verified": false,
+  "day_boundary_logic_verified": false,
+  "credential_reads": 0,
+  "scene_sha256": "e7eed8fb7c57d6492367f2770e8d978b743332034f6133731148c61730a2977f",
+  "stages": [
+    {
+      "stage": "source-exchange-1",
+      "status": "complete",
+      "before": 0,
+      "after": 1
+    },
+    {
+      "stage": "source-exchange-2",
+      "status": "complete",
+      "before": 1,
+      "after": 2
+    },
+    {
+      "stage": "independent-first-plan",
+      "status": "complete",
+      "before": 2,
+      "after": 3
+    },
+    {
+      "stage": "form-two-quotes-and-actual-plan",
+      "status": "complete",
+      "before": 3,
+      "after": 4
+    },
+    {
+      "stage": "unrelated-exchange-1",
+      "status": "complete",
+      "before": 4,
+      "after": 5
+    },
+    {
+      "stage": "unrelated-exchange-2",
+      "status": "complete",
+      "before": 5,
+      "after": 6
+    },
+    {
+      "stage": "unrelated-exchange-3",
+      "status": "complete",
+      "before": 6,
+      "after": 7
+    },
+    {
+      "stage": "close-before-next-day",
+      "status": "complete",
+      "before": 7,
+      "after": 7
+    },
+    {
+      "stage": "reopen-simulated-next-day",
+      "status": "complete",
+      "before": 7,
+      "after": 7
+    },
+    {
+      "stage": "next-choice-uses-working-understanding",
+      "status": "complete",
+      "before": 7,
+      "after": 8
+    },
+    {
+      "stage": "same-nonce-zero-model",
+      "status": "complete",
+      "before": 8,
+      "after": 8
+    },
+    {
+      "stage": "result-back-to-exchange",
+      "status": "complete",
+      "before": 8,
+      "after": 9
+    },
+    {
+      "stage": "disable-understanding-zero-model",
+      "status": "complete",
+      "before": 9,
+      "after": 9
+    },
+    {
+      "stage": "disabled-actual-reply-no-old-chain",
+      "status": "complete",
+      "before": 9,
+      "after": 10
+    },
+    {
+      "stage": "correction-exchange-1",
+      "status": "complete",
+      "before": 10,
+      "after": 11
+    },
+    {
+      "stage": "correction-exchange-2",
+      "status": "complete",
+      "before": 11,
+      "after": 12
+    },
+    {
+      "stage": "rebuild-from-new-committed-quotes",
+      "status": "complete",
+      "before": 12,
+      "after": 13
+    },
+    {
+      "stage": "corrected-understanding-new-plan",
+      "status": "complete",
+      "before": 13,
+      "after": 14
+    },
+    {
+      "stage": "corrected-result-back-to-exchange",
+      "status": "complete",
+      "before": 14,
+      "after": 15
+    }
+  ],
+  "runner_sha256_at_execution": "96e2bdb4232d530bae91edcdc438ee12b1dd03e1e1dae39ea451cfe435fa0465",
+  "local_contract_sha256_at_execution": "ddc346d616a434ebb94c5dc45145be8c7c1221266f337b21af687226300239e3",
+  "local_model_tasks": 15,
+  "checks": {
+    "source_heads_outside_recent_two": true,
+    "reopen_zero_model_same_view": true,
+    "next_choice_plan_changed": true,
+    "choice_includes_working_understanding": true,
+    "same_nonce_zero_model": true,
+    "reply_same_committed_plan": true,
+    "disabled_whole_derived_chain_hidden": true,
+    "disabled_preview_no_working_understanding": true,
+    "disabled_preview_no_old_result_or_history": true,
+    "disabled_actual_reply_no_old_chain": true,
+    "correction_new_understanding_and_plan": true,
+    "corrected_reply_same_plan": true
+  },
+  "tasks": [
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "2b7fa0a4fc4eb996174c52783bd77aea878ef891e4662ce9dff1db8f5bfdc591",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "066ba777c4455b44f8b693975eeb48f12709f5f4530ef073303b699a0889991f",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-choice",
+      "preview_sha256": "46efdc3c17ec9edeb7e0d0790651aad8476b7d5c476bbbc188068bbaf6c4c667",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "403962364416bd55a5631d8969598db17c5fa13b56ada279a5d6ca9c42bda5fa"
+    },
+    {
+      "kind": "working-understanding-form",
+      "preview_sha256": "5a2e1620cc805c84e6b1dc78d7247987fc6ec9c9666d1e9b6722a105444a307f",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "6c4eeec8250fa85560e9fe9a071f0d3e7c48e915d7194d1cee59f3804411001f"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "912cb7eeea8f88bfd4e95ece056aeb94216b8623b749efb157b2f3cce0c7607a",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "151f0903c121e3f3d50f26e6979eb1c1f739da6c7be8d0b0f07486f6a95858c3",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "2d5f2ecf519b237dcef3168494e33683bc34f7db348b59a99419c97e8d3c00f1",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-choice",
+      "preview_sha256": "47210584182c14339f42bc060ec471ab8d81d66d5a9a2a277ebd5775a563a39f",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "b928b83940338822dd3c42c6f16961e33a19103c1885ea3741613c05d60266cd"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "ff592bd172323467827a49c44d5b464dd01967f16f18cb8470792cd6a1a7b9c5",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "47dbc2d4b1e87cb23310284ebc87c41d449b4dcb16038346256dae8416aab205",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "4d5c0c1e66a7789b9a90d30f0a5a1cd7cf412c67ef89b519e66d280ee1c5a1f1",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "612eaad0b00fbaca041e90f55e6832e1711ab7fd709490eaed0e8ece367c00df",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    },
+    {
+      "kind": "working-understanding-form",
+      "preview_sha256": "3620f3236a3a78ab20f1f1ee9ba94353ba58bc3fc3765c7cf2827f314942788d",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "ae986d90bcda5495a0e45ce3973e54f52a05e490a8abaeba7d06d059fe5366dd"
+    },
+    {
+      "kind": "working-activity-choice",
+      "preview_sha256": "c6516c0c99a98dad9ffb512f7a7946041d2c0475e27716d587a907b82221e934",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "08f4f341eb4c95c6cf4e3d9766471d26f8ea227233f36261afb728d60ca9d672"
+    },
+    {
+      "kind": "working-activity-reply",
+      "preview_sha256": "956904eff35d9b9dc10d24464b6c011a9e9da880e81fb36ad236a2fc86f4db25",
+      "status": "complete",
+      "error_type": null,
+      "output_sha256": "10d2de08cb3dd1dcb1426e10830324f41cfd5c7bfb0c8aacaab5d88db4e92b60"
+    }
+  ],
+  "exact_unsent_previews_sha256": "aff1286768d2ce995bf43f67982dabc1407a58142026aa8a0a6bd00e5959d214",
+  "raw_text_exported": false
+}

@@ -6,6 +6,8 @@
 
 disable/privacy fence与发表权限双核，旧W派生源/方案反向form拒；history-off/cutoff/换理解完整过滤plan/result及旧轮lineage。coldprepared控制恢复仅在opening核已提交准确disable与exact权限CAS解除，query/replay不写、不清后来的fence；schema7重算采用effective history而记录/guard保real授权。旧None字段省略/pins/byte保持，LOCAL在registry前拒remote，Pending无transport/key；18新行为及旧shared18/S14426验证、独立复核通过，新用途与实包LOCAL证据见[S145报告](reports/2026-10-09-slice-145/REPORT.md)。
 
+实包发现并修复同文来源身份错配：共享recent helper先保过滤/预算后actual record，原text投影/2轮4000与break顺序不变，依赖按实际head及其lineage构造，不靠文本pair认回失效旧轮；新增1回归/4必要兼容及复核通过，旧已persisted误taint不迁移。源码fcb0d0a/修复78e6353已push，root3完成15固定合成LOCAL/19step/12check全true及15wire同源/Pending拒绝；basis e87c9db1…977c未批准，0remote/key，非真实人物语义或跨天通过。
+
 ### Slice-144：独立自然正文与重点分享技术候选
 
 沿已批S142三用途及2026-10-07同用途继续开发承接，新增独立final-text authority/manifest/schema6、`LivingFinalTextDevelopmentGrant`、variant audit与8793入口。旧exact S142 grant/资格/policy/wire/8792/root不变；新grant引用原人类用途basis与开发授权tag，独立literal pins新策略及每kind协议，不冒称新技术hash获人类exact批准。

@@ -1,0 +1,15 @@
+{
+  "status": "unapproved-review-frozen",
+  "review_basis": "e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c",
+  "local_model_tasks": 15,
+  "pending_rejections": 15,
+  "remote_calls": 0,
+  "credential_reads": 0,
+  "all_wire_payloads_match_actual_tasks": true,
+  "purposes": [
+    "working-activity-choice",
+    "working-activity-reply",
+    "working-understanding-form"
+  ],
+  "exact_wire_resource_sha256": "c78441ad8f0f1b6e2dd49c3dbd9df22f83d6b6e7639291ae1df338cfb5c1395a"
+}

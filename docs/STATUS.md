@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-09：S145源fcb0d0a已push，18新行为/旧shared18/S14426及独立复核通过。实包LOCAL root1权限挡0任务，root2完成12合成任务后同文旧/新轮text-pair错配致更正来源拒，首失败原样保留；按actual selected head修lineage，修后新root3完整验收/准确3purpose审阅。0远程/0凭据，旧8793/记录保持，见[S145](reports/2026-10-09-slice-145/REPORT.md)。
+- 2026-10-09：S145源fcb0d0a/同文修复78e6353已push，19新行为与必要旧兼容/复核过；实包root3完整15LOCAL/19steps/12check全true（2原话+A1→W1→过窗/reopen→plan变化/回聊→disable全过滤→新纠错重建）。root1/2首失败保留；15actual wire同源/Pending拒15，basis e87c9db1…977c新3用途未批准，0远程/0key，非真实人物/跨天通过，旧8793保持，见[S145](reports/2026-10-09-slice-145/REPORT.md)。
 
 - 2026-10-08：S144源779648f/首验证据ec807d7已push，7真实/7提交/0空白0重试，方案→79字分享→重启→144/125/97接话及third过滤成立，单样本不证空白根因/长期可靠性。用户明确批准后8793已启动仅127.0.0.1/PID26852，独立空root、默认暂停/分享关闭、readonly审计0调用；旧8792/root保持，无系统服务或自启动，见[S144](reports/2026-10-08-slice-144/REPORT.md)。
 

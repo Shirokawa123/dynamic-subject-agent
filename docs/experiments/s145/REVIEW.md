@@ -1,6 +1,6 @@
 # S145：当前构图工作理解的新增用途审阅
 
-2026-10-09。当前为独立LOCAL实现与准确审阅准备，**未获新用途批准**；原S139/S142 E1/三用途和S144技术开发批准不被扩用。只有LOCAL工程、source/runner复核和实际任务wire完成后才冻结review basis，本文件不自行授权发送。
+2026-10-09。独立LOCAL实现与实包整链已完成，**未获新用途批准**；原S139/S142 E1/三用途和S144技术开发批准不被扩用。准确对象已在[review.json](review.json)冻结，basis `e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c`。source/runner/实际metadata最终复核由主窗口接纳，本文件不自行授权发送。
 
 ## 这次要改变的行为
 
@@ -34,6 +34,14 @@ review.json冻结后绑定人物最小资料、LOCAL合同、scenario、helper�
 
 ## 获准后的固定首次场景（尚未执行）
 
+协议参数来自15个实际LOCAL任务的同一pure serializer：HTTPS `https://api.deepseek.com/chat/completions`，deepseek-flash，max_tokens4096、thinking enabled/reasoning_effort high、非stream、timeout30秒；form/choice为JSON object，reply为自然text且不带response_format，最终正文无语义变化封装，保非空/1200/NUL/完整性裁决。未发送wire只保新自有root，不把背景或响应全文复制到仓库。
+
 [首次真实场景](live-scene.json)：新独立身份，2条原话交流→独立一次choice新方案→两原话/实际方案形成理解→3轮换题→关闭重开0模型→一次choice参考理解→结果回聊→原nonce查读0模型→明确disable0模型→实际禁用接话→2条新更正交流→形成新理解→新choice→同结果接话。最多15首次请求（10普通reply/3choice/2form），每stage1请求0retry；数量是本场景结束条件，不恢复旧全局次数限制。
 
 首技术失败/完整性未知停止全部；首choice没有eligible新方案、form insufficient或理解越出当前范围、后续choice无实际变化，都记录首次并结束。没有备用分支或补抽成功，不提前规定真实模型的statement/plan/reply。重启真实关闭打开；不靠模拟标签宣称真实跨天，实际日界/离线生活仍另验。
+
+## 实际LOCAL与禁发证据
+
+新自有workspace资源 `.local_indexes/s145/local-review-20261009-3` 上，原已审纱雾包经精确预览/freeze进入新身份，15个合成任务（2form/3choice/10reply）、19个完成步骤及12个完整行为check通过。原话退出最近2轮、关闭重开0任务、真实方案字段变化、同结果回聊、disable及实际旧链过滤、新2原话更正/新方案回聊均核实际输入；这是工程运行证据，不是人物因果/自然度或真实跨天通过。
+
+15份wire的system与user逐值等于实际LOCAL policy/payload，三purpose齐备且所有E1null。Pending逐项拒15次，0transport/credential；完整exact任务和wire保同目录、public onlymetadata。实际LOCAL exact SHA `aff1286768d2ce995bf43f67982dabc1407a58142026aa8a0a6bd00e5959d214`，wire资源SHA `c78441ad8f0f1b6e2dd49c3dbd9df22f83d6b6e7639291ae1df338cfb5c1395a`。原root1沙箱0任务失败、root2同文误lineage12任务中断均完整保留；修actual selected head后才跑root3，不改场景挑成功，详见[完整报告](../../reports/2026-10-09-slice-145/REPORT.md)。

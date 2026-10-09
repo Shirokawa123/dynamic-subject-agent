@@ -4,7 +4,7 @@
 
 用户结果：一段确实发生的交流或活动能够成为带出处、可更正的有限认识；退出近期窗口、重启或下一日后仍可影响下一次选择，活动结果继续回到交流。已存在单条E1原话→构图方案→结果接话，不重复实现或冒称已经有长期认识。
 
-独立LOCAL/schema7源fcb0d0a已push，2原话/可选独立文字方案→≤240 tentative理解/3task贯通，18新行为/旧shared18/S14426过。实包root1权限挡0LOCAL；root2已12LOCAL但同文旧/新轮text-pair串旧lineage，重建准确拒，原失败不改。现已按过滤/预算后actual selected head修复，1新回归/4必要旧lineage-S1-window预算兼容及复核收口；阶段commit/push后root唯一新root3原场景完整LOCAL/准确wire/Pending冻结。helper tuple/list无语义判断另修；新用途未批，0remote/0key，旧对象不动。
+源码fcb0d0a/同文修复78e6353已push，19unique新行为、必要旧shared18/S14426及增量4兼容/复核过。实包root1权限挡0LOCAL、root2同文误lineage12LOCAL中断首证据保留；按actual selected head修复后root3原场景15LOCAL/19steps/12check全true，形成→过窗→reopen0→改变plan→回聊→disable实际全过滤→新原话重建成立。输出固定合成，真实跨天/语义未过，0remote/key。15actualTask purewire同源/Pending拒15，final只读复核另核16canonical提交，全部接纳。精确basis e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c冻结未批准，独立工作已完成，现证据commit/push并集中确认3新用途；旧对象不动。
 
 本片主窗口负责整体合同/docs/资源/git；独立研究和只读源码调查按现有协作策略接纳，强耦合source/权限/恢复最终由单一实施所有者贯通。永久五不变量、Facade/Authority/Gateway分工及模型仅提议Python裁决保持。用户效果与合成工程证据分别报告。
 

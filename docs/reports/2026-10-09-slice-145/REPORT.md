@@ -41,3 +41,15 @@ root2首WindowsLOCAL已有12个固定合成任务/16个完成步骤，初始2交
 另helper禁用预览判断直接拿tuple()与[]比，实际Adapter记录经plain为[]正确；修为无语义格式一致的比较，并在禁用检查失败立即停止。该fixture误差与真实lineage故障分开，root2原false元数据不改写；源码修复/定向回归/独立复核后再用新root3验证完整LOCAL，不用合成重跑宣称人物实际可靠性。
 
 已修复：recent_dialogue纯选择先保实际canonical record，原过滤/预算/break顺序保持，再生成原text DTO；shared basis同一选择后仅按selected head及其已有lineage建依赖，模型不接收内部ID。新同文回归通过，旧2个shared来源lineage/S144整S1窗/4000预算不回填共4个必要兼容通过；此前18新行为不重复，新unique共19。source冻结后阶段提交，root3沿原场景复核，不改词避开问题。
+
+## 完整LOCAL交付与准确冻结
+
+同文修复阶段78e6353已push后，root唯一执行新自有root3，exit0：[完整安全metadata](local-complete-metadata.json)为15个固定合成任务（10reply/3choice/2form）、19个完成步骤、12个完整check全true，0remote/0key。出处2不同committed head、独立A1正确；三个purpose的每个preview等于actual Task；来源已退出2轮、真正close/reopen不增模型且业务view相同；下一plan实际字段改变、reply收到同canonical plan；disable0/实际W1-result-history全空；新2原句（未换词）形成新理解/新方案/同结果回聊。原nonce只读0任务，最终product关闭。
+
+Script中的D+1仅注入环境标签，未消费为日期逻辑；metadata real_cross_day_verified/day_boundary_logic_verified均false。固定Adapter按W1改变方案说明代码与数据连接成立，不能用其“选择差异”证明真实人物因果、自然度或长期记忆已经完成。本片helper共27LOCAL（首Windows12＋修后15），不是27次真实Provider；单独测试调用不混入此账。
+
+`prepare_s145_review.py`从上述15份actual Task生成pure wire：system/payload逐值相等，所有E1null；Pending typed拒15，0transport/credential，三kind齐备。reply wire自然text、form/choice JSON，max_tokens4096/thinking enabled/high/非stream/timeout30。同份[wire metadata](wire-review-metadata.json)和[review对象](../../experiments/s145/review.json)绑定执行时scene/helper/LOCAL合同及actual raw hashes，basis `e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c`；状态not-granted不自动激活。独立actual metadata最后只读复核后，由root提交推送证据并集中请求准确新用途。
+
+当前可交付：新LOCAL认识形成/使用/更正闭环、同文来源错配修复、独立资格与禁发路径、必要兼容和冷恢复证据、准确可审真实范围。未交付：新Provider真实人物语义、真实跨天/多日相处、自动检索/多认识/多项目生活、S145用户UI/生产启用。原8793不升级、不操作草稿；后续批准只准独立真实验收，不把结果提前灌入用户窗口。
+
+最终actual metadata独立只读接纳：15Task/19Stage/12check及所有wire/hash与当前scene/helpers/合同/basis一致；SQLite只读另核16条canonical提交（15合成任务对应15次业务提交＋1零模型disable），实际方案变化/同结果回聊/新原话重建成立，E1始终null。root1/2首失败保留，public没有正文或真实跨天冒称；复核0产品打开/0Model/key/git。全部已授权独立工作收口，唯一待决定为上述3个准确新增Provider用途。
