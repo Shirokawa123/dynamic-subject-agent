@@ -1,0 +1,59 @@
+{
+  "version": "s145-first-live-working-understanding-scene-1",
+  "approval_status": "not-granted",
+  "maximum_first_requests": 15,
+  "requests_per_stage": 1,
+  "automatic_retries": 0,
+  "independent_fresh_identity": true,
+  "existing_user_roots_touched": false,
+  "simulated_time_used_to_claim_real_cross_day": false,
+  "source_messages": [
+    "先只讨论这次文字构图。我希望主体旁边留一个安静的角落，让视线有地方停。",
+    "我刚才说的留白只针对这次构图，不是说我所有画都喜欢空。这个角落仍想保留一点光影变化。"
+  ],
+  "source_quotes": [
+    "我希望主体旁边留一个安静的角落，让视线有地方停。",
+    "我刚才说的留白只针对这次构图，不是说我所有画都喜欢空。这个角落仍想保留一点光影变化。"
+  ],
+  "gap_messages": [
+    "暂时换个话题。你觉得一个故事的开头怎样让人愿意继续看？",
+    "先说文字里的节奏，不讨论刚才的构图。",
+    "如果开头很安静，后来出现转折，你会怎样看？"
+  ],
+  "result_question": "刚才新提交的文字方案具体改变了什么？还没有画成图片。",
+  "correction_messages": [
+    "更正这次构图的意思：不用再保留安静角落，我现在想让阴影靠近主体。",
+    "这仍然只是这个方案的修改，不是永久偏好；留白不要再作为这次构图的重点。"
+  ],
+  "correction_quotes": [
+    "不用再保留安静角落，我现在想让阴影靠近主体。",
+    "这仍然只是这个方案的修改，不是永久偏好；留白不要再作为这次构图的重点。"
+  ],
+  "order": [
+    "source-reply-1",
+    "source-reply-2",
+    "independent-choice-1",
+    "form-from-two-quotes-and-actual-plan",
+    "gap-reply-1",
+    "gap-reply-2",
+    "gap-reply-3",
+    "close-and-reopen-zero-model",
+    "choice-using-valid-understanding",
+    "result-reply",
+    "same-nonce-read-zero-model",
+    "disable-understanding-zero-model",
+    "disabled-reply",
+    "correction-reply-1",
+    "correction-reply-2",
+    "rebuild-from-new-two-quotes",
+    "corrected-choice",
+    "corrected-result-reply"
+  ],
+  "stop_conditions": [
+    "first-technical-failure-or-unknown-integrity-stop-all",
+    "independent-choice-without-new-eligible-plan-end-first-scene",
+    "formed-understanding-insufficient-or-semantically-out-of-scope-end-first-scene",
+    "later-choice-without-real-plan-change-record-and-end-first-scene",
+    "no-rescue-branch-no-repeat-of-failed-stage-no-success-selection"
+  ]
+}

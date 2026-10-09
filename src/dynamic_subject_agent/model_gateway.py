@@ -36,6 +36,9 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    WORKING_UNDERSTANDING_FORM = 'working-understanding-form'
+    WORKING_ACTIVITY_CHOICE = 'working-activity-choice'
+    WORKING_ACTIVITY_REPLY = 'working-activity-reply'
     LIVING_ACTIVITY_CHOICE = 'living-activity-choice'
     LIVING_ACTIVITY_SHARE = 'living-activity-share'
     LIVING_ACTIVITY_REPLY = 'living-activity-reply'

@@ -614,6 +614,76 @@ class _ApplicationRouter:
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='shared-state-unverified')
 
+    def _working_request_valid(self, request):
+        from dynamic_subject_agent.working_understanding import WorkingUnderstandingRequest, validate_sources
+        if (type(request) is not WorkingUnderstandingRequest or request.target_profile_id != self._binding.profile_id
+            or request.target_timeline_id != self._binding.timeline_id or type(request.expected_revision) is not int
+            or request.expected_revision < 0 or type(request.request_id) is not str or request.action not in ('form','disable')
+            or type(request.confirmed) is not bool):
+            return False
+        try:
+            from dynamic_subject_agent.timeline import _validate_idempotency_key
+            _validate_idempotency_key(request.request_id)
+            if request.action == 'form':
+                validate_sources(request.sources)
+            elif request.sources != ():
+                return False
+            return True
+        except Exception:
+            return False
+
+    def query_working_understanding(self, request=None):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if request is not None and not self._working_request_valid(request):
+            return SharedActivityResponse('unavailable',problem_code='working-request-invalid')
+        try:
+            return self._host.query_working_understanding(self._binding,request)
+        except Exception:
+            return SharedActivityResponse('failed-closed',problem_code='working-state-unverified')
+
+    def preview_working_understanding(self, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if not self._working_request_valid(request) or request.action != 'form':
+            return SharedActivityResponse('unavailable',problem_code='working-request-invalid')
+        try:
+            return self._host.query_working_understanding(self._binding,request,preview=True)
+        except PreAdmissionRejected as error:
+            return SharedActivityResponse('unavailable',problem_code=error.code)
+        except Exception:
+            return SharedActivityResponse('failed-closed',problem_code='working-preview-unverified')
+
+    def apply_working_understanding(self, request):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if not self._working_request_valid(request):
+            return SharedActivityResponse('unavailable',problem_code='working-request-invalid')
+        if request.confirmed is not True:
+            return SharedActivityResponse('cancelled')
+        try:
+            return self._host.apply_working_understanding(self._binding,request)
+        except PreAdmissionRejected as error:
+            return SharedActivityResponse('unavailable',problem_code=error.code)
+        except Exception:
+            return SharedActivityResponse('failed-closed',problem_code='working-operation-unverified')
+
+    def preview_working_activity(self, purpose='choice', text=''):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        if purpose not in ('choice','reply') or purpose == 'reply' and (type(text) is not str or not text.strip() or len(text)>1000 or '\x00' in text):
+            return SharedActivityResponse('unavailable',problem_code='working-preview-purpose-invalid')
+        try:
+            return self._host.query_working_understanding(self._binding,preview=True,purpose=purpose,message=text)
+        except Exception:
+            return SharedActivityResponse('failed-closed',problem_code='working-preview-unverified')
+
+    def advance_working_activity(self, request):
+        from dynamic_subject_agent.shared_activity import WORKING_AUTHORITY, SharedActivityStepRequest, SharedActivityResponse
+        if self._binding.provider_authority != WORKING_AUTHORITY:
+            return SharedActivityResponse('unavailable',problem_code='independent-working-authority-required')
+        return self._apply_shared_activity(request,SharedActivityStepRequest)
+
     def preview_shared_activity_step(self):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         self._require_open()
@@ -699,7 +769,9 @@ class _ApplicationRouter:
             return SharedActivityResponse('failed-closed', problem_code='living-control-unverified')
 
     def set_shared_experience(self, request):
-        from dynamic_subject_agent.shared_activity import SharedExperienceRequest
+        from dynamic_subject_agent.shared_activity import SharedExperienceRequest, SharedActivityResponse, WORKING_AUTHORITY
+        if self._binding.provider_authority == WORKING_AUTHORITY:
+            return SharedActivityResponse('unavailable',problem_code='working-e1-selection-unavailable')
         return self._apply_shared_activity(request, SharedExperienceRequest)
 
     def advance_shared_activity(self, request):
@@ -1540,6 +1612,21 @@ class ApplicationFacade:
 
     def query_shared_activity(self, request=None):
         return self.__router.query_shared_activity(request)
+
+    def query_working_understanding(self, request=None):
+        return self.__router.query_working_understanding(request)
+
+    def preview_working_understanding(self, request):
+        return self.__router.preview_working_understanding(request)
+
+    def apply_working_understanding(self, request):
+        return self.__router.apply_working_understanding(request)
+
+    def preview_working_activity(self, purpose='choice', text=''):
+        return self.__router.preview_working_activity(purpose,text)
+
+    def advance_working_activity(self, request):
+        return self.__router.advance_working_activity(request)
 
     def query_living_activity(self, request=None):
         return self.__router.query_living_activity(request)

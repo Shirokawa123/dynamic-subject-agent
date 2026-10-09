@@ -154,11 +154,13 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
+            from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
+            expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority == WORKING_AUTHORITY else SharedActivityCognition
             live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
-            if (type(cognition) is not SharedActivityCognition or cognition.gateway is None
+            if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
                 or cognition.gateway.capabilities.local is not (not live)
                 or getattr(cognition, '_whole_composition_witness', None) != loaded.qri.reviewed_chat_contract):
@@ -737,6 +739,32 @@ def open_shared_activity_product_local(config, *, gateway, identity_id, binding=
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_working_understanding_product_local(config, *, gateway, identity_id, binding=None, day=None):
+    """Independent schema7 LOCAL root; remote rejected before registry access."""
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
+    if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
+        raise ValueError('local-only working understanding gateway required')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_working_understanding_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    cognition = WorkingUnderstandingCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+        contract=loaded.qri.reviewed_chat_contract,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.working_permission = lambda: authority.working_permission(loaded.qri.profile_id, loaded.timeline_id)
+    cognition.working_revoke = lambda blocked, expected=None: authority.revoke_working_sources(loaded.qri.profile_id, blocked=blocked, expected=expected)
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    # Day injection is deliberately observational: no offline catch-up/events.
+    cognition.working_day = day
+    product = _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+    try:
+        product._composition._host._reconcile_working_source_fence(product._composition._router._binding)
+    except Exception:
+        product.close()
+        raise
+    return product
 
 
 def open_living_activity_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):

@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-145：独立LOCAL当前构图工作理解
+
+新working-local/schema7/authority/Manifest沿单shared_activity_record与原Publication保存最多1条可修正tentative理解及准确来源闭包，不第二store、不升级旧root。Facade显式2不同committed用户原话各≤400、可选独立当前typed文字方案，经WORKING_UNDERSTANDING_FORM提议≤240 composition-text/formed|insufficient；Python核真实来源、范围、闭集引用和全部实际输入依赖，insufficient typed NoOp保旧。choice/reply为独立newkind，最多1有效W1及原支持；旧note仅本地，reply沿S144自然text。新qualification不取得旧E1选定/停用能力，兼容字段shared_experience恒null，schema7 reader拒非空source。
+
+disable/privacy fence与发表权限双核，旧W派生源/方案反向form拒；history-off/cutoff/换理解完整过滤plan/result及旧轮lineage。coldprepared控制恢复仅在opening核已提交准确disable与exact权限CAS解除，query/replay不写、不清后来的fence；schema7重算采用effective history而记录/guard保real授权。旧None字段省略/pins/byte保持，LOCAL在registry前拒remote，Pending无transport/key；18新行为及旧shared18/S14426验证、独立复核通过，新用途与实包LOCAL证据见[S145报告](reports/2026-10-09-slice-145/REPORT.md)。
+
 ### Slice-144：独立自然正文与重点分享技术候选
 
 沿已批S142三用途及2026-10-07同用途继续开发承接，新增独立final-text authority/manifest/schema6、`LivingFinalTextDevelopmentGrant`、variant audit与8793入口。旧exact S142 grant/资格/policy/wire/8792/root不变；新grant引用原人类用途basis与开发授权tag，独立literal pins新策略及每kind协议，不冒称新技术hash获人类exact批准。

@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'working-understanding-local-s145-1':
+        from dynamic_subject_agent.working_understanding import working_contract
+        if contract != working_contract({key:contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact working LOCAL contract required')
+        return 'working-local'
     if contract.get('version') == 'living-activity-local-s142-1':
         from dynamic_subject_agent.living_activity import living_contract
         if contract != living_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -150,6 +155,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == 'working-local':
+        return 'original-working-understanding-local-s145-' + digest(contract)
     if variant == 'living-local':
         return 'original-living-activity-local-s142-' + digest(contract)
     if variant == 'living-live':

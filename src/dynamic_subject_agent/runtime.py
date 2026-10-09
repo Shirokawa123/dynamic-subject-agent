@@ -363,6 +363,7 @@ class CognitionRuntimeView:
     load_character_dialogue: Callable[[bool], object] | None = None
     load_whole_context: Callable[[], object] | None = None
     load_shared_activity: Callable | None = None
+    validate_working_sources: Callable | None = None
     load_first_life_followup: Callable[[bool], object] | None = None
     load_preference_question: Callable[[], object | None] | None = None
     load_subject_tasks: Callable[[], tuple] | None = None
@@ -1103,6 +1104,8 @@ class SubjectRuntime:
             ),
             load_shared_activity=((lambda authorization: self._engine.shared_activity_basis(authorization, exclude_operation_id=dialogue_operation.operation_id))
                 if SHARED_INTENT in self._context.authority.allowed_intents and dialogue_operation is not None else None),
+            validate_working_sources=((lambda sources, authorization: self._engine.validate_working_sources(sources, authorization,
+                exclude_operation_id=dialogue_operation.operation_id)) if getattr(self._context.authority, 'provider_authority', None) == 'original-working-understanding-local-s145-1' and dialogue_operation is not None else None),
             load_whole_context=((lambda: self._engine.whole_context_basis(expected_head=dialogue_head))
                 if CONTEXT_INTENT in self._context.authority.allowed_intents and dialogue_head is not None else None),
             load_recent_dialogue=(

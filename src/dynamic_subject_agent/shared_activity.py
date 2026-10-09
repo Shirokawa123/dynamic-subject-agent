@@ -14,11 +14,14 @@ SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
 LIVING_AUTHORITY = 'original-living-activity-local-s142-1'
 LIVING_LIVE_AUTHORITY = 'original-living-activity-deepseek-s142-1'
 LIVING_FINAL_TEXT_AUTHORITY = 'original-living-final-text-deepseek-s144-1'
+WORKING_AUTHORITY = 'original-working-understanding-local-s145-1'
+WORKING_INTENT = 'working-understanding-system-input'
+WORKING_RUNTIME_CONTRACT = 'original-working-understanding-cycle-s145-1'
 LIVING_LIVE_AUTHORITIES = (LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY)
 LIVING_AUTHORITIES = (LIVING_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
 LIVING_INTENT = 'living-activity-system-input'
 LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
-SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *LIVING_AUTHORITIES)
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *LIVING_AUTHORITIES, WORKING_AUTHORITY)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
@@ -234,6 +237,7 @@ class SharedActivityRecord:
     context_revision: int
     dialogue_dependencies: tuple[int, ...] | None = None
     living: dict | None = None
+    working: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -251,14 +255,25 @@ class SharedActivityInput:
     living_trigger: str | None = None
     living_day: str | None = None
     target_event_id: str | None = None
+    working_sources: tuple[dict, ...] | None = None
+    working_permission: dict | None = None
 
     def __post_init__(self):
         from dynamic_subject_agent.whole_context_boundary import WholeContextInput
         # Reuse the existing exact UUID/four-component basis/auth validator.
         WholeContextInput(self.target_profile_id, self.target_timeline_id, self.request_digest,
             self.expected_revision, self.expected_basis, self.authorization)
-        if self.input_kind not in ("select", "disable", "advance", "share"):
+        if self.input_kind not in ("select", "disable", "advance", "share", "understand", "understanding-disable"):
             raise ValueError("closed shared activity input required")
+        if self.working_permission is not None:
+            from dynamic_subject_agent.working_understanding import validate_permission, validate_sources
+            validate_permission(self.working_permission)
+            if self.input_kind == 'understand':
+                object.__setattr__(self, 'working_sources', validate_sources(self.working_sources))
+            elif self.working_sources is not None:
+                raise ValueError('only formation carries working sources')
+        elif self.input_kind in ('understand', 'understanding-disable') or self.working_sources is not None:
+            raise ValueError('independent working permission required')
         if self.living_permission is not None:
             from dynamic_subject_agent.living_activity import validate_permission, valid_day
             validate_permission(self.living_permission)
@@ -284,7 +299,7 @@ class SharedActivityInput:
 
     @property
     def payload_fingerprint(self):
-        value = {key: item for key, item in asdict(self).items() if not key.startswith('living_') and key != 'target_event_id' or item is not None}
+        value = {key: item for key, item in asdict(self).items() if (not key.startswith(('living_', 'working_')) and key != 'target_event_id') or item is not None}
         return digest(dict(version=SHARED_VERSION, **value))
 
 
@@ -313,6 +328,9 @@ def decode_record(value):
     if value.get('living') is not None:
         from dynamic_subject_agent.living_activity import validate_living
         validate_living(value['living'])
+    if value.get('working') is not None:
+        from dynamic_subject_agent.working_understanding import validate_working
+        validate_working(value['working'])
     return SharedActivityRecord(**value)
 
 
@@ -349,6 +367,9 @@ def initial_record():
 def visible_state(record, *, enabled, cutoff):
     source = record.source if enabled and record.source and record.source.source_head_sequence > cutoff else None
     valid = {source.source_key} if source else set()
+    if record.working is not None:
+        from dynamic_subject_agent.working_understanding import working_valid_sources
+        valid.update(working_valid_sources(record, enabled, cutoff))
     plan = record.plan if set(record.source_dependencies) <= valid else None
     result = record.result if record.result and set(record.result.source_dependencies) <= valid else None
     return dict(source=source, current_plan=plan, result=result, valid_sources=valid,
