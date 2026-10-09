@@ -4681,14 +4681,12 @@ class TimelineEngine:
         if LIVING_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.living_activity import living_valid_sources
             visible['valid_sources'] = living_valid_sources(record, visible['valid_sources'], enabled=authorization.history_enabled, cutoff=cutoff)
-        dialogue = self._whole_dialogue_from_prefix('', authorization.history_enabled, verified)
-        selected = {(row.user_text, row.assistant_text) for row in dialogue.recent_dialogue}
+        _, selected = self._whole_dialogue_selection_from_prefix('', authorization.history_enabled, verified)
         lineage = self._shared_dialogue_lineage(publications)
         dialogue_dependencies = set()
-        for row in verified[0]:
-            if (row.user_text, row.assistant_text) in selected:
-                dialogue_dependencies.add(row.head_sequence)
-                dialogue_dependencies.update(lineage[row.head_sequence])
+        for row in selected:
+            dialogue_dependencies.add(row.head_sequence)
+            dialogue_dependencies.update(lineage[row.head_sequence])
         working_visible = None
         if WORKING_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.working_understanding import visible_understanding
@@ -8280,19 +8278,19 @@ class TimelineEngine:
             cutoff = max(cutoff, int(row[4]))
         return records, cutoff
 
-    def _whole_dialogue_from_prefix(self, message, enabled, verified):
+    def _whole_dialogue_selection_from_prefix(self, message, enabled, verified):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.whole_dialogue_scope import is_whole_dialogue_control
-        from dynamic_subject_agent.recent_dialogue import select_recent_dialogue
+        from dynamic_subject_agent.recent_dialogue import select_recent_dialogue_records, RecentDialogueTurn
         if verified is None:
-            return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved')
+            return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved'), ()
         records, cutoff = verified
         # Source/lineage filtering controls which words may be disclosed. It
         # does not erase the verified fact that a prior exchange committed.
         has_prior = bool(records)
         if (is_whole_dialogue_control(message)
             or records and records[-1].head_sequence > cutoff and is_whole_dialogue_control(records[-1].user_text)):
-            return CharacterDialogueBasis('restricted', has_prior, problem_code='character-history-restricted')
+            return CharacterDialogueBasis('restricted', has_prior, problem_code='character-history-restricted'), ()
         if SHARED_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.shared_activity import initial_record, visible_state
             publications = self._verified_publications()
@@ -8313,8 +8311,13 @@ class TimelineEngine:
             lineage = self._shared_dialogue_lineage(publications)
             records = tuple(row for row in records if set(dependencies[row.head_sequence]) <= valid
                 and row.head_sequence not in blocked_heads and not lineage[row.head_sequence] & blocked_heads)
-        selected = select_recent_dialogue(records, after_sequence=cutoff, control_predicate=is_whole_dialogue_control) if enabled else ()
-        return CharacterDialogueBasis('available', has_prior, selected)
+        selected = select_recent_dialogue_records(records, after_sequence=cutoff,
+            control_predicate=is_whole_dialogue_control) if enabled else ()
+        texts = tuple(RecentDialogueTurn(record.user_text, record.assistant_text) for record in selected)
+        return CharacterDialogueBasis('available', has_prior, texts), selected
+
+    def _whole_dialogue_from_prefix(self, message, enabled, verified):
+        return self._whole_dialogue_selection_from_prefix(message, enabled, verified)[0]
 
     def preview_whole_dialogue(self, message, enabled):
         if type(enabled) is not bool:

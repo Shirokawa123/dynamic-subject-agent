@@ -269,10 +269,13 @@ def run(base, scene):
         preview = product.application.preview_working_activity('reply',scene['result_question'])
         if preview.status != 'previewed':
             raise ValueError('Disabled reply preview unavailable.')
-        checks['disabled_preview_no_working_understanding'] = preview.view['payload']['evidence']['working_understanding'] is None
-        checks['disabled_preview_no_old_result_or_history'] = (preview.view['payload']['evidence']['activity_result'] is None
-            and preview.view['payload']['evidence']['shared_experience'] is None
-            and preview.view['payload']['exchange'] == [])
+        disabled_preview_payload = plain(preview.view)['payload']
+        checks['disabled_preview_no_working_understanding'] = disabled_preview_payload['evidence']['working_understanding'] is None
+        checks['disabled_preview_no_old_result_or_history'] = (disabled_preview_payload['evidence']['activity_result'] is None
+            and disabled_preview_payload['evidence']['shared_experience'] is None
+            and disabled_preview_payload['exchange'] == [])
+        if not all(checks.values()):
+            raise ValueError('Disabled input chain was not fully filtered.')
         stage('disabled-actual-reply-no-old-chain',lambda: send(product,scene['result_question'],adapter))
         disabled_payload = adapter.calls[-1]['preview']['payload']
         checks['disabled_actual_reply_no_old_chain'] = (disabled_payload['evidence']['working_understanding'] is None

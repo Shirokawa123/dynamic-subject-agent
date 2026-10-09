@@ -4,7 +4,7 @@
 
 用户结果：一段确实发生的交流或活动能够成为带出处、可更正的有限认识；退出近期窗口、重启或下一日后仍可影响下一次选择，活动结果继续回到交流。已存在单条E1原话→构图方案→结果接话，不重复实现或冒称已经有长期认识。
 
-独立LOCAL/schema7源已冻结并复核通过：显式2条不同committed用户逐字原话各≤400＋可选1真实当前文字方案，形成composition-text范围≤240暂定理解；3新task form/choice/reply，后两最多1有效理解及原支持。insufficient typed NoOp保旧，旧note不外发；form/choice JSON、reply沿S144自然正文。18新行为、旧shared18/S14426必要兼容通过；非法nonce、冷disable CAS恢复、schema7 effective history重算及打开失败关闭已验证。newcandidate拒E1操作/字段恒null，旧对象不动。现阶段commit/push后由root唯一执行实包LOCAL与准确wire/Pending冻结，新用途未批准0远程/0凭据；详细条件见任务书。
+独立LOCAL/schema7源fcb0d0a已push，2原话/可选独立文字方案→≤240 tentative理解/3task贯通，18新行为/旧shared18/S14426过。实包root1权限挡0LOCAL；root2已12LOCAL但同文旧/新轮text-pair串旧lineage，重建准确拒，原失败不改。现已按过滤/预算后actual selected head修复，1新回归/4必要旧lineage-S1-window预算兼容及复核收口；阶段commit/push后root唯一新root3原场景完整LOCAL/准确wire/Pending冻结。helper tuple/list无语义判断另修；新用途未批，0remote/0key，旧对象不动。
 
 本片主窗口负责整体合同/docs/资源/git；独立研究和只读源码调查按现有协作策略接纳，强耦合source/权限/恢复最终由单一实施所有者贯通。永久五不变量、Facade/Authority/Gateway分工及模型仅提议Python裁决保持。用户效果与合成工程证据分别报告。
 

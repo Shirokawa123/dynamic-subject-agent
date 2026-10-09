@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-09：S145独立LOCAL/schema7两原话/可选方案→≤240暂定构图理解→后续choice/reply贯通，18新行为与旧shared18/S14426及独立复核通过；cold-disable CAS/effective-history/nonce/资源关闭修复，新候选E1恒null。现源码阶段提交后唯一执行实包LOCAL与准确审阅，新3purpose未批，0远程/0凭据，旧8793/记录保持，见[S145](reports/2026-10-09-slice-145/REPORT.md)。
+- 2026-10-09：S145源fcb0d0a已push，18新行为/旧shared18/S14426及独立复核通过。实包LOCAL root1权限挡0任务，root2完成12合成任务后同文旧/新轮text-pair错配致更正来源拒，首失败原样保留；按actual selected head修lineage，修后新root3完整验收/准确3purpose审阅。0远程/0凭据，旧8793/记录保持，见[S145](reports/2026-10-09-slice-145/REPORT.md)。
 
 - 2026-10-08：S144源779648f/首验证据ec807d7已push，7真实/7提交/0空白0重试，方案→79字分享→重启→144/125/97接话及third过滤成立，单样本不证空白根因/长期可靠性。用户明确批准后8793已启动仅127.0.0.1/PID26852，独立空root、默认暂停/分享关闭、readonly审计0调用；旧8792/root保持，无系统服务或自启动，见[S144](reports/2026-10-08-slice-144/REPORT.md)。
 

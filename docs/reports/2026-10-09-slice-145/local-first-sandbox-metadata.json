@@ -1,0 +1,20 @@
+{
+  "version": "s145-local-review-metadata-1",
+  "status": "failed-partial",
+  "error_type": "StudioRejected",
+  "synthetic_outputs": true,
+  "simulated_day": true,
+  "remote_calls": 0,
+  "real_cross_day_verified": false,
+  "day_boundary_logic_verified": false,
+  "credential_reads": 0,
+  "scene_sha256": "e7eed8fb7c57d6492367f2770e8d978b743332034f6133731148c61730a2977f",
+  "stages": [],
+  "runner_sha256_at_execution": "580e699bbec63157615e0bdf5e31568c6b4a76ae9ff71eb6aa8bdd829d4c06d7",
+  "local_contract_sha256_at_execution": "ddc346d616a434ebb94c5dc45145be8c7c1221266f337b21af687226300239e3",
+  "local_model_tasks": 0,
+  "checks": {},
+  "tasks": [],
+  "exact_unsent_previews_sha256": "6dd6031f54a1746cd5c2b02d18b46305f29b7c18e87fe24b674317565c99068a",
+  "raw_text_exported": false
+}

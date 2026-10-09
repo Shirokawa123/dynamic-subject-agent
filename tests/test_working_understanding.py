@@ -338,3 +338,43 @@ def test_opening_reconciliation_scope_failure_closes_product_and_allows_same_roo
             working_fixture(adapter)
     product=working_fixture(adapter)
     assert state(product)['revision']==0 and not adapter.calls
+
+
+def test_identical_old_and_new_exchange_words_do_not_launder_filtered_old_lineage_into_correction(working_fixture):
+    class IdenticalReplyAdapter(LocalAdapter):
+        def invoke(self,task):
+            if task.kind is ModelTaskKind.WORKING_ACTIVITY_REPLY:
+                self.calls.append(task)
+                return ModelResult(task.kind,dict(reply_text='固定合成回复。',language='zh'))
+            return super().invoke(task)
+    adapter=IdenticalReplyAdapter();product=working_fixture(adapter)
+    assert send(product,'这一次构图试少量暖色。','working-source-a').status=='terminal'
+    assert send(product,'桌边留白可以帮助看清主体。','working-source-b').status=='terminal'
+    assert product.application.advance_working_activity(step(product,'working-independent-before-form')).status=='committed'
+    assert product.application.apply_working_understanding(request(product)).status=='committed'
+    for i in range(3):
+        assert send(product,'合成换题'+str(i),'working-equal-gap-'+str(i)).status=='terminal'
+    assert product.application.advance_working_activity(step(product,'working-equal-dependent-plan')).status=='committed'
+    repeated='刚才新提交的文字方案具体改变了什么？还没有画成图片。'
+    assert send(product,repeated,'working-equal-old-question').status=='terminal'
+    old=history(product)[-1]
+    assert product.application.apply_working_understanding(request(product,'working-equal-disable',action='disable')).status=='committed'
+    assert send(product,repeated,'working-equal-new-question').status=='terminal'
+    new=history(product)[-1]
+    assert new.head_sequence!=old.head_sequence and (new.user_text,new.assistant_text)==(old.user_text,old.assistant_text)
+    assert adapter.calls[-1].payload['payload']['exchange']==()
+    correction_a='更正这次构图的意思：不用再保留安静角落，我现在想让阴影靠近主体。'
+    correction_b='这仍然只是这个方案的修改，不是永久偏好；留白不要再作为这次构图的重点。'
+    assert send(product,correction_a,'working-equal-correction-a').status=='terminal'
+    a=history(product)[-1].head_sequence
+    assert send(product,correction_b,'working-equal-correction-b').status=='terminal'
+    b=history(product)[-1].head_sequence
+    sources=(WorkingSourceQuote(a,'不用再保留安静角落，我现在想让阴影靠近主体。'),WorkingSourceQuote(b,correction_b))
+    req=WorkingUnderstandingRequest(product.profile_id,product.timeline_id,'working-equal-rebuild',state(product)['revision'],sources,'form',True)
+    preview=product.application.preview_working_understanding(req)
+    assert preview.status=='previewed',preview
+    assert preview.view['payload']['activity_result'] is None
+    count=len(adapter.calls)
+    assert product.application.apply_working_understanding(req).status=='committed'
+    assert len(adapter.calls)==count+1 and adapter.calls[-1].payload==preview.view
+    assert {row['source_head_sequence'] for row in state(product)['visible_understanding']['sources']}=={a,b}

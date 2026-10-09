@@ -29,3 +29,15 @@ runner独立复核补齐：每ordinary preview==actual，form两原话和typed A
 [准确审阅](../../experiments/s145/REVIEW.md)将绑定实际LOCAL ModelTask及直接序列化的未发送wire，3新用途分别为工作理解形成、理解影响活动、理解进入普通接话。原S139/S142只准单条逐字E1等投影；两条原话归纳与派生理解外发是新增用途，须单独准确批准。尚无可执行LIVE grant。
 
 固定首次真实场景最多15首次请求（10reply/3choice/2form），每stage1/0retry；首技术失败/完整性未知、无eligible计划、insufficient/语义越界或无实际变化记录后结束，不建备用分支挑成功。关闭重开实际执行，模拟环境不冒称真实跨天；不开新系统服务/通知/离线生活/云，不新增材料/Provider/key用途，不删或迁移旧记录。
+
+## 实包LOCAL首次证据与接缝修复
+
+源码阶段fcb0d0a已push后root唯一执行。新自有root1在人物创建/模型任务前StudioRejected，0LOCAL/0remote；只读定位沙箱内卷根与本任务TEMP.resolve(strict=True)均PermissionError，隔离校验按合同停止，没有放宽。完整[首沙箱metadata](local-first-sandbox-metadata.json)保留。改为准确自有Windows环境、新root2执行同一helper，不是模型重试或人物失败补抽。
+
+root2首WindowsLOCAL已有12个固定合成任务/16个完成步骤，初始2交流/独立方案/理解形成/3换题/真实关闭重开0模型/新方案差异/结果回聊/disable0/实际禁用接话/2更正交流均已提交；重建form预览准确拒working-source-unavailable，0该stage模型任务，原partial保持：[首次Windows中断metadata](local-first-windows-partial-metadata.json)。候选当前没有远程用途，失败与所有固定合成输出只保存其各自本地canonical/精确未发送记录。
+
+只读诊断0模型发现实际禁用接话exchange=[]，首更正只收一条合法新轮，但canonical给它错误记入旧W依赖。旧W活跃的结果问head9与disable后合法同问head11的完整user+assistant文本pair相同（SHA `fd15fbdc44b0eb959b6edc6b7ec67c64b4210a7df5d99daf7f13eff3dcc27074`）；共享basis用文本pair集合匹配历史，把已过滤head9当作实际选中，误带入其lineage，使新quote不合资格。这是已证的来源身份错误，修复须按过滤/预算后实际selected head建依赖，不改话术避开、不擦除真的旧W taint，也不迁移已persisted误taint。
+
+另helper禁用预览判断直接拿tuple()与[]比，实际Adapter记录经plain为[]正确；修为无语义格式一致的比较，并在禁用检查失败立即停止。该fixture误差与真实lineage故障分开，root2原false元数据不改写；源码修复/定向回归/独立复核后再用新root3验证完整LOCAL，不用合成重跑宣称人物实际可靠性。
+
+已修复：recent_dialogue纯选择先保实际canonical record，原过滤/预算/break顺序保持，再生成原text DTO；shared basis同一选择后仅按selected head及其已有lineage建依赖，模型不接收内部ID。新同文回归通过，旧2个shared来源lineage/S144整S1窗/4000预算不回填共4个必要兼容通过；此前18新行为不重复，新unique共19。source冻结后阶段提交，root3沿原场景复核，不改词避开问题。

@@ -115,8 +115,13 @@ def expression_request_text(message: str) -> str:
         if not re.match(r'^(?:我|他|她|朋友)?(?:昨天|前天|之前|上次|曾经)[^，,：:]*(?:说|问|要求)[^，,：:]*[，,：:]', sentence.strip()))
 
 
-def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0,
-                           control_predicate=is_dialogue_control) -> tuple[RecentDialogueTurn, ...]:
+def select_recent_dialogue_records(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0,
+                                  control_predicate=is_dialogue_control) -> tuple[ConversationTurnRecord, ...]:
+    """Keep canonical source identity through the exact bounded selection.
+
+    Text projection happens only after this selection. Equal words in two
+    different Publications are not evidence that both records were supplied.
+    """
     selected = []
     chars = 0
     for record in reversed(records[-MAX_DIALOGUE_TURNS:]):
@@ -130,6 +135,13 @@ def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after
         size = len(record.user_text) + len(record.assistant_text)
         if chars + size > MAX_DIALOGUE_CHARS:
             break
-        selected.append(RecentDialogueTurn(record.user_text, record.assistant_text))
+        selected.append(record)
         chars += size
     return tuple(reversed(selected))
+
+
+def select_recent_dialogue(records: tuple[ConversationTurnRecord, ...], *, after_sequence: int = 0,
+                           control_predicate=is_dialogue_control) -> tuple[RecentDialogueTurn, ...]:
+    return tuple(RecentDialogueTurn(record.user_text, record.assistant_text)
+        for record in select_recent_dialogue_records(records, after_sequence=after_sequence,
+            control_predicate=control_predicate))
