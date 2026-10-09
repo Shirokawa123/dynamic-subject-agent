@@ -1,0 +1,103 @@
+{
+  "version": "s146-public-acceptance-summary-1",
+  "status": "complete-first-engineering-scene",
+  "synthetic_outputs": false,
+  "remote_requests": 15,
+  "request_purposes": {
+    "ordinary_reply": 10,
+    "activity_choice": 3,
+    "understanding_form": 2
+  },
+  "canonical_publications": 16,
+  "zero_model_disable_publications": 1,
+  "all_http_successful": true,
+  "all_protocol_finish_stop": true,
+  "automatic_retries": 0,
+  "first_failure": null,
+  "checkpoint_io_failures": 0,
+  "form_semantic_reviews_accepted": 2,
+  "real_reopen_verified": true,
+  "real_cross_day_verified": false,
+  "day_boundary_logic_verified": false,
+  "overall_character_quality_verified": false,
+  "raw_text_exported": false,
+  "reasoning_text_exported": false,
+  "stage_results": [
+    {
+      "stage": "create-independent-working-live",
+      "status": "complete"
+    },
+    {
+      "stage": "source-reply-1",
+      "status": "terminal"
+    },
+    {
+      "stage": "source-reply-2",
+      "status": "terminal"
+    },
+    {
+      "stage": "independent-choice-1",
+      "status": "committed"
+    },
+    {
+      "stage": "form-from-two-quotes-and-actual-plan",
+      "status": "committed"
+    },
+    {
+      "stage": "gap-reply-1",
+      "status": "terminal"
+    },
+    {
+      "stage": "gap-reply-2",
+      "status": "terminal"
+    },
+    {
+      "stage": "gap-reply-3",
+      "status": "terminal"
+    },
+    {
+      "stage": "close-and-reopen-zero-model",
+      "status": "complete"
+    },
+    {
+      "stage": "choice-using-valid-understanding",
+      "status": "committed"
+    },
+    {
+      "stage": "result-reply",
+      "status": "terminal"
+    },
+    {
+      "stage": "same-nonce-read-zero-model",
+      "status": "complete"
+    },
+    {
+      "stage": "disable-understanding-zero-model",
+      "status": "complete"
+    },
+    {
+      "stage": "disabled-reply",
+      "status": "terminal"
+    },
+    {
+      "stage": "correction-reply-1",
+      "status": "terminal"
+    },
+    {
+      "stage": "correction-reply-2",
+      "status": "terminal"
+    },
+    {
+      "stage": "rebuild-from-new-two-quotes",
+      "status": "committed"
+    },
+    {
+      "stage": "corrected-choice",
+      "status": "committed"
+    },
+    {
+      "stage": "corrected-result-reply",
+      "status": "terminal"
+    }
+  ]
+}

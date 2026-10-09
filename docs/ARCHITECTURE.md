@@ -4,6 +4,8 @@
 
 2026-10-09用户批准S145 basis e87c9db1…977c，新增working-live authority/Manifest/schema7、ApprovedWorkingUnderstandingGrant、三purpose audit与sameclient/thread一次票据。每次从sealed/canonical/source/permission两次重建，传递闭包/最后Publication及冷prepared保持；旧LOCAL/Pending/Grant/schema/root不转。form/choice JSON，reply strict final原文封装、reasoning丢弃，E1null/旧note不重投/0retry。15新Fake及4旧兼容、helper16纯行为与独立复核通过；固定首次≤15由[S146报告](reports/2026-10-09-slice-146/REPORT.md)承接，未执行不称人物效果/跨天成立。
 
+实际固定首验15HTTPS/15Model提交＋1零模型disable=16canonical，exit0/无blank/retry，2form根窗口SHA语义闸接纳；过窗/实际reopen0后v2角落光影，停用后新2原话重建v3贴主体阴影，同结果接话。单支仅有限效果；红兔拟人兔/耳朵无已审外形支持，人物忠实/多日/真实跨天/UI未过，旧8793保持。
+
 ### Slice-145：独立LOCAL当前构图工作理解
 
 新working-local/schema7/authority/Manifest沿单shared_activity_record与原Publication保存最多1条可修正tentative理解及准确来源闭包，不第二store、不升级旧root。Facade显式2不同committed用户原话各≤400、可选独立当前typed文字方案，经WORKING_UNDERSTANDING_FORM提议≤240 composition-text/formed|insufficient；Python核真实来源、范围、闭集引用和全部实际输入依赖，insufficient typed NoOp保旧。choice/reply为独立newkind，最多1有效W1及原支持；旧note仅本地，reply沿S144自然text。新qualification不取得旧E1选定/停用能力，兼容字段shared_experience恒null，schema7 reader拒非空source。
