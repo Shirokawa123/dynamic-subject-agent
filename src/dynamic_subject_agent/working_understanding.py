@@ -146,6 +146,17 @@ def validate_form(value, has_activity):
     return value
 
 
+def working_choice_for_adjudication(value, *, has_understanding):
+    """Normalize only the closed W1 label before the existing adjudicator."""
+    if type(value) is not dict:
+        raise ValueError('exact working choice output required')
+    refs=value.get('basis_refs')
+    if (type(refs) is not list or any(type(x) is not str for x in refs)
+        or len(refs)!=len(set(refs)) or not set(refs)<=({'W1'} if has_understanding else set())):
+        raise ValueError('actual working choice references required')
+    return dict(value,basis_refs=[]), tuple(refs)
+
+
 def visible_understanding(record, enabled, cutoff):
     if not enabled or record.working is None:
         return None
@@ -249,11 +260,7 @@ def build_working_record(view, *, command, authorization, permission, head_seque
     # input to the resulting taint, regardless of the model's claimed reasons.
     refs = None
     if choice is not None:
-        refs = choice.get('basis_refs')
-        allowed = ({'E1'} if view['visible_source'] is not None else set()) | ({'W1'} if view['visible_understanding'] is not None else set())
-        if type(refs) is not list or any(type(x) is not str for x in refs) or len(refs) != len(set(refs)) or not set(refs) <= allowed:
-            raise ValueError('actual working choice references required')
-        choice = dict(choice, basis_refs=[x for x in refs if x != 'W1'])
+        choice, refs = working_choice_for_adjudication(choice,has_understanding=view['visible_understanding'] is not None)
     transition_before = before
     if (type(command) is SharedActivityInput and command.input_kind == 'advance'
         and view['current_plan'] is None and before.phase != 'unstarted'):

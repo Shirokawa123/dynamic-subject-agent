@@ -1,5 +1,7 @@
 # 角色聊天产品方向记录
 
+2026-10-09 S146准确用途批准：用户对S145三个新用途问题明确答复“同意”，绑定basis `e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c`及[审阅](../experiments/s145/REVIEW.md)。同已审Sagiri30事实/4解释最小背景、DeepSeek/Windows默认slot，form限2不同已提交逐字user≤400＋可选独立A1（160/800/400）→≤240composition-text暂定理解；choice/reply最多1有效W1及原支持，current1000/可关闭两完整4000/current result保持，E1null、note仅本地。只手动形成/推进/发送，各stage1/0retry；固定首次≤15遇首技术/完整性未知、无新eligible、insufficient/语义越界/无实际变化结束，不补抽。准许新独立LIVE资格/审计与开发root验收，不转换旧LOCAL/Pending/8793，原not-granted对象留历史；其他材料/Provider/key用途、后台生活/通知/云、人格重写/Reflection、删除迁移未获此项批准。
+
 2026-10-09 S145接续：用户对“下一步补长期相处闭环，让共同经历影响后续选择，跨话题/重启/跨天接续”的建议答复“那就继续推进”。据此自主完成必要研究、开发、验证与提交推送，先核已有E1/活动闭环，不重复改已修能力。新增认识形成/出站用途须准备具体实现与准确可审方案后集中确认；此回复不扩大Provider材料/凭据、离线生活、云、通知、删除迁移或人格重写/Reflection授权。
 
 2026-10-08 S144入口启动批准：用户对具体申请“启动新候选入口127.0.0.1:8793，独立空数据目录，默认暂停/分享关闭，首次打开不调用模型，不创建系统服务或开机任务，保留旧8792”明确答复“同意”。据此允许已审本仓CLI以隐藏窗口持续运行该loopback本地应用进程，root `C:/Users/30252/AppData/Local/DynamicSubjectAgent/living-final-text-chat/entry`；该决定仅替代此动作先前缺少单独批准的状态，不扩大模型材料/Provider/凭据用途、LAN/云、通知、离线生活、删除迁移或人格重写/Reflection。

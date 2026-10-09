@@ -679,8 +679,8 @@ class _ApplicationRouter:
             return SharedActivityResponse('failed-closed',problem_code='working-preview-unverified')
 
     def advance_working_activity(self, request):
-        from dynamic_subject_agent.shared_activity import WORKING_AUTHORITY, SharedActivityStepRequest, SharedActivityResponse
-        if self._binding.provider_authority != WORKING_AUTHORITY:
+        from dynamic_subject_agent.shared_activity import WORKING_AUTHORITIES, SharedActivityStepRequest, SharedActivityResponse
+        if self._binding.provider_authority not in WORKING_AUTHORITIES:
             return SharedActivityResponse('unavailable',problem_code='independent-working-authority-required')
         return self._apply_shared_activity(request,SharedActivityStepRequest)
 
@@ -769,8 +769,8 @@ class _ApplicationRouter:
             return SharedActivityResponse('failed-closed', problem_code='living-control-unverified')
 
     def set_shared_experience(self, request):
-        from dynamic_subject_agent.shared_activity import SharedExperienceRequest, SharedActivityResponse, WORKING_AUTHORITY
-        if self._binding.provider_authority == WORKING_AUTHORITY:
+        from dynamic_subject_agent.shared_activity import SharedExperienceRequest, SharedActivityResponse, WORKING_AUTHORITIES
+        if self._binding.provider_authority in WORKING_AUTHORITIES:
             return SharedActivityResponse('unavailable',problem_code='working-e1-selection-unavailable')
         return self._apply_shared_activity(request, SharedExperienceRequest)
 

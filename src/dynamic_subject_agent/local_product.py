@@ -154,12 +154,12 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_AUTHORITIES
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
-            expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority == WORKING_AUTHORITY else SharedActivityCognition
-            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
+            expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
+            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES, WORKING_LIVE_AUTHORITY)
             if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
                 or cognition.gateway.capabilities.local is not (not live)
@@ -168,7 +168,8 @@ def _open_loaded_local_product(
             if live:
                 from dynamic_subject_agent.shared_activity_live import SharedActivityDelivery
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
-                expected_delivery = LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
+                from dynamic_subject_agent.working_understanding_live import WorkingUnderstandingDelivery
+                expected_delivery = WorkingUnderstandingDelivery if loaded.qri.provider_authority==WORKING_LIVE_AUTHORITY else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -759,6 +760,42 @@ def open_working_understanding_product_local(config, *, gateway, identity_id, bi
     # Day injection is deliberately observational: no offline catch-up/events.
     cognition.working_day = day
     product = _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+    try:
+        product._composition._host._reconcile_working_source_fence(product._composition._router._binding)
+    except Exception:
+        product.close()
+        raise
+    return product
+
+
+def open_working_understanding_product_live(config, *, grant, audit_path, identity_id, _transport=None, observations=None):
+    """Independent approved schema7; never converts LOCAL or legacy roots."""
+    from dynamic_subject_agent.shared_activity import WORKING_LIVE_AUTHORITY
+    from dynamic_subject_agent.working_understanding_live import (
+        ApprovedWorkingUnderstandingGrant,WorkingUnderstandingDelivery,open_working_understanding_audit)
+    from dynamic_subject_agent.working_understanding_provider import DeepSeekWorkingUnderstandingAdapter
+    from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
+    if type(grant) is not ApprovedWorkingUnderstandingGrant:
+        raise ValueError('exact approved working grant required')
+    grant.validate()
+    if not isinstance(audit_path,Path) or not audit_path.is_absolute():
+        raise ValueError('absolute independent working three-purpose audit required')
+    authority=LocalIdentityAuthority(config)
+    loaded=authority.activate_working_understanding_live(grant=grant,audit_path=audit_path,identity_id=identity_id)
+    delivery=WorkingUnderstandingDelivery(grant=grant,audit=open_working_understanding_audit(audit_path),
+        contract=loaded.qri.reviewed_chat_contract,state_path=config.state_path)
+    transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    adapter=DeepSeekWorkingUnderstandingAdapter(transport=transport,delivery=delivery,
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),observations=observations)
+    cognition=WorkingUnderstandingCognition(provider_authority=WORKING_LIVE_AUTHORITY,
+        envelope=loaded.reviewed_definition,gateway=ModelGateway(adapter),contract=loaded.qri.reviewed_chat_contract,delivery=delivery,
+        snapshot_loader=lambda:authority.try_whole_scope_snapshot(loaded.qri.profile_id,loaded.timeline_id),
+        authorization=lambda:authority.original_whole_authorization(loaded.qri.profile_id),guard=authority.original_whole_guard)
+    cognition.try_authorization=lambda:authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.working_permission=lambda:authority.working_permission(loaded.qri.profile_id,loaded.timeline_id)
+    cognition.working_revoke=lambda blocked,expected=None:authority.revoke_working_sources(loaded.qri.profile_id,blocked=blocked,expected=expected)
+    cognition._whole_composition_witness=loaded.qri.reviewed_chat_contract
+    product=_open_loaded_local_product(config,authority=authority,loaded=loaded,cognition=cognition,source_authoring=None)
     try:
         product._composition._host._reconcile_working_source_fence(product._composition._router._binding)
     except Exception:

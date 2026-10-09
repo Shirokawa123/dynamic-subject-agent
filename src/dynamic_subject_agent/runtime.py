@@ -1105,7 +1105,7 @@ class SubjectRuntime:
             load_shared_activity=((lambda authorization: self._engine.shared_activity_basis(authorization, exclude_operation_id=dialogue_operation.operation_id))
                 if SHARED_INTENT in self._context.authority.allowed_intents and dialogue_operation is not None else None),
             validate_working_sources=((lambda sources, authorization: self._engine.validate_working_sources(sources, authorization,
-                exclude_operation_id=dialogue_operation.operation_id)) if getattr(self._context.authority, 'provider_authority', None) == 'original-working-understanding-local-s145-1' and dialogue_operation is not None else None),
+                exclude_operation_id=dialogue_operation.operation_id)) if getattr(self._context.authority, 'provider_authority', None) in ('original-working-understanding-local-s145-1','original-working-understanding-deepseek-s146-1') and dialogue_operation is not None else None),
             load_whole_context=((lambda: self._engine.whole_context_basis(expected_head=dialogue_head))
                 if CONTEXT_INTENT in self._context.authority.allowed_intents and dialogue_head is not None else None),
             load_recent_dialogue=(
