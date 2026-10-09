@@ -1,0 +1,67 @@
+{
+  "version": "s147-public-first-summary-1",
+  "source_commit": "e63b8fb",
+  "status": "complete-first-engineering-scene",
+  "runner_exit_code": 0,
+  "remote_requests": 8,
+  "audit_complete": 8,
+  "canonical_commits": 8,
+  "purposes": {
+    "reply": 5,
+    "choice": 2,
+    "form": 1
+  },
+  "automatic_retries": 0,
+  "blank_replies_committed": 0,
+  "first_failure": false,
+  "real_server_product_reopen_verified": true,
+  "original_nonce_query_added_requests": 0,
+  "temporary_loopback_server_closed": true,
+  "production_service_started": false,
+  "raw_text_exported": false,
+  "reasoning_text_exported": false,
+  "real_cross_day_verified": false,
+  "long_term_character_quality_verified": false,
+  "model_stages": [
+    {
+      "stage": "source-reply-1",
+      "status": "terminal"
+    },
+    {
+      "stage": "source-reply-2",
+      "status": "terminal"
+    },
+    {
+      "stage": "independent-choice-1",
+      "status": "replayed"
+    },
+    {
+      "stage": "form-from-two-quotes-and-actual-plan",
+      "status": "replayed"
+    },
+    {
+      "stage": "name-is-not-appearance-probe",
+      "status": "terminal"
+    },
+    {
+      "stage": "story-topic-gap",
+      "status": "terminal"
+    },
+    {
+      "stage": "choice-using-valid-understanding",
+      "status": "replayed"
+    },
+    {
+      "stage": "result-reply",
+      "status": "terminal"
+    }
+  ],
+  "main_content_assessment": {
+    "understanding_scope_and_sources_accepted": true,
+    "unsupported_name_to_appearance_inference_observed": false,
+    "new_design_scope_retained": true,
+    "understanding_after_window_and_reopen_used_in_changed_plan": true,
+    "current_result_returned_to_reply": true,
+    "result_reply_old_detail_accuracy_fully_passed": false
+  }
+}
