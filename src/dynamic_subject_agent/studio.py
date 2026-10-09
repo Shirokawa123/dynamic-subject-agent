@@ -17,7 +17,7 @@ from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_c
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope, whole_publication_key
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_FACT_FAITHFUL_AUTHORITY
 
 import hashlib
 import json
@@ -762,6 +762,12 @@ class CapabilityManifest:
             included=(*old.included,'approved-working-understanding-deepseek'),
             certified=(*old.certified,'approved-working-understanding-deepseek'),
             unavailable=tuple(item for item in old.unavailable if item not in ('remote-provider','remote-working-use')))
+
+    @classmethod
+    def working_fact_faithful_live(cls):
+        old=cls.working_understanding_live()
+        return cls(manifest_version='working-fact-faithful-capabilities-s147-1',
+            included=old.included,certified=old.certified,unavailable=old.unavailable)
 
     @classmethod
     def living_activity_local(cls):
@@ -1749,7 +1755,7 @@ class PolicyKernel:
             (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
              or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
                  and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract))
-             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live())
+             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live())
                  and matches_whole_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
@@ -8872,7 +8878,7 @@ class SubjectStudio:
             "isolation_proof": isolation.to_dict(),
         }
         if reviewed_chat_contract is not None:
-            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live()):
+            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live()):
                 if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract, allow_legacy=True):
                     raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
                 variant = contract_variant(reviewed_chat_contract)
@@ -8880,6 +8886,7 @@ class SubjectStudio:
                     or (capabilities == CapabilityManifest.shared_activity_local()) != (variant == "shared-local")
                     or (capabilities == CapabilityManifest.working_understanding_local()) != (variant == 'working-local')
                     or (capabilities == CapabilityManifest.working_understanding_live()) != (variant == 'working-live')
+                    or (capabilities == CapabilityManifest.working_fact_faithful_live()) != (variant == 'working-fact-faithful-live')
                     or (capabilities == CapabilityManifest.living_activity_local()) != (variant == "living-local")
                     or (capabilities == CapabilityManifest.living_activity_live()) != (variant == "living-live")
                     or (capabilities == CapabilityManifest.living_final_text_live()) != (variant == "living-final-text-live")
@@ -9618,7 +9625,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                WORKING_LIVE_AUTHORITY
+                WORKING_FACT_FAITHFUL_AUTHORITY
+                if decision.capability_manifest==CapabilityManifest.working_fact_faithful_live()
+                else WORKING_LIVE_AUTHORITY
                 if decision.capability_manifest==CapabilityManifest.working_understanding_live()
                 else WORKING_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.working_understanding_local()
@@ -9832,16 +9841,17 @@ class SubjectStudio:
             contract = qri.reviewed_chat_contract
             validate_whole_envelope(snapshot.reviewed_definition, contract)
             context = contract_variant(contract) == "context-boundary"
-            working_live=contract_variant(contract)=='working-live'
+            working_fact=contract_variant(contract)=='working-fact-faithful-live'
+            working_live=contract_variant(contract) in ('working-live','working-fact-faithful-live')
             working = contract_variant(contract) == 'working-local'
             living = contract_variant(contract) == 'living-local'
             final_text = contract_variant(contract) == 'living-final-text-live'
             living_live = contract_variant(contract) in ('living-live', 'living-final-text-live')
             shared = contract_variant(contract) == "shared-local"
             live = contract_variant(contract) == "shared-live"
-            expected_manifest = CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
+            expected_manifest = CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
-            if (qri.provider_authority != (WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
+            if (qri.provider_authority != (WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
                 or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY

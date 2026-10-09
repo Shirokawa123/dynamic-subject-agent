@@ -154,12 +154,12 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_AUTHORITIES
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_LIVE_AUTHORITIES, WORKING_AUTHORITIES
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
             expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
-            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES, WORKING_LIVE_AUTHORITY)
+            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES, *WORKING_LIVE_AUTHORITIES)
             if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
                 or cognition.gateway.capabilities.local is not (not live)
@@ -169,7 +169,7 @@ def _open_loaded_local_product(
                 from dynamic_subject_agent.shared_activity_live import SharedActivityDelivery
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
                 from dynamic_subject_agent.working_understanding_live import WorkingUnderstandingDelivery
-                expected_delivery = WorkingUnderstandingDelivery if loaded.qri.provider_authority==WORKING_LIVE_AUTHORITY else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
+                expected_delivery = WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -698,6 +698,11 @@ def validate_living_activity_entry(config, *, profile_id, timeline_id, technical
     LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
+def validate_working_understanding_entry(config, *, profile_id, timeline_id, technical_variant='fact-faithful'):
+    """Pure sealed exact authority/active pointer check; no Host or recovery."""
+    LocalIdentityAuthority(config).validate_working_understanding_entry(profile_id,timeline_id,technical_variant=technical_variant)
+
+
 def open_original_whole_product(config, *, definition_basis, runtime_asset_sha, persona_digest, review_basis,
                                 scope_digest=None, audit_path=None, _transport=None, observations=None, technical_variant="baseline", identity_id=None):
     """New exact whole qualification; opening/reopening performs no model call."""
@@ -770,24 +775,22 @@ def open_working_understanding_product_local(config, *, gateway, identity_id, bi
 
 def open_working_understanding_product_live(config, *, grant, audit_path, identity_id, _transport=None, observations=None):
     """Independent approved schema7; never converts LOCAL or legacy roots."""
-    from dynamic_subject_agent.shared_activity import WORKING_LIVE_AUTHORITY
     from dynamic_subject_agent.working_understanding_live import (
-        ApprovedWorkingUnderstandingGrant,WorkingUnderstandingDelivery,open_working_understanding_audit)
+        working_grant_variant,WorkingUnderstandingDelivery,open_working_understanding_audit)
     from dynamic_subject_agent.working_understanding_provider import DeepSeekWorkingUnderstandingAdapter
     from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
-    if type(grant) is not ApprovedWorkingUnderstandingGrant:
-        raise ValueError('exact approved working grant required')
+    variant=working_grant_variant(grant)
     grant.validate()
     if not isinstance(audit_path,Path) or not audit_path.is_absolute():
         raise ValueError('absolute independent working three-purpose audit required')
     authority=LocalIdentityAuthority(config)
     loaded=authority.activate_working_understanding_live(grant=grant,audit_path=audit_path,identity_id=identity_id)
-    delivery=WorkingUnderstandingDelivery(grant=grant,audit=open_working_understanding_audit(audit_path),
+    delivery=WorkingUnderstandingDelivery(grant=grant,audit=open_working_understanding_audit(audit_path,technical_variant=variant),
         contract=loaded.qri.reviewed_chat_contract,state_path=config.state_path)
     transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
     adapter=DeepSeekWorkingUnderstandingAdapter(transport=transport,delivery=delivery,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),observations=observations)
-    cognition=WorkingUnderstandingCognition(provider_authority=WORKING_LIVE_AUTHORITY,
+    cognition=WorkingUnderstandingCognition(provider_authority=loaded.qri.provider_authority,
         envelope=loaded.reviewed_definition,gateway=ModelGateway(adapter),contract=loaded.qri.reviewed_chat_contract,delivery=delivery,
         snapshot_loader=lambda:authority.try_whole_scope_snapshot(loaded.qri.profile_id,loaded.timeline_id),
         authorization=lambda:authority.original_whole_authorization(loaded.qri.profile_id),guard=authority.original_whole_guard)

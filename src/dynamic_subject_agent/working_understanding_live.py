@@ -8,7 +8,7 @@ from threading import RLock, get_ident
 from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.shared_activity import digest
-from dynamic_subject_agent.working_understanding import working_contract, FORM_POLICY, CHOICE_POLICY, REPLY_POLICY
+from dynamic_subject_agent.working_understanding import working_contract, working_policies, FORM_POLICY, CHOICE_POLICY, REPLY_POLICY
 
 APPROVED_WORKING_REVIEW = 'e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c'
 APPROVED_WORKING_MATERIAL_DIGEST = '30715f56be4a693835739645f7d8c07be264f3a2396790f82113503a00f0b44c'
@@ -24,6 +24,17 @@ APPROVED_WORKING_PROTOCOL_HASHES = (
 APPROVED_FIRST_SCENE_SHA = 'fbb87ebeec6a0dd0e8049d19bcf661fa5d4ac3064beaf7166f81170f6cc7c00a'
 WORKING_APPROVAL = 'user-approved-working-understanding-use-2026-10-09'
 WORKING_LIVE_VERSION = 'working-understanding-live-s146-1'
+FACT_FAITHFUL_DEVELOPMENT_AUTHORIZATION = 'user-continued-entry-reference-grounding-2026-10-09'
+FACT_FAITHFUL_LIVE_VERSION = 'working-fact-faithful-live-s147-1'
+WORKING_TECHNICAL_VARIANTS = ('baseline','fact-faithful')
+FACT_FAITHFUL_POLICY_HASHES = (
+    '909d7f6cfbf8fadce1e548f803dcd99cf85b1bfd0337bf759c9c4f8af6529f27',
+    '102cd1e31a127e1cadcbc001902873aa1fd3d97473bd4eb8c015e026abdbe02c',
+    '174c545df32e46b0709fc55c3f508545b885f2414c5e71771508e39b5fbb5abe')
+FACT_FAITHFUL_PROTOCOL_HASHES = (
+    '3c1bd02909292fd4a835a663d9c3d5e28ff81c1bbaadf6564fed03290dda7450',
+    '3c1bd02909292fd4a835a663d9c3d5e28ff81c1bbaadf6564fed03290dda7450',
+    '6cb5917026e0a98048608b2fc8ae7901385e12241d713b54767e1b4020420d31')
 KINDS = (ModelTaskKind.WORKING_UNDERSTANDING_FORM, ModelTaskKind.WORKING_ACTIVITY_CHOICE, ModelTaskKind.WORKING_ACTIVITY_REPLY)
 PURPOSES = frozenset(kind.value for kind in KINDS)
 
@@ -59,6 +70,46 @@ class ApprovedWorkingUnderstandingGrant:
             raise ValueError('independently pinned working protocol or slot changed')
 
 
+@dataclass(frozen=True)
+class WorkingFactFaithfulDevelopmentGrant:
+    """Inherited human data-use approval and independently pinned development.
+
+    No claim that the human approved the candidate's new technical hashes.
+    """
+    review_basis: str
+    development_authorization: str
+
+    def __post_init__(self):
+        if (self.review_basis != APPROVED_WORKING_REVIEW
+            or self.development_authorization != FACT_FAITHFUL_DEVELOPMENT_AUTHORIZATION):
+            raise ValueError('existing working use and exact continued development decision required')
+
+    def validate(self):
+        self.__post_init__()
+        ApprovedWorkingUnderstandingGrant(self.review_basis,True).validate()
+        if tuple(sha256(policy.encode()).hexdigest() for policy in working_policies('fact-faithful')) != FACT_FAITHFUL_POLICY_HASHES:
+            raise ValueError('independently pinned fact-faithful policy changed')
+        if tuple(digest(working_protocol_for_kind(kind)) for kind in KINDS) != FACT_FAITHFUL_PROTOCOL_HASHES:
+            raise ValueError('independently pinned fact-faithful protocol or slot changed')
+
+
+def working_grant_variant(grant):
+    if type(grant) is ApprovedWorkingUnderstandingGrant:
+        return 'baseline'
+    if type(grant) is WorkingFactFaithfulDevelopmentGrant:
+        return 'fact-faithful'
+    raise ValueError('exact independently scoped working grant required')
+
+
+def working_variant_for_authority(authority):
+    from dynamic_subject_agent.shared_activity import WORKING_LIVE_AUTHORITY,WORKING_FACT_FAITHFUL_AUTHORITY
+    if authority == WORKING_LIVE_AUTHORITY:
+        return 'baseline'
+    if authority == WORKING_FACT_FAITHFUL_AUTHORITY:
+        return 'fact-faithful'
+    raise ValueError('exact working LIVE authority required')
+
+
 def working_live_contract(binding):
     ApprovedWorkingUnderstandingGrant(APPROVED_WORKING_REVIEW, True).validate()
     base = working_contract(binding)
@@ -70,6 +121,29 @@ def working_live_contract(binding):
             approved_first_scene_sha=APPROVED_FIRST_SCENE_SHA,
             purpose_protocol_sha=dict(zip(('form','choice','reply'),APPROVED_WORKING_PROTOCOL_HASHES,strict=True)),
             final_content='natural-text-original-wrapper-zh'))
+
+
+def working_fact_faithful_contract(binding):
+    WorkingFactFaithfulDevelopmentGrant(APPROVED_WORKING_REVIEW,FACT_FAITHFUL_DEVELOPMENT_AUTHORIZATION).validate()
+    base=working_contract(binding)
+    return dict(base,version=FACT_FAITHFUL_LIVE_VERSION,authorization=WORKING_APPROVAL,
+        development_authorization=FACT_FAITHFUL_DEVELOPMENT_AUTHORIZATION,provider='deepseek',
+        credential_use='existing-Windows-slot-HTTPS-Bearer-only',
+        excluded='automatic-life-sharing-persona-rewrite-reflection-cloud-migration-new-material-new-provider-new-credential-use',
+        technical_variant=dict(base['technical_variant'],name='working-fact-faithful-live',
+            inherited_use_review_basis=APPROVED_WORKING_REVIEW,
+            form_policy_sha=FACT_FAITHFUL_POLICY_HASHES[0],choice_policy_sha=FACT_FAITHFUL_POLICY_HASHES[1],
+            reply_policy_sha=FACT_FAITHFUL_POLICY_HASHES[2],
+            purpose_protocol_sha=dict(zip(('form','choice','reply'),FACT_FAITHFUL_PROTOCOL_HASHES,strict=True)),
+            final_content='natural-text-original-wrapper-zh'))
+
+
+def working_live_contract_for_variant(binding, *, technical_variant='baseline'):
+    if technical_variant == 'baseline':
+        return working_live_contract(binding)
+    if technical_variant == 'fact-faithful':
+        return working_fact_faithful_contract(binding)
+    raise ValueError('closed working LIVE variant required')
 
 
 class WorkingUnderstandingCallAudit(DevelopmentCallAudit):
@@ -86,18 +160,29 @@ class WorkingUnderstandingCallAudit(DevelopmentCallAudit):
             return tuple(dict(zip(fields,row[:-1],strict=True)) for row in self._verified(db))
 
 
-def open_working_understanding_audit(path, *, initialize=False):
+class WorkingFactFaithfulCallAudit(WorkingUnderstandingCallAudit):
+    @staticmethod
+    def configuration():
+        return dict(version='working-fact-faithful-call-audit-s147-1',authorization=WORKING_APPROVAL,
+            development_authorization=FACT_FAITHFUL_DEVELOPMENT_AUTHORIZATION,
+            inherited_use_review_basis=APPROVED_WORKING_REVIEW,provider='deepseek',purposes=sorted(PURPOSES),limit=None)
+
+
+def open_working_understanding_audit(path, *, initialize=False, technical_variant='baseline'):
     if not isinstance(path,Path) or not path.is_absolute():
         raise ValueError('absolute independent working audit required')
+    if type(technical_variant) is not str or technical_variant not in WORKING_TECHNICAL_VARIANTS:
+        raise ValueError('closed working audit variant required')
+    audit_type=WorkingUnderstandingCallAudit if technical_variant=='baseline' else WorkingFactFaithfulCallAudit
     witness=path.with_name(path.name+'-initialized')
     if witness.exists():
         if not witness.is_dir() or not path.is_dir():
             raise ValueError('working audit witness missing')
-        return WorkingUnderstandingCallAudit(path)
+        return audit_type(path)
     if path.exists() or not initialize:
         raise ValueError('working audit cannot be recreated or repurposed')
     witness.mkdir(parents=True,exist_ok=False)
-    return WorkingUnderstandingCallAudit(path,initialize=True)
+    return audit_type(path,initialize=True)
 
 
 @dataclass(frozen=True)
@@ -112,18 +197,21 @@ class _WorkingTicket:
 class WorkingUnderstandingDelivery:
     def __init__(self, *, grant, audit, contract, state_path):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if type(grant) is not ApprovedWorkingUnderstandingGrant or type(audit) is not WorkingUnderstandingCallAudit:
+        variant=working_grant_variant(grant)
+        if type(audit) is not (WorkingUnderstandingCallAudit if variant=='baseline' else WorkingFactFaithfulCallAudit):
             raise ValueError('exact working approval and three-purpose audit required')
         grant.validate()
-        if contract != working_live_contract({key:contract[key] for key in APPROVED_BINDING}):
+        if contract != working_live_contract_for_variant({key:contract[key] for key in APPROVED_BINDING},technical_variant=variant):
             raise ValueError('exact working LIVE contract required')
         self.grant,self.audit,self.contract=grant,audit,deepcopy(contract)
+        self.technical_variant=variant
         self.run_digest=digest(dict(contract=contract,state_path=str(state_path.resolve()),audit_path=str(audit.path.resolve())))
         self._lock,self._ticket,self._pending,self._poisoned=RLock(),None,None,False
 
     def _validate_contract(self):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if self.contract != working_live_contract({key:self.contract[key] for key in APPROVED_BINDING}):
+        if (working_grant_variant(self.grant)!=self.technical_variant
+            or self.contract != working_live_contract_for_variant({key:self.contract[key] for key in APPROVED_BINDING},technical_variant=self.technical_variant)):
             raise ValueError('working contract differs from exact approval')
 
     def claim(self, operation, task, rebuild):
@@ -137,7 +225,7 @@ class WorkingUnderstandingDelivery:
             if task.payload != rebuild():
                 raise ValueError('working input differs from sealed canonical source')
             validate_working_request_payload(task)
-            working_remote_request_preview(task)
+            working_remote_request_preview(task,technical_variant=self.technical_variant)
             request=digest(task.payload)
             attempt=digest(dict(run=self.run_digest,operation=operation,purpose=task.kind.value))
             self.audit.claim(attempt,request,purpose=task.kind.value,run_digest=self.run_digest)

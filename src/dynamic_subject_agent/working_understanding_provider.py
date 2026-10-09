@@ -47,7 +47,7 @@ class DeepSeekWorkingUnderstandingAdapter(ProviderAdapter):
         code=None
         try:
             actual=self.delivery.consume(task)
-            request=working_remote_request_preview(actual)
+            request=working_remote_request_preview(actual,technical_variant=self.delivery.technical_variant)
             wire=canonical_json(request['body']).encode()
             if sha256(wire).hexdigest()!=request['wire_sha256']:
                 raise ValueError('exact working wire changed')

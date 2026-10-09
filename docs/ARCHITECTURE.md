@@ -1,5 +1,13 @@
 # 产品架构
 
+### Slice-147：可操作工作理解入口与人物事实范围候选
+
+新增独立`fact-faithful`同用途技术候选：沿S146准确批准basis与Sagiri30/4材料/三用途/Provider/default slot，替换form/choice/reply对应范围段，区分原作事实与本次改编，不从名称联想或自己旧话补原貌，也不以缺项证明属性不存在。独立authority/Manifest/grant/audit、literal三policy/协议pins；原S145/146的对象、策略、schema7和root不升级。runtime的工作来源validator按已有WORKING_AUTHORITIES覆盖候选。
+
+独立8794 UI由薄Adapter只调Facade，生产composition/Authority先纯校验精确active identity/variant/pointer再打开或重开。历史选择2个不同committed user连续片段各≤400、零模型预览、明确形成/停用/推进；显示暂定陈述与U1U2/A1出处，普通出站预览含实际W1。复用原nonce、pending/unknown/草稿/history/cutoff、单canonical与Publication/恢复；新空entry初开/刷新/查读0模型，不接生活timer/通知，不迁移旧8793。
+
+验收采用自有TEMP Fake HTTP/页面及必要旧兼容，真实首景通过同新HTTP入口按固定8首次/每stage1/0retry执行，范围语义由主窗口读canonical核接纳，实际close服务器+product重开与原nonce查读0请求。技术与人物效果、失败与未验边界见[S147报告](reports/2026-10-09-slice-147/REPORT.md)；正式8794持续启动未因开发自动获批。
+
 ### Slice-146：独立LIVE工作理解的准确批准接入
 
 2026-10-09用户批准S145 basis e87c9db1…977c，新增working-live authority/Manifest/schema7、ApprovedWorkingUnderstandingGrant、三purpose audit与sameclient/thread一次票据。每次从sealed/canonical/source/permission两次重建，传递闭包/最后Publication及冷prepared保持；旧LOCAL/Pending/Grant/schema/root不转。form/choice JSON，reply strict final原文封装、reasoning丢弃，E1null/旧note不重投/0retry。15新Fake及4旧兼容、helper16纯行为与独立复核通过；固定首次≤15由[S146报告](reports/2026-10-09-slice-146/REPORT.md)承接，未执行不称人物效果/跨天成立。

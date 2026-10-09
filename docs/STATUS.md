@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-09：S147已实现独立工作理解聊天页（选2原话/preview/形成/出处/停用/手动活动）及fact-faithful同用途候选；Fake完整HTTP/自有隐藏页草稿与操作、必要旧兼容通过，首次真实验收待执行，旧8793/root不升级，生产8794未启动，见[S147](reports/2026-10-09-slice-147/REPORT.md)。
+
 - 2026-10-09：S146源f25547e已push，固定15真实/15audit提交＋disable0共16canonical，0retry/0blank/无首失败；2有据理解→换题/重启→v2角落光影→回聊→停用全过滤→新纠错/v3贴主体阴影/回聊成立。普通接话仍偏总结，红兔拟人兔/耳朵无已审外形依据，人物忠实/真实跨天/多日/UI未过；旧8793保持，见[S146](reports/2026-10-09-slice-146/REPORT.md)。
 
 - 2026-10-09：S145源fcb0d0a/同文修复78e6353已push，19新行为与必要旧兼容/复核过；实包root3完整15LOCAL/19steps/12check全true（2原话+A1→W1→过窗/reopen→plan变化/回聊→disable全过滤→新纠错重建）。root1/2首失败保留；15actual wire同源/Pending拒15，basis e87c9db1…977c新3用途未批准，0远程/0key，非真实人物/跨天通过，旧8793保持，见[S145](reports/2026-10-09-slice-145/REPORT.md)。

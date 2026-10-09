@@ -7,7 +7,7 @@ from dynamic_subject_agent.character_communication_trial_provider import communi
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import (
     ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTask, ModelTaskKind, ModelGatewayFailure)
-from dynamic_subject_agent.working_understanding import FORM_POLICY, CHOICE_POLICY, REPLY_POLICY
+from dynamic_subject_agent.working_understanding import working_policies
 
 
 @dataclass(frozen=True)
@@ -20,9 +20,10 @@ class PendingWorkingUnderstandingGrant:
             raise ValueError('only pending working review is representable')
 
 
-def working_remote_request_preview(task):
-    policies = {ModelTaskKind.WORKING_UNDERSTANDING_FORM:FORM_POLICY,
-        ModelTaskKind.WORKING_ACTIVITY_CHOICE:CHOICE_POLICY, ModelTaskKind.WORKING_ACTIVITY_REPLY:REPLY_POLICY}
+def working_remote_request_preview(task, *, technical_variant='baseline'):
+    form,choice,reply=working_policies(technical_variant)
+    policies = {ModelTaskKind.WORKING_UNDERSTANDING_FORM:form,
+        ModelTaskKind.WORKING_ACTIVITY_CHOICE:choice, ModelTaskKind.WORKING_ACTIVITY_REPLY:reply}
     if type(task) is not ModelTask or task.kind not in policies:
         raise ValueError('typed working task required')
     preview, policy = task.payload, policies[task.kind]

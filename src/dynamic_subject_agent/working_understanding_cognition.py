@@ -5,7 +5,7 @@ from dataclasses import asdict, replace
 from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat import OriginalWholeAuthorization, contract_variant, validate_whole_reply
-from dynamic_subject_agent.shared_activity import SharedActivityInput, WORKING_LIVE_AUTHORITY
+from dynamic_subject_agent.shared_activity import SharedActivityInput, WORKING_LIVE_AUTHORITY, WORKING_LIVE_AUTHORITIES
 from dynamic_subject_agent.working_understanding import (
     WORKING_AUTHORITY, build_form_preview, build_working_choice_preview, build_working_reply_preview, build_working_record)
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
@@ -22,15 +22,20 @@ class WorkingUnderstandingCognition(SharedActivityCognition):
 
     def __init__(self, provider_authority=WORKING_AUTHORITY, **kwargs):
         super().__init__(provider_authority=provider_authority, **kwargs)
-        if provider_authority==WORKING_LIVE_AUTHORITY:
+        if provider_authority in WORKING_LIVE_AUTHORITIES:
             self.adapter_version='working-understanding-live-cognition-s146-1'
+            if provider_authority!=WORKING_LIVE_AUTHORITY:
+                self.adapter_version='working-fact-faithful-cognition-s147-1'
 
     def preflight(self, *, context, command):
-        if self.provider_authority==WORKING_LIVE_AUTHORITY:
+        if self.provider_authority in WORKING_LIVE_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_live import WorkingUnderstandingDelivery
+            from dynamic_subject_agent.working_understanding_live import working_variant_for_authority
+            variant=working_variant_for_authority(self.provider_authority)
             if (self.gateway is None or self.gateway.capabilities.local is not False
                 or self.gateway.capabilities.provider_id!='deepseek' or type(self.delivery) is not WorkingUnderstandingDelivery
-                or self.snapshot_loader is None or contract_variant(self.contract)!='working-live'
+                or self.snapshot_loader is None or contract_variant(self.contract)!=('working-live' if variant=='baseline' else 'working-fact-faithful-live')
+                or self.delivery.technical_variant!=variant
                 or self.contract!=self.delivery.contract):
                 raise PreAdmissionRejected('working-approved-gateway-required','exact independently approved LIVE composition required')
             self.delivery.grant.validate()
@@ -60,7 +65,7 @@ class WorkingUnderstandingCognition(SharedActivityCognition):
         return build_working_choice_preview(self.envelope, identity, view, self.contract)
 
     def _execute_working(self, task, *, plan, context, command, authorization, permission):
-        if self.provider_authority==WORKING_LIVE_AUTHORITY:
+        if self.provider_authority in WORKING_LIVE_AUTHORITIES:
             from dynamic_subject_agent.original_whole_chat import validate_whole_envelope
             from dynamic_subject_agent.working_understanding import validate_permission
             def rebuild():
@@ -136,7 +141,7 @@ class WorkingUnderstandingCognition(SharedActivityCognition):
                 text = record.result.event.summary
             proposal = self._bounded_noop_proposal(context=context, basis=basis,
                 experience_summary=('已提交当前构图的暂定工作理解或文字活动；原话不是事实真值或永久人格。'
-                    if self.provider_authority==WORKING_LIVE_AUTHORITY else 'LOCAL当前构图工作理解与文字活动；原话不是事实真值或永久人格。'),
+                    if self.provider_authority in WORKING_LIVE_AUTHORITIES else 'LOCAL当前构图工作理解与文字活动；原话不是事实真值或永久人格。'),
                 expression_candidate=ExpressionCandidate(text,'zh'))
             return replace(proposal, shared_record=record)
         except Exception as error:

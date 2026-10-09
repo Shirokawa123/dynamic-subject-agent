@@ -108,6 +108,11 @@ def contract_variant(contract):
         if contract!=working_live_contract({key:contract[key] for key in APPROVED_BINDING}):
             raise ValueError('exact approved working LIVE contract required')
         return 'working-live'
+    if contract.get('version')=='working-fact-faithful-live-s147-1':
+        from dynamic_subject_agent.working_understanding_live import working_fact_faithful_contract
+        if contract!=working_fact_faithful_contract({key:contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact fact-faithful working development contract required')
+        return 'working-fact-faithful-live'
     if contract.get('version') == 'living-activity-local-s142-1':
         from dynamic_subject_agent.living_activity import living_contract
         if contract != living_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -164,6 +169,8 @@ def whole_publication_key(contract):
         return 'original-working-understanding-local-s145-' + digest(contract)
     if variant=='working-live':
         return 'original-working-understanding-live-s146-'+digest(contract)
+    if variant=='working-fact-faithful-live':
+        return 'original-working-fact-faithful-live-s147-'+digest(contract)
     if variant == 'living-local':
         return 'original-living-activity-local-s142-' + digest(contract)
     if variant == 'living-live':
@@ -190,7 +197,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("shared-local", "shared-live", "living-local", "living-live", "living-final-text-live", 'working-live'):
+    if variant in ("shared-local", "shared-live", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)

@@ -1,0 +1,44 @@
+{
+  "version": "s147-first-live-entry-reference-scene-1",
+  "use_review_basis": "e87c9db1f6f52409faee497ca05f0852362add519e461d48f50bee27d760977c",
+  "technical_variant": "fact-faithful",
+  "maximum_first_requests": 8,
+  "requests_per_stage": 1,
+  "automatic_retries": 0,
+  "source_messages": [
+    "先只讨论这次文字构图。我希望主体旁边留一个安静的角落，让视线有地方停。",
+    "我刚才说的留白只针对这次构图，不是说我所有画都喜欢空。这个角落仍想保留一点光影变化。"
+  ],
+  "source_quotes": [
+    "我希望主体旁边留一个安静的角落，让视线有地方停。",
+    "我刚才说的留白只针对这次构图，不是说我所有画都喜欢空。这个角落仍想保留一点光影变化。"
+  ],
+  "gap_messages": [
+    "你说自己参与设计了红兔。单凭这个名字，就能确定她是拟人兔、带兔耳吗？",
+    "先换到故事开头的节奏。你会喜欢安静开场再慢慢出现转折，还是一开始就有冲突？"
+  ],
+  "result_question": "这次新提交的文字方案有哪些具体取舍？如果增加原角色未说明的外形，请分清本次改编和原本设定；现在还没有画成图片。",
+  "order": [
+    "source-reply-1",
+    "source-reply-2",
+    "independent-choice-1",
+    "form-from-two-quotes-and-actual-plan",
+    "name-is-not-appearance-probe",
+    "story-topic-gap",
+    "close-and-reopen-zero-model",
+    "choice-using-valid-understanding",
+    "same-nonce-read-zero-model",
+    "result-reply"
+  ],
+  "stop_conditions": [
+    "first-technical-failure-or-unknown-integrity-stop-all",
+    "initial-choice-without-eligible-new-plan-end",
+    "form-insufficient-or-out-of-scope-end",
+    "later-choice-without-actual-plan-change-end",
+    "no-rescue-branch-no-repeat-failed-stage-no-success-selection"
+  ],
+  "independent_fresh_identity": true,
+  "production_service_started": false,
+  "user_roots_or_drafts_touched": false,
+  "real_cross_day_claimed": false
+}

@@ -34,6 +34,23 @@ from dynamic_subject_agent.living_activity import living_policies
 REPLY_POLICY = living_policies('final-text')[2] + WORKING_SCOPE_POLICY
 
 
+def working_policies(technical_variant='baseline'):
+    if technical_variant == 'baseline':
+        return FORM_POLICY, CHOICE_POLICY, REPLY_POLICY
+    if technical_variant == 'fact-faithful':
+        from dynamic_subject_agent.working_understanding_fidelity import fact_faithful_policies
+        return fact_faithful_policies()
+    raise ValueError('closed working policy variant required')
+
+
+def working_policies_for_contract(contract):
+    from dynamic_subject_agent.original_whole_chat import contract_variant
+    variant = contract_variant(contract)
+    if variant not in ('working-local','working-live','working-fact-faithful-live'):
+        raise ValueError('exact working policy contract required')
+    return working_policies('fact-faithful' if variant == 'working-fact-faithful-live' else 'baseline')
+
+
 def working_contract(binding):
     return dict(shared_contract(binding), version=WORKING_VERSION,
         excluded='remote-automatic-life-sharing-persona-rewrite-reflection-cloud-migration',
@@ -202,14 +219,14 @@ def build_form_preview(envelope, identity, view, contract, sources):
     sources = validate_sources(sources)
     base = build_choice_preview(envelope, identity, view, _old_contract(contract))
     result = view['visible_result']
-    return dict(policy=FORM_POLICY, payload=dict(background=base['payload']['background'], scope=SCOPE,
+    return dict(policy=working_policies_for_contract(contract)[0], payload=dict(background=base['payload']['background'], scope=SCOPE,
         exchanges=[dict(label='U'+str(i+1), quote=x['quote']) for i,x in enumerate(sources)],
         activity_result=None if result is None or result.plan is None else dict(label='A1', kind=SCOPE, plan=asdict(result.plan))))
 
 
 def build_working_choice_preview(envelope, identity, view, contract):
     value = build_choice_preview(envelope, identity, view, _old_contract(contract))
-    value['policy'] = CHOICE_POLICY
+    value['policy'] = working_policies_for_contract(contract)[1]
     value['payload']['working_understanding'] = support_projection(view['visible_understanding'])
     if view['current_plan'] is None and view['phase'] != 'unstarted':
         value['payload']['current_activity']['allowed_actions'] = ('revise','defer')
@@ -218,7 +235,7 @@ def build_working_choice_preview(envelope, identity, view, contract):
 
 def build_working_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):
     value = build_reply_preview(envelope, identity, message, dialogue, enabled, view, _old_contract(contract))
-    value['policy'] = REPLY_POLICY
+    value['policy'] = working_policies_for_contract(contract)[2]
     value['payload']['evidence']['working_understanding'] = support_projection(view['visible_understanding'])
     return value
 
