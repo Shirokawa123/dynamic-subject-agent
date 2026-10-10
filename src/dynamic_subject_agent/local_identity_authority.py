@@ -384,7 +384,8 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             open_shared_activity_audit(Path(metadata["audit_path"])).counts()
         elif qri.provider_authority in LIVING_LIVE_AUTHORITIES:
             from dynamic_subject_agent.living_activity_live import open_living_activity_audit
-            open_living_activity_audit(Path(metadata['audit_path']), technical_variant='final-text' if qri.provider_authority == LIVING_FINAL_TEXT_AUTHORITY else 'baseline').counts()
+            from dynamic_subject_agent.living_activity import living_variant_for_contract
+            open_living_activity_audit(Path(metadata['audit_path']), technical_variant=living_variant_for_contract(qri.reviewed_chat_contract)).counts()
         else:
             open_original_whole_audit(Path(metadata["audit_path"])).counts()
     if record.get("host_location") is not None:
@@ -1409,7 +1410,8 @@ class LocalIdentityAuthority:
             open_working_understanding_audit(audit_path,initialize=existing is None,technical_variant='fact-faithful' if working_fact else 'baseline')
         elif living_live:
             from dynamic_subject_agent.living_activity_live import open_living_activity_audit
-            open_living_activity_audit(audit_path, initialize=existing is None, technical_variant='final-text' if final_text else 'baseline')
+            from dynamic_subject_agent.living_activity import living_variant_for_contract
+            open_living_activity_audit(audit_path, initialize=existing is None, technical_variant=living_variant_for_contract(contract))
         elif live:
             from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
             open_shared_activity_audit(audit_path, initialize=existing is None)
@@ -1720,8 +1722,9 @@ class LocalIdentityAuthority:
                     opener = open_shared_activity_audit
                 elif identity.qri.provider_authority in LIVING_LIVE_AUTHORITIES:
                     from dynamic_subject_agent.living_activity_live import open_living_activity_audit
+                    from dynamic_subject_agent.living_activity import living_variant_for_contract
                     opener = lambda path: open_living_activity_audit(path, technical_variant=
-                        'final-text' if identity.qri.provider_authority == LIVING_FINAL_TEXT_AUTHORITY else 'baseline')
+                        living_variant_for_contract(identity.qri.reviewed_chat_contract))
                 total, used, remaining = opener(Path(record["whole_chat_activation"]["audit_path"])).counts()
                 return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]

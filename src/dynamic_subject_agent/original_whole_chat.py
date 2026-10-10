@@ -123,6 +123,11 @@ def contract_variant(contract):
         if contract != living_live_contract({key: contract[key] for key in APPROVED_BINDING}):
             raise ValueError('exact approved living LIVE contract required')
         return 'living-live'
+    if contract.get('version') == 'living-action-contract-live-s149-1':
+        from dynamic_subject_agent.living_action_contract import living_action_contract
+        if contract != living_action_contract({key:contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact action-contract living qualification required')
+        return 'living-final-text-live'
     if contract.get('version') == 'living-final-text-live-s144-1':
         from dynamic_subject_agent.living_activity_live import living_final_text_contract
         if contract != living_final_text_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -176,6 +181,8 @@ def whole_publication_key(contract):
     if variant == 'living-live':
         return 'original-living-activity-live-s142-' + digest(contract)
     if variant == 'living-final-text-live':
+        if contract['version']=='living-action-contract-live-s149-1':
+            return 'original-living-action-contract-live-s149-'+digest(contract)
         return 'original-living-final-text-live-s144-' + digest(contract)
     if variant == "shared-local":
         return "original-shared-activity-local-s139-" + digest(contract)

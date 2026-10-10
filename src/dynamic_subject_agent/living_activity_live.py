@@ -38,13 +38,16 @@ def living_protocol_for_kind(kind, *, technical_variant='baseline'):
         or type(kind) is not ModelTaskKind or kind.value not in PURPOSES):
         raise ValueError('closed living purpose and protocol required')
     result = deepcopy(current_living_protocol())
-    if technical_variant == 'final-text' and kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+    if technical_variant in ('final-text','action-contract') and kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
         # Ordinary final content is text by default. No unverified text enum.
         del result['protocol']['response_format']
     return result
 
 
 def living_grant_variant(grant):
+    from dynamic_subject_agent.living_action_contract import LivingActionContractDevelopmentGrant
+    if type(grant) is LivingActionContractDevelopmentGrant:
+        return 'action-contract'
     if type(grant) is ApprovedLivingActivityGrant:
         return 'baseline'
     if type(grant) is LivingFinalTextDevelopmentGrant:
@@ -142,6 +145,9 @@ def living_live_contract_for_variant(binding, *, technical_variant='baseline'):
         return living_live_contract(binding)
     if technical_variant == 'final-text':
         return living_final_text_contract(binding)
+    if technical_variant == 'action-contract':
+        from dynamic_subject_agent.living_action_contract import living_action_contract
+        return living_action_contract(binding)
     raise ValueError('closed living technical variant required')
 
 
@@ -167,12 +173,26 @@ class LivingFinalTextCallAudit(LivingActivityCallAudit):
             inherited_use_review_basis=APPROVED_LIVING_REVIEW, provider='deepseek', purposes=sorted(PURPOSES), limit=None)
 
 
+class LivingActionContractCallAudit(LivingActivityCallAudit):
+    @staticmethod
+    def configuration():
+        from dynamic_subject_agent.living_action_contract import ACTION_DEVELOPMENT_AUTHORIZATION
+        return dict(version='living-action-contract-call-audit-s149-1',authorization=LIVING_APPROVAL,
+            development_authorization=ACTION_DEVELOPMENT_AUTHORIZATION,
+            inherited_use_review_basis=APPROVED_LIVING_REVIEW,provider='deepseek',purposes=sorted(PURPOSES),limit=None)
+
+
+def living_audit_type(technical_variant):
+    return {'baseline':LivingActivityCallAudit,'final-text':LivingFinalTextCallAudit,
+        'action-contract':LivingActionContractCallAudit}[technical_variant]
+
+
 def open_living_activity_audit(path, *, initialize=False, technical_variant='baseline'):
     if not isinstance(path, Path) or not path.is_absolute():
         raise ValueError('absolute independent living audit required')
     if type(technical_variant) is not str or technical_variant not in LIVING_TECHNICAL_VARIANTS:
         raise ValueError('closed living audit variant required')
-    audit_type = LivingActivityCallAudit if technical_variant == 'baseline' else LivingFinalTextCallAudit
+    audit_type = living_audit_type(technical_variant)
     witness = path.with_name(path.name + '-initialized')
     if witness.exists():
         if not witness.is_dir() or not path.is_dir():
@@ -197,7 +217,7 @@ class LivingActivityDelivery:
     def __init__(self, *, grant, audit, contract, state_path):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
         variant = living_grant_variant(grant)
-        expected_audit = LivingActivityCallAudit if variant == 'baseline' else LivingFinalTextCallAudit
+        expected_audit = living_audit_type(variant)
         if type(audit) is not expected_audit:
             raise ValueError('exact living grant and independent three-purpose audit required')
         grant.validate()

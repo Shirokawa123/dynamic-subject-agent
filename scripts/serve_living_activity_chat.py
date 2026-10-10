@@ -46,7 +46,7 @@ class LivingActivityChatEntry(OriginalWholeChatEntry):
     def __init__(self, entry_root, *, live=True, package_path=DEFAULT_PACKAGE,
                  transport=None, audit_path=None, clock=None, day=None, observations=None):
         root = Path(entry_root).resolve()
-        protected = (default_entry_root(), final_text_entry_root(), OriginalWholeChatEntry.default_entry_root(),
+        protected = (self.default_entry_root(), default_entry_root(), final_text_entry_root(), OriginalWholeChatEntry.default_entry_root(),
             context_entry_root(), *(shared_entry_root(variant) for variant in SHARED_TECHNICAL_VARIANTS))
         if (type(live) is not bool or live and (root != self.default_entry_root().resolve() or clock is not None or day is not None)
             or not live and (transport is None or audit_path is None

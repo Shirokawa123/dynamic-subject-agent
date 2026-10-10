@@ -28,7 +28,7 @@ REPLY_POLICY = shared_reply_policy('self-directed-activity') + (
     'evidence.latest_share若存在，是本分支已经提交的最新一条主动分享原话，只供接续它的具体安排；'
     '它不是用户消息、事实来源或本人完成图片的证据。没有该原话时不要补造分享内容。'
 )
-LIVING_TECHNICAL_VARIANTS = ('baseline', 'final-text')
+LIVING_TECHNICAL_VARIANTS = ('baseline', 'final-text', 'action-contract')
 FINAL_TEXT_LIVE_VERSION = 'living-final-text-live-s144-1'
 _SHARE_EXPRESSION = '分享时自然第一人称短消息说具体安排或取舍，不编造过去习惯、持续心理活动或用户未回复的原因，不催促。'
 _FINAL_TEXT_SHARE_EXPRESSION = (
@@ -40,6 +40,9 @@ def living_policies(technical_variant='baseline'):
     """Closed same-use output protocols; material projections remain identical."""
     if type(technical_variant) is not str or technical_variant not in LIVING_TECHNICAL_VARIANTS:
         raise ValueError('closed living technical variant required')
+    if technical_variant == 'action-contract':
+        from dynamic_subject_agent.living_action_contract import action_contract_policies
+        return action_contract_policies()
     if technical_variant == 'baseline':
         return shared_choice_policy('self-directed-activity'), SHARE_POLICY, REPLY_POLICY
     from dynamic_subject_agent.original_whole_chat import JSON_EXAMPLE_SUFFIX
@@ -58,7 +61,10 @@ def living_variant_for_contract(contract):
     variant = contract_variant(contract)
     if variant not in ('living-local', 'living-live', 'living-final-text-live'):
         raise ValueError('exact living qualification required')
-    return 'final-text' if variant == 'living-final-text-live' else 'baseline'
+    if variant == 'living-final-text-live':
+        from dynamic_subject_agent.living_action_contract import ACTION_VERSION
+        return 'action-contract' if contract['version']==ACTION_VERSION else 'final-text'
+    return 'baseline'
 
 
 def living_contract(binding):

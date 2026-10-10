@@ -56,7 +56,7 @@ def living_remote_request_preview(task, *, technical_variant='baseline'):
     if len(wire) > 65536:
         raise ValueError('bounded living wire required')
     output_contract = OUTPUT_CONTRACTS[task.kind]
-    if technical_variant == 'final-text' and task.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+    if technical_variant in ('final-text','action-contract') and task.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
         output_contract = dict(final_content='natural-text', nonempty=True, max_chars=1200,
             local_wrapper=dict(reply_text='original-final-content', language='zh'))
     return dict(status='unapproved-preview-only', purpose=task.kind.value,
@@ -64,8 +64,8 @@ def living_remote_request_preview(task, *, technical_variant='baseline'):
         requests_per_action=1, automatic_retries=0, output_contract=output_contract,
         credential_use='existing-Windows-slot-HTTPS-Bearer-only-after-exact-separate-approval',
         wire_sha256=sha256(wire).hexdigest(),
-        **(dict(technical_variant='final-text', final_content='natural-text-original-wrapper-zh')
-            if technical_variant == 'final-text' else {}))
+        **(dict(technical_variant=technical_variant, final_content='natural-text-original-wrapper-zh')
+            if technical_variant in ('final-text','action-contract') else {}))
 
 
 class UnapprovedLivingActivityAdapter(ProviderAdapter):

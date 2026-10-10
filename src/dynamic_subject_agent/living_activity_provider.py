@@ -35,7 +35,7 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             raise ValueError('exact S142 approved transport, slot and delivery required')
         delivery.grant.validate()
         self.transport, self.credential_ref, self.delivery = transport, credential_ref, delivery
-        if delivery.technical_variant == 'final-text':
+        if delivery.technical_variant in ('final-text','action-contract'):
             self.capabilities = ProviderCapabilities('deepseek', 'deepseek-flash', False, (StructuredOutputMode.JSON_OBJECT, StructuredOutputMode.TEXT))
         self.observations = LivingActivityObservations() if observations is None else observations
 
@@ -60,7 +60,7 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             raise ModelGatewayFailure('delivery-unverified') from None
         try:
             observed = _ObservedTransport(self.transport)
-            if self.delivery.technical_variant == 'final-text' and actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
+            if self.delivery.technical_variant in ('final-text','action-contract') and actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY:
                 value = dict(reply_text=_post_text_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096), language='zh')
             else:
                 value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
@@ -81,7 +81,7 @@ class DeepSeekLivingActivityAdapter(ProviderAdapter):
             code = error.diagnostic_code
             row['status'] = 'unknown' if code in ('transport-timeout', 'transport-delivery-ambiguous') else 'failed-closed'
         except Exception:
-            code = 'expression-invalid' if (self.delivery.technical_variant == 'final-text'
+            code = 'expression-invalid' if (self.delivery.technical_variant in ('final-text','action-contract')
                 and actual.kind is ModelTaskKind.LIVING_ACTIVITY_REPLY) else 'structured-choice-invalid'
         try:
             self.delivery.record(row['status'], value if code is None else None)
