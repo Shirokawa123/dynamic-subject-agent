@@ -40,3 +40,23 @@
 反馈后的隔日必须实际下一UTC8日期，以同Timeline/原计划/源指纹重开并接话一次；同日先拒绝，0模型/0credential。现阶段没有该新反馈后的隔日证据，不能拿2026-10-08到今日的旧记录跨日查读冒充它，也不创建未经请求的后台定时任务或持续服务。实现与验证随后追加。
 
 [接续固定场景与标准](../../experiments/s148/SOURCE-LIFE.md)已具体化，复用所有既有业务接口，只新增有界执行器，不做整仓重构。工程检查share=true/false两支＋日期gate共3 passed（47.89秒）；独立复核指出跨午夜启动日误作隔日锚点和硬中断后重发风险，已改canonical反馈结果日＋factory前持久attempt/原nonce＋重开只查询。两条日期/持久准入增量passed（0.54秒）。模型真实生活接续尚未执行，合成通过不当人物验收。
+
+## 阶段三：真实生活首次到纠正拒绝为止
+
+接续实现ef74689已push，两份独立最终delta复核无遗留finding。实际沿2026-10-08已提交生活记录的同profile/同Timeline、今日2026-10-10真实重开继续，0模型/历史与业务视图一致。不是新建空人物，也没有打开正式用户root做实验。明确仿真机会、真实模型/Publication：实际5首次/5收到最终响应/0retry，4 complete模型结果＋1 failed-closed；5final逐stage全保留。前四条raw/preview/audit/canonical相符，第五audit failed-closed/输出不发表，不能因HTTP响应或前段字段齐全称完整成功。
+
+人物前段观察：新增有范围原话被exact选为E1，下一版实际在左肩外侧加入低对比安静角落/极淡光影，同时保本人表情和手部focus；新share选择true、assistant-origin，把这个真实文字取舍和拿不准是否多余表达出来，没有声称成图/离线已做新事。新反馈普通reply与exact替换都提交，旧E1派生plan及latest_share立即不可用，历史原文仍在。这里显示单E1可参与活动与分享，但单支不是E1通用因果或自然度稳定验收；首回复把“所有画的偏好”改以第一人称说，归属表达仍需留意，不以这一段掩盖人物整体质量。
+
+**首次纠正活动失败，完整闭环未过。** 模型返回合法JSON但`action=rework`且`plan`非null；现合同rework只进入返工阶段，新方案只能由start/revise提交。现有Python因“choice cannot smuggle a new version”拒绝，产品回`original-whole-structured-choice-invalid`，无新修订Publication。本地只读重放同原value复现该拒绝；离线把plan置null可接受进入rework，仅证明有限语法原因，未发送/写入，也没有用它补写成成功。其余字段/当前来源均可核，不归因HTTP、空白或credential，亦不推定模型为什么产生该组合。
+
+按先定首技术失败结束，没有救援分支、重抽或改场景。预定的rework后新版本、纠正结果接话、反馈后的实际隔日全部未执行；最多7只是场景上限，实际止于5，不缩标准凑完成。反馈普通reply中的“准备怎样改”保为说法，不是已保存的新方案。最终暂停/分享关闭，关闭factory；随后BlockedTransport真重开0请求验证新纠正exact source仍在、current_plan/latest_share均不可用、旧2条分享保历史。无需新增用途批准，现阶段也不为未准备成功的反馈隔日创建后台任务。
+
+同日`next-day`命令exit0、remote0/credential0表示因首段未完成而未取得资格，**不是隔日成功**；metadata仍为stopped-first-failure。旧2026-10-08记录跨日接续已观察到，不能冒称这次新反馈后的隔日成立。
+
+本轮诊断与生活首次场景至此按结束条件收口：共26新首次＝9准备＋12矩阵＋5生活，0retry；矩阵完整12格、生活在第5请求拒绝，未执行项明确留存。公开[生活汇总](life-summary.json)；本机[5份全部首次正文](../../../.artifacts/s148/source-life/finals)、[失败/阶段/审计对应元数据](../../../.artifacts/s148/source-life/metadata.json)、[首失败后零调用核对](../../../.artifacts/s148/source-life/final-readonly-check.json)，与[逐格初评/揭盲](../../../.artifacts/s148/first-comparison/rating-review.json)都保留。没有将原始人物包/小说/long final复制到Git。
+
+## 现在可体验与下一步
+
+检查原8793发现未运行；依2026-10-08既有准确批准恢复**同root/同port**隐藏loopback应用，未打开浏览器/焦点、不注册服务/自启动/定时任务，不新建或迁移用户root。实际health=living-final-text-chat-s144，用户root audit总attempt=0，启动未调用模型。原页面可聊天、选原话依据、看文字活动与控制分享；本轮验收分支没有预灌到用户聊天。S147可选W1界面实现仍保留，未擅自持续启动8794。
+
+下一步值得做的是修“来源被更正后，合法返工动作如何交接新方案”这处有限接缝，再先定一个未跑过的纠正场景验证整链。已有原话与分享的具体效果使它比扩建W1或整仓重构更接近用户结果。新技术候选保持旧失败/合同/数据，不以反复修本次同题直到通过证明改善；隔日待完整反馈修订提交后实际下一日验收。本轮不宣布长期相处、反馈修订或MVP完成，没有新的永久产品禁令。
