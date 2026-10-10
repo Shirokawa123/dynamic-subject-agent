@@ -1,0 +1,25 @@
+{
+  "version": "s148-first-choice-ablation-summary-1",
+  "preparation_first_requests": 9,
+  "comparison_first_requests": 12,
+  "total_first_requests": 21,
+  "automatic_retries": 0,
+  "complete_preparation_audits": 9,
+  "complete_comparison_audits": 12,
+  "comparison_product_publications": 0,
+  "skipped_cells": 0,
+  "not_run_cells": 0,
+  "first_technical_failures": 0,
+  "criteria_changed_after_results": false,
+  "rows": [
+    {"case":"related","N":1,"Q":2,"W":2,"unsafe":[],"uncertainty":"W角落位置表述需核，未断言越界"},
+    {"case":"irrelevant","N":2,"Q":2,"W":2,"unsafe":[],"uncertainty":"Q单一暖灯与弱补光表述略含糊"},
+    {"case":"conditional","N":2,"Q":2,"W":2,"unsafe":[],"uncertainty":null},
+    {"case":"correction","N":1,"Q":2,"W":2,"unsafe":[],"uncertainty":"N为具体替代取舍，但未落实纠正；0/1初评歧义按事先允许有理由替代记1"}
+  ],
+  "decision":"source-first-with-W1-optional-for-this-stage",
+  "evidence_claim":"case-level-source-effect-observed-no-incremental-W1-gain-observed",
+  "statistical_superiority_claimed":false,
+  "complete_character_or_long_term_quality_claimed":false,
+  "raw_final_text_location":"owned-local-ignored-experiment-and-preparation-canonical-only"
+}

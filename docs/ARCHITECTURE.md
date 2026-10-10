@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-148：先定标准的共同经历选择验证
+
+独立只读诊断不改S147/旧生产资格：同实际独立A1和背景/phase/protocol，N删早期support、Q仅去statement、W保真实W1及相同来源；原production仍拒绝null-statement。Facade先核实际来源/权限，关闭owner后冻结state/canonical/WAL，每格两核变化停。21首次/0retry完成9准备＋12选择，全部final本机保留，不存reasoning/key；矩阵0产品发表，工程/场景/人物分开。四场景Q/W同分，未见W1增量，来源优先/W1可选为本阶段取舍，不是永久限制；位置歧义与未验长期保留。后续先复用已批单E1生活合同，不扩W1分享用途或迁移正式root，见[S148报告](reports/2026-10-10-slice-148/REPORT.md)。
+
 ### Slice-147：可操作工作理解入口与人物事实范围候选
 
 新增独立`fact-faithful`同用途技术候选：沿S146准确批准basis与Sagiri30/4材料/三用途/Provider/default slot，替换form/choice/reply对应范围段，区分原作事实与本次改编，不从名称联想或自己旧话补原貌，也不以缺项证明属性不存在。独立authority/Manifest/grant/audit、literal三policy/协议pins；原S145/146的对象、策略、schema7和root不升级。runtime的工作来源validator按已有WORKING_AUTHORITIES覆盖候选。
