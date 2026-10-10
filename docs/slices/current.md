@@ -4,6 +4,8 @@
 
 S148来源优先/W1可选取舍保持。S149工程、场景、人物分别验证并分阶段commit/push；真实反馈隔日仍须实际日期，新增持续入口/后台动作先具体准备再集中问，正式8793与草稿不触及。下文保留已收口S148/147事实，不作为新实现或额外授权。
 
+2026-10-10用户对8795独立入口与2026-10-11北京时间10:00本机当前对话一次隔日验证明确“同意”，两准确动作已批准并执行准备：8795实际loopback/空聊天/默认暂停分享关闭/audit0；首PowerShell解析失败在应用前，ASCII修复/Parser核对后正常启动，失败保本机。native heartbeat ID=s149已创建/更新为一次10:00，任一终态停止；尚未实际隔日/0attempt，不以安排代通过。执行时只按NEXT-DAY-REVIEW和冻结runner核同身份/方案/source/pins，最多1同用途尝试0retry；回执见报告，不动用户8793/8795聊天。批准/启动/回执提交push。
+
 2026-10-10 S149新场景已按标准9首次全走/0retry/0skip或技术失败，9audit/11canonical、cold→share→warm exact反馈→rework(null,v2)→真重开→revise(v3)→结果接话/换题成立。真实内容明确指称有限通过，分享偏说明/含糊照旧/稳定性/实际隔日未过；同日后日入口0模型0credential拒绝。实现2b13fd7已push，临时新HTTP漏application_id已修/兼容核；完整结果见[S149报告](../reports/2026-10-10-slice-149/REPORT.md)。待集中决定[新8795持续入口](../experiments/s149/ENTRY-START.md)及[一次隔日后台验证](../experiments/s149/NEXT-DAY-REVIEW.md)，两者均未启动/安排，已有模型用途不重问。
 
 本轮标准与结束条件见[S148 PLAN](../experiments/s148/PLAN.md)。沿已有资料/Provider/slot用途实施同用途诊断；新增生活分享接线先完成具体可运行准备再集中审阅。已证工程、场景执行与人物效果分别报告；不将当前实验限定写成永久产品限制，不改旧root/正文/草稿或启动未批持续服务。每验证阶段commit/push。

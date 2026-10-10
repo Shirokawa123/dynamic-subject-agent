@@ -1,5 +1,7 @@
 # S149独立可体验入口的具体启动动作
 
+2026-10-10用户对本动作与一次隔日验证集中答复“同意”，本动作已批准。下文保原可审对象；实际启动/健康/零模型事实另见S149报告，不以批准冒称执行成功。
+
 仅在本片代码/必要行为/真实新场景完成接纳后申请。现用户对同用途开发的“继续”不视为这个新持续进程的批准。
 
 批准后仅启动一次本仓 `scripts/start_living_action_contract_chat.ps1 -Python D:/anaconda3/python.exe -Port 8795 -NoBrowser -DirectProvider`，隐藏窗口，仅127.0.0.1；health=living-action-contract-chat-s149。新空目录`%LOCALAPPDATA%/DynamicSubjectAgent/living-action-contract-chat/entry`，默认暂停/分享关闭/空聊天，打开/刷新/查读/重开不调用模型。精确新variant及pointer由Authority验证；未知占用/部分初始化拒绝且不覆盖。

@@ -33,3 +33,15 @@
 ## 未验与可审下一动作
 
 反馈后的真正隔日尚未执行，需实际2026-10-11或更晚的UTC8日期。已准备一次[隔日后台动作](../../experiments/s149/NEXT-DAY-REVIEW.md)，现有聊天的本地跟进可承接、电脑/应用需在运行且sandbox/审批仍有效，未因代码或模型用途授权自动安排。还有新空8795[持续入口动作](../../experiments/s149/ENTRY-START.md)可让用户直接体验候选；实现与独立临时HTTP已经可审，正式新入口尚未启动，不改变已有8793。两项需要用户准确批准，集中问，不再为已有模型资料/slot/次数询问。
+
+## 用户批准后的启动与一次调度
+
+2026-10-10用户对两个集中问题明确“同意”，批准准确启动及一次后日验证；方向/current与两个原审阅对象均已追加批准，旧待审文字保为历史。此回复不扩任何资料/Provider/key/迁移/云/Reflection用途。
+
+实际首次启动在PowerShell读取无BOM UTF8中文throw错误文本时解析失败，发生Python应用/新root创建前，0模型；首stdout/stderr现场保本机。仅将该启动器错误字符串改为ASCII、通过实际Windows PowerShell Parser检查，未动冻结runner/helper/SCENE/模型策略，再按同一批准动作启动。不能把第一个launcher PID或进程退出码当作已可体验。
+
+实际入口健康=living-action-contract-chat-s149，只监听127.0.0.1:8795，Python PID34660（隐藏启动器PID19408）。后台GET/status核空chat_messages、paused=true/sharing_enabled=false；新root active identity/timeline与pointer匹配、exact contract= living-action-contract-live-s149-1，Provider audit attempts=0。启动/查读没有模型请求，没有打开浏览器/抢焦点、注册系统服务/自启动、迁移旧root或操作草稿。可体验地址[8795](http://127.0.0.1:8795)，由用户按需打开；本机[启动汇总](../../../.artifacts/s149/entry-approved-summary.json)保实际时间及核对，第一失败与修正日志另保同目录。
+
+Codex应用native工具已创建并更新同当前对话的一次本地heartbeat，ID=s149、ACTIVE，时间为2026-10-11北京时间10:00；本机China Standard Time/UTC8核对，保存配置仅一次发生，任务要求任何终态暂停自身，不每天重复。创建/更新回执成立，未手改automation.toml或造OS定时任务。只执行冻结next-day，最多1次同DeepSeek尝试/0retry、原nonce-only恢复，结果回当前对话；电脑/Codex需运行，原sandbox/审批保持，失败如实未执行，不绕过。调度已安排**不是隔日通过**，当前feedback_real_next_day_verified仍false，尚无next-day attempt。
+
+本次只执行已批启动/调度与零模型验证，没有重发初日9阶段或模型场景。PowerShell兼容修复不改变后日pins；已有未提交成果保持。本会话提交/push批准事实、启动器修复与回执，后日工程/场景/人物结果在真正执行后另追加。

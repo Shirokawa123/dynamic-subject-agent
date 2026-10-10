@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-10：S149源2b13fd7已push，真实新场景9首次/9complete/11canonical/0retry：cold E1→活动/share→warm更正→合法rework版本不增→重开/revise→结果接话/换题成立；只读工程核过。明确指称有限效果、分享仍偏说明，真实反馈隔日未到/0attempt；新8795与一次隔日后台动作已可审未启，旧失败/root/草稿保持，见[S149](reports/2026-10-10-slice-149/REPORT.md)。
+- 2026-10-10：S149真实9首次/11canonical反馈修订有限通过；用户批准后8795已启动loopback/空聊天/默认暂停分享关闭/audit0，PowerShell首解析失败与ASCII修复保现场。native一次隔日任务s149已安排2026-10-11北京时间10:00/任一终态停止，尚未实际隔日/0attempt。旧root/草稿/失败保持，见[S149](reports/2026-10-10-slice-149/REPORT.md)。
 
 - 2026-10-10：S148诊断21首次/12格全走，原话有适当影响/W1无增量，来源优先/W1可选；接续ef74689已push、同人物旧Timeline真实5首次到source→活动→true分享→反馈替换。第5 rework带plan被拒，4complete/1failed-closed、0retry；新修订/接话/反馈隔日未执行，26全部final保本机。原获批8793同root恢复0audit、8794未启动，见[S148](reports/2026-10-10-slice-148/REPORT.md)。
 

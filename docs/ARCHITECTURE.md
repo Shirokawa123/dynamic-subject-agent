@@ -6,6 +6,8 @@
 
 真实新明确指称色温场景9首次/9audit complete/11canonical、0retry/失败/skip：同人物新Timeline自选v1→cold E1/v2/share→warm exact新反馈/旧链过滤→rework版本2/0新plan→真重开→revise版本3→准确结果接话/换题。机会manual simulation，模型和Publication真实；独立只读审计通过。分享仍偏说明、含糊照旧与长期稳定未验；反馈实际日2026-10-10，同日后日0请求拒绝，不称真实隔日。一次原nonce后日尝试/factory前准入及准确启动/调度方案见[S149报告](reports/2026-10-10-slice-149/REPORT.md)。
 
+用户随后准确批准两动作；8795新空entry已隐藏运行，仅loopback、default paused/shareoff/audit0，未迁旧root/草稿；首PowerShell中文throw解析失败改ASCII后通过实际Parser与启动核对，模型策略/冻结后日文件不变。native当前对话一次隔日任务s149已安排2026-10-11 UTC8 10:00/任一终态停止，尚未执行或验收隔日。
+
 ### Slice-148：先定标准的共同经历选择验证
 
 独立只读诊断不改S147/旧生产资格：同实际独立A1和背景/phase/protocol，N删早期support、Q仅去statement、W保真实W1及相同来源；原production仍拒绝null-statement。Facade先核实际来源/权限，关闭owner后冻结state/canonical/WAL，每格两核变化停。21首次/0retry完成9准备＋12选择，全部final本机保留，不存reasoning/key；矩阵0产品发表，工程/场景/人物分开。四场景Q/W同分，未见W1增量，来源优先/W1可选为本阶段取舍，不是永久限制；位置歧义与未验长期保留。后续先复用已批单E1生活合同，不扩W1分享用途或迁移正式root，见[S148报告](reports/2026-10-10-slice-148/REPORT.md)。
