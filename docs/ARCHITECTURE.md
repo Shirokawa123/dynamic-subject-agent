@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-149：同用途动作合同技术候选与新反馈场景
+
+独立action-contract保持S142/S144数据/协议/slot与同schema6/能力Manifest，只替换choice动作段与不授资格的null示例；新合同/version/grant/choice pin/audit/publication key隔离，旧资格/策略/root/失败不变。family living-final-text-live显式复用相同业务能力，Authority从exact contract辨audit变体；rework非null仍拒，不丢plan或改成revise。新empty entry的准确health闭集已补，Facade/页面与恢复复用，正式8795持续启动尚待具体批准。
+
+真实新明确指称色温场景9首次/9audit complete/11canonical、0retry/失败/skip：同人物新Timeline自选v1→cold E1/v2/share→warm exact新反馈/旧链过滤→rework版本2/0新plan→真重开→revise版本3→准确结果接话/换题。机会manual simulation，模型和Publication真实；独立只读审计通过。分享仍偏说明、含糊照旧与长期稳定未验；反馈实际日2026-10-10，同日后日0请求拒绝，不称真实隔日。一次原nonce后日尝试/factory前准入及准确启动/调度方案见[S149报告](reports/2026-10-10-slice-149/REPORT.md)。
+
 ### Slice-148：先定标准的共同经历选择验证
 
 独立只读诊断不改S147/旧生产资格：同实际独立A1和背景/phase/protocol，N删早期support、Q仅去statement、W保真实W1及相同来源；原production仍拒绝null-statement。Facade先核实际来源/权限，关闭owner后冻结state/canonical/WAL，每格两核变化停。21首次/0retry完成9准备＋12选择，全部final本机保留，不存reasoning/key；矩阵0产品发表，工程/场景/人物分开。四场景Q/W同分，未见W1增量，来源优先/W1可选为本阶段取舍，不是永久限制；位置歧义与未验长期保留。后续先复用已批单E1生活合同，不扩W1分享用途或迁移正式root，见[S148报告](reports/2026-10-10-slice-148/REPORT.md)。

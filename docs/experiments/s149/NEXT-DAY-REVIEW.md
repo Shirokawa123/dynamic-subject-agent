@@ -1,0 +1,11 @@
+# S149一次真实隔日验证：可审后台动作
+
+这是待批准的具体动作；当前“继续推进”仅承接开发，不视为新的后台定时任务批准。初日9首次/0retry已完成合法返工/新暖光方案/结果接话，canonical反馈完成日2026-10-10；同日next-day确实0请求/0credential拒绝，没有隔日结果。
+
+建议在2026-10-11北京时间10:00仅运行一次本机当前对话的跟进任务，沿已有项目E:/dynamic-subject-agent与同S149开发Timeline，不另建任务/工作树、不升级用户root。只执行冻结 `scripts/run_s149_action_continuity.py next-day`：检查runner/helper/场景哈希、实际UTC8日期、同身份/Timeline与保存plan/source，然后最多1次现DeepSeek普通接话尝试/0retry。当前问句不泄漏暖/冷答案，材料/字段/Windowsslot沿已批S142/S144；没到条件、篡改、旧attempt、unavailable/失败/UNKNOWN均不补发，原nonce只能查询。结束暂停/分享关闭、关闭factory，原final只保本机，不开新服务/不通知别人。
+
+后台跟进只做本次结果核对/判读，记录工程/场景/人物与未验，更新REPORT/current/STATUS≤5行，commit/push并在本对话回报。无另行场景/调优/新材料出站；不能因已安排而预记通过。任何终态都停止本次调度，不形成每天巡检。
+
+本地桌面调度要求电脑开机、应用运行；原沙箱/审批仍有效，权限或运行环境阻止时如实记未执行，不绕过。[官方调度文档](https://learn.chatgpt.com/docs/automations?surface=app)说明本地项目/现有聊天跟进与默认sandbox；本机native automation工具可承接，具体创建回执才证明已安排。尚未创建任务。
+
+需要明确同意的来源：[AGENTS](../../../AGENTS.md)“后台运行/通知按具体已批准合同执行”。旧具体批准覆盖8793持续应用，未含这项隔日无人值守任务；模型用途本身已批，不再为同用途调用次数重问。
