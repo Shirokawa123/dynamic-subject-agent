@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -308,7 +308,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies", "living", "living_permission", "living_trigger", "living_day", "target_event_id", "working", "working_sources", "working_permission") or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies", "living", "living_permission", "living_trigger", "living_day", "target_event_id", "working", "working_sources", "working_permission", "feedback") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -2685,7 +2685,7 @@ def _bootstrap_timeline(
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
         shared = SHARED_INTENT in authority.allowed_intents
-        schema_version = 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
+        schema_version = 8 if FEEDBACK_INTENT in authority.allowed_intents else 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
             if life or whole_context:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
@@ -2867,7 +2867,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4,5,6,7) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5,6,7,8) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2903,7 +2903,7 @@ def _verify_store_integrity(
         expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==4:
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary'}
-    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0] in (5,6,7):
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8):
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary', 'shared_activity_input', 'shared_activity_record', 'prepared_cycle_plan'}
     try:
         tables = frozenset(
@@ -3404,12 +3404,14 @@ class TimelineEngine:
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7)) != (CONTEXT_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7,8)) != (CONTEXT_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7)) != (SHARED_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8)) != (SHARED_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('shared-contract-mismatch', 'Timeline version differs from shared activity authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0] == 6) != (LIVING_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('living-contract-mismatch', 'Living requires its independent schema6')
+            if (writer.execute('PRAGMA user_version').fetchone()[0] == 8) != (FEEDBACK_INTENT in authority.allowed_intents):
+                raise AdmissionFailedClosed('feedback-contract-mismatch', 'Feedback requires independent schema8')
             if (writer.execute('PRAGMA user_version').fetchone()[0] == 7) != (WORKING_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('working-contract-mismatch', 'Working requires independent schema7')
             if authority.timeline_id != location.timeline_id:
@@ -4650,6 +4652,16 @@ class TimelineEngine:
                     or len(candidates) != 1 or type(candidates[0]) is not SubjectCommand
                     or not source.quote.strip() or len(source.quote) > 400 or source.quote not in candidates[0].utterance):
                     raise PublicationFailedClosed('shared-source-invalid', 'source is not one committed user quote')
+            if FEEDBACK_INTENT in self._authority.allowed_intents:
+                if current.feedback is None:
+                    raise PublicationFailedClosed('feedback-prefix-invalid', 'schema8 needs feedback record')
+                for source in current.feedback['sources']:
+                    candidates = [(out, cmd) for out, cmd, _ in publications if out.head_sequence == source['source_head_sequence']]
+                    if (source['source_head_sequence'] > outcome.head_sequence or len(candidates) != 1
+                        or type(candidates[0][1]) is not SubjectCommand or source['quote'] != candidates[0][1].utterance):
+                        raise PublicationFailedClosed('feedback-source-invalid', 'feedback is not a complete committed user message')
+            elif current.feedback is not None:
+                raise PublicationFailedClosed('feedback-prefix-invalid', 'old contract cannot carry feedback')
             dependencies[outcome.head_sequence] = current.reply_dependencies
             record = current
             if LIVING_INTENT in self._authority.allowed_intents and current.living is None:
@@ -4796,10 +4808,20 @@ class TimelineEngine:
                         or command.source_head_sequence <= view['cutoff_sequence']):
                         raise ValueError('source unavailable after disclosure cutoff')
             expected = None
-            if LIVING_INTENT not in self._authority.allowed_intents and WORKING_INTENT not in self._authority.allowed_intents:
+            if not {LIVING_INTENT, WORKING_INTENT, FEEDBACK_INTENT} & set(self._authority.allowed_intents):
                 expected = build_record(view['record'], command=command, authorization=authorization,
                     cutoff=view['cutoff_sequence'], context_revision=view['context_revision'], head_sequence=plan.expected_basis.head_sequence+1,
                     choice=choice_from_record(record) if record.kind == 'decision' else None, dialogue_dependencies=view['dialogue_dependencies'])
+            if FEEDBACK_INTENT in self._authority.allowed_intents:
+                from dynamic_subject_agent.natural_feedback import build_feedback_record
+                if record.feedback is None:
+                    raise ValueError('schema8 feedback record required')
+                expected = build_feedback_record(view, command=command, authorization=authorization,
+                    head_sequence=plan.expected_basis.head_sequence+1,
+                    choice=choice_from_record(record) if record.kind == 'decision' else None,
+                    proposal=record.feedback['proposal'])
+                if type(command) is SubjectCommand and plan.expression.text != record.feedback['proposal']['reply_text']:
+                    raise ValueError('feedback expression differs from adjudicated proposal')
             if WORKING_INTENT in self._authority.allowed_intents:
                 from dynamic_subject_agent.working_understanding import build_working_record
                 if record.working is None:
@@ -8303,7 +8325,7 @@ class TimelineEngine:
             dependencies = {out.head_sequence: out.shared_record.reply_dependencies for out, _, _ in publications}
             blocked_heads = {out.shared_record.source.source_head_sequence for out, _, _ in publications
                 if out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
-            if LIVING_INTENT in self._authority.allowed_intents:
+            if {LIVING_INTENT, FEEDBACK_INTENT} & set(self._authority.allowed_intents):
                 blocked_heads.update(out.head_sequence for out, command, _ in publications
                     if type(command) is SubjectCommand and not set(out.shared_record.reply_dependencies) <= valid)
             if WORKING_INTENT in self._authority.allowed_intents:

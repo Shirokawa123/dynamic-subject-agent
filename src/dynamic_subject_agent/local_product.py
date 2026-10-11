@@ -747,6 +747,23 @@ def open_shared_activity_product_local(config, *, gateway, identity_id, binding=
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
+def open_natural_feedback_product_local(config, *, gateway, identity_id, binding=None):
+    """New isolated LOCAL qualification; refuse remote before registry access."""
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.shared_activity import FEEDBACK_AUTHORITY
+    from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+    if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
+        raise ValueError('LOCAL natural feedback gateway required; remote purpose unapproved')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_natural_feedback_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+        provider_authority=FEEDBACK_AUTHORITY, contract=loaded.qri.reviewed_chat_contract,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
 def open_working_understanding_product_local(config, *, gateway, identity_id, binding=None, day=None):
     """Independent schema7 LOCAL root; remote rejected before registry access."""
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING

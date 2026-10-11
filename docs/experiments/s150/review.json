@@ -1,0 +1,203 @@
+{
+  "automatic_retries": 0,
+  "binding": {
+    "anchor_id": "v1-pre-broadcast",
+    "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+    "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+    "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+    "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+    "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+    "subject_id": "sagiri"
+  },
+  "credential_use": "existing-Windows-default-slot-HTTPS-Bearer-only",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "first_real_scene": {
+    "after_topic_gap_actual_activity": true,
+    "background_schedule": false,
+    "first_technical_failure_stops": true,
+    "max_first_attempts": 10,
+    "persistent_service": false,
+    "real_next_day": false,
+    "retries": 0,
+    "same_character_same_new_timeline": true
+  },
+  "local_contract": {
+    "anchor_id": "v1-pre-broadcast",
+    "authorization": "local-preparation-only-no-remote-grant",
+    "automatic_retries": 0,
+    "call_limit": null,
+    "credential_use": "none",
+    "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "excluded": "remote-automatic-life-sharing-persona-rewrite-reflection-cloud-migration",
+    "max_complete_turns": 2,
+    "max_current_chars": 1000,
+    "max_exchange_chars": 4000,
+    "max_reply_chars": 1200,
+    "max_requests_per_turn": 1,
+    "max_tokens": 4096,
+    "model": "deepseek-flash",
+    "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+    "policy_sha": "a2e86ae7b2cea52b580510dae71f6e6f631fd4ea7efe5d3af020f38ffd26577e",
+    "provider": "local",
+    "reasoning_effort": "high",
+    "retention": "canonical-Timeline-only",
+    "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+    "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+    "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+    "subject_id": "sagiri",
+    "technical_variant": {
+      "choice_policy_sha": "363026832e5c421d97a91b47804afc7ebfdca60cb5253e1c364b3801463e60fb",
+      "feedback_policy_sha": "25f6dd629eca8b00157f89f055f25eb6113d9e5a69e5969a1e027462135b2292",
+      "max_edits": 4,
+      "max_feedback_chars": 400,
+      "max_feedback_sources": 8,
+      "name": "feedback-local",
+      "timeline_schema": 8
+    },
+    "thinking": "enabled",
+    "timeout_seconds": 30,
+    "version": "natural-feedback-local-s150-1"
+  },
+  "local_evidence": {
+    "canonical_publications": 9,
+    "checks": {
+      "actual_next_activity_changed": true,
+      "exact_partial_revision": true,
+      "feedback_outside_recent_window": true,
+      "preview_matches_execution": true,
+      "reopen_zero_model_same_identity": true,
+      "reply_receives_current_plan": true
+    },
+    "credential_reads": 0,
+    "first_run": "failed-short-idempotency-key-preserved",
+    "pending_refusals": 9,
+    "remote_calls": 0,
+    "synthetic_tasks": 9,
+    "task_wire_sha256": [
+      "3118a9f07445215cf6b56dc4419c9eb155c964e56e65c2dc89515f1eaa5e5e3e",
+      "125c1d5813e78f9a1ceb0c4c439b97564d0098dcaf245b6204622ad826cd1dee",
+      "39be95c7af7c0d54fa6c83c748da1d61de744f2e99d71eaa29299903905955df",
+      "ceca59d5265d2d0bd7d973ca2ae31a4c89a1134dfe353beed6661e38068c163f",
+      "83c591299fbdb4bda420a6372eacacf7e7ca9fd85e7aa82da57b83d06c6ff472",
+      "05249e26880ed82f4ceb355d716c2101c36e71ef99cf3d61ab14d73af85ac7ca",
+      "768aac8eda67c10bbb093c1794c2e8d790ebac011f4ca10fc0767b3f29900a06",
+      "fa45833f5b0a5d7c736f526c652905736a6b5d12792c2560f8dccb962b437955",
+      "eeb7204e35c47f83df56a32289dbf9e5e6e16170ac2e3902dc8e81f0d3e5422a"
+    ],
+    "validated_run": "local-loop-validated"
+  },
+  "max_requests_per_action": 1,
+  "policies": {
+    "choice": "这是人物本次自行选择的日常构图文字活动，当前调用是明确推进活动，不是等待或回答一条新的用户消息。background中的聊天渠道说明不代表本次收到用户绘画要求。只形成文字方案，不是完成图片或发生外部故事。以background中已审的本人创作关注、审美取舍和具体能力边界为线索，结合本阶段allowed_actions提出当次可行活动；这些线索不证明本人此刻持续想什么或已经做过新活动。shared_experience若存在，只证明用户曾说过这段逐字原话，不证明内容为真，也不要求服从；它是可选的交流依据，不是活动启动资格。current_plan为null仅表示本次没有可用旧方案，不阻止依据自身关注提出新构想，也不表示从未活动；不补造旧版本。current_plan存在时，先辨本版subject、composition与focus；若推进新版本，做一项具体服务当前focus的取舍并实际改变方案，而非重复原文或只宣布继续。从本阶段允许的action中选择；defer保持合法，decision_note说清本次无法推进或保留比较的实际理由，不把没有E1或新用户消息本身当作等待理由。仅输出JSON exact {action,plan,reason_code,basis_refs,decision_note}。plan为null或{subject,composition,focus}，各最多160、800、400字符。reason_code仅emphasize-subject/balance-space/improve-readability/preserve-current/try-alternative/defer-comparison。basis_refs只可为空或本请求实际提供的E1；decision_note是用户可见的本次取舍说明，最多160字符，不是隐藏推理、人格重写或未来事实。action=start或revise时，plan必须是{subject,composition,focus}且有实际变化；action=keep、rework或defer时，plan必须是JSON null，不得带新方案或空对象。rework只决定进入返工阶段，本次不提交新方案；下一次明确推进、allowed_actions含revise时才可提交修订。每次先核当前allowed_actions；例子不授予未列出的动作资格，current_plan=null也不能跳过阶段或补造旧方案。例如合法进入返工的结构为{\"action\":\"rework\",\"plan\":null,\"reason_code\":\"try-alternative\",\"basis_refs\":[],\"decision_note\":\"下一步比较新的构图取舍。\"}。这只是格式例子，不是已发生事件、当前理由或必须选择的动作；实际理由仍来自人物关注与本次可用来源。current_feedback若有是当前活动真实收到的最近修订原话，不是永久偏好。当前方案已包含获接纳的局部修订；以它为基准继续一项具体活动取舍，不退回已纠正的安排。没有新用户要求也可按本人关注推进，允许有理由保留或暂缓。不要声称已成图或离线做过新活动。",
+    "feedback": "回应当前用户消息，同时判断是否明确要求修订唯一当前构图文字方案。background是有范围的已审人物资料，exchange仅是双方原话；当前方案是已提交文字，不是成图或离线经历。只有明确针对当前方案、目标和范围可确定的修改才提议revise；普通聊天、提问、仅条件假想或不采纳建议为chat。目标不清时clarify，只问缺失目标，不替用户决定；current_plan为null时不得恢复或猜旧方案。修订只提出局部文字替换，保持未要求修改的主体、视点及全部其他细节，不重写整个方案。有自己的意见和理由，用户原话不是事实真值或永久偏好。若不同意可以chat说明理由；不得声称没有提交的修改已完成。仅输出JSON exact {intent,activity_revision,edits,reason_code,reply_text,language}；intent仅chat/clarify/revise，activity_revision照抄输入。language=zh，正文非空最多1200字符。chat/clarify的edits=[]、reason_code=null；revise最多4项非空编辑，每项exact {field,before,after}，field仅subject/composition/focus，before为该字段唯一的逐字连续片段1至160字，after最多240字，替换后有变化。同字段多项编辑必须在原版本互不重叠。revise的reason_code仅improve-readability/balance-space/emphasize-subject/try-alternative。current_feedback若有仅限当前文字活动，以最新反馈及当前方案为准，不把旧建议当永久要求。"
+  },
+  "protocol": {
+    "accepted_response_models": [
+      "deepseek-v4-flash",
+      "deepseek-flash"
+    ],
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "expression": {
+      "max_tokens": 4096,
+      "reasoning_effort": "high",
+      "response_format": {
+        "type": "json_object"
+      },
+      "stream": false,
+      "thinking": {
+        "type": "enabled"
+      }
+    },
+    "model": "deepseek-flash",
+    "planning": {
+      "max_tokens": 4096,
+      "reasoning_effort": "low",
+      "response_format": {
+        "type": "json_object"
+      },
+      "stream": false,
+      "thinking": {
+        "type": "enabled"
+      }
+    },
+    "timeout_seconds": 30.0
+  },
+  "requested_uses": {
+    "choice": {
+      "added_field": {
+        "current_feedback": {
+          "label": "F1",
+          "quote_chars": 400
+        }
+      },
+      "existing_fields": [
+        "background",
+        "shared_experience",
+        "current_activity",
+        "current_plan"
+      ],
+      "purpose": "shared-activity-choice",
+      "response_fields": [
+        "action",
+        "plan",
+        "reason_code",
+        "basis_refs",
+        "decision_note"
+      ],
+      "trigger": "explicit-manual-advance-first-validation"
+    },
+    "feedback": {
+      "activity_revision": "one-nonnegative-integer",
+      "background": "existing-approved-Sagiri30-facts-4-interpretations-minimal-projection",
+      "complete_recent_rounds": 2,
+      "current_chars": 1000,
+      "history_can_disable": true,
+      "optional_current_plan": {
+        "composition": 800,
+        "focus": 400,
+        "subject": 160
+      },
+      "optional_latest_eligible_feedback": {
+        "label": "F1",
+        "quote_chars": 400
+      },
+      "optional_selected_source": {
+        "label": "E1",
+        "quote_chars": 400
+      },
+      "purpose": "natural-activity-feedback",
+      "recent_chars": 4000,
+      "response_fields": [
+        "intent",
+        "activity_revision",
+        "edits",
+        "reason_code",
+        "reply_text",
+        "language"
+      ],
+      "trigger": "one-user-submitted-message"
+    }
+  },
+  "review_basis": "f09dd24a840082d19dea10c0e0f8cce3bf8b31764d3f151be20f0c86d3e518f6",
+  "scene_sha256": "d5ecf6f538968891f83d26f25a9928ed26550de9505c20e74c66f18368ff685e",
+  "source_sha256": {
+    "scripts/run_s150_local_feedback.py": "651599187be882a7d05997a2be0a4c08db7bb6c15cc6bbaf984e7407b70f373c",
+    "src/dynamic_subject_agent/application.py": "124c127d22b45e1c30351e0f32e1bd6258ca9eae9aca7ec77ab978a1d6171b9b",
+    "src/dynamic_subject_agent/host.py": "0d6144900b3c3fecb007d8b53b761bf5adfc5d1c127cea9fff785e073027d293",
+    "src/dynamic_subject_agent/local_identity_authority.py": "adfb180efffc6bb7aed11fc470cc43935ed7d07d6b179a185a731ad5abfabcae",
+    "src/dynamic_subject_agent/local_product.py": "2913d145a49fcfa034bd50bf32ec811be4c174f7670ab2d926722880306cc6a8",
+    "src/dynamic_subject_agent/model_gateway.py": "5b5c2428afa190d9c2fa9846aac0f0548040dfa357abf915a4a44522f1c886a9",
+    "src/dynamic_subject_agent/natural_feedback.py": "9cd607abc878732f24c3a3ed66d2069f9a7f1862aed3a456cd175d5c069ad864",
+    "src/dynamic_subject_agent/natural_feedback_remote_preview.py": "407c6e35909ef48f29562684959ac1a3830bc16efdcb5cfb995322cccc92524d",
+    "src/dynamic_subject_agent/original_whole_chat.py": "399554e4ee2f55e6a1f3a92829a5db654fb342730aa99c3b3f45703efb0e4cc0",
+    "src/dynamic_subject_agent/shared_activity.py": "f38265c10f8f61385e65cb58693faa3deb9a16e4007f0d97bc9309d4dfc4659a",
+    "src/dynamic_subject_agent/shared_activity_cognition.py": "d49ff6889772437b51088fca2e640eb6cd7abcade9f5ee9142bba3f70f74eed2",
+    "src/dynamic_subject_agent/studio.py": "b6a725102aae333e401ee247750d2913f5d4896f03380e825dccbc16b1329962",
+    "src/dynamic_subject_agent/timeline.py": "7667e5f100be559b4e012dbd4bf1ae814cb74470d9fee544bed5154233df993d",
+    "tests/test_natural_feedback.py": "9bc9410fadb5f9ba917a9f1b33ecf7b2780b83e47f9362b73ae26f55fe9d3de4"
+  },
+  "status": "unapproved",
+  "timeout_seconds": 30,
+  "version": "natural-feedback-review-s150-1"
+}

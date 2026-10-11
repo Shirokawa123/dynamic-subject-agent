@@ -684,6 +684,17 @@ class _ApplicationRouter:
             return SharedActivityResponse('unavailable',problem_code='independent-working-authority-required')
         return self._apply_shared_activity(request,SharedActivityStepRequest)
 
+    def preview_natural_feedback(self, text):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITY
+        self._require_open()
+        if (self._binding.provider_authority != FEEDBACK_AUTHORITY or type(text) is not str
+            or not text.strip() or len(text) > 1000 or '\x00' in text):
+            return SharedActivityResponse('unavailable', problem_code='natural-feedback-preview-unavailable')
+        try:
+            return self._host.preview_natural_feedback(self._binding, text)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='natural-feedback-preview-unverified')
+
     def preview_shared_activity_step(self):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         self._require_open()
@@ -1648,6 +1659,9 @@ class ApplicationFacade:
 
     def preview_shared_activity_step(self):
         return self.__router.preview_shared_activity_step()
+
+    def preview_natural_feedback(self, text):
+        return self.__router.preview_natural_feedback(text)
 
     def set_shared_experience(self, request):
         return self.__router.set_shared_experience(request)

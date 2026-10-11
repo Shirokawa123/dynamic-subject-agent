@@ -44,6 +44,7 @@ class ModelTaskKind(str, Enum):
     LIVING_ACTIVITY_REPLY = 'living-activity-reply'
     SHARED_ACTIVITY_CHOICE = "shared-activity-choice"
     SHARED_ACTIVITY_REPLY = "shared-activity-reply"
+    NATURAL_ACTIVITY_FEEDBACK = 'natural-activity-feedback'
     CHARACTER_ORIGINAL_WHOLE_REPLY = "character-original-whole-reply"
     CHARACTER_FIRST_LIFE_WHOLE_REPLY = "character-first-life-whole-reply"
     CHARACTER_FIRST_LIFE_FACT_EXPRESSION = "character-first-life-fact-expression"

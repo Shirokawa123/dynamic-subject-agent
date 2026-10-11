@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'natural-feedback-local-s150-1':
+        from dynamic_subject_agent.natural_feedback import feedback_contract
+        if contract != feedback_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact natural feedback LOCAL qualification required')
+        return 'feedback-local'
     if contract.get('version') == 'working-understanding-local-s145-1':
         from dynamic_subject_agent.working_understanding import working_contract
         if contract != working_contract({key:contract[key] for key in APPROVED_BINDING}):
@@ -170,6 +175,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == 'feedback-local':
+        return 'original-natural-feedback-local-s150-' + digest(contract)
     if variant == 'working-local':
         return 'original-working-understanding-local-s145-' + digest(contract)
     if variant=='working-live':
@@ -204,7 +211,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("shared-local", "shared-live", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
+    if variant in ("shared-local", "shared-live", "feedback-local", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)

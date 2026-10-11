@@ -1,5 +1,9 @@
 # 当前工作
 
+唯一执行切换为[S150：自然反馈局部修订与换题后继续活动](slice-150-natural-feedback-continuity.md)。2026-10-11用户明确要求自主完成此闭环，新增用途集中审；fetch后HEAD/origin/main=62cb694、tracked无差异，旧untracked保留。先固定标准及必要研究，再独立LOCAL可运行准备/准确预览/复核；未批自然反馈新用途前0remote/0credential，不操作旧入口/草稿或冻结S149文件。以下S149及以前只保留历史，不再是执行任务。
+
+S150 LOCAL准备阶段已验证收口：真实已审包9合成请求/9canonical/6check，反馈过两轮窗/真close-reopen0/实际新活动v3成立；首短nonce失败、早期工程失败保留。最终22新＋40必要旧行为相关检查/双复核接纳，晚选E1遗漏依赖P2已修。人物语义/真实新场景/LIVE sender未验，0remote/0credential；[报告](../reports/2026-10-11-slice-150/REPORT.md)、[准确两新用途](../experiments/s150/REVIEW.md)与先定首次≤10/0retry标准就绪，待集中用途批准后接精确LIVE再真实验收，不因准备通过称MVP。
+
 唯一执行：[S149：明确返工动作与新方案，检验新的反馈闭环](slice-149-rework-contract-continuity.md)。2026-10-10用户对S148结果及有限返工接缝/新场景下一步明确“那继续推进吧”。本地与最新main869beac一致，无tracked差异，全部untracked成果保留。沿既有用途做独立action-contract候选，不改旧资格/失败/root；先定[新色温场景](../experiments/s149/SCENE.md)，0retry/首失败结束，不复跑旧题至过。
 
 2026-10-11已批一次隔日动作收口：实际1新增尝试/0retry/complete，同人同Timeline、真实10:01:47 UTC8提交、原v3/source不变，暖主光/低亮冷边光准确接话，无成图/离线新事编造；累计10audit/12canonical、0新choice/share。单明确来源有限通过，不证明多日/超窗/隔日新选择或MVP；s149 native心跳已PAUSED，任何后续工作不由该一次任务扩权，详见[S149隔日报告](../reports/2026-10-10-slice-149/REPORT.md)。只更新事实并commit/push，不操作8793/8795/草稿或新场景。

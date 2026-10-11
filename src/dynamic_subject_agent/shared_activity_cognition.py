@@ -13,6 +13,7 @@ from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WIT
 from dynamic_subject_agent.shared_activity import (
     SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, LIVING_AUTHORITIES, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
     shared_variant_for_contract)
+from dynamic_subject_agent.shared_activity import FEEDBACK_AUTHORITY
 
 
 class SharedActivityCognition(OriginalWholeChatCognition):
@@ -27,6 +28,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if provider_authority == SHARED_LIVE_AUTHORITY:
             self.adapter_version = 'shared-activity-live-cognition-s139-1'
         self.contract = contract
+        self.supports_natural_feedback = provider_authority == FEEDBACK_AUTHORITY
         self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
         if provider_authority in LIVING_LIVE_AUTHORITIES:
             self.adapter_version = ('living-final-text-live-cognition-s144-1' if provider_authority == LIVING_FINAL_TEXT_AUTHORITY
@@ -34,6 +36,14 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         self.delivery, self.snapshot_loader = delivery, snapshot_loader
 
     def preflight(self, *, context, command):
+        if self.supports_natural_feedback:
+            from dynamic_subject_agent.original_whole_chat import contract_variant
+            if (self.gateway is None or self.gateway.capabilities.local is not True
+                or contract_variant(self.contract) != 'feedback-local'):
+                raise PreAdmissionRejected('natural-feedback-local-required', 'new purpose has no remote grant')
+            if type(command) is SharedActivityInput:
+                return
+            return OriginalWholeChatCognition.preflight(self, context=context, command=command)
         if self.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.original_whole_chat import contract_variant
             live = self.provider_authority in LIVING_LIVE_AUTHORITIES
@@ -92,6 +102,9 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             yield
 
     def choice_preview(self, identity, view):
+        if self.supports_natural_feedback:
+            from dynamic_subject_agent.natural_feedback import build_feedback_choice_preview
+            return build_feedback_choice_preview(self.envelope, identity, view, self.contract)
         if self.provider_authority in LIVING_AUTHORITIES:
             from dynamic_subject_agent.living_activity import build_living_choice_preview
             return build_living_choice_preview(self.envelope, identity, view, self.contract)
@@ -121,6 +134,8 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         return self.gateway.execute(task).value
 
     def propose(self, *, plan, context, command, basis):
+        if self.supports_natural_feedback:
+            return self._propose_feedback(plan=plan, context=context, command=command, basis=basis)
         if self.provider_authority in LIVING_AUTHORITIES:
             return self._propose_living(plan=plan, context=context, command=command, basis=basis)
         if type(command) not in (SharedActivityInput, WholeContextInput):
@@ -168,6 +183,50 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 code = 'provider-failed'
             raise CognitionFailedClosed('whole-reply', 'original-whole-' + code,
                 'The shared proposal failed; no activity event or automatic retry is produced.') from None
+
+    def _propose_feedback(self, *, plan, context, command, basis):
+        from dynamic_subject_agent.natural_feedback import build_feedback_preview, build_feedback_record
+        if type(command) not in (SharedActivityInput, WholeContextInput):
+            scope = whole_dialogue_scope(command.utterance)
+            if scope in (WITHDRAWAL, UNRESOLVED):
+                code = 'original-whole-history-withdrawn' if scope == WITHDRAWAL else 'original-whole-history-control-unresolved'
+                raise CognitionFailedClosed('history', code, 'Disclosure control is not sent.')
+        try:
+            authorization = self.authorization()
+            view = context.load_shared_activity(authorization)
+            choice = feedback = None
+            if type(command) is WholeContextInput:
+                text = CONTEXT_RECEIPT
+            elif type(command) is SharedActivityInput and command.input_kind != 'advance':
+                text = '已更新共同依据；原记录保留。'
+            else:
+                with self.guard(authorization):
+                    if type(command) is SharedActivityInput:
+                        task = ModelTask(ModelTaskKind.SHARED_ACTIVITY_CHOICE, self.choice_preview(context.runtime_identity, view))
+                        choice = self.gateway.execute(task).value
+                        text = '本次文字活动取舍已提交。'
+                    else:
+                        dialogue = context.load_character_dialogue(authorization.history_enabled)
+                        task = ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, build_feedback_preview(
+                            self.envelope, context.runtime_identity, command.utterance, dialogue,
+                            authorization.history_enabled, view, self.contract))
+                        feedback = self.gateway.execute(task).value
+                        text = feedback['reply_text']
+            if self.authorization() != authorization:
+                raise ShareAuthorizationChanged('feedback-source-permission-changed')
+            record = build_feedback_record(view, command=command, authorization=authorization,
+                head_sequence=plan.expected_basis.head_sequence+1, choice=choice, proposal=feedback)
+            if record.kind == 'decision':
+                text = record.result.event.summary
+            proposal = self._bounded_noop_proposal(context=context, basis=basis,
+                experience_summary='LOCAL自然反馈与有来源文字方案；不形成永久偏好或成图。',
+                expression_candidate=ExpressionCandidate(text, 'zh'))
+            return replace(proposal, shared_record=record)
+        except CognitionFailedClosed:
+            raise
+        except Exception:
+            raise CognitionFailedClosed('whole-reply', 'original-whole-structured-choice-invalid',
+                'Feedback proposal failed closed; no plan change or retry.') from None
 
     def _propose_living(self, *, plan, context, command, basis):
         from dynamic_subject_agent.living_activity import (

@@ -1,0 +1,39 @@
+{
+  "canonical": 9,
+  "character_effect": "not-validated; synthetic intent/replies cannot establish natural understanding",
+  "credential_reads": 0,
+  "engineering": {
+    "after_review_fix": "3pass including new late-E1 regression",
+    "corrected_assertion": "1pass; independent plan unaffected by history-off",
+    "distinct_final_behavior_cases": 62,
+    "final_feedback": "21pass",
+    "first_fixed_feedback_tests": "17pass",
+    "initial_tests": "16fail/1pass: missing runtime contract closure",
+    "selected_run": "59pass/1incorrect-assertion-fail",
+    "unaffected_compatibility_cases": 40
+  },
+  "local": {
+    "actual_next_activity_changed": true,
+    "exact_partial_revision": true,
+    "feedback_outside_recent_window": true,
+    "preview_matches_execution": true,
+    "reopen_zero_model_same_identity": true,
+    "reply_receives_current_plan": true
+  },
+  "local_tasks": 9,
+  "pending_refusals": 9,
+  "remote_calls": 0,
+  "review": {
+    "basis": "f09dd24a840082d19dea10c0e0f8cce3bf8b31764d3f151be20f0c86d3e518f6",
+    "correctness": "one-P2-source-dependency-fixed-and-rechecked",
+    "specification": "accepted"
+  },
+  "scenario": {
+    "local_first": "stopped-before-gap-task; 4synthetic tasks/4publications; malformed nonce",
+    "local_validated": "9synthetic tasks/9publications/6checks",
+    "real_first": "not-executed-unapproved",
+    "real_next_day": "not-in-this-stage"
+  },
+  "stage": "LOCAL-preparation",
+  "status": "complete-remote-purpose-unapproved"
+}

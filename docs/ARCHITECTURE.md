@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-150：独立LOCAL自然反馈局部修订
+
+新natural-feedback-local authority/Manifest/schema8沿SharedActivityRecord及Publication复用原canonical，旧root/资格/字节不升级。普通Facade消息通过新NATURAL_ACTIVITY_FEEDBACK联合提议chat/clarify/revise及自然正文；Python仅对当前有效plan核版本/basis/权限、逐字唯一片段/不重叠/真实变化，保留未改文字、全部本次实际E1/plan依赖和当前真实F原话，原子发表并核正文一致。chat/clarify是活动NoOp；失败不发表，冷prepared重算/原nonce零模型保持。仅最新有效且支持当前plan的F1投影，换源/停用/历史关闭/cutoff/旧派生轮整项过滤，独立新方案不带回不支持它的旧反馈；8来源/4编辑是当前有界合同而非永久产品限制。
+
+实际已审包LOCAL首短nonce拒绝保留，独立完成9合成/9提交/3topic过窗/真重开0/新活动v3/6check，22新＋40受影响旧最终相关检查及双复核接纳，晚选E1依赖遗漏P2已修。0新remote/0credential，不证自然语义或人物效果；准确feedback联合提议与choice新增F1用途、纯wire/Pending拒绝和未执行真实首次见[S150报告](reports/2026-10-11-slice-150/REPORT.md)。旧8793/8795/冻结S149与调度保持，不启新持续服务或迁移。
+
 ### Slice-149：同用途动作合同技术候选与新反馈场景
 
 独立action-contract保持S142/S144数据/协议/slot与同schema6/能力Manifest，只替换choice动作段与不授资格的null示例；新合同/version/grant/choice pin/audit/publication key隔离，旧资格/策略/root/失败不变。family living-final-text-live显式复用相同业务能力，Authority从exact contract辨audit变体；rework非null仍拒，不丢plan或改成revise。新empty entry的准确health闭集已补，Facade/页面与恢复复用，正式8795持续启动尚待具体批准。

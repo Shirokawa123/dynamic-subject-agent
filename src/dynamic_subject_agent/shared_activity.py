@@ -10,6 +10,9 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFieldDiff, adjudicate_life, validate_plan, event_summary
 
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
+FEEDBACK_AUTHORITY = 'original-natural-feedback-local-s150-1'
+FEEDBACK_INTENT = 'natural-feedback-system-input'
+FEEDBACK_RUNTIME_CONTRACT = 'original-natural-feedback-cycle-s150-1'
 SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
 LIVING_AUTHORITY = 'original-living-activity-local-s142-1'
 LIVING_LIVE_AUTHORITY = 'original-living-activity-deepseek-s142-1'
@@ -25,7 +28,7 @@ LIVING_LIVE_AUTHORITIES = (LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY)
 LIVING_AUTHORITIES = (LIVING_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
 LIVING_INTENT = 'living-activity-system-input'
 LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
-SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *LIVING_AUTHORITIES, *WORKING_AUTHORITIES)
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, FEEDBACK_AUTHORITY, *LIVING_AUTHORITIES, *WORKING_AUTHORITIES)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
@@ -131,8 +134,10 @@ def shared_reply_policy(technical_variant="baseline"):
 def shared_variant_for_contract(contract):
     """Verify the whole canonical witness before choosing expression text."""
     from dynamic_subject_agent.original_whole_chat import contract_variant
-    if contract_variant(contract) not in ('shared-local', 'shared-live'):
+    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local'):
         raise ValueError('exact shared qualification required')
+    if contract_variant(contract) == 'feedback-local':
+        return 'self-directed-activity'
     return {SHARED_EXPRESSION_VERSION: 'natural-expression',
         SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')
 
@@ -242,6 +247,7 @@ class SharedActivityRecord:
     dialogue_dependencies: tuple[int, ...] | None = None
     living: dict | None = None
     working: dict | None = None
+    feedback: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -335,6 +341,9 @@ def decode_record(value):
     if value.get('working') is not None:
         from dynamic_subject_agent.working_understanding import validate_working
         validate_working(value['working'])
+    if value.get('feedback') is not None:
+        from dynamic_subject_agent.natural_feedback import validate_feedback
+        validate_feedback(value['feedback'])
     return SharedActivityRecord(**value)
 
 
@@ -371,6 +380,9 @@ def initial_record():
 def visible_state(record, *, enabled, cutoff):
     source = record.source if enabled and record.source and record.source.source_head_sequence > cutoff else None
     valid = {source.source_key} if source else set()
+    if record.feedback is not None:
+        from dynamic_subject_agent.natural_feedback import valid_feedback_sources
+        valid.update(valid_feedback_sources(record, enabled, cutoff))
     if record.working is not None:
         from dynamic_subject_agent.working_understanding import working_valid_sources
         valid.update(working_valid_sources(record, enabled, cutoff))
