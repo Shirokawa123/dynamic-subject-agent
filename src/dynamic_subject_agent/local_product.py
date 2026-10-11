@@ -782,7 +782,7 @@ def open_natural_feedback_product_live(config, *, identity_id, grant, audit_path
     adapter = DeepSeekNaturalFeedbackAdapter(transport=transport, delivery=delivery,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID), observations=observations)
     cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter),
-        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_SCOPED_AUTHORITY if technical_variant in ('scoped','intent-only') else FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_SCOPED_AUTHORITY if technical_variant in ('scoped','intent-only','multi-span') else FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
         snapshot_loader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)

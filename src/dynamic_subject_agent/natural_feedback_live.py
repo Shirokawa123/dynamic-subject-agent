@@ -59,6 +59,8 @@ def feedback_grant_variant(grant):
     if type(grant) is NaturalFeedbackScopedDevelopmentGrant:return 'scoped'
     from dynamic_subject_agent.natural_feedback_intent import NaturalFeedbackIntentDevelopmentGrant
     if type(grant) is NaturalFeedbackIntentDevelopmentGrant:return 'intent-only'
+    from dynamic_subject_agent.natural_feedback_multispan import NaturalFeedbackMultispanDevelopmentGrant
+    if type(grant) is NaturalFeedbackMultispanDevelopmentGrant:return 'multi-span'
     raise ValueError('exact approved feedback grant required')
 
 
@@ -73,6 +75,9 @@ def feedback_live_contract_for_variant(binding,technical_variant='baseline'):
     if technical_variant=='intent-only':
         from dynamic_subject_agent.natural_feedback_intent import intent_contract
         return intent_contract(binding)
+    if technical_variant=='multi-span':
+        from dynamic_subject_agent.natural_feedback_multispan import multispan_contract
+        return multispan_contract(binding)
     raise ValueError('closed feedback LIVE variant required')
 
 
@@ -81,6 +86,7 @@ def feedback_variant_for_contract(contract):
     if contract_variant(contract) not in ('feedback-live','feedback-scoped-live'):raise ValueError('exact feedback LIVE contract required')
     if contract['version']=='natural-feedback-scoped-live-s152-1':return 'scoped'
     if contract['version']=='natural-feedback-intent-live-s153-1':return 'intent-only'
+    if contract['version']=='natural-feedback-multispan-live-s154-1':return 'multi-span'
     from dynamic_subject_agent.natural_feedback_budget import BUDGET_VERSION
     return 'direct-final' if contract['version']==BUDGET_VERSION else 'baseline'
 
@@ -124,9 +130,17 @@ class NaturalFeedbackIntentCallAudit(NaturalFeedbackScopedCallAudit):
             development_authorization=INTENT_DEVELOPMENT,feedback_policy_sha=INTENT_POLICY_SHA)
 
 
+class NaturalFeedbackMultispanCallAudit(NaturalFeedbackIntentCallAudit):
+    @staticmethod
+    def configuration():
+        from dynamic_subject_agent.natural_feedback_multispan import MULTISPAN_DEVELOPMENT
+        return dict(NaturalFeedbackIntentCallAudit.configuration(),version='natural-feedback-multispan-audit-s154-1',
+            development_authorization=MULTISPAN_DEVELOPMENT,edit_construction='complete-bounded-unique-interval-cover-1')
+
+
 def _audit_type(technical_variant):
-    if technical_variant not in ('baseline','direct-final','scoped','intent-only'):raise ValueError('closed feedback audit variant required')
-    return NaturalFeedbackIntentCallAudit if technical_variant=='intent-only' else NaturalFeedbackScopedCallAudit if technical_variant=='scoped' else NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
+    if technical_variant not in ('baseline','direct-final','scoped','intent-only','multi-span'):raise ValueError('closed feedback audit variant required')
+    return NaturalFeedbackMultispanCallAudit if technical_variant=='multi-span' else NaturalFeedbackIntentCallAudit if technical_variant=='intent-only' else NaturalFeedbackScopedCallAudit if technical_variant=='scoped' else NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
 
 
 def open_natural_feedback_audit(path, *, initialize=False, technical_variant='baseline'):

@@ -34,6 +34,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 else 'natural-feedback-local-cognition-s150-1')
             if provider_authority==FEEDBACK_SCOPED_AUTHORITY:self.adapter_version='natural-feedback-scoped-cognition-s152-1'
             if contract is not None and contract['version']=='natural-feedback-intent-live-s153-1':self.adapter_version='natural-feedback-intent-cognition-s153-1'
+            if contract is not None and contract['version']=='natural-feedback-multispan-live-s154-1':self.adapter_version='natural-feedback-multispan-cognition-s154-1'
         self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
         if provider_authority in LIVING_LIVE_AUTHORITIES:
             self.adapter_version = ('living-final-text-live-cognition-s144-1' if provider_authority == LIVING_FINAL_TEXT_AUTHORITY

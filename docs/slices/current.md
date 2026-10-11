@@ -1,5 +1,9 @@
 # 当前工作
 
+唯一执行[S154：多跨度构造与接续](slice-154-multispan-continuity.md)。用户明确先修多跨度/保持原长度与其他照旧、新未见首景/保失败不重抽、授权内自主提交推送；fetch后03a1b64与main一致、tracked干净、旧未提交/失败全保。先定≤4/160/240/唯一不重叠完整覆盖及exact frame，独立multi-span技术资格沿同已批用途/材料/slot，旧S153构造不升级；工程复核commit/push后只执行原创青台→禾台十步≤10首次0retry/首失败终态，以下为历史。
+
+S154工程验证收口：新13＋旧43核心56/2新＋2旧执行器4模拟、双只读复核接纳，旧S153原失败仍拒/新离线4短段完整但0重发0改判，所有旧成果保留。原160/240/≤4/唯一不重叠与expectedplan保护不放宽；0实际新remote/credential。commit/push后仅冻结新首景，区分真实同字段长距分段与跨字段多项，不把模拟/短稿当长现场证明，见[REPORT](../reports/2026-10-11-slice-154/REPORT.md)。
+
 唯一执行[S153：Python构造明确替换与接续](slice-153-python-frame-continuity.md)。2026-10-11用户S152终态后明确继续；fetch后8e10a90与main一致、tracked干净/旧未提交和失败全保。先定raw两字段意图/正文，Python按独立frame构造仍满足旧唯一/真实变化/大小界限的edit；未知范围不effect，不放宽旧协议/重发首题。沿同两已批用途/资料/slot，新独立技术资格/新纸鹤→布偶首景≤10首次0retry，工程复核提交推送后真实执行，首失败终止，以下S152及以前为历史。
 
 S153工程验证收口：52核心新旧/6必要权限回执（3为delta复核）/4执行器模拟与双复核接纳，旧失败原decoder仍拒0重发；无contract装配探测及测试短nonce失败全保并修。必要history状态audit分派漏项关闭，独立新协议不升级旧root/常驻入口；0实际新调用/凭据，commit/push后仅冻结新首景，真实效果尚未验，见[REPORT](../reports/2026-10-11-slice-153/REPORT.md)。
