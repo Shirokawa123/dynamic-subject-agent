@@ -6,7 +6,7 @@ from dynamic_subject_agent.deepseek import (
     DeepSeekTransport, _post_json_reply_content, DeepSeekResponseDiagnosticFailure, DEEPSEEK_ENDPOINT,
     DEEPSEEK_TIMEOUT_SECONDS, DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID)
 from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
-from dynamic_subject_agent.first_life_reply_live_provider import _ObservedTransport
+from dynamic_subject_agent.natural_feedback_output_metadata import BudgetObservedTransport
 from dynamic_subject_agent.model_gateway import (
     ProviderAdapter, ProviderCapabilities, StructuredOutputMode, ModelTaskKind, ModelResult, ModelGatewayFailure)
 from dynamic_subject_agent.frozen_attempt import canonical_json
@@ -36,7 +36,7 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
         observed = value = code = None
         try:
             actual = self.delivery.consume(task)
-            request = natural_feedback_remote_request_preview(actual)
+            request = natural_feedback_remote_request_preview(actual,technical_variant=self.delivery.technical_variant)
             wire = canonical_json(request['body']).encode()
             if sha256(wire).hexdigest() != request['wire_sha256']:
                 raise ValueError('exact feedback wire changed')
@@ -46,7 +46,7 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
             except Exception: pass
             raise ModelGatewayFailure('delivery-unverified') from None
         try:
-            observed = _ObservedTransport(self.transport)
+            observed = BudgetObservedTransport(self.transport)
             value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
                 require_complete=True, discard_reasoning=True, safe_diagnostics=True)
             payload = actual.payload['payload']
@@ -76,7 +76,7 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
             code, row['status'] = 'audit-failed', 'failed-closed'
         if code is not None: row['error_code'] = code
         if observed is not None:
-            row.update({key: observed.row[key] for key in ('model', 'usage', 'finish_reason')})
+            row.update({key: observed.row[key] for key in ('model', 'usage', 'finish_reason','reasoning_tokens','final_chars')})
         row['elapsed_seconds'] = max(0.0, perf_counter() - started)
         self.observations.append(row)
         if code is not None: raise ModelGatewayFailure(code)

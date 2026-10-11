@@ -51,6 +51,28 @@ def feedback_live_contract(binding):
             approved_review_basis=APPROVED_FEEDBACK_REVIEW, protocol_sha=APPROVED_FEEDBACK_PROTOCOL))
 
 
+def feedback_grant_variant(grant):
+    if type(grant) is ApprovedNaturalFeedbackGrant:return 'baseline'
+    from dynamic_subject_agent.natural_feedback_budget import NaturalFeedbackBudgetDevelopmentGrant
+    if type(grant) is NaturalFeedbackBudgetDevelopmentGrant:return 'direct-final'
+    raise ValueError('exact approved feedback grant required')
+
+
+def feedback_live_contract_for_variant(binding,technical_variant='baseline'):
+    if technical_variant=='baseline':return feedback_live_contract(binding)
+    if technical_variant=='direct-final':
+        from dynamic_subject_agent.natural_feedback_budget import feedback_budget_contract
+        return feedback_budget_contract(binding)
+    raise ValueError('closed feedback LIVE variant required')
+
+
+def feedback_variant_for_contract(contract):
+    from dynamic_subject_agent.original_whole_chat import contract_variant
+    if contract_variant(contract)!='feedback-live':raise ValueError('exact feedback LIVE contract required')
+    from dynamic_subject_agent.natural_feedback_budget import BUDGET_VERSION
+    return 'direct-final' if contract['version']==BUDGET_VERSION else 'baseline'
+
+
 class NaturalFeedbackCallAudit(DevelopmentCallAudit):
     purposes = PURPOSES
 
@@ -65,18 +87,28 @@ class NaturalFeedbackCallAudit(DevelopmentCallAudit):
             return tuple(dict(zip(fields, row[:-1], strict=True)) for row in self._verified(db))
 
 
-def open_natural_feedback_audit(path, *, initialize=False):
+class NaturalFeedbackBudgetCallAudit(NaturalFeedbackCallAudit):
+    @staticmethod
+    def configuration():
+        from dynamic_subject_agent.natural_feedback_budget import BUDGET_DEVELOPMENT,BUDGET_PROTOCOL_SHA
+        return dict(NaturalFeedbackCallAudit.configuration(),version='natural-feedback-direct-final-call-audit-s151-1',
+            development_authorization=BUDGET_DEVELOPMENT,protocol_sha=BUDGET_PROTOCOL_SHA)
+
+
+def open_natural_feedback_audit(path, *, initialize=False, technical_variant='baseline'):
+    if technical_variant not in ('baseline','direct-final'):raise ValueError('closed feedback audit variant required')
+    audit_type=NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
     if not isinstance(path, Path) or not path.is_absolute():
         raise ValueError('absolute independent feedback audit required')
     witness = path.with_name(path.name + '-initialized')
     if witness.exists():
         if not witness.is_dir() or not path.is_dir():
             raise ValueError('feedback audit witness missing')
-        return NaturalFeedbackCallAudit(path)
+        return audit_type(path)
     if path.exists() or not initialize:
         raise ValueError('feedback audit cannot be recreated or repurposed')
     witness.mkdir(parents=True, exist_ok=False)
-    return NaturalFeedbackCallAudit(path, initialize=True)
+    return audit_type(path, initialize=True)
 
 
 @dataclass(frozen=True)
@@ -91,10 +123,12 @@ class _FeedbackTicket:
 class NaturalFeedbackDelivery:
     def __init__(self, *, grant, audit, contract, state_path):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if type(grant) is not ApprovedNaturalFeedbackGrant or type(audit) is not NaturalFeedbackCallAudit:
+        self.technical_variant=feedback_grant_variant(grant)
+        expected_audit=NaturalFeedbackBudgetCallAudit if self.technical_variant=='direct-final' else NaturalFeedbackCallAudit
+        if type(audit) is not expected_audit:
             raise ValueError('approved feedback grant and independent audit required')
         grant.validate()
-        if contract != feedback_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+        if contract != feedback_live_contract_for_variant({key: contract[key] for key in APPROVED_BINDING},self.technical_variant):
             raise ValueError('exact feedback LIVE contract required')
         self.grant, self.audit, self.contract = grant, audit, deepcopy(contract)
         self.run_digest = digest(dict(contract=contract, state_path=str(state_path.resolve()), audit_path=str(audit.path.resolve())))
@@ -102,7 +136,7 @@ class NaturalFeedbackDelivery:
 
     def _validate_contract(self):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if self.contract != feedback_live_contract({key: self.contract[key] for key in APPROVED_BINDING}):
+        if self.contract != feedback_live_contract_for_variant({key: self.contract[key] for key in APPROVED_BINDING},self.technical_variant):
             raise ValueError('current approved feedback contract changed')
 
     def claim(self, operation, task, rebuild):
@@ -116,7 +150,7 @@ class NaturalFeedbackDelivery:
             if task.payload != rebuild():
                 raise ValueError('feedback request differs from canonical material')
             from dynamic_subject_agent.natural_feedback_remote_preview import natural_feedback_remote_request_preview
-            natural_feedback_remote_request_preview(task)
+            natural_feedback_remote_request_preview(task,technical_variant=self.technical_variant)
             request = digest(task.payload)
             attempt = digest(dict(run=self.run_digest, operation=operation, purpose=task.kind.value))
             self.audit.claim(attempt, request, purpose=task.kind.value, run_digest=self.run_digest)

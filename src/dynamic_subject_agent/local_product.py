@@ -767,17 +767,16 @@ def open_natural_feedback_product_local(config, *, gateway, identity_id, binding
 
 def open_natural_feedback_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None):
     from dynamic_subject_agent.shared_activity import FEEDBACK_LIVE_AUTHORITY
-    from dynamic_subject_agent.natural_feedback_live import ApprovedNaturalFeedbackGrant, NaturalFeedbackDelivery, open_natural_feedback_audit
+    from dynamic_subject_agent.natural_feedback_live import feedback_grant_variant, NaturalFeedbackDelivery, open_natural_feedback_audit
     from dynamic_subject_agent.natural_feedback_provider import DeepSeekNaturalFeedbackAdapter
     from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
-    if type(grant) is not ApprovedNaturalFeedbackGrant:
-        raise ValueError('exact approved natural feedback grant required')
+    technical_variant=feedback_grant_variant(grant)
     grant.validate()
     if not isinstance(audit_path, Path) or not audit_path.is_absolute():
         raise ValueError('absolute independent feedback audit required')
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_natural_feedback_live(grant=grant, audit_path=audit_path, identity_id=identity_id)
-    delivery = NaturalFeedbackDelivery(grant=grant, audit=open_natural_feedback_audit(audit_path),
+    delivery = NaturalFeedbackDelivery(grant=grant, audit=open_natural_feedback_audit(audit_path,technical_variant=technical_variant),
         contract=loaded.qri.reviewed_chat_contract, state_path=config.state_path)
     transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
     adapter = DeepSeekNaturalFeedbackAdapter(transport=transport, delivery=delivery,

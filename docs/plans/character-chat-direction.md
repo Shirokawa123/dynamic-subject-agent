@@ -1,5 +1,7 @@
 # 角色聊天产品方向记录
 
+2026-10-11 S151继续决定：用户要求“先定位并解决输出截断，再用没跑过的新场景验证‘一句自然反馈修订→换题→继续活动’”，明确保留本次失败、不重抽同题至过，已有授权内自主完成提交推送、新用途集中问。承接为[S151](../slices/slice-151-output-budget-new-continuity.md)；同S150两已批用途、Sagiri30/4、DeepSeek/default Windows slot，准许必要同用途诊断/协议技术候选与新首景，旧S150不补发/不改失败。助手暂选feedback direct-final、choice保持high作为可证伪假设，不是永久关闭思考或产品取舍；不新增数据/触发用途、服务/通知/调度、迁移或人格重写。
+
 2026-10-11 S150验收事实（助手判断，不新增用户决定）：4真实首次/0retry，普通一句反馈自动改暖v2、E1＋F来源/非光照细节准确保留；第4含糊反馈空final/4096/response-truncated终止，后6步未执行，完整真实换题接续尚未证明。原focus逐字标准不适配初稿光照内容且仍记未达，反馈输出前增补语义项并列评分；原题/标准/policy不改写，不补发或复跑至过。下一必要工作为响应截断诊断及未见场景补验；W1本阶段来源优先/可选、长期人物目标保持，详见[S150报告](../reports/2026-10-11-slice-150/REPORT.md)。
 
 2026-10-11 S150准确用途批准：用户对[集中审阅](../experiments/s150/REVIEW.md)明确答复“批准这两项，继续真实验收”，绑定basis `f09dd24a840082d19dea10c0e0f8cce3bf8b31764d3f151be20f0c86d3e518f6`。同已审Sagiri30/4/DeepSeek/default Windows slot，新增当前消息/可关闭两完整轮/有效方案/E1/F1的单次自然反馈chat/clarify/revise联合提议；手动choice增加最近有效F1。原SCENE首次≤10、每stage1/0retry、首技术失败停止，全部首次正文保本机；独立新LIVE资格/审计/开发Timeline，不升级LOCAL/旧root。无新服务/后台调度/通知、迁移、永久偏好/人格重写/Reflection。原review状态和pins保持，批准由本条/current及新exact Grant承接。

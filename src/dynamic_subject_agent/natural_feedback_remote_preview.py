@@ -9,7 +9,7 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.natural_feedback import FEEDBACK_POLICY, feedback_choice_policy
 
 
-def natural_feedback_remote_request_preview(task):
+def natural_feedback_remote_request_preview(task, *, technical_variant='baseline'):
     if type(task) is not ModelTask or task.kind not in (ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, ModelTaskKind.SHARED_ACTIVITY_CHOICE):
         raise ValueError('exact candidate feedback or activity choice task required')
     expected = FEEDBACK_POLICY if task.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK else feedback_choice_policy()
@@ -17,8 +17,8 @@ def natural_feedback_remote_request_preview(task):
         or task.payload['policy'] != expected):
         raise ValueError('exact candidate policy required')
     validate_payload(task.kind, task.payload['payload'])
-    from dynamic_subject_agent.character_communication_trial_provider import communication_protocol
-    protocol = communication_protocol('thinking-high', 'low')
+    from dynamic_subject_agent.natural_feedback_budget import feedback_protocol
+    protocol = feedback_protocol(task.kind, technical_variant)
     body = dict(model=protocol['model'], messages=[dict(role='system', content=expected),
         dict(role='user', content=canonical_json(task.payload['payload']))], **protocol['expression'])
     wire = canonical_json(body).encode()

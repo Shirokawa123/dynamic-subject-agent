@@ -380,8 +380,8 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
             from dynamic_subject_agent.working_understanding_live import open_working_understanding_audit,working_variant_for_authority
             open_working_understanding_audit(Path(metadata['audit_path']),technical_variant=working_variant_for_authority(qri.provider_authority)).counts()
         elif qri.provider_authority == FEEDBACK_LIVE_AUTHORITY:
-            from dynamic_subject_agent.natural_feedback_live import open_natural_feedback_audit
-            open_natural_feedback_audit(Path(metadata['audit_path'])).counts()
+            from dynamic_subject_agent.natural_feedback_live import open_natural_feedback_audit,feedback_variant_for_contract
+            open_natural_feedback_audit(Path(metadata['audit_path']),technical_variant=feedback_variant_for_contract(qri.reviewed_chat_contract)).counts()
         elif qri.provider_authority == SHARED_LIVE_AUTHORITY:
             from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
             open_shared_activity_audit(Path(metadata["audit_path"])).counts()
@@ -1356,11 +1356,10 @@ class LocalIdentityAuthority:
     @_registry_mutation
     def activate_natural_feedback_live(self, *, grant, audit_path, identity_id):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        from dynamic_subject_agent.natural_feedback_live import ApprovedNaturalFeedbackGrant, feedback_live_contract
-        if type(grant) is not ApprovedNaturalFeedbackGrant:
-            raise ValueError('typed exact S150 approval required')
+        from dynamic_subject_agent.natural_feedback_live import feedback_grant_variant,feedback_live_contract_for_variant
+        technical_variant=feedback_grant_variant(grant)
         grant.validate()
-        return self._activate_context_identity(feedback_live_contract(APPROVED_BINDING), audit_path, identity_id)
+        return self._activate_context_identity(feedback_live_contract_for_variant(APPROVED_BINDING,technical_variant), audit_path, identity_id)
 
     @_registry_mutation
     def activate_working_understanding_local(self, *, binding, identity_id):
@@ -1425,8 +1424,8 @@ class LocalIdentityAuthority:
         if (identity.qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY or existing is None and record.get('host_location') is not None):
             raise RuntimeError('whole-context-requires-new-unserved-identity')
         if feedback_live:
-            from dynamic_subject_agent.natural_feedback_live import open_natural_feedback_audit
-            open_natural_feedback_audit(audit_path, initialize=existing is None)
+            from dynamic_subject_agent.natural_feedback_live import open_natural_feedback_audit,feedback_variant_for_contract
+            open_natural_feedback_audit(audit_path, initialize=existing is None,technical_variant=feedback_variant_for_contract(contract))
         elif working_live:
             from dynamic_subject_agent.working_understanding_live import open_working_understanding_audit
             open_working_understanding_audit(audit_path,initialize=existing is None,technical_variant='fact-faithful' if working_fact else 'baseline')

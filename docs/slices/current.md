@@ -1,5 +1,7 @@
 # 当前工作
 
+唯一执行[S151：输出预算诊断与未见自然反馈接续](slice-151-output-budget-new-continuity.md)。用户2026-10-11明确继续截断定位/修复、新场景、保首失败/不重抽、授权内自主commit/push。fetch后5522160与main一致，tracked无差异、旧成果保留。沿S150已批两用途/材料/Provider/slot做direct-final独立技术候选，先定4格新消息诊断与空间纹理新首景标准；不放宽length接受/0retry，不重启S150首景/旧root或新服务。以下S150仅历史。
+
 S150本轮真实首景已终态收口：工程6ef4be9已push后4首次/0retry，3complete/1response-truncated、4canonical，真实一句反馈自动改暖v2并保E1＋F/非光照细节。第4含糊反馈HTTP200/空final/4096tokens未发表，后续条件/3topic/重开后choice/结果6步未执行；不能称真实完整闭环。初稿focus含冷主光，原focus逐字标准不适配且未达；第三输出前另记语义补充并并列评分，不改冻结场景/策略或补发。只读核canonical/audit/raw通过0新请求，完整证据见[REPORT](../reports/2026-10-11-slice-150/REPORT.md)。本轮结束、保首失败，下一必要工作是有界响应截断诊断后用未见场景补接续，不扩W1/服务/调度/旧root；提交推送当前事实。
 
 2026-10-11用户对S150集中问题明确答复“批准这两项，继续真实验收”，准确绑定review basis `f09dd24a840082d19dea10c0e0f8cce3bf8b31764d3f151be20f0c86d3e518f6`。基线61c2e30已fetch与main一致、tracked干净，旧未提交成果保留。按原冻结两用途/资料/Provider/slot/schema8/策略协议接独立LIVE资格与审计；必要工程/复核commit/push后，执行原SCENE≤10首次/每stage1/0retry/首技术失败停，全final保本机。不启动服务或操作旧8793/8795/草稿/调度；批准事实由本条承接，原unapproved审阅对象保持冻结。

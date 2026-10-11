@@ -1,5 +1,8 @@
 # 产品架构
 
+### Slice-151：反馈正文预算的独立技术候选
+
+用户继续截断修复及未见场景，同S150已批两数据用途/材料/slot；新增direct-final contract/开发Grant/pin/audit/publication key，显式复用feedback-live family/schema8，仅feedback thinking disabled/无effort，choice仍high，原4K/policy/JSON/投影/0retry/裁决和旧grant不改。安全标量finish/reasoning_tokens/final_chars观测不读存CoT；missing不伪0。9新＋12LIVE、3新执行器＋4旧最终相关检查与双复核接纳；固定四格只读诊断无Publication，完整结果与人工语义eligible绑定后才可运行新10stage，缺门槛0opening/0模型。真实结果另见[S151报告](reports/2026-10-11-slice-151/REPORT.md)，不以模拟预算路径当根因/人物证明。
 ### Slice-150：独立LOCAL自然反馈局部修订
 
 真实首景4首次/0retry、3模型complete/1截断失败、4Publication；普通一句反馈提出4光照局部替换并自动F来源发表v2，E1闭包/主体视点及非光照内容保持，reply等于canonical。原focus逐字标准因初稿含冷光不适配仍记未达；反馈输出前补充语义项并列有限通过。第4“再收一点”HTTP200/final空/4096/response-truncated未发表，后6步未执行，真实过窗新选择/完整闭环未证；SQLite只读全链/audit核验通过，不读key/CoT或重试，详见[S150真实结果](reports/2026-10-11-slice-150/REPORT.md)。

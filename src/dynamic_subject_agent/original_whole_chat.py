@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'natural-feedback-direct-final-live-s151-1':
+        from dynamic_subject_agent.natural_feedback_budget import feedback_budget_contract
+        if contract != feedback_budget_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact S151 feedback protocol qualification required')
+        return 'feedback-live'
     if contract.get('version') == 'natural-feedback-live-s150-1':
         from dynamic_subject_agent.natural_feedback_live import feedback_live_contract
         if contract != feedback_live_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -181,6 +186,8 @@ def _legacy_followup_contract(binding):
 def whole_publication_key(contract):
     variant = contract_variant(contract)
     if variant == 'feedback-live':
+        if contract['version']=='natural-feedback-direct-final-live-s151-1':
+            return 'original-natural-feedback-direct-final-s151-'+digest(contract)
         return 'original-natural-feedback-live-s150-' + digest(contract)
     if variant == 'feedback-local':
         return 'original-natural-feedback-local-s150-' + digest(contract)
