@@ -1,5 +1,7 @@
 # 当前工作
 
+S151本轮终态：新空间纹理首景6首次0retry/5complete1缺language失败/6canonical，全部stop无截断；真实一反馈改灰纹理v2，但错误删除应保留渐变光且回复矛盾，语义保留/准确修订未过，原标准不变。第6话题未发表，后4topic/过窗重开/新choice/接话未执行；与已收4格共10新请求，readonly原文/audit/canonical核验0调用，旧S150失败始终保留。预算候选仅开发选项，不称完整闭环；本轮有界结束，commit/push事实。下一必要工作为协议常量简化与修订保护范围后另见新场景补选择，不重抽本题/扩W1/服务/旧root，见[REPORT](../reports/2026-10-11-slice-151/REPORT.md)。
+
 S151工程5a5b1b2/1b30d3a已push；固定四格真实4首次/0retry/0人物发表，3complete/1baseline缺language，源权限/canonical/WAL不变，旧S150失败不动。Direct两格完整且语义2/2，126/99completion/推理细分None；未复现length，不宣称已证全部根因。不可覆盖eligible已绑定首次结果，诊断有界结束；commit/push本阶段后进入已冻结[空间纹理新首景](../experiments/s151/SCENE.md)，≤10首次0retry/首技术失败停，不再调诊断题。
 
 唯一执行[S151：输出预算诊断与未见自然反馈接续](slice-151-output-budget-new-continuity.md)。用户2026-10-11明确继续截断定位/修复、新场景、保首失败/不重抽、授权内自主commit/push。fetch后5522160与main一致，tracked无差异、旧成果保留。沿S150已批两用途/材料/Provider/slot做direct-final独立技术候选，先定4格新消息诊断与空间纹理新首景标准；不放宽length接受/0retry，不重启S150首景/旧root或新服务。以下S150仅历史。

@@ -2,6 +2,8 @@
 
 ### Slice-151：反馈正文预算的独立技术候选
 
+实际4格诊断3complete/1baseline漏language，direct两格stop/schema/语义可用而未复现length；新首景6首次/5complete/1漏language未发表，六stop无截断、6canonical/v2，灰纹理改到但未请求删渐变光，语义保留失败。后4步未执行，真实过窗后新选择仍未证；共10新0retry/readonly核验通过，候选限开发、非完整人物默认通过。before/after仅保跨度外原文，不能证明跨度内语义保护；固定语言字段生成冗余为后续具体缺口，不改旧合同/失败或本轮标准，见[S151报告](reports/2026-10-11-slice-151/REPORT.md)。
+
 用户继续截断修复及未见场景，同S150已批两数据用途/材料/slot；新增direct-final contract/开发Grant/pin/audit/publication key，显式复用feedback-live family/schema8，仅feedback thinking disabled/无effort，choice仍high，原4K/policy/JSON/投影/0retry/裁决和旧grant不改。安全标量finish/reasoning_tokens/final_chars观测不读存CoT；missing不伪0。9新＋12LIVE、3新执行器＋4旧最终相关检查与双复核接纳；固定四格只读诊断无Publication，完整结果与人工语义eligible绑定后才可运行新10stage，缺门槛0opening/0模型。真实结果另见[S151报告](reports/2026-10-11-slice-151/REPORT.md)，不以模拟预算路径当根因/人物证明。
 ### Slice-150：独立LOCAL自然反馈局部修订
 

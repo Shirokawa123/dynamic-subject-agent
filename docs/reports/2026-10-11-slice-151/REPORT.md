@@ -1,5 +1,19 @@
 # S151：输出预算诊断与未见自然反馈接续
 
+## 新首景终态：截断未再出现，但准确修订与完整闭环未通过
+
+固定新首景实际6首次/0retry，5audit complete/1failed-closed、6canonical为来源chat/零模型select/自选v1/自动F修订v2/含糊chat/条件chat。六响应均finish stop，completion依次128、1838（choice其中1533reasoning）、185、122、121、220；feedback reasoning细分未提供，不能伪0。没有截断或空final；第6首话题虽有388字完整JSON正文，但缺language，Python严格拒绝并未发表。当前v2保留；按首技术失败结束，不补字段、不重试、不另抽同题。
+
+后4步全部未执行：topic-gap-2、topic-gap-3、过两轮窗/真重开后的新choice、当前结果接话。第一次换题仅有未发表候选，不把它算成已成功换题；真实过窗/重开/继续活动仍未验证。四格诊断＋首景合计10新真实请求，0retry；旧S1504首/首失败保持。预算干预在这些新样本未触发旧length路径，不能据单场景宣称永不截断或完整功能修好。
+
+人物效果按原冻结语义标准：初始选择右侧原创抱膝少女、中景/稍低四分之三视点，以小可爱体块与空间重量为关注，明确左侧大片干净留白（2）；一句新反馈自动把左侧换浅灰细纹理（目标2），无复制plan或手选F。但是第二项edit将“只用一条极淡的地平线和一点渐变光暗示空间…”换成仅留地平线/纹理暗示空间，删了用户明确要求照旧的渐变光（保留约束0）。回复先说“光线都不动”又说“渐变光去掉”，存在可核矛盾（准确表达0）；自己的审美理由不能代替该修改的授权。没有改标准以接受它，也没有补发纠正直到通过。不能把这个语义越界归因于关闭thinking：本新场景没有相同完整链的原模式对照，原模式诊断也有字段遗漏。
+
+含糊“那个再调一下”虽intent=chat，正文具体询问纹理/地平线/主体等对象，没有猜改版本（澄清作用2）；但其复述仍沿此前“光线照旧/渐变去掉”的矛盾，不能当内容全准。未来拥挤书店条件没有修改v2，明确仅是假设（条件2）。普通表达较长、像构图咨询，初回复仍让用户先列主体而后续活动才自行选择（自然性1）；材料不支持的习惯/成图/离线新活动未补造，但不能证明长期自身生活。
+
+只读核验6audit的请求/全部首次final hash、5完整DTO output digest、active独立资格/同identity Timeline、6Publication全链和record digest、E1＋F源闭包、失败零发表一致；确认渐变光删除确实已进canonical。核验0模型/0credential，仅SQLite URI mode=ro，不对失败重新调用/改变状态。证据：[新首景metadata](../../../.artifacts/s151/new-scene-first/metadata.json)、[只读核验](../../../.artifacts/s151/new-scene-first/readonly-verification.json)、[初稿](../../../.artifacts/s151/new-scene-first/finals/initial-activity.json)、[唯一反馈及实际edits](../../../.artifacts/s151/new-scene-first/finals/natural-correction.json)、[含糊接话](../../../.artifacts/s151/new-scene-first/finals/ambiguous-feedback.json)、[条件接话](../../../.artifacts/s151/new-scene-first/finals/conditional-feedback.json)、[第6缺字段首final](../../../.artifacts/s151/new-scene-first/finals/topic-gap-1.json)。previews/audit/canonical-history同目录保全，公开仅[live-summary](live-summary.json)。
+
+本轮有界诊断结束。保留direct-final作为独立开发选项，限制结论为本次反馈输出预算路径改善，不推广为已完整通过的人物能力/默认入口。真实“准确修订→换题→继续”目标未达，工程字段/序列化通过不补人物效果。剩余两具体缺口：固定language常量仍要求模型重复生成而会漏；局部before/after验证只能保证跨度外文字不变，不能证明跨度内没有删掉用户要求保留的概念。下一必要交付应减少无必要的协议生成字段、明确修订保护范围并拒绝未请求变化，再用另一个未见场景补验后续选择；不把它扩成W1/记忆重构或放宽结构接纳。无新服务、调度、旧入口/草稿/数据迁移或新用途。
+
 ## 四格真实诊断收口
 
 工程5a5b1b2/1b30d3a已push后固定4格全执行，4真实首次/0retry/0人物Publication，旧source权限/canonical/WAL字节不变，S1504首/失败保持。结果：A-baseline stop/1246completion（1062reasoning）/302final字符，但缺language，结构拒绝；A-direct stop/126completion/231final，完整chat不改；B-direct stop/99completion/240final，完整revise，唯一将远景列车灯暖白→中性白；B-baseline stop/380completion（258reasoning）/267final，完整。3complete/1schema失败，全部首次正文/audit保本机。
