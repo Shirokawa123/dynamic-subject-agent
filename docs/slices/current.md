@@ -1,5 +1,9 @@
 # 当前工作
 
+唯一执行[S152：精简协议与独立可写frame](slice-152-compact-frame-continuity.md)。用户明确继续保护其他照旧/减少冗余字段、新未见场景、保失败/不放宽标准/不重抽、授权内自主提交。fetch后da4d0d5与main一致、tracked干净，旧成果保留。先定frame：明确引号对象替换外所有字节保护，未知scope澄清；暂限自动effect范围并说明影响，不永久取消自然反馈。沿已批同数据/两用途/slot单请求做独立资格，原失败仅离线，不转root/服务/草稿；以下S151为历史。
+
+S152工程验证收口：独立资格/三字段raw/本地六字段绑定、先定frame及最终Publication重算，14新＋21旧必要兼容/2新执行器＋3旧最终检查、两只读复核过；旧S151错误patch仅离线拒绝0调用，首次工程/fixture失败保留。0实际新remote/credential，工程commit/push后执行冻结新字牌首景十步≤10首次/0retry/首技术或保护失败结束；人物/真实接续尚未验，见[REPORT](../reports/2026-10-11-slice-152/REPORT.md)。
+
 S151本轮终态：新空间纹理首景6首次0retry/5complete1缺language失败/6canonical，全部stop无截断；真实一反馈改灰纹理v2，但错误删除应保留渐变光且回复矛盾，语义保留/准确修订未过，原标准不变。第6话题未发表，后4topic/过窗重开/新choice/接话未执行；与已收4格共10新请求，readonly原文/audit/canonical核验0调用，旧S150失败始终保留。预算候选仅开发选项，不称完整闭环；本轮有界结束，commit/push事实。下一必要工作为协议常量简化与修订保护范围后另见新场景补选择，不重抽本题/扩W1/服务/旧root，见[REPORT](../reports/2026-10-11-slice-151/REPORT.md)。
 
 S151工程5a5b1b2/1b30d3a已push；固定四格真实4首次/0retry/0人物发表，3complete/1baseline缺language，源权限/canonical/WAL不变，旧S150失败不动。Direct两格完整且语义2/2，126/99completion/推理细分None；未复现length，不宣称已证全部根因。不可覆盖eligible已绑定首次结果，诊断有界结束；commit/push本阶段后进入已冻结[空间纹理新首景](../experiments/s151/SCENE.md)，≤10首次0retry/首技术失败停，不再调诊断题。

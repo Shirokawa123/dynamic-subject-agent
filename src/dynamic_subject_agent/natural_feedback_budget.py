@@ -10,13 +10,13 @@ BUDGET_PROTOCOL_SHA='55a69fdb206af0ba4202ec025bc06ece483b409b3201de2405faa0ac4ae
 
 
 def feedback_protocol(kind,technical_variant='baseline'):
-    if technical_variant not in ('baseline','direct-final') or kind not in (
+    if technical_variant not in ('baseline','direct-final','scoped') or kind not in (
         ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,ModelTaskKind.SHARED_ACTIVITY_CHOICE):
         raise ValueError('closed feedback protocol kind and variant required')
     from dynamic_subject_agent.character_communication_trial_provider import communication_protocol
     base=communication_protocol('thinking-high','low')
     expression=dict(base['expression'])
-    if technical_variant=='direct-final' and kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+    if technical_variant in ('direct-final','scoped') and kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
         expression.pop('reasoning_effort')
         expression['thinking']={'type':'disabled'}
     return dict(model=base['model'],endpoint=base['endpoint'],timeout_seconds=base['timeout_seconds'],

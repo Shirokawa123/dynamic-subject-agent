@@ -154,12 +154,12 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
         from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY
         from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
-        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_LIVE_AUTHORITIES, WORKING_AUTHORITIES, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES
+        from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, SHARED_AUTHORITIES, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_LIVE_AUTHORITIES, WORKING_AUTHORITIES, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES, FEEDBACK_SCOPED_AUTHORITY
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
             expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
-            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, *LIVING_LIVE_AUTHORITIES, *WORKING_LIVE_AUTHORITIES)
+            live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_SCOPED_AUTHORITY, *LIVING_LIVE_AUTHORITIES, *WORKING_LIVE_AUTHORITIES)
             if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
                 or cognition.gateway.capabilities.local is not (not live)
@@ -170,7 +170,7 @@ def _open_loaded_local_product(
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
                 from dynamic_subject_agent.working_understanding_live import WorkingUnderstandingDelivery
                 from dynamic_subject_agent.natural_feedback_live import NaturalFeedbackDelivery
-                expected_delivery = NaturalFeedbackDelivery if loaded.qri.provider_authority == FEEDBACK_LIVE_AUTHORITY else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
+                expected_delivery = NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -766,7 +766,7 @@ def open_natural_feedback_product_local(config, *, gateway, identity_id, binding
 
 
 def open_natural_feedback_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None):
-    from dynamic_subject_agent.shared_activity import FEEDBACK_LIVE_AUTHORITY
+    from dynamic_subject_agent.shared_activity import FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY
     from dynamic_subject_agent.natural_feedback_live import feedback_grant_variant, NaturalFeedbackDelivery, open_natural_feedback_audit
     from dynamic_subject_agent.natural_feedback_provider import DeepSeekNaturalFeedbackAdapter
     from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
@@ -782,7 +782,7 @@ def open_natural_feedback_product_live(config, *, identity_id, grant, audit_path
     adapter = DeepSeekNaturalFeedbackAdapter(transport=transport, delivery=delivery,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID), observations=observations)
     cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter),
-        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_SCOPED_AUTHORITY if technical_variant=='scoped' else FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
         snapshot_loader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)

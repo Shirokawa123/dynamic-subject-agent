@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-152：精简反馈协议与独立文字修改范围
+
+新feedback-scoped-live/SCOPED authority/Manifest/Grant/audit/key沿S150同两用途/投影/slot及schema8，旧资格/root不升级。wire严格三字段intent/edits/reply_text；language、当前版本和本地reason由实际task绑定内部六字段，raw与normalized审计分别核。Python先于模型由当前原话/currentplan确定完整引号文字替换范围，“所有”才可多处同步；Provider/Cognition/Publication各核最终方案恰等于独立expectedplan，所有非目标字符含光路/镜头逐字保留，额外修改整次拒绝。未知/自由反馈/条件暂不能自动effect，澄清或NoOp；这是本轮覆盖限缩，不称通用自然反馈已解决或永久限制。旧S151错误patch离线拒绝0调用，14新＋21必要兼容通过，真实新首景尚未执行，见[S152](reports/2026-10-11-slice-152/REPORT.md)。
+
 ### Slice-151：反馈正文预算的独立技术候选
 
 实际4格诊断3complete/1baseline漏language，direct两格stop/schema/语义可用而未复现length；新首景6首次/5complete/1漏language未发表，六stop无截断、6canonical/v2，灰纹理改到但未请求删渐变光，语义保留失败。后4步未执行，真实过窗后新选择仍未证；共10新0retry/readonly核验通过，候选限开发、非完整人物默认通过。before/after仅保跨度外原文，不能证明跨度内语义保护；固定语言字段生成冗余为后续具体缺口，不改旧合同/失败或本轮标准，见[S151报告](reports/2026-10-11-slice-151/REPORT.md)。

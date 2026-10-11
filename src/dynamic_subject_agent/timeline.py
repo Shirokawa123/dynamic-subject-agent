@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_SCOPED_AUTHORITY
 from contextlib import contextmanager
 
 from dynamic_subject_agent.participant_goals import (
@@ -4816,7 +4816,11 @@ class TimelineEngine:
                 from dynamic_subject_agent.natural_feedback import build_feedback_record
                 if record.feedback is None:
                     raise ValueError('schema8 feedback record required')
-                expected = build_feedback_record(view, command=command, authorization=authorization,
+                if self._authority.provider_authority == FEEDBACK_SCOPED_AUTHORITY:
+                    from dynamic_subject_agent.natural_feedback_frame import scoped_feedback_record
+                    builder=scoped_feedback_record
+                else:builder=build_feedback_record
+                expected = builder(view, command=command, authorization=authorization,
                     head_sequence=plan.expected_basis.head_sequence+1,
                     choice=choice_from_record(record) if record.kind == 'decision' else None,
                     proposal=record.feedback['proposal'])

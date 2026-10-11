@@ -55,6 +55,8 @@ def feedback_grant_variant(grant):
     if type(grant) is ApprovedNaturalFeedbackGrant:return 'baseline'
     from dynamic_subject_agent.natural_feedback_budget import NaturalFeedbackBudgetDevelopmentGrant
     if type(grant) is NaturalFeedbackBudgetDevelopmentGrant:return 'direct-final'
+    from dynamic_subject_agent.natural_feedback_scoped import NaturalFeedbackScopedDevelopmentGrant
+    if type(grant) is NaturalFeedbackScopedDevelopmentGrant:return 'scoped'
     raise ValueError('exact approved feedback grant required')
 
 
@@ -63,12 +65,16 @@ def feedback_live_contract_for_variant(binding,technical_variant='baseline'):
     if technical_variant=='direct-final':
         from dynamic_subject_agent.natural_feedback_budget import feedback_budget_contract
         return feedback_budget_contract(binding)
+    if technical_variant=='scoped':
+        from dynamic_subject_agent.natural_feedback_frame import scoped_contract
+        return scoped_contract(binding)
     raise ValueError('closed feedback LIVE variant required')
 
 
 def feedback_variant_for_contract(contract):
     from dynamic_subject_agent.original_whole_chat import contract_variant
-    if contract_variant(contract)!='feedback-live':raise ValueError('exact feedback LIVE contract required')
+    if contract_variant(contract) not in ('feedback-live','feedback-scoped-live'):raise ValueError('exact feedback LIVE contract required')
+    if contract['version']=='natural-feedback-scoped-live-s152-1':return 'scoped'
     from dynamic_subject_agent.natural_feedback_budget import BUDGET_VERSION
     return 'direct-final' if contract['version']==BUDGET_VERSION else 'baseline'
 
@@ -95,9 +101,18 @@ class NaturalFeedbackBudgetCallAudit(NaturalFeedbackCallAudit):
             development_authorization=BUDGET_DEVELOPMENT,protocol_sha=BUDGET_PROTOCOL_SHA)
 
 
+class NaturalFeedbackScopedCallAudit(NaturalFeedbackBudgetCallAudit):
+    @staticmethod
+    def configuration():
+        from dynamic_subject_agent.natural_feedback_scoped import SCOPED_POLICY_SHA
+        from dynamic_subject_agent.natural_feedback_frame import SCOPED_DEVELOPMENT
+        return dict(NaturalFeedbackBudgetCallAudit.configuration(),version='natural-feedback-scoped-audit-s152-1',
+            development_authorization=SCOPED_DEVELOPMENT,feedback_policy_sha=SCOPED_POLICY_SHA)
+
+
 def open_natural_feedback_audit(path, *, initialize=False, technical_variant='baseline'):
-    if technical_variant not in ('baseline','direct-final'):raise ValueError('closed feedback audit variant required')
-    audit_type=NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
+    if technical_variant not in ('baseline','direct-final','scoped'):raise ValueError('closed feedback audit variant required')
+    audit_type=NaturalFeedbackScopedCallAudit if technical_variant=='scoped' else NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
     if not isinstance(path, Path) or not path.is_absolute():
         raise ValueError('absolute independent feedback audit required')
     witness = path.with_name(path.name + '-initialized')
@@ -124,7 +139,7 @@ class NaturalFeedbackDelivery:
     def __init__(self, *, grant, audit, contract, state_path):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
         self.technical_variant=feedback_grant_variant(grant)
-        expected_audit=NaturalFeedbackBudgetCallAudit if self.technical_variant=='direct-final' else NaturalFeedbackCallAudit
+        expected_audit=NaturalFeedbackScopedCallAudit if self.technical_variant=='scoped' else NaturalFeedbackBudgetCallAudit if self.technical_variant=='direct-final' else NaturalFeedbackCallAudit
         if type(audit) is not expected_audit:
             raise ValueError('approved feedback grant and independent audit required')
         grant.validate()

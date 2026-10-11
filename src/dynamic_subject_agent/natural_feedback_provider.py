@@ -41,6 +41,12 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
             if sha256(wire).hexdigest() != request['wire_sha256']:
                 raise ValueError('exact feedback wire changed')
             row.update(request_digest=digest(actual.payload), wire_sha256=request['wire_sha256'])
+            frame=None
+            if self.delivery.technical_variant=='scoped' and actual.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+                from dynamic_subject_agent.natural_feedback_frame import requested_frame
+                payload=actual.payload['payload']
+                current=None if payload['current_plan'] is None else validate_plan(payload['current_plan'])
+                frame=requested_frame(payload['turn']['current_message'],current)
         except Exception:
             try: self.delivery.record('failed-closed')
             except Exception: pass
@@ -51,6 +57,9 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
                 require_complete=True, discard_reasoning=True, safe_diagnostics=True)
             payload = actual.payload['payload']
             if actual.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+                if self.delivery.technical_variant=='scoped':
+                    from dynamic_subject_agent.natural_feedback_frame import compact_proposal
+                    value=compact_proposal(value,payload,frame=frame)
                 validate_proposal(value)
                 if value['activity_revision'] != payload['activity_revision']:
                     raise ValueError('feedback baseline revision differs')

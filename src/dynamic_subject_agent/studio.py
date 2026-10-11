@@ -17,7 +17,7 @@ from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_c
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, matches_whole_source_contract, validate_whole_envelope, whole_publication_key
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
-from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_FACT_FAITHFUL_AUTHORITY, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES
+from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_FACT_FAITHFUL_AUTHORITY, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES, FEEDBACK_SCOPED_AUTHORITY
 
 import hashlib
 import json
@@ -770,6 +770,13 @@ class CapabilityManifest:
             included=(*old.included, 'approved-natural-feedback-deepseek'),
             certified=(*old.certified, 'approved-natural-feedback-deepseek'),
             unavailable=tuple(x for x in old.unavailable if x not in ('remote-provider', 'remote-feedback-use')))
+
+    @classmethod
+    def natural_feedback_scoped_live(cls):
+        old=cls.natural_feedback_live()
+        return cls(manifest_version='natural-feedback-scoped-capabilities-s152-1',
+            included=(*old.included,'independent-requested-edit-frame'),certified=(*old.certified,'independent-requested-edit-frame'),
+            unavailable=old.unavailable)
 
     @classmethod
     def working_understanding_live(cls):
@@ -1771,7 +1778,7 @@ class PolicyKernel:
             (question.capability_manifest == CapabilityManifest.reviewed_character_dormant()
              or (question.capability_manifest == CapabilityManifest.reviewed_character_chat()
                  and matches_chat_source_contract(question.profile_source, question.reviewed_chat_contract))
-             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live())
+             or (question.capability_manifest in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.natural_feedback_scoped_live(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live())
                  and matches_whole_source_contract(question.profile_source, question.reviewed_chat_contract)))
             and is_reviewed_source(question.profile_source) and question.profile_source == question.genesis_source
             and question.isolation_proof.provenance_class == REVIEWED_CHARACTER_PROOF
@@ -8894,7 +8901,7 @@ class SubjectStudio:
             "isolation_proof": isolation.to_dict(),
         }
         if reviewed_chat_contract is not None:
-            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live()):
+            if capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.natural_feedback_scoped_live(), CapabilityManifest.shared_activity_live(), CapabilityManifest.living_activity_local(), CapabilityManifest.living_activity_live(), CapabilityManifest.living_final_text_live(), CapabilityManifest.working_understanding_local(), CapabilityManifest.working_understanding_live(),CapabilityManifest.working_fact_faithful_live()):
                 if not is_reviewed_source(profile.source) or not matches_whole_source_contract(profile.source, reviewed_chat_contract, allow_legacy=True):
                     raise StudioRejected("original-whole-contract-invalid", "whole contract requires the exact approved source")
                 variant = contract_variant(reviewed_chat_contract)
@@ -8902,6 +8909,7 @@ class SubjectStudio:
                     or (capabilities == CapabilityManifest.shared_activity_local()) != (variant == "shared-local")
                     or (capabilities == CapabilityManifest.natural_feedback_local()) != (variant == "feedback-local")
                     or (capabilities == CapabilityManifest.natural_feedback_live()) != (variant == "feedback-live")
+                    or (capabilities == CapabilityManifest.natural_feedback_scoped_live()) != (variant == "feedback-scoped-live")
                     or (capabilities == CapabilityManifest.working_understanding_local()) != (variant == 'working-local')
                     or (capabilities == CapabilityManifest.working_understanding_live()) != (variant == 'working-live')
                     or (capabilities == CapabilityManifest.working_fact_faithful_live()) != (variant == 'working-fact-faithful-live')
@@ -9643,7 +9651,9 @@ class SubjectStudio:
             "capabilities": decision.capability_manifest.to_dict(),
             "isolation_proof": question.isolation_proof.to_dict(),
             "provider_authority": (
-                FEEDBACK_LIVE_AUTHORITY
+                FEEDBACK_SCOPED_AUTHORITY
+                if decision.capability_manifest == CapabilityManifest.natural_feedback_scoped_live()
+                else FEEDBACK_LIVE_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.natural_feedback_live()
                 else FEEDBACK_AUTHORITY
                 if decision.capability_manifest == CapabilityManifest.natural_feedback_local()
@@ -9804,7 +9814,7 @@ class SubjectStudio:
         if ("first_life_contract" in snapshot_hint or qri.first_life_contract is not None
             or qri.provider_authority in (LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY)):
             return self._verify_first_life_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
-        if qri.provider_authority in WHOLE_AUTHORITIES or qri.capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.shared_activity_live()):
+        if qri.provider_authority in WHOLE_AUTHORITIES or qri.capabilities in (CapabilityManifest.original_whole_chat(), CapabilityManifest.original_whole_context(), CapabilityManifest.shared_activity_local(), CapabilityManifest.natural_feedback_local(), CapabilityManifest.natural_feedback_live(), CapabilityManifest.natural_feedback_scoped_live(), CapabilityManifest.shared_activity_live()):
             return self._verify_original_whole_qri(qri, self.query_snapshot(qri.genesis_snapshot_id))
         reviewed_contract = ("reviewed_definition" in snapshot_hint
             or qri.provider_authority in (REVIEWED_CHARACTER_AUTHORITY, CHAT_AUTHORITY)
@@ -9869,13 +9879,14 @@ class SubjectStudio:
             living = contract_variant(contract) == 'living-local'
             final_text = contract_variant(contract) == 'living-final-text-live'
             living_live = contract_variant(contract) in ('living-live', 'living-final-text-live')
+            feedback_scoped = contract_variant(contract) == "feedback-scoped-live"
             feedback_live = contract_variant(contract) == "feedback-live"
             feedback = contract_variant(contract) == "feedback-local"
             shared = contract_variant(contract) == "shared-local"
             live = contract_variant(contract) == "shared-live"
-            expected_manifest = CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
+            expected_manifest = CapabilityManifest.natural_feedback_scoped_live() if feedback_scoped else CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
-            if (qri.provider_authority != (FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
+            if (qri.provider_authority != (FEEDBACK_SCOPED_AUTHORITY if feedback_scoped else FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
                 or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY

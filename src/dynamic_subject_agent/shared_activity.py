@@ -12,7 +12,8 @@ from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFie
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
 FEEDBACK_AUTHORITY = 'original-natural-feedback-local-s150-1'
 FEEDBACK_LIVE_AUTHORITY = 'original-natural-feedback-deepseek-s150-1'
-FEEDBACK_AUTHORITIES = (FEEDBACK_AUTHORITY, FEEDBACK_LIVE_AUTHORITY)
+FEEDBACK_SCOPED_AUTHORITY = 'original-natural-feedback-scoped-deepseek-s152-1'
+FEEDBACK_AUTHORITIES = (FEEDBACK_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_SCOPED_AUTHORITY)
 FEEDBACK_INTENT = 'natural-feedback-system-input'
 FEEDBACK_RUNTIME_CONTRACT = 'original-natural-feedback-cycle-s150-1'
 SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
@@ -136,9 +137,9 @@ def shared_reply_policy(technical_variant="baseline"):
 def shared_variant_for_contract(contract):
     """Verify the whole canonical witness before choosing expression text."""
     from dynamic_subject_agent.original_whole_chat import contract_variant
-    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local', 'feedback-live'):
+    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local', 'feedback-live','feedback-scoped-live'):
         raise ValueError('exact shared qualification required')
-    if contract_variant(contract) in ('feedback-local', 'feedback-live'):
+    if contract_variant(contract) in ('feedback-local', 'feedback-live','feedback-scoped-live'):
         return 'self-directed-activity'
     return {SHARED_EXPRESSION_VERSION: 'natural-expression',
         SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')

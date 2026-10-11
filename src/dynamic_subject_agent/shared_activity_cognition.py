@@ -13,7 +13,7 @@ from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WIT
 from dynamic_subject_agent.shared_activity import (
     SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, LIVING_AUTHORITIES, SharedActivityInput, build_record, build_choice_preview, build_reply_preview,
     shared_variant_for_contract)
-from dynamic_subject_agent.shared_activity import FEEDBACK_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES
+from dynamic_subject_agent.shared_activity import FEEDBACK_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES, FEEDBACK_SCOPED_AUTHORITY
 
 
 class SharedActivityCognition(OriginalWholeChatCognition):
@@ -32,6 +32,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if self.supports_natural_feedback:
             self.adapter_version = ('natural-feedback-live-cognition-s150-1' if provider_authority == FEEDBACK_LIVE_AUTHORITY
                 else 'natural-feedback-local-cognition-s150-1')
+            if provider_authority==FEEDBACK_SCOPED_AUTHORITY:self.adapter_version='natural-feedback-scoped-cognition-s152-1'
         self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
         if provider_authority in LIVING_LIVE_AUTHORITIES:
             self.adapter_version = ('living-final-text-live-cognition-s144-1' if provider_authority == LIVING_FINAL_TEXT_AUTHORITY
@@ -41,12 +42,12 @@ class SharedActivityCognition(OriginalWholeChatCognition):
     def preflight(self, *, context, command):
         if self.supports_natural_feedback:
             from dynamic_subject_agent.original_whole_chat import contract_variant
-            live = self.provider_authority == FEEDBACK_LIVE_AUTHORITY
+            live = self.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY)
             if live:
                 from dynamic_subject_agent.natural_feedback_live import NaturalFeedbackDelivery
                 if (self.gateway is None or self.gateway.capabilities.local is not False
                     or self.gateway.capabilities.provider_id != 'deepseek' or type(self.delivery) is not NaturalFeedbackDelivery
-                    or self.snapshot_loader is None or contract_variant(self.contract) != 'feedback-live'
+                    or self.snapshot_loader is None or contract_variant(self.contract) != ('feedback-scoped-live' if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY else 'feedback-live')
                     or self.contract != self.delivery.contract):
                     raise PreAdmissionRejected('natural-feedback-approved-gateway-required', 'exact S150 LIVE composition required')
                 self.delivery.grant.validate()
@@ -222,11 +223,18 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                         task = ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, build_feedback_preview(
                             self.envelope, context.runtime_identity, command.utterance, dialogue,
                             authorization.history_enabled, view, self.contract))
+                        if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
+                            from dynamic_subject_agent.natural_feedback_frame import scoped_preview
+                            task=ModelTask(task.kind,scoped_preview(task.payload))
                         feedback = self._execute_feedback(task, plan=plan, context=context, command=command, authorization=authorization)
                         text = feedback['reply_text']
             if self.authorization() != authorization:
                 raise ShareAuthorizationChanged('feedback-source-permission-changed')
-            record = build_feedback_record(view, command=command, authorization=authorization,
+            if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
+                from dynamic_subject_agent.natural_feedback_frame import scoped_feedback_record
+                builder=scoped_feedback_record
+            else:builder=build_feedback_record
+            record = builder(view, command=command, authorization=authorization,
                 head_sequence=plan.expected_basis.head_sequence+1, choice=choice, proposal=feedback)
             if record.kind == 'decision':
                 text = record.result.event.summary
@@ -245,7 +253,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 'Feedback proposal failed closed; no plan change or retry.') from None
 
     def _execute_feedback(self, task, *, plan, context, command, authorization):
-        if self.provider_authority == FEEDBACK_LIVE_AUTHORITY:
+        if self.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY):
             from dynamic_subject_agent.natural_feedback import build_feedback_preview, build_feedback_choice_preview
             from dynamic_subject_agent.original_whole_chat import validate_whole_envelope
             def rebuild():
@@ -264,8 +272,12 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 if task.kind is not ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK or type(command) in (SharedActivityInput, WholeContextInput):
                     raise ValueError('exact submitted feedback purpose required')
                 dialogue = context.load_character_dialogue(authorization.history_enabled)
-                return build_feedback_preview(snapshot['envelope'], snapshot['identity'], command.utterance,
+                preview=build_feedback_preview(snapshot['envelope'], snapshot['identity'], command.utterance,
                     dialogue, authorization.history_enabled, view, snapshot['contract'])
+                if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
+                    from dynamic_subject_agent.natural_feedback_frame import scoped_preview
+                    preview=scoped_preview(preview)
+                return preview
             try:
                 self.delivery.claim(plan.operation_ref.operation_id + ':' + plan.attempt_id, task, rebuild)
             except Exception:
