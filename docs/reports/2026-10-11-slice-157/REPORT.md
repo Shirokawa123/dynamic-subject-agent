@@ -1,5 +1,24 @@
 # S157：choice六格预算诊断与候选后的完整首景
 
+## 固定六格终态：choice-final通过，保全部首失败
+
+工程b321a63提交推送后六格全按冻结顺序执行，6首次/0retry/5complete+1failed-closed，诊断提议0 Publication。source两个本地合成种子整树/权限/canonical/WAL始终相同（A2/B4工程Publication，4 Fake/0真实准备），没有把它们当人物体验或复制到后续首景。
+
+| 首格 | 终态/action | completion / reasoning计数 | 语义 |
+| --- | --- | --- | --- |
+| A-high | complete/start/stop | 2516 / 2093 | 2 |
+| A-low | complete/start/stop | 1578 / 1183 | 2 |
+| A-final | complete/start/stop | 273 / null | 2 |
+| B-final | complete/revise/stop | 199 / null | 2 |
+| B-low | complete/revise/stop | 1968 / 1784 | 2 |
+| B-high | failed-closed/length/final空 | 4096 / 4096 | 0 |
+
+A三完整格均有新地图店主体/物件/镜头/光线/具体关注；final以少年压平旧地图折痕、低侧桌面视角、店深空柜和门外暖光入口形成取舍。B-final增加沾泥茶篓/磨亮竹纹与雨湿石路的视线，B-low增加凉茶/湿披肩/脚印水痕，两者实际新方案不同于当前seed，均保弦湾/不恢复弦屋，无成图或离线经历编造。目标语义均2，但A-low段间镜头/光线较散，B-final“地名痕迹”表述含糊，自然性局限另记，不调整结果前门槛。
+
+low/final均两输入技术及语义过；按先定completion合计final472<low3546，首次不可覆盖eligibility选择 **choice-final**。reasoning缺值null不伪0。B-high重现同length/空final/4096路径，支持思考开销相关假设；仅两材料不证明上游全部根因、稳定性或模式普遍更优，不补抽该失败。现候选只限新独立开发资格，8796不升级。
+
+只读核6 audit/request/wire/raw/输出digest、两个source整树不变、原始final与value一致、readiness/metadata/final资格依据、旧两目录完整56工件hash相同，0模型/凭据/业务写入。完整[metadata](../../../.artifacts/s157/six-first-live/metadata.json)、[eligibility](../../../.artifacts/s157/six-first-live/eligibility.json)、[核验](../../../.artifacts/s157/six-first-live/readonly-six-verification.json)均本机保留，公开[诊断汇总](diagnostic-summary.json)。本阶段人物Publication0，真实长距/指称仍未验；诊断事实commit/push后才准备并验证候选后的空root首景。
+
 ## 工程与六格准备
 
 用户明确先固定6格、候选通过后才未见完整闭环，保两旧终态/不重跑/不放宽4096及原保护、授权内自主提交推送。main/remote开工611f52d，旧两根各28文件hash已冻结；新S157资格与诊断独立，8796不POST/重开/升级，用户草稿不触。

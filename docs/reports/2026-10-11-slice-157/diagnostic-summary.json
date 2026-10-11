@@ -1,0 +1,89 @@
+{
+  "status": "readonly-six-verified",
+  "engineering_source_commit": "b321a63",
+  "first_requests": 6,
+  "automatic_retries": 0,
+  "audit_complete": 5,
+  "audit_failed_closed": 1,
+  "source_seed_fake_calls": {
+    "A": 1,
+    "B": 3
+  },
+  "source_seed_real_calls": 0,
+  "source_seed_publications": {
+    "A": 2,
+    "B": 4
+  },
+  "diagnostic_publications": 0,
+  "source_whole_trees_unchanged": true,
+  "selected_variant": "choice-final",
+  "completion_totals": {
+    "final": 472,
+    "low": 3546
+  },
+  "semantic_scores": {
+    "A-final": 2,
+    "A-high": 2,
+    "A-low": 2,
+    "B-final": 2,
+    "B-high": 0,
+    "B-low": 2
+  },
+  "cells": [
+    {
+      "label": "A-high",
+      "status": "complete",
+      "action": "start",
+      "finish_reason": "stop",
+      "completion_tokens": 2516,
+      "reasoning_tokens": 2093
+    },
+    {
+      "label": "A-low",
+      "status": "complete",
+      "action": "start",
+      "finish_reason": "stop",
+      "completion_tokens": 1578,
+      "reasoning_tokens": 1183
+    },
+    {
+      "label": "A-final",
+      "status": "complete",
+      "action": "start",
+      "finish_reason": "stop",
+      "completion_tokens": 273,
+      "reasoning_tokens": null
+    },
+    {
+      "label": "B-final",
+      "status": "complete",
+      "action": "revise",
+      "finish_reason": "stop",
+      "completion_tokens": 199,
+      "reasoning_tokens": null
+    },
+    {
+      "label": "B-low",
+      "status": "complete",
+      "action": "revise",
+      "finish_reason": "stop",
+      "completion_tokens": 1968,
+      "reasoning_tokens": 1784
+    },
+    {
+      "label": "B-high",
+      "status": "failed",
+      "action": null,
+      "finish_reason": "length",
+      "completion_tokens": 4096,
+      "reasoning_tokens": 4096
+    }
+  ],
+  "same_group_exact_messages": true,
+  "raw_wire_audit_digests": true,
+  "old_two_56_files_unchanged": true,
+  "inspection_model_requests": 0,
+  "inspection_credential_reads": 0,
+  "scene_not_started": true,
+  "scope": "two synthetic diagnostic sources; no person Publication or long-scene proof"
+}

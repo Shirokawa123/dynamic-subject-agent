@@ -1,5 +1,7 @@
 # 当前工作
 
+S157六格终态：b321a63工程已push后6首次0retry/5complete＋B-high length/空final/4096失败，source整树不变/diagnostic0人物Publication。low/final两输入均技术+语义2，原选择规则final472<low3546→choice-final eligible（首次verdict绑定ready/metadata/全部final，不覆写）；high失败全保不抽，旧两终态56工件hash同。readonly6audit/wire/raw/资格0调用过；诊断事实commit/push后才实现/核新空洗衣房十步首次，原4096/所有文字保护保持，不升级8796/草稿。
+
 S157工程准备收口：30核心新旧/最终6 helper/双复核过，缺final证据与HTTP停组P2关闭；原4096/投影/JSON/policy/≤8/≤4/160/240/完整exact保护不变，新增资格/audit/key独立。新源4 Fake工程seed/0真实凭据，原manifest/readiness保留、final-readiness封0请求；旧两终态完整56工件hash全同，失败fixture/partial seed全部保。工程commit/push后固定6格首次0retry，选两输入技术+语义2候选并提交诊断事实后才未见空首景，不改8796/草稿。
 
 唯一执行[S157：固定六格choice诊断与候选后未见完整闭环](slice-157-choice-budget-six-cell.md)。2026-10-11用户明确按方案/先6格候选过再新首景/保两终态不重跑不放宽4096与原保护/授权内自主commit push。611f52d与fetch后main一致，tracked干净；先独立闭集choice-low/final资格/6格新材料与评分冻结，源本地合成明确非人物/0真实调用，六格proposals0人物发表。新资格不升级8796/旧root/草稿，旧文件原终态全保；工程复核push后首次矩阵0retry，eligible事实push后才唯一新洗衣房首景，旧S156及以前下文仅历史。
