@@ -1,0 +1,52 @@
+{
+  "status": "readonly-verified-first-failure",
+  "engineering_source_commit": "b4bde47",
+  "scene_status": "first-stage-failed",
+  "attempts": 2,
+  "audit_complete": 1,
+  "audit_failed_closed": 1,
+  "canonical_publications": 2,
+  "activity_revision": 0,
+  "same_identity_timeline": true,
+  "canonical_in_owned_new_root": true,
+  "raw_audit_canonical_digests": true,
+  "canonical_history_equals_original_reply": true,
+  "initial_activity_published": false,
+  "current_plan": null,
+  "initial_long_eligibility": "not-graded-no-final-plan",
+  "natural_reference_executed": false,
+  "multispan_correction_executed": false,
+  "response_truncated_stage": "initial-activity",
+  "truncated_final_chars": 0,
+  "truncated_reasoning_tokens": 4096,
+  "truncated_completion_tokens": 4096,
+  "finish_reasons": [
+    "stop",
+    "length"
+  ],
+  "completion_tokens": [
+    106,
+    4096
+  ],
+  "reasoning_tokens": [
+    null,
+    4096
+  ],
+  "automatic_retries": 0,
+  "not_executed": [
+    "natural-reference",
+    "natural-correction",
+    "conditional-feedback",
+    "topic-gap-1",
+    "topic-gap-2",
+    "topic-gap-3",
+    "post-gap-activity",
+    "current-result-reply"
+  ],
+  "old_s155_scene_status": "bounded-end-initial-content-not-met",
+  "old_s155_scene_calls": 2,
+  "old_s155_all_28_files_unchanged": true,
+  "all_10_preserved_sources_unchanged": true,
+  "verification_requests": 0,
+  "verification_credential_reads": 0
+}

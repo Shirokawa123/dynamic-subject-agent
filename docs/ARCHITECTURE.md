@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-156：未见钟表店的首次验证与choice截断终态
+
+复用S154 multi-span/S155 entry及同S150两用途/资格/policy/协议/slot，生产src与8796不改，仅独立新冻结runner/root/场景/nonce/pin。6 helper Fake/纯check/双只读复核后b4bde47已push；真实2首次0retry，首聊天完成/零模型E1选定，第2choice length/final空/completion与reasoning计数4096导致FailedClosed、无plan/活动0/完整2canonical。初稿资格/后8未验，真实长距修订与自然指称未证；raw/audit/canonical只读0调用、S155九目标28文件与10源码全保，详情见[S156报告](reports/2026-10-11-slice-156/REPORT.md)。旧≤8目标/≤4/160/240/唯一不重叠/exact其他照旧保持，首失败不补发或改判。
+
 ### Slice-155：独立手动自然反馈入口
 
 独立空 S155 root/8796 启动器沿 S154 multi-span 资格与 S150 已批两用途，Authority 在 entry open/recovery 前纯核 active identity/Timeline/exact variant。薄 Adapter 只调用 Facade，当前参考与下一步来自实际 natural-feedback 投影，草稿/原 nonce 独立作用域；Unknown/已核失败关闭可零请求重开查读。无计时/分享/通知，初始化0模型/凭据、canonical空链/audit0。2026-10-11准确启动获批后，8796已一次隐藏loopback运行/同pointer/空聊天活动0/audit0；准确动作及恢复环境事实见[S155报告](reports/2026-10-11-slice-155/REPORT.md)。自动effect仍限明确引文替换，原≤4/160/240/唯一不重叠/完整覆盖及其他字符逐字保护不放宽；自然指称本轮只验含糊澄清→明确词句修订，不称通用自动定位。

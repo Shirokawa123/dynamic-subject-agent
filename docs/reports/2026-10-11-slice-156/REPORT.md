@@ -1,5 +1,21 @@
 # S156：未见钟表店长距、多跨度与自然指称
 
+## 真实首验终态：初稿choice截断，后八步未验
+
+准备工程b4bde47已提交推送后，唯一冻结新场景实际2首次/0retry：首聊天完成并零模型选E1；第2初稿choice HTTP200但finish=length、final空、completion4096/reasoning计数4096，返回 original-whole-response-truncated/FailedClosed。审计1complete+1failed-closed、完整canonical仅2 Publication（chat、select），活动版本0/无plan，初稿资格未评分。没有长稿或多跨度修订发表；后8自然指称、明确修订、条件、三话题、重开新choice、末答全未执行。
+
+首聊天仍关联文字构图，但请求已明确“你自己选”及三个位置，回复重复让用户决定两点，并把“三段”误称“三步”；自然/推进仅1。具体主体/镜头/光线、自然指称的适当澄清、exact其他照旧、出窗后实际选择及末答忠实度均未验，不能用Fake或首聊天替代。此样本确认choice响应截断及空final，尚未证明布局要求或服务内部行为是根因；不读取/保存reasoning正文，也不改预算/policy或首题补发。
+
+| 层次 | 结论与限制 |
+| --- | --- |
+| 工程 | 6 Fake/冻结check/双复核通过，原界限不变；实际首失败拒绝发表，无部分plan或虚假修订；raw/request/audit/canonical核验一致。 |
+| 场景 | 2/10已执行，首技术失败有界结束；初稿资格及后8未验，0retry/0抽下一稿/0取最佳样本。 |
+| 人物 | 首接话可读相关但重复确认，评分1；初稿/长距修改/指称/后续取舍/最新回复全未验。 |
+
+只读核两条audit状态/request digest、首次final SHA、首聊天normalized digest/原文等于canonical、精确active同identity/Timeline、完整2 Publication/record digest、唯一E1及无plan；核验0模型/凭据/业务写入。[完整证据](../../../.artifacts/s156/clock-first/metadata.json)、[空初稿final](../../../.artifacts/s156/clock-first/finals/initial-activity.json)、[只读核验](../../../.artifacts/s156/clock-first/readonly-verification.json)、[人物评阅](../../../.artifacts/s156/clock-first/content-review.json)均本机保存，公开仅[事实摘要](live-summary.json)。没有改首SCENE、初稿格式、标准、源码/Provider或资格。
+
+S155全部28文件与10保留源码hash与开工基线完全相同，九目标首稿仍2次原有界终态。8796只读复核同scope/health正确/空聊天/活动0，未向其POST或重开，不接/发/覆盖草稿。本轮有界收口，提交推送新失败与未验事实；下一必要为在同用途独立定位choice最终正文预算/协议，再冻结另一个未见场景补真实长距与指称，不能重发或改判本题，不能通过扩大旧界限制造通过。
+
 ## 准备：保九目标终态，冻结独立新场景
 
 2026-10-11用户明确新场景补验/保首稿终态/不重跑不放宽/授权内自主提交推送。开工 main/HEAD=a12aeeb，fetch后 origin/main同值，tracked干净；只读8796 health正确/空聊天/活动0。九目标S155保持2请求、bounded-end-initial-content-not-met、后8未执行，未重发或改判。

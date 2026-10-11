@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-11：S156刻廊→时隅新十步/原全部保护已冻结，6 helper Fake/纯check0模型凭据opening/双只读复核过；旧九目标2次终态及28文件/10源码hash全保，生产/8796/旧runner不改。工程提交推送后仅新首次0retry，当前0真实新请求/clock-first未建，长距真实修订和人物指称作用尚待，见[S156准备](reports/2026-10-11-slice-156/REPORT.md)。
+- 2026-10-11：S156准备b4bde47已push/6 Fake＋纯check/双复核过；真实新钟表店2首次0retry，1complete＋1choice截断FailedClosed（length/final空/completion与reasoning计数4096），2canonical/活动0/无plan，初稿资格及后8未验。本轮有界结束/readonly全链0调用；旧S155仍2次终态/28文件及10源码hash全同，8796健康空聊天活动0保持，真实长距修订/指称未证，见[S156事实](reports/2026-10-11-slice-156/live-summary.json)。
 
 - 2026-10-11：S155入口获准确批准后已隐藏运行127.0.0.1:8796，health正确/同pointer/空canonical与聊天/活动0/audit0/启动核验0模型凭据，无自动活动分享。工程e747f83/终态9856ba1已push；原首景2次0retry、九目标超冻结8有界结束/后8未验，真实长距修订与自然指称未证，旧失败保持，见[S155启动回执与报告](reports/2026-10-11-slice-155/REPORT.md)。
 
