@@ -1,5 +1,7 @@
 # 当前工作
 
+S155首验终态：工程e747f83已push后2首次0retry/2audit complete/3canonical仅v1；同字段6目标首末291成立，但subject1/composition6/focus2共9>冻结≤8，frame不可授权/资格0，有界结束。后8自然指称/修订/条件/3topic/重开新choice/结果未验；保全部首稿/失败/原界限，不删目标或重抽。readonly全链0请求通过；独立空entry同pointer仍保，8796未批未启动，具体[启动动作](../experiments/s155/ENTRY-START.md)齐备，提交推送真实终态后集中确认。
+
 S155换窗恢复：HEAD/main5516561，fetch后remote一致，原23passed已结束；新空entry同pointer/canonical0/audit0按原TEMP环境只读核通过，无重建/真实请求/8796服务。双复核问题关闭，增量helper8＋最终名字边界2passed（9唯一）；工程提交推送后唯一新长距首验，准确[启动动作](../experiments/s155/ENTRY-START.md)仍未批，全部旧成果保持。
 
 唯一执行[S155：独立体验入口与长距/指称首验](slice-155-natural-feedback-entry.md)。用户明确先接入口/再补真实长距和自然指称、保旧入口草稿失败/不放宽、授权内自主提交推送、新启动或用途做审再集中问。fetch后5516561与main一致、tracked干净/旧成果全保；沿同S154两用途/policy/资料/slot复用薄界面与纯Authority资格验证。先零调用入口准备/自有Fake HTTP/新冻结首景，再真实已有用途首验；8796常驻启动未批不运行，无新指称自动定位出站用途。

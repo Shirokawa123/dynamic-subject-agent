@@ -4,6 +4,8 @@
 
 独立空 S155 root/8796 启动器沿 S154 multi-span 资格与 S150 已批两用途，Authority 在 entry open/recovery 前纯核 active identity/Timeline/exact variant。薄 Adapter 只调用 Facade，当前参考与下一步来自实际 natural-feedback 投影，草稿/原 nonce 独立作用域；Unknown/已核失败关闭可零请求重开查读。无计时/分享/通知，初始化0模型/凭据、canonical空链/audit0。当前8796常驻启动未批；准确动作及恢复环境事实见[S155报告](reports/2026-10-11-slice-155/REPORT.md)。自动effect仍限明确引文替换，原≤4/160/240/唯一不重叠/完整覆盖及其他字符逐字保护不放宽；自然指称本轮只验含糊澄清→明确词句修订，不称通用自动定位。
 
+工程e747f83后真实首次2请求/2complete/3canonical仅v1；composition6目标首末291，但全plan9目标超先定≤8资格门槛，初稿内容2/资格0有界结束，无反馈修订发表/后8未验。0retry/readonly全链0/旧首失败保持；这不是通用自然指称或真实长距完整修订已过，见[S155事实](reports/2026-10-11-slice-155/live-summary.json)。
+
 ### Slice-154：有界唯一多跨度完整覆盖
 
 独立multi-span技术contract/Grant/audit/key沿S150同用途/投影/slot，raw2/policy/Provider协议不变，SCOPED能力/schema8/最终frame终审复用，旧S153构造/root不升级。连续目标组唯一上下文窗口先满足160before/240after，剔除被更晚start/更早end支配窗口，再按基线位置选最少段完整覆盖且不重叠，各字段合计≤4；不能表示整次拒绝。只改先定目标字串，所有其他字符逐字保护/最终exact expectedplan。旧S153离线新构造4段2/46/63/9可用但旧仍拒/0重发/0发表，真实新接续尚未验，见[S154](reports/2026-10-11-slice-154/REPORT.md)。

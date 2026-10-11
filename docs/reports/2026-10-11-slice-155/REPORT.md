@@ -1,5 +1,23 @@
 # S155：独立入口与真实长距、自然指称首验
 
+## 真实首验终态：初稿九个目标，有界结束
+
+工程 e747f83 已提交推送后，冻结首次新场景实际只执行2步/2请求/0retry，2 audit complete、3 canonical（初次聊天、零模型E1选定、初稿choice），仅v1。两个 final 均 finish=stop，无截断或技术失败；completion 121/1921，choice reasoning1428、feedback细分null不伪0。
+
+首接话 intent=clarify，重复询问已经明确允许自选的构图内容/外观，未生成文字方案或冒称成图；自然性1。第二步真实 choice=start，初稿有速写少女、画具、白兔形笔袋、纸灯、灰猫、水景，前中远景及镜头/光线/具体关注均可见，内容要素2。composition实际6处“汀舍”、首末目标跨度291>160，是实际长距初稿；但subject1+composition6+focus2共9目标，超出先定≤8的独立frame门槛，requested_frame返回None。人工初稿内容分2不能覆盖资格分0；执行器零模型grade-long后终态 bounded-end-initial-content-not-met。
+
+没有削目标、改正文、提高8目标/4项/160/240界限或重抽初稿。后8步（自然指称、明确修订、未来条件、三个新话题、重开新choice、结果接话）全部未执行。没有实际多跨度修订发表、v2/F1或保名新版本；**长距完整修订与自然指称人物效果仍未验证**，不能把首长稿或工程通过称为该目标完成。
+
+| 层次 | 结果与限制 |
+| --- | --- |
+| 工程 | 独立入口/恢复/HTTP Fake/门槛检查与双复核通过，工程已push。真实2请求raw/audit/canonical一致；首门槛拒绝资格后未补发。8796仍未批/未运行。 |
+| 场景 | 2/10执行，长稿首门槛未达；后8步未验，0retry/skip取好样本。九目标是冻结首稿门槛未达，不是模型JSON失败或永久产品取舍。 |
+| 人物 | 初稿具体主体、镜头、光线、关注要素2；初次澄清有重复确认，自然性1。自然指称澄清、准确修订、换题后选择和最新结果忠实度全未验。 |
+
+只读核 audit/request/raw SHA/normalized digest、同identity/Timeline资格、完整3 Publication链和record digest、唯一聊天正文等于首次原reply、v1及E1依赖一致；0模型/凭据/业务写入。两首次原文/预览/metadata/audit/canonical全保本机，见[只读核验](../../../.artifacts/s155/long-first/readonly-verification.json)、[完整metadata](../../../.artifacts/s155/long-first/metadata.json)、[首初稿](../../../.artifacts/s155/long-first/finals/initial-activity.json)。公开仅[事实摘要](live-summary.json)。旧S150/151/152/153失败仍各4/6/3/3次原终态，未重发或改判；所有工程/核验失败保留。
+
+本轮首验按冻结条件终态收口，待[8796准确启动动作](../../experiments/s155/ENTRY-START.md)集中确认。下一必要验证仍为保持原保护下、未见且可表示的真实长距完整更正→自然指称澄清→换题后新选择；不能复跑本次初稿至过或把入口启动当人物验收。新用途仍需具体审阅，本次没有新增出站用途。
+
 ## 换窗恢复与工程准备
 
 从本仓文件和实际状态恢复，没有读取旧聊天历史。2026-10-11 本地 main/HEAD 为 5516561，fetch 后 origin/main 同值；S155 tracked 差异和相关 untracked 仍在，全部旧临时目录、草稿及失败保留，没有 reset、清理或重建。
@@ -22,4 +40,4 @@
 
 最终名字检查逐字段匹配，跨字段拼出新名不能冒充保名；受影响成功十步与该新边界例 2 passed / 67.37 秒，[日志](../../../.artifacts/s155/test-final-name-boundary.log)。新增 helper 共9个唯一用例分8+2两次相关验证（成功例重验一次），不是新增人物效果。两路最终只读复核全部问题关闭；冻结 scene/grant/policy 的 check 通过0模型/凭据/product open，未改 SCENE 的字节或门槛。准确启动机器依据见 [entry-start.json](../../experiments/s155/entry-start.json)。
 
-工程接纳与提交推送完成之前不执行该首验。此时 `.artifacts/s155/long-first` 尚不存在，0实际新请求；既有真实模型请求和失败场景未重跑。当前临时覆盖是明确引文替换及含糊澄清，不称通用自然指称自动定位或永久产品限制。工程、场景执行和人物效果将在本报告分别记录。
+工程阶段收口时 `.artifacts/s155/long-first` 尚不存在，0实际新请求；工程e747f83推送后才执行首次首验，终态见报告顶部。既有真实模型请求和失败场景未重跑。当前临时覆盖是明确引文替换及含糊澄清，不称通用自然指称自动定位或永久产品限制。

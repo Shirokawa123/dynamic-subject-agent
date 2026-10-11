@@ -1,0 +1,56 @@
+{
+  "status": "readonly-verified",
+  "engineering_source_commit": "e747f83",
+  "scene_status": "bounded-end-initial-content-not-met",
+  "attempts": 2,
+  "audit_complete": 2,
+  "audit_failed_closed": 0,
+  "canonical_publications": 3,
+  "activity_revisions": [
+    1
+  ],
+  "same_identity_timeline": true,
+  "automatic_retries": 0,
+  "raw_audit_canonical_digests": true,
+  "canonical_history_equals_original_reply": true,
+  "initial_target_counts": {
+    "subject": 1,
+    "composition": 6,
+    "focus": 2
+  },
+  "initial_target_total": 9,
+  "initial_composition_target_span": 291,
+  "initial_content_score": 2,
+  "long_eligibility_score": 0,
+  "bounded_reason": "nine-targets-exceed-frozen-eight-target-frame",
+  "same_field_long_initial_plan": true,
+  "real_multispan_correction_executed": false,
+  "natural_reference_executed": false,
+  "correction_feedback_published": false,
+  "post_gap_choice_executed": false,
+  "finish_reasons": [
+    "stop",
+    "stop"
+  ],
+  "completion_tokens": [
+    121,
+    1921
+  ],
+  "reasoning_tokens": [
+    null,
+    1428
+  ],
+  "inspection_requests": 0,
+  "inspection_credential_reads": 0,
+  "old_failures_preserved": true,
+  "not_executed": [
+    "natural-reference",
+    "natural-correction",
+    "conditional-feedback",
+    "topic-gap-1",
+    "topic-gap-2",
+    "topic-gap-3",
+    "post-gap-activity",
+    "current-result-reply"
+  ]
+}
