@@ -1743,6 +1743,9 @@ class LocalIdentityAuthority:
                 elif identity.qri.provider_authority == SHARED_LIVE_AUTHORITY:
                     from dynamic_subject_agent.shared_activity_live import open_shared_activity_audit
                     opener = open_shared_activity_audit
+                elif identity.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY):
+                    from dynamic_subject_agent.natural_feedback_live import open_natural_feedback_audit,feedback_variant_for_contract
+                    opener=lambda path:open_natural_feedback_audit(path,technical_variant=feedback_variant_for_contract(identity.qri.reviewed_chat_contract))
                 elif identity.qri.provider_authority in LIVING_LIVE_AUTHORITIES:
                     from dynamic_subject_agent.living_activity_live import open_living_activity_audit
                     from dynamic_subject_agent.living_activity import living_variant_for_contract

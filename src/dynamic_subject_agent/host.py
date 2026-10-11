@@ -7812,7 +7812,7 @@ class RuntimeHost:
             self._runtime_identity, message, view['_dialogue'], authorization.history_enabled, view, cognition.contract)
         if binding.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
             from dynamic_subject_agent.natural_feedback_frame import scoped_preview
-            preview=scoped_preview(preview)
+            preview=scoped_preview(preview,cognition.contract)
         return SharedActivityResponse('previewed', view=preview)
 
     def query_shared_activity(self, binding, *, preview=False, request=None):

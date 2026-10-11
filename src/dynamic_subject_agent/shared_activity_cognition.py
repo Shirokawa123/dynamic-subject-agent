@@ -33,6 +33,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             self.adapter_version = ('natural-feedback-live-cognition-s150-1' if provider_authority == FEEDBACK_LIVE_AUTHORITY
                 else 'natural-feedback-local-cognition-s150-1')
             if provider_authority==FEEDBACK_SCOPED_AUTHORITY:self.adapter_version='natural-feedback-scoped-cognition-s152-1'
+            if contract is not None and contract['version']=='natural-feedback-intent-live-s153-1':self.adapter_version='natural-feedback-intent-cognition-s153-1'
         self.supports_living_activity = provider_authority in LIVING_AUTHORITIES
         if provider_authority in LIVING_LIVE_AUTHORITIES:
             self.adapter_version = ('living-final-text-live-cognition-s144-1' if provider_authority == LIVING_FINAL_TEXT_AUTHORITY
@@ -225,7 +226,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                             authorization.history_enabled, view, self.contract))
                         if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
                             from dynamic_subject_agent.natural_feedback_frame import scoped_preview
-                            task=ModelTask(task.kind,scoped_preview(task.payload))
+                            task=ModelTask(task.kind,scoped_preview(task.payload,self.contract))
                         feedback = self._execute_feedback(task, plan=plan, context=context, command=command, authorization=authorization)
                         text = feedback['reply_text']
             if self.authorization() != authorization:
@@ -276,7 +277,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                     dialogue, authorization.history_enabled, view, snapshot['contract'])
                 if self.provider_authority==FEEDBACK_SCOPED_AUTHORITY:
                     from dynamic_subject_agent.natural_feedback_frame import scoped_preview
-                    preview=scoped_preview(preview)
+                    preview=scoped_preview(preview,snapshot['contract'])
                 return preview
             try:
                 self.delivery.claim(plan.operation_ref.operation_id + ':' + plan.attempt_id, task, rebuild)

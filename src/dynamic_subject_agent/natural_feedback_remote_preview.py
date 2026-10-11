@@ -16,6 +16,9 @@ def natural_feedback_remote_request_preview(task, *, technical_variant='baseline
     if technical_variant=='scoped' and task.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
         from dynamic_subject_agent.natural_feedback_frame import SCOPED_POLICY
         expected=SCOPED_POLICY
+    if technical_variant=='intent-only' and task.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+        from dynamic_subject_agent.natural_feedback_intent import INTENT_POLICY
+        expected=INTENT_POLICY
     if (type(task.payload) is not dict or set(task.payload) != {'policy', 'payload'}
         or task.payload['policy'] != expected):
         raise ValueError('exact candidate policy required')

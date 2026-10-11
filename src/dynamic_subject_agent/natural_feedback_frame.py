@@ -98,5 +98,8 @@ def scoped_contract(binding):
             feedback_output='intent-edits-reply-constants-bound-locally',write_frame='explicit-quoted-replacement-1'))
 
 
-def scoped_preview(preview):
+def scoped_preview(preview,contract=None):
+    if contract is not None and contract['version']=='natural-feedback-intent-live-s153-1':
+        from dynamic_subject_agent.natural_feedback_intent import intent_preview
+        return intent_preview(preview)
     return dict(preview,policy=SCOPED_POLICY)

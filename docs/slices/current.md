@@ -1,5 +1,9 @@
 # 当前工作
 
+唯一执行[S153：Python构造明确替换与接续](slice-153-python-frame-continuity.md)。2026-10-11用户S152终态后明确继续；fetch后8e10a90与main一致、tracked干净/旧未提交和失败全保。先定raw两字段意图/正文，Python按独立frame构造仍满足旧唯一/真实变化/大小界限的edit；未知范围不effect，不放宽旧协议/重发首题。沿同两已批用途/资料/slot，新独立技术资格/新纸鹤→布偶首景≤10首次0retry，工程复核提交推送后真实执行，首失败终止，以下S152及以前为历史。
+
+S153工程验证收口：52核心新旧/6必要权限回执（3为delta复核）/4执行器模拟与双复核接纳，旧失败原decoder仍拒0重发；无contract装配探测及测试短nonce失败全保并修。必要history状态audit分派漏项关闭，独立新协议不升级旧root/常驻入口；0实际新调用/凭据，commit/push后仅冻结新首景，真实效果尚未验，见[REPORT](../reports/2026-10-11-slice-153/REPORT.md)。
+
 唯一执行[S152：精简协议与独立可写frame](slice-152-compact-frame-continuity.md)。用户明确继续保护其他照旧/减少冗余字段、新未见场景、保失败/不放宽标准/不重抽、授权内自主提交。fetch后da4d0d5与main一致、tracked干净，旧成果保留。先定frame：明确引号对象替换外所有字节保护，未知scope澄清；暂限自动effect范围并说明影响，不永久取消自然反馈。沿已批同数据/两用途/slot单请求做独立资格，原失败仅离线，不转root/服务/草稿；以下S151为历史。
 
 S152工程验证收口：独立资格/三字段raw/本地六字段绑定、先定frame及最终Publication重算，14新＋21旧必要兼容/2新执行器＋3旧最终检查、两只读复核过；旧S151错误patch仅离线拒绝0调用，首次工程/fixture失败保留。0实际新remote/credential，工程commit/push后执行冻结新字牌首景十步≤10首次/0retry/首技术或保护失败结束；人物/真实接续尚未验，见[REPORT](../reports/2026-10-11-slice-152/REPORT.md)。
