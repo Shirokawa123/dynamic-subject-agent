@@ -1,0 +1,15 @@
+{
+  "status": "approved",
+  "approval_date": "2026-10-11",
+  "user_response": "同意",
+  "review_basis": "b67a27fc2472b04c8f789d76061cc7a8354a90a5e0fb075d3fb33c3e7a51ebb6",
+  "action": "one-hidden-local-persistent-entry-launch",
+  "host": "127.0.0.1",
+  "port": 8796,
+  "application": "natural-feedback-chat-s155",
+  "root": ".artifacts/s155/experience-entry",
+  "startup_model_requests": 0,
+  "automatic_activity": false,
+  "automatic_share": false,
+  "preserve_frozen_review": true
+}

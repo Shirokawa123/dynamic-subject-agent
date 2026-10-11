@@ -1,5 +1,13 @@
 # S155：独立入口与真实长距、自然指称首验
 
+## 已批准启动：8796独立入口可体验
+
+2026-10-11用户对准确启动方案明确答复“同意”，绑定review basis b67a27fc…51ebb6，[批准记录](../../experiments/s155/entry-start-approval.json)与方向/current承接；原unapproved机器review和说明保持冻结，不改批准对象。核exact files/pointer/空audit及端口后，仅一次运行原启动器，隐藏进程PID30508，未弹浏览器。
+
+实际health=`natural-feedback-chat-s155`，唯一监听为127.0.0.1:8796/PID30508；同active身份/Timeline/pointer、空history、完整canonical空链、activity revision=0、audit=0，启动及核验0模型/0凭据读取。无自动推进/分享/通知/系统服务/调度；没有接用户草稿、迁移旧入口或复制开发内容。前轮长距首验仍2次原有界终态，未重发或改判。本机[启动回执](../../../.artifacts/s155/entry-start-receipt-20261011.json)、[核验日志](../../../.artifacts/s155/entry-start-verification-20261011.log)、launch/684f7e74fd3b4657b4dba8cd7f3a9311日志保留。
+
+入口地址为 http://127.0.0.1:8796 。使用仍是手动聊天/选原话/文字构图/明确引文反馈；启动工程通过不替代未执行的长距完整更正、自然指称、换题后选择或实用户人物评价。
+
 ## 真实首验终态：初稿九个目标，有界结束
 
 工程 e747f83 已提交推送后，冻结首次新场景实际只执行2步/2请求/0retry，2 audit complete、3 canonical（初次聊天、零模型E1选定、初稿choice），仅v1。两个 final 均 finish=stop，无截断或技术失败；completion 121/1921，choice reasoning1428、feedback细分null不伪0。

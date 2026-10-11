@@ -1,5 +1,9 @@
 # 当前工作
 
+S155启动收口：用户准确批准b67a27fc…51ebb6后，原启动器一次隐藏运行PID30508，仅127.0.0.1:8796；health正确/同pointer与active身份Timeline/空canonical和聊天/活动0/audit0，启动核验0模型凭据，无自动活动分享/浏览器/服务调度。保旧入口与草稿，原九目标首验仍2次有界终态/后8未验，无重发或改判；[报告](../reports/2026-10-11-slice-155/REPORT.md)与独立批准/本机回执齐，提交推送本阶段。冻结旧未批表述仅为批准前历史，不再是当前8796状态。
+
+2026-10-11用户对S155准确8796启动方案明确答复“同意”，绑定review basis `b67a27fc2472b04c8f789d76061cc7a8354a90a5e0fb075d3fb33c3e7a51ebb6`：允许一次隐藏loopback独立空入口启动，零模型/无自动活动分享，保旧入口/草稿/失败。先核冻结files/pointer/端口，再按原TEMP环境启动并核health/同身份/空canonical/audit0；不重发已终态长距首景或扩大用途。
+
 S155首验终态：工程e747f83已push后2首次0retry/2audit complete/3canonical仅v1；同字段6目标首末291成立，但subject1/composition6/focus2共9>冻结≤8，frame不可授权/资格0，有界结束。后8自然指称/修订/条件/3topic/重开新choice/结果未验；保全部首稿/失败/原界限，不删目标或重抽。readonly全链0请求通过；独立空entry同pointer仍保，8796未批未启动，具体[启动动作](../experiments/s155/ENTRY-START.md)齐备，提交推送真实终态后集中确认。
 
 S155换窗恢复：HEAD/main5516561，fetch后remote一致，原23passed已结束；新空entry同pointer/canonical0/audit0按原TEMP环境只读核通过，无重建/真实请求/8796服务。双复核问题关闭，增量helper8＋最终名字边界2passed（9唯一）；工程提交推送后唯一新长距首验，准确[启动动作](../experiments/s155/ENTRY-START.md)仍未批，全部旧成果保持。

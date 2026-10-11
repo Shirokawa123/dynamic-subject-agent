@@ -2,7 +2,7 @@
 
 ### Slice-155：独立手动自然反馈入口
 
-独立空 S155 root/8796 启动器沿 S154 multi-span 资格与 S150 已批两用途，Authority 在 entry open/recovery 前纯核 active identity/Timeline/exact variant。薄 Adapter 只调用 Facade，当前参考与下一步来自实际 natural-feedback 投影，草稿/原 nonce 独立作用域；Unknown/已核失败关闭可零请求重开查读。无计时/分享/通知，初始化0模型/凭据、canonical空链/audit0。当前8796常驻启动未批；准确动作及恢复环境事实见[S155报告](reports/2026-10-11-slice-155/REPORT.md)。自动effect仍限明确引文替换，原≤4/160/240/唯一不重叠/完整覆盖及其他字符逐字保护不放宽；自然指称本轮只验含糊澄清→明确词句修订，不称通用自动定位。
+独立空 S155 root/8796 启动器沿 S154 multi-span 资格与 S150 已批两用途，Authority 在 entry open/recovery 前纯核 active identity/Timeline/exact variant。薄 Adapter 只调用 Facade，当前参考与下一步来自实际 natural-feedback 投影，草稿/原 nonce 独立作用域；Unknown/已核失败关闭可零请求重开查读。无计时/分享/通知，初始化0模型/凭据、canonical空链/audit0。2026-10-11准确启动获批后，8796已一次隐藏loopback运行/同pointer/空聊天活动0/audit0；准确动作及恢复环境事实见[S155报告](reports/2026-10-11-slice-155/REPORT.md)。自动effect仍限明确引文替换，原≤4/160/240/唯一不重叠/完整覆盖及其他字符逐字保护不放宽；自然指称本轮只验含糊澄清→明确词句修订，不称通用自动定位。
 
 工程e747f83后真实首次2请求/2complete/3canonical仅v1；composition6目标首末291，但全plan9目标超先定≤8资格门槛，初稿内容2/资格0有界结束，无反馈修订发表/后8未验。0retry/readonly全链0/旧首失败保持；这不是通用自然指称或真实长距完整修订已过，见[S155事实](reports/2026-10-11-slice-155/live-summary.json)。
 
