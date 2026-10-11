@@ -19,6 +19,14 @@ low/final均两输入技术及语义过；按先定completion合计final472<low3
 
 只读核6 audit/request/wire/raw/输出digest、两个source整树不变、原始final与value一致、readiness/metadata/final资格依据、旧两目录完整56工件hash相同，0模型/凭据/业务写入。完整[metadata](../../../.artifacts/s157/six-first-live/metadata.json)、[eligibility](../../../.artifacts/s157/six-first-live/eligibility.json)、[核验](../../../.artifacts/s157/six-first-live/readonly-six-verification.json)均本机保留，公开[诊断汇总](diagnostic-summary.json)。本阶段人物Publication0，真实长距/指称仍未验；诊断事实commit/push后才准备并验证候选后的空root首景。
 
+## 候选后首景工程准备
+
+六格事实11b0813已push后，仅新增SelectedChoiceEntry及冻结首景runner；固定新scene-first/entry+audit，没有HTTP/UI/常驻进程。每次新root创建/opening及wire前先核eligible_variant，原score/manifest/readiness/metadata/first final任变拒绝；新entry同已审人物空history/revision0、exact variant/pointer由Authority纯校验，错variant/Timeline或部分root保数据拒绝，不复制seed/诊断proposals。
+
+[scene helper](../../../.artifacts/s157/test-scene-first.log)6 passed/113.85秒，实际新qualification下完整十步Facade Fake、首技术失败终态、短稿/九目标资格不足、不修订目标未达均不追加请求；[入口](../../../.artifacts/s157/test-candidate-entry-first.log)2 passed/7.53秒，包括empty/reopen0、拒换variant/Timeline和missing eligibility在root创建前拒。真实候选/scene/grant纯[check](../../../.artifacts/s157/scene-check-first.log)0模型/凭据/opening，真实scene-first此刻未创建。只读入口复核无问题，场景最终复核接纳及此阶段commit/push后才真实首景，原冻结SCENE门槛/所有保护不改。
+
+最终入口与scene两路只读复核通过，无问题；十条文字/scene SHA一致、eligibility-before-root、实际selected variant与全部效果门槛闭合。此接线阶段0新增真实请求/无scene root/0新常驻服务，提交推送后才唯一次新首景，不再修改冻结schema/标准/协议或诊断首次verdict。
+
 ## 工程与六格准备
 
 用户明确先固定6格、候选通过后才未见完整闭环，保两旧终态/不重跑/不放宽4096及原保护、授权内自主提交推送。main/remote开工611f52d，旧两根各28文件hash已冻结；新S157资格与诊断独立，8796不POST/重开/升级，用户草稿不触。
