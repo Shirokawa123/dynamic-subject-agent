@@ -4,6 +4,8 @@
 
 S153工程验证收口：52核心新旧/6必要权限回执（3为delta复核）/4执行器模拟与双复核接纳，旧失败原decoder仍拒0重发；无contract装配探测及测试短nonce失败全保并修。必要history状态audit分派漏项关闭，独立新协议不升级旧root/常驻入口；0实际新调用/凭据，commit/push后仅冻结新首景，真实效果尚未验，见[REPORT](../reports/2026-10-11-slice-153/REPORT.md)。
 
+S153新首景终态：工程473f7e6后3首次0retry/2complete1本地构造跨度拒/3canonical仅v1；三stop无截断、模型raw两字段合法。实际8处目标中composition五处首末165>旧160，单段算法不能构造，整次未发表/原光线不动；后7含糊/条件/3topic/重开后新choice/结果未执行，闭环未过。readonly raw/normalized/audit/canonical全链0调用、旧失败全保，见[REPORT](../reports/2026-10-11-slice-153/REPORT.md)。本轮有界结束、不改冻结构造重发本题；下一必要为多个不重叠唯一小跨度总≤4/旧160/240，先工程覆盖再另见场景。此缺口不冒充模型格式失败或永久产品限制，提交推送终态事实。
+
 唯一执行[S152：精简协议与独立可写frame](slice-152-compact-frame-continuity.md)。用户明确继续保护其他照旧/减少冗余字段、新未见场景、保失败/不放宽标准/不重抽、授权内自主提交。fetch后da4d0d5与main一致、tracked干净，旧成果保留。先定frame：明确引号对象替换外所有字节保护，未知scope澄清；暂限自动effect范围并说明影响，不永久取消自然反馈。沿已批同数据/两用途/slot单请求做独立资格，原失败仅离线，不转root/服务/草稿；以下S151为历史。
 
 S152工程验证收口：独立资格/三字段raw/本地六字段绑定、先定frame及最终Publication重算，14新＋21旧必要兼容/2新执行器＋3旧最终检查、两只读复核过；旧S151错误patch仅离线拒绝0调用，首次工程/fixture失败保留。0实际新remote/credential，工程commit/push后执行冻结新字牌首景十步≤10首次/0retry/首技术或保护失败结束；人物/真实接续尚未验，见[REPORT](../reports/2026-10-11-slice-152/REPORT.md)。

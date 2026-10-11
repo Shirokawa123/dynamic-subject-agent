@@ -4,6 +4,8 @@
 
 独立intent-only/version/Grant/policy/audit/key沿同S150两用途/投影/slot；复用SCOPED authority/Manifest/schema8及最终frame裁决，旧资格/root不升级。raw仅intent/reply_text，不收模型edit/plan；Python对revise从真实原话/currentplan独立frame按每目标字段最小首末跨度构造编辑，旧唯一/160before/240after/真实变化界限及exact expectedplan均保持，未知/不能表示不effect。raw与内部六字段分别审计；S152旧noop失败仍原decoder拒绝0重发。暂限引号替换非通用NL，文字保护不替代物件语义验证；真实新接续尚未验。必要history回执修复按exact feedback contract选audit读取器，仅补原两authority分派，见[S153](reports/2026-10-11-slice-153/REPORT.md)。
 
+实际新首景473f7e6后3首次0retry/2complete1本地构造拒绝/3canonical仅v1；三stop/模型raw2有效，8处目标中composition首末跨度165超过旧160，本次每字段单段算法不能表示，不等于旧多项编辑协议都不能表示。反馈未发表/原光线和初稿不动；后7接续未执行，闭环未过。readonly全链0调用，52核心/6必要回执/4执行器模拟及复核不能替代真实构造/人物效果；终态及暂时限制见[S153事实](reports/2026-10-11-slice-153/live-summary.json)。
+
 ### Slice-152：精简反馈协议与独立文字修改范围
 
 新feedback-scoped-live/SCOPED authority/Manifest/Grant/audit/key沿S150同两用途/投影/slot及schema8，旧资格/root不升级。wire严格三字段intent/edits/reply_text；language、当前版本和本地reason由实际task绑定内部六字段，raw与normalized审计分别核。Python先于模型由当前原话/currentplan确定完整引号文字替换范围，“所有”才可多处同步；Provider/Cognition/Publication各核最终方案恰等于独立expectedplan，所有非目标字符含光路/镜头逐字保留，额外修改整次拒绝。未知/自由反馈/条件暂不能自动effect，澄清或NoOp；这是本轮覆盖限缩，不称通用自然反馈已解决或永久限制。旧S151错误patch离线拒绝0调用，14新＋21必要兼容通过；工程阶段的真实首景当时未执行，结果由下段承接，见[S152](reports/2026-10-11-slice-152/REPORT.md)。
