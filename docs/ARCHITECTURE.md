@@ -2,6 +2,8 @@
 
 ### Slice-150：独立LOCAL自然反馈局部修订
 
+2026-10-11用户准确批准basis f09dd24a…518f6两用途后，独立feedback-live/schema8/Manifest/Grant/audit启用，原LOCAL/Pending/审阅冻结对象/旧root不转换。材料/LOCAL合同/两policy/协议literal pins、sealed/canonical/authorization两次fresh重建与same-thread一次票据、strict final JSON/原Publication裁决保持；12新Fake、4执行器和6必要旧兼容最终相关检查及双复核接纳，真实首次内容另由S150报告记录。首次runner固定10stage/首技术失败/0retry、reserved仅inspect，close错误终态不遗留ready；不启动持续服务或调度。
+
 新natural-feedback-local authority/Manifest/schema8沿SharedActivityRecord及Publication复用原canonical，旧root/资格/字节不升级。普通Facade消息通过新NATURAL_ACTIVITY_FEEDBACK联合提议chat/clarify/revise及自然正文；Python仅对当前有效plan核版本/basis/权限、逐字唯一片段/不重叠/真实变化，保留未改文字、全部本次实际E1/plan依赖和当前真实F原话，原子发表并核正文一致。chat/clarify是活动NoOp；失败不发表，冷prepared重算/原nonce零模型保持。仅最新有效且支持当前plan的F1投影，换源/停用/历史关闭/cutoff/旧派生轮整项过滤，独立新方案不带回不支持它的旧反馈；8来源/4编辑是当前有界合同而非永久产品限制。
 
 实际已审包LOCAL首短nonce拒绝保留，独立完成9合成/9提交/3topic过窗/真重开0/新活动v3/6check，22新＋40受影响旧最终相关检查及双复核接纳，晚选E1依赖遗漏P2已修。0新remote/0credential，不证自然语义或人物效果；准确feedback联合提议与choice新增F1用途、纯wire/Pending拒绝和未执行真实首次见[S150报告](reports/2026-10-11-slice-150/REPORT.md)。旧8793/8795/冻结S149与调度保持，不启新持续服务或迁移。

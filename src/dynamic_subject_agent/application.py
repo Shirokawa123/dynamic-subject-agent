@@ -602,7 +602,7 @@ class _ApplicationRouter:
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
 
     def query_shared_activity(self, request=None):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest, SharedActivityStepRequest
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest, SharedActivityStepRequest, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES
         self._require_open()
         if request is not None and (type(request) not in (SharedExperienceRequest, SharedActivityStepRequest)
             or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id
@@ -685,9 +685,9 @@ class _ApplicationRouter:
         return self._apply_shared_activity(request,SharedActivityStepRequest)
 
     def preview_natural_feedback(self, text):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITY
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITIES
         self._require_open()
-        if (self._binding.provider_authority != FEEDBACK_AUTHORITY or type(text) is not str
+        if (self._binding.provider_authority not in FEEDBACK_AUTHORITIES or type(text) is not str
             or not text.strip() or len(text) > 1000 or '\x00' in text):
             return SharedActivityResponse('unavailable', problem_code='natural-feedback-preview-unavailable')
         try:

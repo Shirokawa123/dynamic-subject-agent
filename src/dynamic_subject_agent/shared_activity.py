@@ -11,6 +11,8 @@ from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFie
 
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
 FEEDBACK_AUTHORITY = 'original-natural-feedback-local-s150-1'
+FEEDBACK_LIVE_AUTHORITY = 'original-natural-feedback-deepseek-s150-1'
+FEEDBACK_AUTHORITIES = (FEEDBACK_AUTHORITY, FEEDBACK_LIVE_AUTHORITY)
 FEEDBACK_INTENT = 'natural-feedback-system-input'
 FEEDBACK_RUNTIME_CONTRACT = 'original-natural-feedback-cycle-s150-1'
 SHARED_LIVE_AUTHORITY = "original-shared-activity-deepseek-s139-1"
@@ -28,7 +30,7 @@ LIVING_LIVE_AUTHORITIES = (LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY)
 LIVING_AUTHORITIES = (LIVING_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
 LIVING_INTENT = 'living-activity-system-input'
 LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
-SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, FEEDBACK_AUTHORITY, *LIVING_AUTHORITIES, *WORKING_AUTHORITIES)
+SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *FEEDBACK_AUTHORITIES, *LIVING_AUTHORITIES, *WORKING_AUTHORITIES)
 SHARED_INTENT = "shared-activity-system-input"
 SHARED_VERSION = "shared-activity-s139-1"
 SHARED_RUNTIME_CONTRACT = "original-shared-activity-cycle-s139-1"
@@ -134,9 +136,9 @@ def shared_reply_policy(technical_variant="baseline"):
 def shared_variant_for_contract(contract):
     """Verify the whole canonical witness before choosing expression text."""
     from dynamic_subject_agent.original_whole_chat import contract_variant
-    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local'):
+    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local', 'feedback-live'):
         raise ValueError('exact shared qualification required')
-    if contract_variant(contract) == 'feedback-local':
+    if contract_variant(contract) in ('feedback-local', 'feedback-live'):
         return 'self-directed-activity'
     return {SHARED_EXPRESSION_VERSION: 'natural-expression',
         SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')

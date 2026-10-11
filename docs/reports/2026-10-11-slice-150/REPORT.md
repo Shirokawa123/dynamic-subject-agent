@@ -1,5 +1,13 @@
 # S150：自然反馈局部修订与换题接续，LOCAL准备收口
 
+## 2026-10-11准确批准后的LIVE工程阶段
+
+用户已明确“批准这两项，继续真实验收”，绑定原basis f09dd24a…518f6；原review.json/SCENE保持冻结unapproved历史对象，批准事实由direction/current与ApprovedNaturalFeedbackGrant承接。新增feedback-live authority/Manifest/精确publication key，保持独立schema8/新root，不转换旧LOCAL或8795。两用途保持原策略/协议/数据上限、最小资料/DeepSeek/default Windows slot；每次claim和同线程一次consume都由sealed/canonical/权限重建，严格最终JSON校验及原Publication裁决，audit与正文/密钥分开保存。
+
+12项新LIVE Fake检查通过；首次UNKNOWN用例原断言错误地要求活动投影可用，按旧UNKNOWN未知前缀拒读合同纠正，状态/不重发未放宽。执行器及6项必要旧兼容选集首1序列化失败/8通过，修正history DTO转plain后，执行器4项全部通过（全10步、reserved仅inspect、首技术失败不重试、关闭失败禁止下一步）。独立发送边界与规格复核接纳；发现finally关闭错误会留下ready的P2，已改为保存first-stage-failed并返回非0、回归通过。冻结review/scene、runner、辅助与执行源pins，在开始首景前核验；此阶段0实际remote/0credential，真实场景尚未执行，不能以Fake通过证明人物效果。
+
+工程阶段按用户要求commit/push后才执行[原SCENE](../../experiments/s150/SCENE.md)。执行器每次只执行下一个固定stage，先持久nonce再arm一次；已有reserved/failed/终态不可补发，只inspect原nonce。初始冷主光按原标准人工读取final后记本地分数，不把评语输入模型；随后自然反馈、歧义/条件、三话题、真重开、一次新choice和当前结果接话。首技术失败终止；所有可提取首次最终正文/预览/wire/canonical保本机。无服务/通知/调度、8793/8795/草稿或源材料变更。
+
 已交付可运行的独立LOCAL闭环：同一已审人物包/同一Timeline，普通消息一句“主光改暖，冷色只留一点边缘反光，其他照旧”原子修订当前方案；三轮换题退出近期窗、真关闭重开零调用后，再实际产生新活动版本并接话当前结果。这里的意图、编辑和正文由明确标记的合成Adapter给出；真实自然理解及人物效果尚未验证。新增用途待[准确审阅](../../experiments/s150/REVIEW.md)，不能把LOCAL成功当作LIVE交付。
 
 ## 实现及权威

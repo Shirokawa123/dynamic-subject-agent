@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'natural-feedback-live-s150-1':
+        from dynamic_subject_agent.natural_feedback_live import feedback_live_contract
+        if contract != feedback_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact approved natural feedback LIVE qualification required')
+        return 'feedback-live'
     if contract.get('version') == 'natural-feedback-local-s150-1':
         from dynamic_subject_agent.natural_feedback import feedback_contract
         if contract != feedback_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -175,6 +180,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == 'feedback-live':
+        return 'original-natural-feedback-live-s150-' + digest(contract)
     if variant == 'feedback-local':
         return 'original-natural-feedback-local-s150-' + digest(contract)
     if variant == 'working-local':
@@ -211,7 +218,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("shared-local", "shared-live", "feedback-local", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
+    if variant in ("shared-local", "shared-live", "feedback-local", "feedback-live", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)
