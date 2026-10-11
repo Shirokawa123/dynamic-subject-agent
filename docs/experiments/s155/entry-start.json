@@ -1,0 +1,40 @@
+{
+  "status": "unapproved",
+  "action": "one-hidden-local-persistent-entry-launch",
+  "application": "natural-feedback-chat-s155",
+  "port": 8796,
+  "host": "127.0.0.1",
+  "root": ".artifacts/s155/experience-entry",
+  "pointer_sha256": "9aca9b679f5ff71c4ce69d1aa5511479feb7439437c353172ea74aad04fd5b30",
+  "profile_id": "03b790f7-19a1-5e65-8209-08829b247dfd",
+  "timeline_id": "ac4769a4-f096-4f7f-8ff5-5369e5e38274",
+  "launcher": "scripts/start_natural_feedback_chat.ps1",
+  "python": "D:/anaconda3/python.exe",
+  "environment": {
+    "PYTHONPATH": "src",
+    "TEMP": ".artifacts",
+    "TMP": ".artifacts"
+  },
+  "startup_model_requests": 0,
+  "startup_credential_reads": 0,
+  "automatic_retries": 0,
+  "automatic_activity": false,
+  "automatic_share": false,
+  "browser_open": false,
+  "system_service": false,
+  "scheduler": false,
+  "notifications": false,
+  "migration": false,
+  "existing_model_review_basis": "f09dd24a840082d19dea10c0e0f8cce3bf8b31764d3f151be20f0c86d3e518f6",
+  "technical_variant": "multi-span",
+  "files": {
+    "scripts/serve_natural_feedback_chat.py": "32bae87abe6503bafde52554f577e990aafd5215a2edc1d28436a028d4d58539",
+    "scripts/start_natural_feedback_chat.ps1": "ebfaf26d34eac91dbe6dbea1e99c42a245afde5b3296d1c4c42ff8325461129d",
+    "app/desktop/natural_feedback_chat.py": "a6e1c7a410cb86162f80177ed1ef60db023dcaa65ab4465c9f853105ffcd5c4a",
+    "app/desktop/static/natural_feedback_chat.html": "2bdaa0679cb55428fe24d67a1846bc1add459ad01627af9dc36e61e4f92c2c97",
+    "src/dynamic_subject_agent/local_product.py": "60a6c856dedea37a9d958cd3276bbd5c020908eb2f8ad85d662a077b80f5b47a",
+    "src/dynamic_subject_agent/local_identity_authority.py": "3a971ded2dcacf41ac48a602ba692310c6039f1cdab34a00b08c75d5cf8d1227"
+  },
+  "action_description_sha256": "6ad8759c7eba50074fb60d19e340fe00501cf45babc2d57232beb3e55d629dd9",
+  "review_basis": "b67a27fc2472b04c8f789d76061cc7a8354a90a5e0fb075d3fb33c3e7a51ebb6"
+}

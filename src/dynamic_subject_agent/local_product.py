@@ -694,6 +694,11 @@ def validate_shared_activity_entry(config, *, profile_id, timeline_id, technical
     LocalIdentityAuthority(config).validate_shared_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
+def validate_natural_feedback_entry(config, *, profile_id, timeline_id):
+    """Pure sealed exact entry check; no Host, recovery or model."""
+    LocalIdentityAuthority(config).validate_natural_feedback_entry(profile_id,timeline_id)
+
+
 def validate_living_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):
     """Validate the exact current living-live identity before entry activation."""
     LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)

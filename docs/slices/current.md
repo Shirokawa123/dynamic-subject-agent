@@ -1,5 +1,9 @@
 # 当前工作
 
+S155换窗恢复：HEAD/main5516561，fetch后remote一致，原23passed已结束；新空entry同pointer/canonical0/audit0按原TEMP环境只读核通过，无重建/真实请求/8796服务。双复核问题关闭，增量helper8＋最终名字边界2passed（9唯一）；工程提交推送后唯一新长距首验，准确[启动动作](../experiments/s155/ENTRY-START.md)仍未批，全部旧成果保持。
+
+唯一执行[S155：独立体验入口与长距/指称首验](slice-155-natural-feedback-entry.md)。用户明确先接入口/再补真实长距和自然指称、保旧入口草稿失败/不放宽、授权内自主提交推送、新启动或用途做审再集中问。fetch后5516561与main一致、tracked干净/旧成果全保；沿同S154两用途/policy/资料/slot复用薄界面与纯Authority资格验证。先零调用入口准备/自有Fake HTTP/新冻结首景，再真实已有用途首验；8796常驻启动未批不运行，无新指称自动定位出站用途。
+
 唯一执行[S154：多跨度构造与接续](slice-154-multispan-continuity.md)。用户明确先修多跨度/保持原长度与其他照旧、新未见首景/保失败不重抽、授权内自主提交推送；fetch后03a1b64与main一致、tracked干净、旧未提交/失败全保。先定≤4/160/240/唯一不重叠完整覆盖及exact frame，独立multi-span技术资格沿同已批用途/材料/slot，旧S153构造不升级；工程复核commit/push后只执行原创青台→禾台十步≤10首次0retry/首失败终态，以下为历史。
 
 S154工程验证收口：新13＋旧43核心56/2新＋2旧执行器4模拟、双只读复核接纳，旧S153原失败仍拒/新离线4短段完整但0重发0改判，所有旧成果保留。原160/240/≤4/唯一不重叠与expectedplan保护不放宽；0实际新remote/credential。commit/push后仅冻结新首景，区分真实同字段长距分段与跨字段多项，不把模拟/短稿当长现场证明，见[REPORT](../reports/2026-10-11-slice-154/REPORT.md)。
