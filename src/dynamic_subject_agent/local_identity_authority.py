@@ -1619,12 +1619,13 @@ class LocalIdentityAuthority:
             or shared_variant_for_contract(identity.qri.reviewed_chat_contract) != technical_variant):
             raise RuntimeError('shared-entry-identity-unverified')
 
-    def validate_natural_feedback_entry(self, expected_identity_id, expected_timeline_id):
+    def validate_natural_feedback_entry(self, expected_identity_id, expected_timeline_id, *, technical_variant='multi-span'):
         """Pure exact active multi-span pointer check before entry open/recovery."""
         from dynamic_subject_agent.natural_feedback_live import feedback_variant_for_contract
+        if technical_variant not in ('multi-span','choice-low','choice-final'):raise ValueError('closed natural feedback entry variant required')
         _,record,identity=self._active_chat_record(expected_identity_id)
         if (identity.qri.provider_authority!=FEEDBACK_SCOPED_AUTHORITY or record.get('timeline_id')!=expected_timeline_id
-            or feedback_variant_for_contract(identity.qri.reviewed_chat_contract)!='multi-span'):
+            or feedback_variant_for_contract(identity.qri.reviewed_chat_contract)!=technical_variant):
             raise RuntimeError('natural-feedback-entry-identity-unverified')
 
     def validate_living_activity_entry(self, expected_identity_id, expected_timeline_id, *, technical_variant='baseline'):

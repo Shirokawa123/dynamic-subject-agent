@@ -99,7 +99,8 @@ def scoped_contract(binding):
 
 
 def scoped_preview(preview,contract=None):
-    if contract is not None and contract['version'] in ('natural-feedback-intent-live-s153-1','natural-feedback-multispan-live-s154-1'):
+    if contract is not None and contract['version'] in ('natural-feedback-intent-live-s153-1','natural-feedback-multispan-live-s154-1',
+        'natural-feedback-choice-low-live-s157-1','natural-feedback-choice-final-live-s157-1'):
         from dynamic_subject_agent.natural_feedback_intent import intent_preview
         return intent_preview(preview)
     return dict(preview,policy=SCOPED_POLICY)

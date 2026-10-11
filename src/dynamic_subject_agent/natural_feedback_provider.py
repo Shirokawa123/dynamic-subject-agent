@@ -42,7 +42,7 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
                 raise ValueError('exact feedback wire changed')
             row.update(request_digest=digest(actual.payload), wire_sha256=request['wire_sha256'])
             frame=None
-            if self.delivery.technical_variant in ('scoped','intent-only','multi-span') and actual.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+            if self.delivery.technical_variant in ('scoped','intent-only','multi-span','choice-low','choice-final') and actual.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
                 from dynamic_subject_agent.natural_feedback_frame import requested_frame
                 payload=actual.payload['payload']
                 current=None if payload['current_plan'] is None else validate_plan(payload['current_plan'])
@@ -63,7 +63,7 @@ class DeepSeekNaturalFeedbackAdapter(ProviderAdapter):
                 if self.delivery.technical_variant=='intent-only':
                     from dynamic_subject_agent.natural_feedback_intent import intent_proposal
                     value=intent_proposal(value,payload,frame=frame)
-                if self.delivery.technical_variant=='multi-span':
+                if self.delivery.technical_variant in ('multi-span','choice-low','choice-final'):
                     from dynamic_subject_agent.natural_feedback_multispan import multispan_proposal
                     value=multispan_proposal(value,payload,frame=frame)
                 validate_proposal(value)

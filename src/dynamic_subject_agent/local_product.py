@@ -694,9 +694,9 @@ def validate_shared_activity_entry(config, *, profile_id, timeline_id, technical
     LocalIdentityAuthority(config).validate_shared_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
 
 
-def validate_natural_feedback_entry(config, *, profile_id, timeline_id):
+def validate_natural_feedback_entry(config, *, profile_id, timeline_id, technical_variant='multi-span'):
     """Pure sealed exact entry check; no Host, recovery or model."""
-    LocalIdentityAuthority(config).validate_natural_feedback_entry(profile_id,timeline_id)
+    LocalIdentityAuthority(config).validate_natural_feedback_entry(profile_id,timeline_id,technical_variant=technical_variant)
 
 
 def validate_living_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):
@@ -787,7 +787,7 @@ def open_natural_feedback_product_live(config, *, identity_id, grant, audit_path
     adapter = DeepSeekNaturalFeedbackAdapter(transport=transport, delivery=delivery,
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID), observations=observations)
     cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(adapter),
-        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_SCOPED_AUTHORITY if technical_variant in ('scoped','intent-only','multi-span') else FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=FEEDBACK_SCOPED_AUTHORITY if technical_variant in ('scoped','intent-only','multi-span','choice-low','choice-final') else FEEDBACK_LIVE_AUTHORITY, delivery=delivery,
         snapshot_loader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)

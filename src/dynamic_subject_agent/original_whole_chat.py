@@ -98,6 +98,12 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') in ('natural-feedback-choice-low-live-s157-1','natural-feedback-choice-final-live-s157-1'):
+        from dynamic_subject_agent.natural_feedback_choice_budget import CHOICE_VERSIONS,choice_budget_contract
+        mode=next(mode for mode,version in CHOICE_VERSIONS.items() if version==contract['version'])
+        if contract!=choice_budget_contract({key:contract[key] for key in APPROVED_BINDING},mode):
+            raise ValueError('exact S157 choice qualification required')
+        return 'feedback-scoped-live'
     if contract.get('version') == 'natural-feedback-multispan-live-s154-1':
         from dynamic_subject_agent.natural_feedback_multispan import multispan_contract
         if contract != multispan_contract({key:contract[key] for key in APPROVED_BINDING}):
@@ -201,6 +207,8 @@ def _legacy_followup_contract(binding):
 def whole_publication_key(contract):
     variant = contract_variant(contract)
     if variant=='feedback-scoped-live':
+        if contract['version'] in ('natural-feedback-choice-low-live-s157-1','natural-feedback-choice-final-live-s157-1'):
+            return 'original-natural-feedback-'+contract['technical_variant']['protocol_variant']+'-s157-'+digest(contract)
         if contract['version']=='natural-feedback-multispan-live-s154-1':return 'original-natural-feedback-multispan-s154-'+digest(contract)
         if contract['version']=='natural-feedback-intent-live-s153-1':return 'original-natural-feedback-intent-s153-'+digest(contract)
         return 'original-natural-feedback-scoped-s152-'+digest(contract)

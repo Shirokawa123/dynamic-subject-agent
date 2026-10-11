@@ -61,10 +61,15 @@ def feedback_grant_variant(grant):
     if type(grant) is NaturalFeedbackIntentDevelopmentGrant:return 'intent-only'
     from dynamic_subject_agent.natural_feedback_multispan import NaturalFeedbackMultispanDevelopmentGrant
     if type(grant) is NaturalFeedbackMultispanDevelopmentGrant:return 'multi-span'
+    from dynamic_subject_agent.natural_feedback_choice_budget import NaturalFeedbackChoiceBudgetGrant
+    if type(grant) is NaturalFeedbackChoiceBudgetGrant:return grant.variant
     raise ValueError('exact approved feedback grant required')
 
 
 def feedback_live_contract_for_variant(binding,technical_variant='baseline'):
+    if technical_variant in ('choice-low','choice-final'):
+        from dynamic_subject_agent.natural_feedback_choice_budget import choice_budget_contract
+        return choice_budget_contract(binding,technical_variant)
     if technical_variant=='baseline':return feedback_live_contract(binding)
     if technical_variant=='direct-final':
         from dynamic_subject_agent.natural_feedback_budget import feedback_budget_contract
@@ -84,6 +89,8 @@ def feedback_live_contract_for_variant(binding,technical_variant='baseline'):
 def feedback_variant_for_contract(contract):
     from dynamic_subject_agent.original_whole_chat import contract_variant
     if contract_variant(contract) not in ('feedback-live','feedback-scoped-live'):raise ValueError('exact feedback LIVE contract required')
+    if contract['version']=='natural-feedback-choice-low-live-s157-1':return 'choice-low'
+    if contract['version']=='natural-feedback-choice-final-live-s157-1':return 'choice-final'
     if contract['version']=='natural-feedback-scoped-live-s152-1':return 'scoped'
     if contract['version']=='natural-feedback-intent-live-s153-1':return 'intent-only'
     if contract['version']=='natural-feedback-multispan-live-s154-1':return 'multi-span'
@@ -139,6 +146,9 @@ class NaturalFeedbackMultispanCallAudit(NaturalFeedbackIntentCallAudit):
 
 
 def _audit_type(technical_variant):
+    if technical_variant in ('choice-low','choice-final'):
+        from dynamic_subject_agent.natural_feedback_choice_budget import NaturalFeedbackChoiceLowCallAudit,NaturalFeedbackChoiceFinalCallAudit
+        return NaturalFeedbackChoiceLowCallAudit if technical_variant=='choice-low' else NaturalFeedbackChoiceFinalCallAudit
     if technical_variant not in ('baseline','direct-final','scoped','intent-only','multi-span'):raise ValueError('closed feedback audit variant required')
     return NaturalFeedbackMultispanCallAudit if technical_variant=='multi-span' else NaturalFeedbackIntentCallAudit if technical_variant=='intent-only' else NaturalFeedbackScopedCallAudit if technical_variant=='scoped' else NaturalFeedbackBudgetCallAudit if technical_variant=='direct-final' else NaturalFeedbackCallAudit
 

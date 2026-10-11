@@ -1,5 +1,9 @@
 # 当前工作
 
+S157工程准备收口：30核心新旧/最终6 helper/双复核过，缺final证据与HTTP停组P2关闭；原4096/投影/JSON/policy/≤8/≤4/160/240/完整exact保护不变，新增资格/audit/key独立。新源4 Fake工程seed/0真实凭据，原manifest/readiness保留、final-readiness封0请求；旧两终态完整56工件hash全同，失败fixture/partial seed全部保。工程commit/push后固定6格首次0retry，选两输入技术+语义2候选并提交诊断事实后才未见空首景，不改8796/草稿。
+
+唯一执行[S157：固定六格choice诊断与候选后未见完整闭环](slice-157-choice-budget-six-cell.md)。2026-10-11用户明确按方案/先6格候选过再新首景/保两终态不重跑不放宽4096与原保护/授权内自主commit push。611f52d与fetch后main一致，tracked干净；先独立闭集choice-low/final资格/6格新材料与评分冻结，源本地合成明确非人物/0真实调用，六格proposals0人物发表。新资格不升级8796/旧root/草稿，旧文件原终态全保；工程复核push后首次矩阵0retry，eligible事实push后才唯一新洗衣房首景，旧S156及以前下文仅历史。
+
 2026-10-11用户询问下一步；助手建议先两组全新choice high/low/直接输出固定6格同用途独立诊断，保4096与所有投影/裁决、0retry、不发表人物状态，完整语义接纳后再另未见长距/指称首景。源码确认仅feedback已关闭thinking/choice仍high；context7接口本轮无，官方回退核参数支持。尚未执行/0新调用，不改S155/S156终态、8796/草稿/原界限，详见[S156后续建议](../reports/2026-10-11-slice-156/REPORT.md#下一步建议2026-10-11未执行)；唯一执行任务仍以S156终态及后续具体任务书承接。
 
 S156真实终态：b4bde47准备已push后新钟表店2首次0retry/1complete＋1choice截断FailedClosed；HTTP200/length/final空/completion4096/reasoning计数4096，2canonical仅chat+E1 select、活动0/无plan。初稿资格/后8长距修订与自然指称/条件/3topic/重开选择/末答均未验，本轮首技术失败有界结束，不改题/预算/界限或补发。readonly raw/audit/canonical0请求过，旧S155九目标仍2次终态/全部28文件及10源码hash全同，8796只读同scope/健康空活动0，草稿不触；提交推送终态与未验事实。下一必要独立choice最终正文预算/协议诊断，再另未见首景，不把本失败重发为通过。

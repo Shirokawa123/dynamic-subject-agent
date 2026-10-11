@@ -10,6 +10,9 @@ BUDGET_PROTOCOL_SHA='55a69fdb206af0ba4202ec025bc06ece483b409b3201de2405faa0ac4ae
 
 
 def feedback_protocol(kind,technical_variant='baseline'):
+    if technical_variant in ('choice-low','choice-final'):
+        from dynamic_subject_agent.natural_feedback_choice_budget import choice_protocol
+        return choice_protocol(kind,technical_variant)
     if technical_variant not in ('baseline','direct-final','scoped','intent-only','multi-span') or kind not in (
         ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,ModelTaskKind.SHARED_ACTIVITY_CHOICE):
         raise ValueError('closed feedback protocol kind and variant required')
