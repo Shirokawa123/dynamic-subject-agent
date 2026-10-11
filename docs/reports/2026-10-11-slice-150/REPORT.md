@@ -1,4 +1,21 @@
-# S150：自然反馈局部修订与换题接续，LOCAL准备收口
+# S150：自然反馈修订有限成立，真实首景因截断终止
+
+## 真实首景终态：一句反馈修订成立，完整接续未通过
+
+工程6ef4be9已commit/push后按冻结首景实际执行4首次/0retry：3audit complete、1failed-closed；4 canonical为普通来源聊天、零模型E1选定、冷主光v1活动、自然反馈v2。第4步“再收一点”HTTP200但final为空，completion_tokens=4096，严格完整响应解析返回original-whole-response-truncated（该码对应finish_reason=length）；未发表、当前版本仍v2。人物是否理解这句含糊反馈无法判断，模型内部耗尽输出预算的原因未确认，未读取/保存raw reasoning。首技术失败已终止，没有补发或另开模型场景。
+
+后续6步全部未执行：条件反馈、3个换题、过近期窗后的真重开/新活动choice、当前结果接话。本次不证明真实换题接续、完整闭环或长期稳定；新实际隔日不在本次范围，旧S149隔日事实保持。无新服务/通知/调度，旧8793/8795及草稿未触及。
+
+实际自然反馈只有原句“主光改暖，冷色只留一点边缘反光，其他照旧”，没有抄旧plan、补主体/视点或手选新来源。模型提出4个实际光照片段替换，Python发表v2并将本条已提交用户原话自动绑定F，保原E1依赖。暖主光、暖白远景灯、暖高光及少量轻微冷色边反光进入方案；站台少女/兔形布偶主体、右侧位置/左轨道留白、视点、轮廓/抱持关注及全部非光照文字保持。自然正文与canonical expression逐字一致，没有成图/离线活动声称。这是一个真实明确反馈的有限效果，不能把局部编辑结构通过当作泛化语义能力。
+
+**标准变化及影响已在第三步请求前说明。** 初稿focus本身写了偏冷主光/冷光，原SCENE要求focus逐字不变会使正确改暖后仍留下旧冷光。原冻结标准未改：实际focus变动，原focus逐字项记0/未达，不能声称原标准全部通过。[ASSESSMENT-NOTE](../../experiments/s150/ASSESSMENT-NOTE.md)在反馈输出前另定只允许光照文字同步修正、其他内容逐字保留的语义标准，结果在该项记2。没有把补充送给模型、改题/策略/协议/投影/上限或重试；两套分数并列于[live-summary](live-summary.json)。原首回复偏长且像构图说明（自然性1），自身选择确有站台/布偶与可爱轮廓的具体关注，但不足以证明长期自有生活。
+
+只读核验：4audit逐请求digest/首次final一致，3完整输出的output digest一致；active authority/同profile与Timeline、4Publication全链/record digest/原文来源、E1＋F依赖及v2当前结果一致，第4失败无Publication。最初blocked transport factory inspect的自动审批超时，未执行；改用SQLite URI mode=ro，不打开应用/transport/credential，完成全链核验，新增模型/凭据均0。不是绕过风险拒绝，也未修改失败。完整证据均本机：
+
+- [真实metadata](../../../.artifacts/s150/real-first/metadata.json)、[只读核验](../../../.artifacts/s150/real-first/readonly-verification.json)。
+- [初始来源首次全文](../../../.artifacts/s150/real-first/finals/initial-source.json)、[初稿全文](../../../.artifacts/s150/real-first/finals/initial-activity.json)、[唯一自然反馈全文](../../../.artifacts/s150/real-first/finals/natural-correction.json)、[第4步原空final](../../../.artifacts/s150/real-first/finals/ambiguous-feedback.json)。每步previews目录保全部准确body，audit保metadata；canonical-history保已提交双方正文，未将空白写成台词。
+
+目前可查看真实一次反馈的修订正文、逐字差异和v2方案；现有聊天页尚未接入S150，完整“自然反馈→换题→继续活动”只在LOCAL/Fake完成，真实链未完成。本轮诊断到此结束。下一必要工作是处理联合结构化任务的响应截断，先作有界输出预算/协议诊断，再用未见过的场景补验真实换题后选择；现有原首失败保留，不复跑至通过。W1继续来源优先/可选，无新增永久限制或记忆扩建前置。
 
 ## 2026-10-11准确批准后的LIVE工程阶段
 
@@ -8,7 +25,9 @@
 
 工程阶段按用户要求commit/push后才执行[原SCENE](../../experiments/s150/SCENE.md)。执行器每次只执行下一个固定stage，先持久nonce再arm一次；已有reserved/failed/终态不可补发，只inspect原nonce。初始冷主光按原标准人工读取final后记本地分数，不把评语输入模型；随后自然反馈、歧义/条件、三话题、真重开、一次新choice和当前结果接话。首技术失败终止；所有可提取首次最终正文/预览/wire/canonical保本机。无服务/通知/调度、8793/8795/草稿或源材料变更。
 
-已交付可运行的独立LOCAL闭环：同一已审人物包/同一Timeline，普通消息一句“主光改暖，冷色只留一点边缘反光，其他照旧”原子修订当前方案；三轮换题退出近期窗、真关闭重开零调用后，再实际产生新活动版本并接话当前结果。这里的意图、编辑和正文由明确标记的合成Adapter给出；真实自然理解及人物效果尚未验证。新增用途待[准确审阅](../../experiments/s150/REVIEW.md)，不能把LOCAL成功当作LIVE交付。
+## LOCAL准备阶段历史（以下为批准前事实）
+
+已交付可运行的独立LOCAL闭环：同一已审人物包/同一Timeline，普通消息一句“主光改暖，冷色只留一点边缘反光，其他照旧”原子修订当前方案；三轮换题退出近期窗、真关闭重开零调用后，再实际产生新活动版本并接话当前结果。这里的意图、编辑和正文由明确标记的合成Adapter给出；当时真实自然理解及人物效果尚未验证、新用途待[准确审阅](../../experiments/s150/REVIEW.md)，不能把LOCAL成功当作LIVE交付。最新批准与真实结果见顶部。
 
 ## 实现及权威
 

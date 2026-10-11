@@ -1,0 +1,53 @@
+{
+  "status": "bounded-first-scene-stopped",
+  "engineering_source_commit": "6ef4be9",
+  "real_first_requests": 4,
+  "automatic_retries": 0,
+  "audit_complete": 3,
+  "audit_failed_closed": 1,
+  "canonical_publications": 4,
+  "canonical_kinds": ["chat", "select", "decision", "feedback"],
+  "activity_revisions": [1, 2],
+  "single_natural_feedback_submitted_revision": true,
+  "manual_plan_copy_in_feedback": false,
+  "manual_feedback_source_selection": false,
+  "same_identity_timeline": true,
+  "raw_final_audit_and_canonical_verified": true,
+  "failed_stage_publication": false,
+  "failure": {
+    "stage": "ambiguous-feedback",
+    "http_status": 200,
+    "application_status": "failed-closed",
+    "code": "original-whole-response-truncated",
+    "final_chars": 0,
+    "completion_tokens": 4096,
+    "model_internal_cause": "unconfirmed"
+  },
+  "character_effect": {
+    "initial_own_choice_cold_main_light": 2,
+    "natural_feedback_warm_main_and_small_cool_edge": 2,
+    "unrequested_subject_viewpoint_layout_retention": 2,
+    "original_strict_focus_unchanged": 0,
+    "focus_lighting_correction_under_pre_output_supplement": 2,
+    "ambiguous_feedback_understanding": null,
+    "ordinary_first_reply_naturalness": 1,
+    "long_term_reliability": "not-validated"
+  },
+  "assessment_change": "ASSESSMENT-NOTE recorded before third output; original focus-exact criterion retained alongside lighting-only semantic criterion",
+  "not_executed": [
+    "conditional-feedback",
+    "topic-gap-1",
+    "topic-gap-2",
+    "topic-gap-3",
+    "post-gap-activity",
+    "current-result-reply"
+  ],
+  "new_real_next_day": "not-in-this-scope",
+  "new_persistent_service": false,
+  "inspection": {
+    "blocked_transport_factory_inspect": "not-executed-auto-review-timeout",
+    "sqlite_uri_readonly_verification": "passed",
+    "new_model_requests": 0,
+    "new_credential_reads": 0
+  }
+}

@@ -2,6 +2,8 @@
 
 ### Slice-150：独立LOCAL自然反馈局部修订
 
+真实首景4首次/0retry、3模型complete/1截断失败、4Publication；普通一句反馈提出4光照局部替换并自动F来源发表v2，E1闭包/主体视点及非光照内容保持，reply等于canonical。原focus逐字标准因初稿含冷光不适配仍记未达；反馈输出前补充语义项并列有限通过。第4“再收一点”HTTP200/final空/4096/response-truncated未发表，后6步未执行，真实过窗新选择/完整闭环未证；SQLite只读全链/audit核验通过，不读key/CoT或重试，详见[S150真实结果](reports/2026-10-11-slice-150/REPORT.md)。
+
 2026-10-11用户准确批准basis f09dd24a…518f6两用途后，独立feedback-live/schema8/Manifest/Grant/audit启用，原LOCAL/Pending/审阅冻结对象/旧root不转换。材料/LOCAL合同/两policy/协议literal pins、sealed/canonical/authorization两次fresh重建与same-thread一次票据、strict final JSON/原Publication裁决保持；12新Fake、4执行器和6必要旧兼容最终相关检查及双复核接纳，真实首次内容另由S150报告记录。首次runner固定10stage/首技术失败/0retry、reserved仅inspect，close错误终态不遗留ready；不启动持续服务或调度。
 
 新natural-feedback-local authority/Manifest/schema8沿SharedActivityRecord及Publication复用原canonical，旧root/资格/字节不升级。普通Facade消息通过新NATURAL_ACTIVITY_FEEDBACK联合提议chat/clarify/revise及自然正文；Python仅对当前有效plan核版本/basis/权限、逐字唯一片段/不重叠/真实变化，保留未改文字、全部本次实际E1/plan依赖和当前真实F原话，原子发表并核正文一致。chat/clarify是活动NoOp；失败不发表，冷prepared重算/原nonce零模型保持。仅最新有效且支持当前plan的F1投影，换源/停用/历史关闭/cutoff/旧派生轮整项过滤，独立新方案不带回不支持它的旧反馈；8来源/4编辑是当前有界合同而非永久产品限制。
