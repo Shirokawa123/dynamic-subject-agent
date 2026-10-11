@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-11：S151固定4真实诊断全走/0retry/0Publication，3complete/1旧模式缺language，source权限/canonical/WAL不变；direct两格stop完整chat/准确局部patch，126/99completion，reasoning细分缺失不伪0。未复现length，不证旧内部根因；首次绑定eligibility语义2/2通过，诊断结束，工程5a5b1b2/1b30d3a已push后准备未见空间纹理首景，见[S151](reports/2026-10-11-slice-151/REPORT.md)。
+
 - 2026-10-11：S151独立direct-final同用途技术候选已接，feedback关thinking/去effort，choice high与4K/policy/数据/裁决不变；9新＋12LIVE兼容、3新执行器＋4旧最终相关检查/双复核过，metadata unavailable与diagnostic readiness门槛问题已修。两新preview只读冻结0原调用，4格首次及空间纹理新首景待实际；旧S150失败不重发，见[S151](reports/2026-10-11-slice-151/REPORT.md)。
 
 - 2026-10-11：S150工程6ef4be9已push，真实首景4首次/0retry、3complete/1截断失败、4canonical；一句自然反馈自动局部修订暖主光v2/E1＋F/非光照内容保留，原focus逐字标准未达，前置语义补充有限过。第4含糊反馈HTTP200/空final/4096tokens/response-truncated未发表，后6步未执行，完整真实接续未过；readonly全链/原文/audit核验0新调用，本轮结束，见[S150真实结果](reports/2026-10-11-slice-150/live-summary.json)。

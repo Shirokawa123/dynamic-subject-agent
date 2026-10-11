@@ -1,5 +1,7 @@
 # 当前工作
 
+S151工程5a5b1b2/1b30d3a已push；固定四格真实4首次/0retry/0人物发表，3complete/1baseline缺language，源权限/canonical/WAL不变，旧S150失败不动。Direct两格完整且语义2/2，126/99completion/推理细分None；未复现length，不宣称已证全部根因。不可覆盖eligible已绑定首次结果，诊断有界结束；commit/push本阶段后进入已冻结[空间纹理新首景](../experiments/s151/SCENE.md)，≤10首次0retry/首技术失败停，不再调诊断题。
+
 唯一执行[S151：输出预算诊断与未见自然反馈接续](slice-151-output-budget-new-continuity.md)。用户2026-10-11明确继续截断定位/修复、新场景、保首失败/不重抽、授权内自主commit/push。fetch后5522160与main一致，tracked无差异、旧成果保留。沿S150已批两用途/材料/Provider/slot做direct-final独立技术候选，先定4格新消息诊断与空间纹理新首景标准；不放宽length接受/0retry，不重启S150首景/旧root或新服务。以下S150仅历史。
 
 S150本轮真实首景已终态收口：工程6ef4be9已push后4首次/0retry，3complete/1response-truncated、4canonical，真实一句反馈自动改暖v2并保E1＋F/非光照细节。第4含糊反馈HTTP200/空final/4096tokens未发表，后续条件/3topic/重开后choice/结果6步未执行；不能称真实完整闭环。初稿focus含冷主光，原focus逐字标准不适配且未达；第三输出前另记语义补充并并列评分，不改冻结场景/策略或补发。只读核canonical/audit/raw通过0新请求，完整证据见[REPORT](../reports/2026-10-11-slice-150/REPORT.md)。本轮结束、保首失败，下一必要工作是有界响应截断诊断后用未见场景补接续，不扩W1/服务/调度/旧root；提交推送当前事实。

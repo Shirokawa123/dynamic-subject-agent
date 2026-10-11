@@ -1,5 +1,13 @@
 # S151：输出预算诊断与未见自然反馈接续
 
+## 四格真实诊断收口
+
+工程5a5b1b2/1b30d3a已push后固定4格全执行，4真实首次/0retry/0人物Publication，旧source权限/canonical/WAL字节不变，S1504首/失败保持。结果：A-baseline stop/1246completion（1062reasoning）/302final字符，但缺language，结构拒绝；A-direct stop/126completion/231final，完整chat不改；B-direct stop/99completion/240final，完整revise，唯一将远景列车灯暖白→中性白；B-baseline stop/380completion（258reasoning）/267final，完整。3complete/1schema失败，全部首次正文/audit保本机。
+
+没有格发生length，不能说重现了旧截断或证明全部内部根因；旧记录已定位响应阶段预算耗满，新mode去掉该feedback思考开销路径是技术干预，不放宽失败接受。Direct两格reasoning_tokens未提供，记录None而非0。B真实patch只变目标片段、主体/视点/其他光路不变；A只是当前条件意见，没有已印刷/成图声称，语义均2/完整。两格技术/语义门槛满足，第一次不可覆盖eligibility绑定manifest/metadata/final SHA，允许冻结的未见空间纹理场景；不因少样本宣称稳定性。
+
+证据：[四格metadata](../../../.artifacts/s151/four-cell-first-live/metadata.json)、[已核冻结来源](../../../.artifacts/s151/four-cell-first-live/manifest.json)、[首次eligibility](../../../.artifacts/s151/four-cell-first-live/eligibility.json)、[A新模式正文](../../../.artifacts/s151/four-cell-first-live/finals/A-direct-final.json)、[B新模式正文](../../../.artifacts/s151/four-cell-first-live/finals/B-direct-final.json)。固定诊断到此结束，不为强复现增加题目；新场景尚未请求。
+
 第一次0请求预览冻结后，复核要求添加readiness/evaluate门槛，执行器hash因此变化。旧four-cell-first准备目录保留且0attempt/0call；在新four-cell-first-live仅重新作0请求准备，消息/场景/协议不改。不是补发或抽样重试，最终执行器commit/push后才产生首次4格请求。
 
 ## 工程阶段
