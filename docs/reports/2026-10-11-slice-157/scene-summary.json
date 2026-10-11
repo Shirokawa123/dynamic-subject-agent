@@ -1,0 +1,43 @@
+{
+  "status": "readonly-scene-first-failure-verified",
+  "engineering_source_commit": "ea1cfec",
+  "selected_variant": "choice-final",
+  "scene_status": "first-stage-failed",
+  "first_requests": 1,
+  "automatic_retries": 0,
+  "audit_complete": 0,
+  "audit_failed_closed": 1,
+  "canonical_publications": 0,
+  "activity_revision": 0,
+  "source_selected": false,
+  "plan_published": false,
+  "failure_code": "original-whole-structured-choice-invalid",
+  "raw_output_fields": [
+    "activity_revision",
+    "intent",
+    "reply_text"
+  ],
+  "unapproved_extra_field": "activity_revision",
+  "finish_reason": "stop",
+  "final_chars": 446,
+  "completion_tokens": 287,
+  "reasoning_tokens": null,
+  "not_executed": [
+    "initial-activity",
+    "natural-reference",
+    "natural-correction",
+    "conditional-feedback",
+    "topic-gap-1",
+    "topic-gap-2",
+    "topic-gap-3",
+    "post-gap-activity",
+    "current-result-reply"
+  ],
+  "matrix_eligibility_unchanged": true,
+  "matrix_sources_unchanged": true,
+  "old_two_56_files_unchanged": true,
+  "raw_request_audit_digest": true,
+  "inspection_model_requests": 0,
+  "inspection_credential_reads": 0,
+  "scope": "choice diagnostic candidate passed; no real long revision/reference/continuity proof"
+}

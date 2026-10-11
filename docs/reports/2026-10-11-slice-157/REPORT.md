@@ -1,5 +1,24 @@
 # S157：choice六格预算诊断与候选后的完整首景
 
+## 候选后真实首景终态：首反馈多字段拒绝，完整闭环未验
+
+候选首景接线ea1cfec已提交推送后，未见楼顶洗衣房第一次请求即终态：1首次/0retry/1audit failed-closed，HTTP200/finish=stop/final446字符/completion287/reasoning细分null。raw输出为 `{intent,reply_text,activity_revision}`，额外生成本应仅Python绑定的activity_revision=0，不满足冻结raw2；旧严格multispan_proposal与生产parser拒绝，original-whole-structured-choice-invalid。未删字段修补接受，未扩大输出协议或补发。
+
+新独立root完整canonical空链/活动0/无已提交聊天、E1、F1或plan；后9步（初稿、指称、明确修订、条件、三个话题、重开新choice、末答）全部未执行。候选choice-final没有在该首景收到choice请求；此失败属于原feedback格式守约不足，不能把它归因于choice模式变化（feedback wire仍原S154），也不能用六格成功称真实长距/指称闭环完成。
+
+未发表首正文先拒绝代写三段成稿、给折衣台布料/手臂、出口逆光、远处空绳与风的看法，又让用户再次确认已明确的分段字数/简称；可以保留角色看法或合理不采纳，但当前目标未推进，自然性/推进仅1，且正文从未成为canonical人物交流。额外字段属于raw闭集协议外字段，不是新数据用途批准问题；同角色/预算/原保护保持。初稿/实际长距更正、自然指称澄清与后续取舍全部未验。
+
+只读核唯一audit/request/raw SHA、exact candidate资格/profile/Timeline、空canonical链、raw额外字段原decoder仍拒、六格eligibility及source整树相同、两旧根完整56工件hash相同，0模型/凭据/业务写入。原文和失败只本机：[metadata](../../../.artifacts/s157/scene-first/metadata.json)、[首final](../../../.artifacts/s157/scene-first/finals/initial-source.json)、[只读核验](../../../.artifacts/s157/scene-first/readonly-scene-verification.json)；公开仅[首景汇总](scene-summary.json)。8796只读同scope/health/空聊天/活动0，未POST/重开/升级，草稿保留。
+
+| 层次 | 本轮结论 |
+| --- | --- |
+| 工程 | 独立choice模式/6格控制/候选入口/首失败与原保护必要Fake和复核通过，实际多字段拒绝无发表。 |
+| 诊断 | 固定6格完整结束，low/final都语义2，按原规则选choice-final；high B截断全保。仅两组小样本，非稳定性或人物证明。 |
+| 新真实场景 | 1/10首次、0retry，首技术失败终态/后9未验，无真实长距修订或指称闭环。 |
+| 人物 | 六格提议具体取舍成立但不发表；首景未发表答复仍重复确认/目标不推进，其他人物效果未验。 |
+
+本轮按冻结规则有界收口，累积真实7请求（6诊断＋1新首景）/0retry。choice-final保独立开发候选，8796不转换；下一必要是feedback单次提议的精确输出协议与冗余旧格式引导检查，再另未见首景，不把多余常量静默过滤接受、不重发旧首题，不放宽4096/≤8/≤4/160/240/唯一不重叠/完整其他照旧。
+
 ## 固定六格终态：choice-final通过，保全部首失败
 
 工程b321a63提交推送后六格全按冻结顺序执行，6首次/0retry/5complete+1failed-closed，诊断提议0 Publication。source两个本地合成种子整树/权限/canonical/WAL始终相同（A2/B4工程Publication，4 Fake/0真实准备），没有把它们当人物体验或复制到后续首景。

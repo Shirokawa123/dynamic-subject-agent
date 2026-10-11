@@ -1,5 +1,7 @@
 # 当前工作
 
+S157本轮终态：6固定首次5complete＋B-high截断全保，choice-final按原门槛eligible/事实11b0813已push；ea1cfec首景接线6＋2Fake/双复核过后，新洗衣房1首次即raw多activity_revision（stop/446chars/287completion），原raw2拒/1audit failed-closed/空canonical活动0，后9未验。总7真实0retry，不删字段补接纳或重发；readonly审计/原文/空链/资格/source/旧两根56工件0调用过，8796同scope健康空且不升级/草稿不触。提交push终态；choice-final仅开发候选，下一必要feedback精确输出/冗余旧格式引导后另未见场景，原4096和全部文字保护不放宽。
+
 S157六格终态：b321a63工程已push后6首次0retry/5complete＋B-high length/空final/4096失败，source整树不变/diagnostic0人物Publication。low/final两输入均技术+语义2，原选择规则final472<low3546→choice-final eligible（首次verdict绑定ready/metadata/全部final，不覆写）；high失败全保不抽，旧两终态56工件hash同。readonly6audit/wire/raw/资格0调用过；诊断事实commit/push后才实现/核新空洗衣房十步首次，原4096/所有文字保护保持，不升级8796/草稿。
 
 S157工程准备收口：30核心新旧/最终6 helper/双复核过，缺final证据与HTTP停组P2关闭；原4096/投影/JSON/policy/≤8/≤4/160/240/完整exact保护不变，新增资格/audit/key独立。新源4 Fake工程seed/0真实凭据，原manifest/readiness保留、final-readiness封0请求；旧两终态完整56工件hash全同，失败fixture/partial seed全部保。工程commit/push后固定6格首次0retry，选两输入技术+语义2候选并提交诊断事实后才未见空首景，不改8796/草稿。

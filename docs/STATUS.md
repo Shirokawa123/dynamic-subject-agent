@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-11：S157工程b321a63已push/30核心＋6helper/双复核过；固定6首次0retry/5complete＋B-high截断4096空final、proposals0Publication/source整树不变。low/final均两输入语义2、final472<low3546按原规则eligible choice-final，null计数不伪0；旧两终态56工件全保/8796不升级。诊断事实提交push后才候选新空首景，长距/指称仍未验，见[S157诊断](reports/2026-10-11-slice-157/diagnostic-summary.json)。
+- 2026-10-11：S157固定6格完成/5complete＋B-high length失败，low/final语义2，原规则472<3546选choice-final/0诊断Publication；ea1cfec候选首景接线过6＋2Fake及双复核。新洗衣房1首次/0retry/stop完整却raw多activity_revision，原raw2严格拒/空canonical活动0/后9未验；总7真实0retry，两旧终态56工件与诊断源/资格全保，8796健康不升级，完整长距/指称未证，见[S157结果](reports/2026-10-11-slice-157/REPORT.md)。
 
 - 2026-10-11：S156准备b4bde47已push/6 Fake＋纯check/双复核过；真实新钟表店2首次0retry，1complete＋1choice截断FailedClosed（length/final空/completion与reasoning计数4096），2canonical/活动0/无plan，初稿资格及后8未验。本轮有界结束/readonly全链0调用；旧S155仍2次终态/28文件及10源码hash全同，8796健康空聊天活动0保持，真实长距修订/指称未证，见[S156事实](reports/2026-10-11-slice-156/live-summary.json)。
 

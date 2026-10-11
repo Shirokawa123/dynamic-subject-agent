@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-157：独立choice预算候选与首次终态
+
+新增exact choice-low/final contract/Grant/protocol pin/audit/publication key，复用SCOPED family/schema8、旧S154多跨度/完整frame及一次送达。只改choice thinking/effort，feedback raw2、原4096/policy/JSON/投影/≤8/≤4/160/240/唯一不重叠/exact其他照旧保持；旧root/8796不升级。30核心/6最终诊断helper/候选首景6＋2Fake和两阶段双复核通过；6固定首次5complete＋B-high length/空4096，low/final两组语义2、472<3546选choice-final，诊断0Publication/source整树不变。候选后未见首景1首次raw多activity_revision严格拒，空canonical/活动0/后9未验，总7真实0retry，旧56工件及资格/source全保；真实长距/指称仍未证，见[S157报告](reports/2026-10-11-slice-157/REPORT.md)。
+
 ### Slice-156：未见钟表店的首次验证与choice截断终态
 
 复用S154 multi-span/S155 entry及同S150两用途/资格/policy/协议/slot，生产src与8796不改，仅独立新冻结runner/root/场景/nonce/pin。6 helper Fake/纯check/双只读复核后b4bde47已push；真实2首次0retry，首聊天完成/零模型E1选定，第2choice length/final空/completion与reasoning计数4096导致FailedClosed、无plan/活动0/完整2canonical。初稿资格/后8未验，真实长距修订与自然指称未证；raw/audit/canonical只读0调用、S155九目标28文件与10源码全保，详情见[S156报告](reports/2026-10-11-slice-156/REPORT.md)。旧≤8目标/≤4/160/240/唯一不重叠/exact其他照旧保持，首失败不补发或改判。
