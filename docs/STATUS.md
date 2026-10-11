@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-11：S152独立scoped三字段输出/本地常量绑定/用户原话先定frame已接，非目标含光路逐字保护，未知范围不能自动effect（暂限明确引号替换，非通用NL完成）。14新＋21必要兼容、2执行器＋3旧最终检查/双复核过；旧S151错误patch离线拒绝0调用，失败全保。新字牌十步首景尚未实际、0新remote/credential；工程提交推送后执行≤10首次/0retry/首技术或保护失败停，见[S152](reports/2026-10-11-slice-152/REPORT.md)。
+- 2026-10-11：S152工程9e0af56已push，三字段/独立frame与40相关模拟检查/双复核过；真实新字牌3首次0retry/2complete1无变化edit拒绝/3canonical，仅v1，三stop无截断。两处目标候选准确但另带before=after，整次反馈未发表/原光线不动；后7含糊/条件/换题/重开新choice/结果未执行，完整闭环未过。readonly全链0调用/旧失败全保，本轮有界结束；暂限明确引文保护非通用NL，见[S152实际结果](reports/2026-10-11-slice-152/live-summary.json)。
 
 - 2026-10-11：S151新首景6首次/0retry、5complete/1缺language拒绝、6canonical/v1→v2；六finish stop无截断，灰纹理目标改到但删了应照旧的渐变光且回复矛盾，人物准确修订未过。第6话题未发表，后4过窗/重开/新choice/接话未执行；与4格共10新请求，readonly核验0调用，旧S150保留，本轮有界结束，见[S151真实结果](reports/2026-10-11-slice-151/live-summary.json)。
 

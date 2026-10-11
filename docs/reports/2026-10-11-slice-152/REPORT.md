@@ -1,5 +1,23 @@
 # S152：精简协议与“其他照旧”保护
 
+## 真实首景终态：三字段完整，但反馈未发表；完整闭环未通过
+
+工程9e0af56已提交推送后，冻结新字牌场景实际3首次/0retry，2audit complete/1failed-closed、3canonical（首消息chat、零模型E1 select、自选v1）。三次finish全部stop，completion为97/3564/170，choice有3294 reasoning、feedback细分缺失为null而非0；HTTP200和正文完整只证明响应层，不能证明修订成功。本轮没有发生旧截断，也未漏三字段，不能据三样本宣称永不截断或稳定。
+
+唯一反馈第三步的首次final为正确subject/focus两处“等风来”→“向光走”，但另附composition的before=after原文编辑，违反原有每项必须真实变化的严格协议。Python在validate_proposal拒绝整次，audit输出structured-choice-invalid；未静默删除该项、补字段、接受部分编辑或放宽标准。错误回复“已…替换”也未进入canonical。当前仍v1/原纸签“等风来”，清晨侧逆光/柔和灰蓝/暖白、镜头和主体完全等于初稿，F来源未自动发表。这次具体失败是冗余无变化编辑；独立frame可用且定位2处，但有效真实修订未完成，不称保护后的修订通过。
+
+按先定第一技术失败结束，后7步全部**未执行**：含糊反馈、未来条件、三个话题、过窗/真重开的新choice、当前结果接话。没有完成换题，更没有真实继续活动；工程合成十步不能补这些未验部分。S150截断/S151删光与缺字段以及本次首失败均保留，不重发本题或开补景直到通过；执行器终态已拒绝继续，结束本轮诊断。
+
+只读SQLite URI mode=ro核验：3audits与3个首次raw final SHA/请求preview一致，2成功normalized DTO output digest准确；active新SCOPED资格/同identity Timeline/3Publication全链及record digest正确；失败零发表，当前计划等于初稿，独立frame定位2处，无变化编辑1处可复核。零新模型/凭据/业务写入，既有失败尝试数4/6未变。完整本机[metadata](../../../.artifacts/s152/new-scene-first/metadata.json)、[原始反馈final](../../../.artifacts/s152/new-scene-first/finals/natural-correction.json)、[初稿final](../../../.artifacts/s152/new-scene-first/finals/initial-activity.json)、[只读核验](../../../.artifacts/s152/new-scene-first/readonly-verification.json)，previews/audit/canonical-history同目录全保；公开仅[事实摘要](live-summary.json)。
+
+| 分层 | 本轮实际结论 |
+| --- | --- |
+| 工程 | 40必要相关模拟检查与复核通过；真实3字段协议收到/独立定位/严格拒无效编辑/零非法发表和全链核验成立。成功真实修订未过。 |
+| 场景 | 完成首消息与自选初稿；唯一反馈失败，3/10首次、后7未执行，完整闭环未过。 |
+| 人物 | 初稿实际选择窗边少女/文字锚点/安静等待，有具体自身画面取舍（初稿2）。候选两处目标准确但无有效发表（实际修订0）；修订后非目标保留、条件/换题/新活动/结果接话均未验证。初接话偏构图说明并重复创作边界（自然性1），没声称已成图或新增离线经历；不称长期主体性。 |
+
+本轮保留独立frame及严格拒绝；scoped仅开发候选、自动修改仍限明确引号替换，旧默认入口不升级。下一必要改进：对Python已经独立确定唯一结果的替换，研究将实际edit构造交给Python，让模型只提议意图/接话，避免重复生成可冗余或扩大范围的patch；保持拒绝未知范围，不把本次无变化项静默剔除后冒充首验通过。完成独立准备与必要验证后用另一个未见场景再验接续，沿原数据用途的技术开发不重问，新投影/用途再集中审。范围限缩和未达保持明示，暂无新服务/UI入口/隔日/分享或调度验收。
+
 ## 工程阶段；真实新首景尚未执行
 
 用户要求减少冗余字段、保护未请求的光线等内容，再验证一个未跑过场景的反馈→换题→继续活动，已有授权内自主提交推送。开工fetch确认da4d0d5与main一致，旧未提交目录与S150/151全部首次失败保留；不改旧场景/脚本/root/资格，S149一次调度保持PAUSED。

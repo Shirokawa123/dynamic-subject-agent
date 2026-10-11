@@ -4,6 +4,8 @@
 
 S152工程验证收口：独立资格/三字段raw/本地六字段绑定、先定frame及最终Publication重算，14新＋21旧必要兼容/2新执行器＋3旧最终检查、两只读复核过；旧S151错误patch仅离线拒绝0调用，首次工程/fixture失败保留。0实际新remote/credential，工程commit/push后执行冻结新字牌首景十步≤10首次/0retry/首技术或保护失败结束；人物/真实接续尚未验，见[REPORT](../reports/2026-10-11-slice-152/REPORT.md)。
 
+S152真实首景已终态：工程9e0af56已push后3首次0retry/2complete1无变化edit拒绝/3canonical，仅v1；三finish stop/三字段全有，无截断。候选两处改字准确但多带composition before=after，整次反馈/已改回复未发表，原光线/初稿不动；后7含糊/条件/3topic/重开后新choice/结果未执行，完整闭环未过。readonly raw/normalized audit/canonical全链核验0调用，旧失败均保，见[REPORT](../reports/2026-10-11-slice-152/REPORT.md)。本轮有界结束，不重发或补景至过；下一必要方向是独立已知目标由Python构造edit、模型只提意图与接话，不以静默删本次无变化项放宽首验。提交推送事实；临时引文范围非永久产品限制，新用途仍集中审。
+
 S151本轮终态：新空间纹理首景6首次0retry/5complete1缺language失败/6canonical，全部stop无截断；真实一反馈改灰纹理v2，但错误删除应保留渐变光且回复矛盾，语义保留/准确修订未过，原标准不变。第6话题未发表，后4topic/过窗重开/新choice/接话未执行；与已收4格共10新请求，readonly原文/audit/canonical核验0调用，旧S150失败始终保留。预算候选仅开发选项，不称完整闭环；本轮有界结束，commit/push事实。下一必要工作为协议常量简化与修订保护范围后另见新场景补选择，不重抽本题/扩W1/服务/旧root，见[REPORT](../reports/2026-10-11-slice-151/REPORT.md)。
 
 S151工程5a5b1b2/1b30d3a已push；固定四格真实4首次/0retry/0人物发表，3complete/1baseline缺language，源权限/canonical/WAL不变，旧S150失败不动。Direct两格完整且语义2/2，126/99completion/推理细分None；未复现length，不宣称已证全部根因。不可覆盖eligible已绑定首次结果，诊断有界结束；commit/push本阶段后进入已冻结[空间纹理新首景](../experiments/s151/SCENE.md)，≤10首次0retry/首技术失败停，不再调诊断题。

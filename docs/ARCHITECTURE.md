@@ -2,7 +2,9 @@
 
 ### Slice-152：精简反馈协议与独立文字修改范围
 
-新feedback-scoped-live/SCOPED authority/Manifest/Grant/audit/key沿S150同两用途/投影/slot及schema8，旧资格/root不升级。wire严格三字段intent/edits/reply_text；language、当前版本和本地reason由实际task绑定内部六字段，raw与normalized审计分别核。Python先于模型由当前原话/currentplan确定完整引号文字替换范围，“所有”才可多处同步；Provider/Cognition/Publication各核最终方案恰等于独立expectedplan，所有非目标字符含光路/镜头逐字保留，额外修改整次拒绝。未知/自由反馈/条件暂不能自动effect，澄清或NoOp；这是本轮覆盖限缩，不称通用自然反馈已解决或永久限制。旧S151错误patch离线拒绝0调用，14新＋21必要兼容通过，真实新首景尚未执行，见[S152](reports/2026-10-11-slice-152/REPORT.md)。
+新feedback-scoped-live/SCOPED authority/Manifest/Grant/audit/key沿S150同两用途/投影/slot及schema8，旧资格/root不升级。wire严格三字段intent/edits/reply_text；language、当前版本和本地reason由实际task绑定内部六字段，raw与normalized审计分别核。Python先于模型由当前原话/currentplan确定完整引号文字替换范围，“所有”才可多处同步；Provider/Cognition/Publication各核最终方案恰等于独立expectedplan，所有非目标字符含光路/镜头逐字保留，额外修改整次拒绝。未知/自由反馈/条件暂不能自动effect，澄清或NoOp；这是本轮覆盖限缩，不称通用自然反馈已解决或永久限制。旧S151错误patch离线拒绝0调用，14新＋21必要兼容通过；工程阶段的真实首景当时未执行，结果由下段承接，见[S152](reports/2026-10-11-slice-152/REPORT.md)。
+
+实际工程9e0af56后新首景3首次/0retry，2complete/1因composition before=after无变化编辑严格拒绝；3canonical仅v1，候选两处改字准确但整次未发表，原光线/方案不动。三finish stop/三字段完整，无旧截断；后7步未执行，真实反馈→换题→新活动未过。readonly首次正文/normalized audit/全canonical链核验0调用，40模拟与独立复核不能替代人物目标；本轮有界收口、不删无效项放宽接受或重抽，见[S152实际结果](reports/2026-10-11-slice-152/live-summary.json)。
 
 ### Slice-151：反馈正文预算的独立技术候选
 
