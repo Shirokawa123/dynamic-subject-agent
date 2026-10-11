@@ -1,5 +1,7 @@
 # S151：输出预算诊断与未见自然反馈接续
 
+第一次0请求预览冻结后，复核要求添加readiness/evaluate门槛，执行器hash因此变化。旧four-cell-first准备目录保留且0attempt/0call；在新four-cell-first-live仅重新作0请求准备，消息/场景/协议不改。不是补发或抽样重试，最终执行器commit/push后才产生首次4格请求。
+
 ## 工程阶段
 
 基线5522160与fetch后main一致，tracked干净、全部旧成果保留。用户已要求同用途截断诊断/修复与新场景，自主提交推送；准确数据用途仍为S150 f09dd24a…518f6两项，同Sagiri30/4/DeepSeek/default Windows slot。唯一[S151](../../slices/slice-151-output-budget-new-continuity.md)，旧S1504首次/首失败/nonce/正文/审阅/SCENE/runner保持，不重发原问题。

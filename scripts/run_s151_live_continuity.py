@@ -31,7 +31,7 @@ from dynamic_subject_agent.natural_feedback_remote_preview import natural_feedba
 from dynamic_subject_agent.frozen_attempt import canonical_json
 
 ROOT=REPO/'.artifacts/s151/new-scene-first'
-DIAGNOSTIC_ROOT=REPO/'.artifacts/s151/four-cell-first'
+DIAGNOSTIC_ROOT=REPO/'.artifacts/s151/four-cell-first-live'
 SCENE=REPO/'docs/experiments/s151/SCENE.md'
 REVIEW=REPO/'docs/experiments/s150/review.json'
 STAGES=(('initial-source', '这次原创文字构图先让主体左侧留出一大片干净的空白；主体、景别和视点请按你自己的关注选。只是文字方案，还没有成图。'), ('initial-activity', None), ('natural-correction', '左边那片留白不要空着，换成浅灰的细纹理，主体、视点和光线都照旧。'), ('ambiguous-feedback', '那个再调一下。'), ('conditional-feedback', '如果以后改成拥挤的书店背景，可以增加深色大块纹理；这一版的灰度和布局先别改。'), ('topic-gap-1', '一个故事开头先听见声音再看见人，你现在觉得怎样？'), ('topic-gap-2', '短篇里把结尾留一点空处，会让你更想回头看吗？只谈现在的想法。'), ('topic-gap-3', '给虚构人物挑一件小物件作为标记时，你会先看形状还是用途？'), ('post-gap-activity', None), ('current-result-reply', '这一版现在怎么安排？哪项取舍对你更重要？'))

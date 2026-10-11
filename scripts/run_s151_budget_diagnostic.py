@@ -21,7 +21,7 @@ from dynamic_subject_agent.deepseek import DEEPSEEK_CREDENTIAL_BACKEND_ID,DEEPSE
 from dynamic_subject_agent.shared_activity import digest
 from dynamic_subject_agent.frozen_attempt import canonical_json
 
-ROOT=REPO/'.artifacts/s151/four-cell-first'
+ROOT=REPO/'.artifacts/s151/four-cell-first-live'
 SOURCE=REPO/'.artifacts/s150/real-first'
 MESSAGES=dict(A='这份配色如果要印成明信片，你觉得要注意什么？只谈目前想法，不修改方案。',
     B='请把远景列车灯的暖白改成偏中性的白，其他安排照旧。')
