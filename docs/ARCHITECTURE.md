@@ -4,6 +4,8 @@
 
 独立multi-span技术contract/Grant/audit/key沿S150同用途/投影/slot，raw2/policy/Provider协议不变，SCOPED能力/schema8/最终frame终审复用，旧S153构造/root不升级。连续目标组唯一上下文窗口先满足160before/240after，剔除被更晚start/更早end支配窗口，再按基线位置选最少段完整覆盖且不重叠，各字段合计≤4；不能表示整次拒绝。只改先定目标字串，所有其他字符逐字保护/最终exact expectedplan。旧S153离线新构造4段2/46/63/9可用但旧仍拒/0重发/0发表，真实新接续尚未验，见[S154](reports/2026-10-11-slice-154/REPORT.md)。
 
+实际e2b5f67后新首景10首次0retry/10complete/11canonical、v1→v2→v3：反馈只同步新名/非目标逐字保，3topic出窗/真close-reopen0后新choice保禾台作具体使用痕迹取舍，最后接话与最新plan一致。无skip/早停/真实失败，readonly全链0调用；actual2短项，不等同同字段长距真实首稿验证（后者仅Facade＋旧失败离线回归）。有限闭环成立，通用自然反馈/长期/隔日/分享/常驻UI仍未验；旧失败/核验脚本首次错误保留，详见[S154事实](reports/2026-10-11-slice-154/live-summary.json)。
+
 ### Slice-153：模型提意图，Python构造明确文字替换
 
 独立intent-only/version/Grant/policy/audit/key沿同S150两用途/投影/slot；复用SCOPED authority/Manifest/schema8及最终frame裁决，旧资格/root不升级。raw仅intent/reply_text，不收模型edit/plan；Python对revise从真实原话/currentplan独立frame按每目标字段最小首末跨度构造编辑，旧唯一/160before/240after/真实变化界限及exact expectedplan均保持，未知/不能表示不effect。raw与内部六字段分别审计；S152旧noop失败仍原decoder拒绝0重发。暂限引号替换非通用NL，文字保护不替代物件语义验证；真实新接续尚未验。必要history回执修复按exact feedback contract选audit读取器，仅补原两authority分派，见[S153](reports/2026-10-11-slice-153/REPORT.md)。
