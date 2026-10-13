@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## focused电车首次：原JSON格式拒绝，未进入人物链
+
+0d9d3cb工程提交后新电车首1请求HTTP200/stop，final297字符/202completion，原始final为JSON对象后带额外逗号；response-content-json失败关闭，audit1 failed-closed、canonical0/无方案，后10未执行。全部原文/metadata留于[focused首景](../../../.artifacts/s158/focused-loop-first/metadata.json)，未删除逗号补接纳、未重发或评分为人物通过。
+
+同片调整方向：普通无可授权编辑的交流使用已有纯正文机制，只有独立frame可授权的修改请求保留严格结构化意图提议。不得用格式修补扩大修改资格，旧JSON路径/失败终态保持；拟议技术调整仍为相同获批输入用途，不增加资料或调用次数。先完成对应实现与验证，再新场景，不在本失败上调题。
+
 ## focused同用途候选准备
 
 在保存温室首终态7854ba4后，集中细化三条行为策略，未改输入投影、raw2、4096或任何文字保护。独立focused version/policy pin与run digest沿同一schema9/审计family，baseline LOCAL/LIVE合同及策略仍逐值一致；不同模式的root/pointer/Authority不能互换。属于用户已批用途内的技术调整，不称新策略hash另获人类批准。

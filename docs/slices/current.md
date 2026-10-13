@@ -1,5 +1,7 @@
 # 当前工作
 
+S158 focused电车首1次已failed-closed：0d9d3cb后stop/297chars/202completion，JSON对象外多逗号触发response-content-json，canonical0/后10未验，全原文保留无补接纳/重发。继续同片把无独立编辑资格的普通交流接已有纯正文机制，明确可编辑请求仍严格JSON/Python frame；只作同用途协议分工，原4096/保护保持，先实现验证再新景。温室/电车终态不改。
+
 S158 focused同用途候选已准备：只修F1已完成时态/实质新取舍/单重点分享，原payload/raw2/4096/全部保护与baseline逐值保持；同schema9/audit family独立policy/version/root/run digest。核心+baseline2、入口4、wrapper3 Fake与双复核通过。工程commit/push后只执行[全新电车首景](../experiments/s158/FOCUSED-SCENE.md)，原温室77文件/首评分全保、不重跑；长距独立判定，体验/隔日仍待真实结果。
 
 S158首真实温室已终态：dec099f后11首次/11complete/0retry/12canonical、两分享、v1→v2→v3；精确更名/过窗真重开/F1传递成立，单目标长距仍未验。正文澄清但intent=chat原检查保false；首评分2/1/2/1/0，分享偏播报、后续仅同义改写、末答误把F1当待办且错述初稿，scene-effect-not-met全保。当前同片继续已批用途内的F1时态/实质取舍/单重点分享候选与新场景，不重跑此景、不放宽4096/原保护，不另开切片。
