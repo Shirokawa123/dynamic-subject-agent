@@ -158,7 +158,9 @@ def _open_loaded_local_product(
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
-            expected_cognition = WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
+            from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
+            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY
+            expected_cognition = IntegratedCharacterCognition if loaded.qri.provider_authority == INTEGRATED_AUTHORITY else WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
             live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_SCOPED_AUTHORITY, *LIVING_LIVE_AUTHORITIES, *WORKING_LIVE_AUTHORITIES)
             if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
@@ -853,6 +855,31 @@ def open_working_understanding_product_live(config, *, grant, audit_path, identi
         product.close()
         raise
     return product
+
+
+def open_integrated_character_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):
+    """One independent LOCAL owner; remote gateways fail before any root access."""
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
+    from dynamic_subject_agent.living_activity import LivingClock, utc8_day
+    if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
+        raise ValueError('LOCAL-only integrated gateway required before any identity access')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_integrated_character_local(
+        binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    cognition = IntegratedCharacterCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+        contract=loaded.qri.reviewed_chat_contract,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
+    cognition.living_presence_permission = lambda: authority.living_permission(loaded.qri.profile_id, loaded.timeline_id)
+    cognition.living_controls = lambda request: authority.change_living_permission(loaded.qri.profile_id, request)
+    cognition.living_failure = lambda: authority.change_living_permission(loaded.qri.profile_id, attention=True)
+    cognition.living_revoke = lambda block_source=None: authority.change_living_permission(loaded.qri.profile_id, revoke=True, block_source=block_source)
+    cognition.living_clock = LivingClock() if clock is None else clock
+    cognition.living_day = utc8_day if day is None else day
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
 def open_living_activity_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):

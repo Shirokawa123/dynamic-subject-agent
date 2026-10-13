@@ -1,5 +1,11 @@
 # 产品架构
 
+### Slice-158：同一Timeline的LOCAL整体运行闭环
+
+独立integrated-local资格/schema9复用SharedActivityRecord的living/feedback、Authority/Host/Facade与单Publication。IntegratedCharacterCognition协调普通反馈、活动、分享及本地控制；最终提交统一重算组合record。S1只进入回复依赖，精确编辑由有效plan＋完整当前F独立裁决；F派生plan及share沿原源失效过滤，旧schema6/8不迁移。普通聊天失败可继续新交流，活动/分享失败需关注；冷恢复不重调模型。
+
+统一LOCAL页面通过Facade接活动/分享/反馈/草稿/原请求恢复；本地composition在身份访问前拒remote。12新核心/恢复/preview、2HTTP和66旧相关兼容通过，双复核补registry锁后接纳。原已审包11合成提议/13canonical完成同人链，0真实/凭据；未发送样例和三项新增跨用途待审，不称真实人物或整片完成，见[S158报告](reports/2026-10-13-slice-158/REPORT.md)。
+
 ### Slice-157：独立choice预算候选与首次终态
 
 新增exact choice-low/final contract/Grant/protocol pin/audit/publication key，复用SCOPED family/schema8、旧S154多跨度/完整frame及一次送达。只改choice thinking/effort，feedback raw2、原4096/policy/JSON/投影/≤8/≤4/160/240/唯一不重叠/exact其他照旧保持；旧root/8796不升级。30核心/6最终诊断helper/候选首景6＋2Fake和两阶段双复核通过；6固定首次5complete＋B-high length/空4096，low/final两组语义2、472<3546选choice-final，诊断0Publication/source整树不变。候选后未见首景1首次raw多activity_revision严格拒，空canonical/活动0/后9未验，总7真实0retry，旧56工件及资格/source全保；真实长距/指称仍未证，见[S157报告](reports/2026-10-11-slice-157/REPORT.md)。

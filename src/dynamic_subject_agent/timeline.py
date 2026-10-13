@@ -29,6 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
+from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY
 from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_SCOPED_AUTHORITY
 from contextlib import contextmanager
 
@@ -2685,7 +2686,7 @@ def _bootstrap_timeline(
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
         shared = SHARED_INTENT in authority.allowed_intents
-        schema_version = 8 if FEEDBACK_INTENT in authority.allowed_intents else 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
+        schema_version = 9 if {FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents) else 8 if FEEDBACK_INTENT in authority.allowed_intents else 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
             if life or whole_context:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
@@ -2867,7 +2868,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4,5,6,7,8) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5,6,7,8,9) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2903,7 +2904,7 @@ def _verify_store_integrity(
         expected_tables=expected_tables | {'system_input', 'prepared_cycle_plan', 'life_record'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==4:
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary'}
-    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8):
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8,9):
         expected_tables=expected_tables | {'whole_context_input', 'whole_context_boundary', 'shared_activity_input', 'shared_activity_record', 'prepared_cycle_plan'}
     try:
         tables = frozenset(
@@ -3400,17 +3401,19 @@ class TimelineEngine:
             )
             gate = _read_admission_gate(writer)
             authority = gate.authority
+            if (writer.execute('PRAGMA user_version').fetchone()[0] == 9) != ({FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents)):
+                raise AdmissionFailedClosed('integrated-contract-mismatch', 'Combined contract requires independent schema9')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==2) != ('confirmed-text-save-v1' in authority.allowed_intents):
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7,8)) != (CONTEXT_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7,8,9)) != (CONTEXT_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8)) != (SHARED_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8,9)) != (SHARED_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('shared-contract-mismatch', 'Timeline version differs from shared activity authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] == 6) != (LIVING_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (6, 9)) != (LIVING_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('living-contract-mismatch', 'Living requires its independent schema6')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] == 8) != (FEEDBACK_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (8, 9)) != (FEEDBACK_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('feedback-contract-mismatch', 'Feedback requires independent schema8')
             if (writer.execute('PRAGMA user_version').fetchone()[0] == 7) != (WORKING_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('working-contract-mismatch', 'Working requires independent schema7')
@@ -4795,6 +4798,9 @@ class TimelineEngine:
             effective = authorization
             if WORKING_INTENT in self._authority.allowed_intents and record.working is not None and record.working['permission']['source_blocked']:
                 effective = replace(authorization,history_enabled=False)
+            integrated = self._authority.provider_authority == INTEGRATED_AUTHORITY
+            if integrated and record.living is not None and record.living['permission']['source_blocked']:
+                effective = replace(authorization, history_enabled=False)
             view = self.shared_activity_basis(effective, exclude_operation_id=plan.operation_ref.operation_id)
             command = self._query_command(plan.operation_ref)
             if type(command) in (SharedActivityInput, WholeContextInput) and command.authorization != record.authorization:
@@ -4812,7 +4818,23 @@ class TimelineEngine:
                 expected = build_record(view['record'], command=command, authorization=authorization,
                     cutoff=view['cutoff_sequence'], context_revision=view['context_revision'], head_sequence=plan.expected_basis.head_sequence+1,
                     choice=choice_from_record(record) if record.kind == 'decision' else None, dialogue_dependencies=view['dialogue_dependencies'])
-            if FEEDBACK_INTENT in self._authority.allowed_intents:
+            if integrated:
+                from dynamic_subject_agent.integrated_character import build_integrated_record
+                if record.feedback is None or record.living is None or record.working is not None:
+                    raise ValueError('combined record requires feedback and living only')
+                share = None
+                if record.kind == 'share':
+                    last = record.living['considered'][-1]
+                    share = dict(share=last['share'], reply_text=record.living['shares'][-1]['text'] if last['share'] else '', language='zh')
+                expected = build_integrated_record(view, command=command, authorization=authorization,
+                    permission=record.living['permission'], head_sequence=plan.expected_basis.head_sequence+1,
+                    choice=choice_from_record(record) if record.kind == 'decision' else None,
+                    share=share, proposal=record.feedback['proposal'])
+                if type(command) is SubjectCommand and plan.expression.text != record.feedback['proposal']['reply_text']:
+                    raise ValueError('feedback expression differs from adjudication')
+                if share is not None and plan.expression.text != (share['reply_text'] if share['share'] else '本次保留分享；已记录这次考虑。'):
+                    raise ValueError('share expression differs from adjudication')
+            if FEEDBACK_INTENT in self._authority.allowed_intents and not integrated:
                 from dynamic_subject_agent.natural_feedback import build_feedback_record
                 if record.feedback is None:
                     raise ValueError('schema8 feedback record required')
@@ -4843,7 +4865,7 @@ class TimelineEngine:
                 expected = build_working_record(view, command=command, authorization=authorization,
                     permission=record.working['permission'], head_sequence=plan.expected_basis.head_sequence+1,
                     choice=choice_from_record(record) if record.kind == 'decision' else None, formation=formation)
-            if LIVING_INTENT in self._authority.allowed_intents:
+            if LIVING_INTENT in self._authority.allowed_intents and not integrated:
                 from dynamic_subject_agent.living_activity import build_living_record
                 if record.living is None:
                     raise ValueError('schema6 living record required')

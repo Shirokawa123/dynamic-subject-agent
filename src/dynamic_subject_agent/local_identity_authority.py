@@ -67,6 +67,7 @@ from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.original_whole_chat import (WHOLE_AUTHORITY, WHOLE_AUTHORITIES, whole_contract,
     validate_whole_envelope, OriginalWholeAuthorization, digest as whole_digest, whole_publication_key, contract_variant)
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY
+from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY
 from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, LIVING_AUTHORITY, LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY, LIVING_LIVE_AUTHORITIES, LIVING_AUTHORITIES, SHARED_AUTHORITIES, shared_contract, WORKING_AUTHORITY, WORKING_LIVE_AUTHORITY, WORKING_FACT_FAITHFUL_AUTHORITY, WORKING_LIVE_AUTHORITIES, WORKING_AUTHORITIES, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES, FEEDBACK_SCOPED_AUTHORITY
 from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeChatCognition
 from dynamic_subject_agent.original_whole_chat_audit import open_original_whole_audit
@@ -883,6 +884,9 @@ def _list_local_identities(config: LocalProductConfig) -> LocalIdentityListRespo
 
 
 def _whole_dormant_cognition(authority):
+    if authority == INTEGRATED_AUTHORITY:
+        from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
+        return IntegratedCharacterCognition()
     if authority in WORKING_AUTHORITIES:
         from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
         return WorkingUnderstandingCognition(provider_authority=authority)
@@ -1354,6 +1358,12 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(feedback_contract(binding), self._config.state_path.parent / 'feedback-local-audit', identity_id)
 
     @_registry_mutation
+    def activate_integrated_character_local(self, *, binding, identity_id):
+        from dynamic_subject_agent.integrated_character import integrated_contract
+        return self._activate_context_identity(integrated_contract(binding),
+            self._config.state_path.parent / 'integrated-local-audit', identity_id)
+
+    @_registry_mutation
     def activate_natural_feedback_live(self, *, grant, audit_path, identity_id):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
         from dynamic_subject_agent.natural_feedback_live import feedback_grant_variant,feedback_live_contract_for_variant
@@ -1397,6 +1407,7 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(shared_live_contract(APPROVED_BINDING, technical_variant=grant.technical_variant), audit_path, identity_id)
 
     def _activate_context_identity(self, contract, audit_path, identity_id):
+        integrated = contract_variant(contract) == 'integrated-local'
         feedback_scoped=contract_variant(contract)=='feedback-scoped-live'
         feedback_live = contract_variant(contract) in ('feedback-live','feedback-scoped-live')
         feedback = contract_variant(contract) in ('feedback-local','feedback-live','feedback-scoped-live')
@@ -1405,8 +1416,8 @@ class LocalIdentityAuthority:
         working = contract_variant(contract) in ('working-local','working-live','working-fact-faithful-live')
         final_text = contract_variant(contract) == 'living-final-text-live'
         living_live = contract_variant(contract) in ('living-live', 'living-final-text-live')
-        living = contract_variant(contract) in ('living-local', 'living-live', 'living-final-text-live')
-        shared = contract_variant(contract) in ('feedback-scoped-live', 'feedback-live', 'feedback-local', 'shared-local', 'shared-live', 'living-local', 'living-live', 'living-final-text-live', 'working-local', 'working-live','working-fact-faithful-live')
+        living = contract_variant(contract) in ('integrated-local', 'living-local', 'living-live', 'living-final-text-live')
+        shared = contract_variant(contract) in ('integrated-local', 'feedback-scoped-live', 'feedback-live', 'feedback-local', 'shared-local', 'shared-live', 'living-local', 'living-live', 'living-final-text-live', 'working-local', 'working-live','working-fact-faithful-live')
         live = contract_variant(contract) == 'shared-live'
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding='utf-8')))
         if identity_id is None:
@@ -1418,7 +1429,7 @@ class LocalIdentityAuthority:
         existing = record.get('whole_chat_activation') or record.get('pending_whole_chat_activation')
         if existing is not None and existing != metadata:
             raise RuntimeError('whole-context-activation-conflict')
-        if identity.qri.provider_authority == (FEEDBACK_SCOPED_AUTHORITY if feedback_scoped else FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
+        if identity.qri.provider_authority == (INTEGRATED_AUTHORITY if integrated else FEEDBACK_SCOPED_AUTHORITY if feedback_scoped else FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY):
             if state['active_identity_id'] != identity_id:
                 raise RuntimeError('whole-context-selection-required')
             return self.load_active()
@@ -1457,7 +1468,7 @@ class LocalIdentityAuthority:
                 if getattr(error, 'code', None) != 'qri-not-found':
                     raise
                 snapshot = studio.query_snapshot(identity.qri.genesis_snapshot_id)
-                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.natural_feedback_scoped_live() if feedback_scoped else CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
+                policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.integrated_character_local() if integrated else CapabilityManifest.natural_feedback_scoped_live() if feedback_scoped else CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context(),
                     reviewed_chat_contract=contract, validity_us=300_000_000)
                 successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id, publication_key=key,
                     predecessor_qualification_id=identity.qri.qualification_id, reviewed_chat_contract=contract)
@@ -1467,7 +1478,8 @@ class LocalIdentityAuthority:
         dormant = ReviewedCharacterDormantCognition()
         dormant.supports_whole_context = True
         dormant.supports_shared_activity = shared
-        dormant.supports_natural_feedback = feedback
+        dormant.supports_integrated_character = integrated
+        dormant.supports_natural_feedback = feedback or integrated
         dormant.supports_living_activity = living
         dormant.supports_working_understanding = working
         if record.get('host_location') is None:

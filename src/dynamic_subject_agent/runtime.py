@@ -1147,19 +1147,24 @@ class SubjectRuntime:
     def recover_original_whole_pending(self):
         pending = self._engine.pending_original_whole_operations()
         for operation_ref in pending:
+            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY, SharedActivityInput
+            needs_life_attention = LIVING_INTENT in self._context.authority.allowed_intents
+            if self._context.authority.provider_authority == INTEGRATED_AUTHORITY:
+                command = self._engine._query_command(operation_ref)
+                needs_life_attention = type(command) is SharedActivityInput and command.input_kind in ('advance', 'share')
             if SHARED_INTENT in self._context.authority.allowed_intents:
                 prepared = self._engine.prepared_plan(operation_ref)
                 if prepared is not None:
                     canceled = self._engine.cancel_prepared_if_stale(operation_ref)
                     if not canceled:
                         self._engine.publish(prepared)
-                    elif LIVING_INTENT in self._context.authority.allowed_intents:
+                    elif needs_life_attention:
                         self._cognition.living_failure()
                     continue
             self._engine.freeze_attempt_basis(operation_ref)
             self._engine.fail_operation(operation_ref, stage='publication', code='original-whole-unprepared-interruption',
                 detail='Cold recovery closes an uncommitted whole attempt; schema 1 has no durable reply preparation and never retries the model.')
-            if LIVING_INTENT in self._context.authority.allowed_intents:
+            if needs_life_attention:
                 self._cognition.living_failure()
         return len(pending)
 

@@ -10,6 +10,8 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.first_life import CompositionPlan, LifeEvent, LifeFieldDiff, adjudicate_life, validate_plan, event_summary
 
 SHARED_AUTHORITY = "original-shared-activity-local-s139-1"
+INTEGRATED_AUTHORITY = 'original-integrated-character-local-s158-1'
+INTEGRATED_RUNTIME_CONTRACT = 'original-integrated-character-cycle-s158-1'
 FEEDBACK_AUTHORITY = 'original-natural-feedback-local-s150-1'
 FEEDBACK_LIVE_AUTHORITY = 'original-natural-feedback-deepseek-s150-1'
 FEEDBACK_SCOPED_AUTHORITY = 'original-natural-feedback-scoped-deepseek-s152-1'
@@ -28,7 +30,7 @@ WORKING_AUTHORITIES = (WORKING_AUTHORITY, *WORKING_LIVE_AUTHORITIES)
 WORKING_INTENT = 'working-understanding-system-input'
 WORKING_RUNTIME_CONTRACT = 'original-working-understanding-cycle-s145-1'
 LIVING_LIVE_AUTHORITIES = (LIVING_LIVE_AUTHORITY, LIVING_FINAL_TEXT_AUTHORITY)
-LIVING_AUTHORITIES = (LIVING_AUTHORITY, *LIVING_LIVE_AUTHORITIES)
+LIVING_AUTHORITIES = (LIVING_AUTHORITY, *LIVING_LIVE_AUTHORITIES, INTEGRATED_AUTHORITY)
 LIVING_INTENT = 'living-activity-system-input'
 LIVING_RUNTIME_CONTRACT = 'original-living-activity-cycle-s142-1'
 SHARED_AUTHORITIES = (SHARED_AUTHORITY, SHARED_LIVE_AUTHORITY, *FEEDBACK_AUTHORITIES, *LIVING_AUTHORITIES, *WORKING_AUTHORITIES)
@@ -137,9 +139,9 @@ def shared_reply_policy(technical_variant="baseline"):
 def shared_variant_for_contract(contract):
     """Verify the whole canonical witness before choosing expression text."""
     from dynamic_subject_agent.original_whole_chat import contract_variant
-    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local', 'feedback-live','feedback-scoped-live'):
+    if contract_variant(contract) not in ('shared-local', 'shared-live', 'feedback-local', 'feedback-live','feedback-scoped-live', 'integrated-local'):
         raise ValueError('exact shared qualification required')
-    if contract_variant(contract) in ('feedback-local', 'feedback-live','feedback-scoped-live'):
+    if contract_variant(contract) in ('feedback-local', 'feedback-live','feedback-scoped-live', 'integrated-local'):
         return 'self-directed-activity'
     return {SHARED_EXPRESSION_VERSION: 'natural-expression',
         SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')

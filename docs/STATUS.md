@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-13：S158统一LOCAL schema9/同Facade与Timeline已贯通聊天、活动、分享、精确反馈、过窗重开和源失效；12新核心/恢复/preview＋2HTTP、66旧兼容通过，双复核补锁接纳。原已审包11合成/13canonical通过、0真实/凭据；[三项新用途](experiments/s158/REVIEW.md)已具体待审，LIVE/人物效果与整片仍未完成，旧失败/原保护保留。
+
 - 2026-10-13：用户要求整体框架推进作为一个切片，已建立[S158](slices/slice-158-integrated-character-loop.md)并核代码/既有报告：运行底座可复用，生活/分享与自然反馈仍分属不同资格和入口；统一完整体验尚未实现。本轮仅盘点与执行组织，0新模型/服务/产品改动；原失败、4096与文字保护保留。
 
 - 2026-10-11：S157固定6格完成/5complete＋B-high length失败，low/final语义2，原规则472<3546选choice-final/0诊断Publication；ea1cfec候选首景接线过6＋2Fake及双复核。新洗衣房1首次/0retry/stop完整却raw多activity_revision，原raw2严格拒/空canonical活动0/后9未验；总7真实0retry，两旧终态56工件与诊断源/资格全保，8796健康不升级，完整长距/指称未证，见[S157结果](reports/2026-10-11-slice-157/REPORT.md)。

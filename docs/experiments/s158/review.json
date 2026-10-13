@@ -1,0 +1,141 @@
+{
+  "changes": [
+    "feedback: valid S1 and its permitted two-complete-turn descendants",
+    "online-choice: latest valid F1 and feedback-derived current plan",
+    "share: feedback-derived action/plan, no F quote or dialogue"
+  ],
+  "credential_use": "existing-default-Windows-slot-HTTPS-Bearer-only",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "exclusions": [
+    "new persistent server start",
+    "offline catchup",
+    "notifications",
+    "cloud",
+    "migration",
+    "deletion",
+    "new material",
+    "persona rewrite",
+    "Reflection"
+  ],
+  "limits": {
+    "E1_chars": 400,
+    "F1_chars": 400,
+    "S1_chars": 400,
+    "after_chars": 240,
+    "before_chars": 160,
+    "complete_turns": 2,
+    "current_message_chars": 1000,
+    "edits": 4,
+    "exchange_chars": 4000,
+    "feedback_sources": 8,
+    "new_topics_per_day": 2,
+    "online_opportunity_seconds": 900,
+    "plan_chars": {
+      "composition": 800,
+      "focus": 400,
+      "subject": 160
+    },
+    "share_followup_turns": 2,
+    "targets": 8
+  },
+  "local_contract": {
+    "anchor_id": "v1-pre-broadcast",
+    "authorization": "local-preparation-only-no-remote-grant",
+    "automatic_retries": 0,
+    "call_limit": null,
+    "credential_use": "none",
+    "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+    "endpoint": "https://api.deepseek.com/chat/completions",
+    "excluded": "remote-offline-catchup-notifications-persona-rewrite-reflection-cloud-migration",
+    "max_complete_turns": 2,
+    "max_current_chars": 1000,
+    "max_exchange_chars": 4000,
+    "max_reply_chars": 1200,
+    "max_requests_per_turn": 1,
+    "max_tokens": 4096,
+    "model": "deepseek-flash",
+    "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+    "policy_sha": "a2e86ae7b2cea52b580510dae71f6e6f631fd4ea7efe5d3af020f38ffd26577e",
+    "provider": "local",
+    "reasoning_effort": null,
+    "retention": "canonical-Timeline-only",
+    "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+    "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+    "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+    "subject_id": "sagiri",
+    "technical_variant": {
+      "choice_policy_sha": "363026832e5c421d97a91b47804afc7ebfdca60cb5253e1c364b3801463e60fb",
+      "feedback_policy_sha": "c74dcabef91f5313df18e3d5afd76b3b87cccfddd04c671d148c7f7f59121948",
+      "max_after_chars": 240,
+      "max_before_chars": 160,
+      "max_edits": 4,
+      "max_feedback_chars": 400,
+      "max_feedback_sources": 8,
+      "max_followup_turns": 2,
+      "max_new_topics_per_utc8_day": 2,
+      "max_share_chars": 400,
+      "max_targets": 8,
+      "name": "integrated-local",
+      "opportunity_seconds": 900,
+      "session_lease_seconds": 15,
+      "share_policy_sha": "4df535d7abf64f946a721d634efa179ee095f65bb2d29f7aff31e808976de671",
+      "timeline_schema": 9
+    },
+    "thinking": "disabled",
+    "timeout_seconds": 30,
+    "version": "integrated-character-local-s158-1"
+  },
+  "local_metadata_sha256": "f16b117b1edaa7466664a4abfe575300e1eb2abb6ce3f38fd01d9ecc149266c6",
+  "material_binding": {
+    "anchor_id": "v1-pre-broadcast",
+    "definition_basis": "8b492ec9f7a047a4b0f4ae3fdb4eaa4326348f1607d89bd0abe96ae56924769c",
+    "persona_digest": "e1340c3ba240190e530d969166e37b2740c911a521582900112df58a5d8e85c8",
+    "review_basis": "1d1feb3f81641d1e722799b1d602a16e65983ba5885f918e91ce4478020b4f13",
+    "runtime_asset_sha": "eab3ee8b1f7c88756154010f0542fc2af918376fec88613d5e1a073bc5554c82",
+    "scope_digest": "6d17c578c37ca029b4be928bf3e80c6cc5f82c35432cfc8e1977645915cec378",
+    "subject_id": "sagiri"
+  },
+  "model": "deepseek-flash",
+  "protocol": {
+    "automatic_retries": 0,
+    "development_total_call_limit": null,
+    "max_tokens": 4096,
+    "requests_per_action": 1,
+    "response_format": {
+      "type": "json_object"
+    },
+    "stream": false,
+    "thinking": {
+      "type": "disabled"
+    }
+  },
+  "review_basis": "35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95",
+  "sample_requests": [
+    {
+      "file_sha256": "1748c4c99b74d6643c406f3afbc94a23fde95f56adb8ae02d1150ba5072f98a3",
+      "path": ".artifacts/s158/reviewed-local-complete/tasks/05.json",
+      "purpose": "natural-activity-feedback",
+      "wire_sha256": "64756c4ec92459a1b6acf442d9c59f4cf6f9c2acffe6dcaf20dc521422b65b66"
+    },
+    {
+      "file_sha256": "8f32ecc40e871e59c1c72e55630966fd8bfd06ceecaaaa2c441eae245fa7e055",
+      "path": ".artifacts/s158/reviewed-local-complete/tasks/09.json",
+      "purpose": "living-activity-choice",
+      "wire_sha256": "0729ac7716b5e9b913f57165d6d8eb178b807a2d2d40de1548aef5045d0769d8"
+    },
+    {
+      "file_sha256": "b24d86a990e494893d76ce5b9e0629d9ed45bb7fb172ecfaf5e7be4829709cab",
+      "path": ".artifacts/s158/reviewed-local-complete/tasks/10.json",
+      "purpose": "living-activity-share",
+      "wire_sha256": "0aa29bb8a73b7f08d9ac0a9ed4b3e23e94195647a5fdb38cd4d24481a910f0d7"
+    },
+    {
+      "file_sha256": "d8a616b0335c030274077ea5582e3d7dcf4d43a17041d8ea2da9da371c91da61",
+      "path": ".artifacts/s158/reviewed-local-complete/tasks/11.json",
+      "purpose": "natural-activity-feedback",
+      "wire_sha256": "01c22f537310e327666d99097bfc417e9a2487b53c013c43ef5324c1e76d61cf"
+    }
+  ],
+  "status": "unapproved",
+  "version": "s158-integrated-three-purpose-review-1"
+}
