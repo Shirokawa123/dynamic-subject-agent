@@ -702,8 +702,8 @@ def validate_natural_feedback_entry(config, *, profile_id, timeline_id, technica
     LocalIdentityAuthority(config).validate_natural_feedback_entry(profile_id,timeline_id,technical_variant=technical_variant)
 
 
-def validate_integrated_character_entry(config, *, profile_id, timeline_id, live=True):
-    LocalIdentityAuthority(config).validate_integrated_character_entry(profile_id, timeline_id, live=live)
+def validate_integrated_character_entry(config, *, profile_id, timeline_id, live=True, technical_variant='baseline'):
+    LocalIdentityAuthority(config).validate_integrated_character_entry(profile_id, timeline_id, live=live, technical_variant=technical_variant)
 
 
 def validate_living_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):

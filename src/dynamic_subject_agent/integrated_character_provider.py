@@ -36,7 +36,7 @@ class DeepSeekIntegratedCharacterAdapter(ProviderAdapter):
         observed = value = code = None
         try:
             actual = self.delivery.consume(task)
-            request = integrated_remote_request_preview(actual)
+            request = integrated_remote_request_preview(actual, technical_variant=self.delivery.grant.technical_variant)
             wire = canonical_json(request['body']).encode()
             if sha256(wire).hexdigest() != request['wire_sha256']:
                 raise ValueError('integrated wire changed')

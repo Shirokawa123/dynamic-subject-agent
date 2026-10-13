@@ -98,9 +98,10 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
-    if contract.get('version') == 'integrated-character-live-s158-1':
+    if contract.get('version') in ('integrated-character-live-s158-1', 'integrated-character-live-focused-s158-1'):
         from dynamic_subject_agent.integrated_character_live import integrated_live_contract
-        if contract != integrated_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+        mode = 'focused' if contract['version'] == 'integrated-character-live-focused-s158-1' else 'baseline'
+        if contract != integrated_live_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant=mode):
             raise ValueError('exact approved integrated LIVE contract required')
         return 'integrated-live'
     if contract.get('version') == 'integrated-character-local-s158-1':

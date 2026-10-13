@@ -7,6 +7,13 @@ from dynamic_subject_agent.shared_activity import digest
 
 APPLICATION_ID = 'integrated-character-local-s158'
 LIVE_APPLICATION_ID = 'integrated-character-live-s158'
+FOCUSED_APPLICATION_ID = 'integrated-character-focused-s158'
+
+
+def integrated_live_application_id(technical_variant='baseline'):
+    if technical_variant not in ('baseline', 'focused'):
+        raise ValueError('closed integrated entry variant required')
+    return LIVE_APPLICATION_ID if technical_variant == 'baseline' else FOCUSED_APPLICATION_ID
 
 
 class IntegratedCharacterChatAdapter(LivingActivityChatAdapter):
@@ -48,13 +55,17 @@ class IntegratedCharacterChatAdapter(LivingActivityChatAdapter):
                 state=self.snapshot())
 
 
-def integrated_character_server(product, *, reopen, port=0, allow_simulation=False, live=False):
+def integrated_character_server(product, *, reopen, port=0, allow_simulation=False, live=False,
+                                technical_variant='baseline'):
     if type(live) is not bool:
         raise ValueError('explicit integrated entry mode required')
+    application_id = integrated_live_application_id(technical_variant)
+    if not live and technical_variant != 'baseline':
+        raise ValueError('LOCAL preparation retains its original baseline')
     adapter = IntegratedCharacterChatAdapter(product, reopen=reopen, allow_simulation=allow_simulation)
     return create_server(None, port=port, adapter=adapter,
         page_name='integrated_character_live_chat.html' if live else 'integrated_character_chat.html',
-        application_id=LIVE_APPLICATION_ID if live else APPLICATION_ID,
+        application_id=application_id if live else APPLICATION_ID,
         post_routes={'/send': adapter.send, '/operation': adapter.poll, '/request-result': adapter.lookup,
             '/context-boundary-query': adapter.boundary_query, '/context-boundary': adapter.boundary_apply,
             '/character-basis': adapter.character_basis, '/message-scope': adapter.message_scope,

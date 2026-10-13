@@ -40,7 +40,19 @@ def integrated_contract(binding):
 
 
 def integrated_choice_preview(envelope, identity, view, contract):
-    return build_feedback_choice_preview(envelope, identity, view, contract)
+    preview = build_feedback_choice_preview(envelope, identity, view, contract)
+    return dict(preview, policy=integrated_policies(contract=contract)[1])
+
+
+def integrated_policies(*, contract=None, technical_variant=None):
+    from dynamic_subject_agent.natural_feedback import feedback_choice_policy
+    variant = technical_variant if technical_variant is not None else (contract or {}).get('technical_variant', {}).get('expression_variant', 'baseline')
+    if variant == 'focused':
+        from dynamic_subject_agent.integrated_character_focus import focused_policies
+        return focused_policies()
+    if variant != 'baseline':
+        raise ValueError('closed integrated expression variant required')
+    return FEEDBACK_POLICY, feedback_choice_policy(), living_policies('action-contract')[1]
 
 
 def integrated_feedback_preview(envelope, identity, message, dialogue, enabled, view, contract):
@@ -48,7 +60,7 @@ def integrated_feedback_preview(envelope, identity, message, dialogue, enabled, 
     share = latest_share(view, enabled)
     payload = dict(preview['payload'])
     payload['evidence'] = dict(payload['evidence'], latest_share=None if share is None else dict(text=share['text']))
-    return dict(policy=FEEDBACK_POLICY, payload=payload)
+    return dict(policy=integrated_policies(contract=contract)[0], payload=payload)
 
 
 def integrated_share_preview(envelope, identity, view, contract):
@@ -57,7 +69,7 @@ def integrated_share_preview(envelope, identity, view, contract):
     if result is None or result.plan is None or result.event.kind not in ('start', 'revise'):
         raise ValueError('actual new plan required for share preview')
     # F-derived plan is explicit in the review; no F quote is sent to share.
-    return dict(policy=living_policies('action-contract')[1], payload=dict(
+    return dict(policy=integrated_policies(contract=contract)[2], payload=dict(
         background=choice['payload']['background'], shared_experience=choice['payload']['shared_experience'],
         activity_result=dict(action=result.event.kind, plan=asdict(result.plan))))
 

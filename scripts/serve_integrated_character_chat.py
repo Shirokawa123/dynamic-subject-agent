@@ -14,7 +14,7 @@ from serve_original_context_chat import default_entry_root as context_root
 from serve_living_activity_chat import default_entry_root as living_root, final_text_entry_root
 from serve_living_action_contract_chat import default_entry_root as action_root
 from serve_working_understanding_chat import default_entry_root as working_root
-from integrated_character_chat import integrated_character_server, LIVE_APPLICATION_ID
+from integrated_character_chat import integrated_character_server, LIVE_APPLICATION_ID, integrated_live_application_id
 from dynamic_subject_agent.local_product import (
     LocalProductConfig, open_local_product, open_integrated_character_product_live,
     validate_integrated_character_entry)
@@ -31,12 +31,15 @@ ENTRY_VERSION = 'integrated-character-entry-s158-1'
 APPLICATION_ID = LIVE_APPLICATION_ID
 
 
-def default_entry_root():
-    return ROOT / '.artifacts/s158/experience-live/entry'
+def default_entry_root(technical_variant='baseline'):
+    if technical_variant not in ('baseline', 'focused'):
+        raise ValueError('closed integrated entry variant required')
+    name = 'experience-live' if technical_variant == 'baseline' else 'experience-focused'
+    return ROOT / '.artifacts/s158' / name / 'entry'
 
 
-def default_audit_root():
-    return ROOT / '.artifacts/s158/experience-live/audit'
+def default_audit_root(technical_variant='baseline'):
+    return default_entry_root(technical_variant).with_name('audit')
 
 
 def _overlaps(first, second):
@@ -48,33 +51,40 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
     default_entry_root = staticmethod(default_entry_root)
 
     def __init__(self, root, *, live=True, package_path=DEFAULT_PACKAGE,
-                 transport=None, audit_path=None, observations=None, clock=None, day=None):
+                 transport=None, audit_path=None, observations=None, clock=None, day=None,
+                 technical_variant='baseline'):
+        if technical_variant not in ('baseline', 'focused'):
+            raise ValueError('closed integrated entry variant required')
+        self.technical_variant = technical_variant
         root = Path(root).resolve()
-        audit = default_audit_root().resolve() if audit_path is None else Path(audit_path).resolve()
+        audit = default_audit_root(technical_variant).resolve() if audit_path is None else Path(audit_path).resolve()
         protected = [OriginalWholeChatEntry.default_entry_root(), context_root(), living_root(),
             final_text_entry_root(), action_root(), working_root(),
             *(shared_root(variant) for variant in SHARED_TECHNICAL_VARIANTS),
             *(ROOT / '.artifacts' / ('s' + str(number)) for number in range(148, 158))]
         protected = [path.resolve() for path in protected]
-        production = default_entry_root().resolve().parent
+        productions = tuple(default_entry_root(variant).resolve().parent for variant in ('baseline', 'focused'))
         temporary = Path(tempfile.gettempdir()).resolve()
         development = (root.is_relative_to((ROOT / '.artifacts/s158').resolve())
-            and not _overlaps(root, production) and root.name == 'entry'
+            and not any(_overlaps(path, production) for path in (root, audit) for production in productions)
+            and root.name == 'entry'
             and root.parent != (ROOT / '.artifacts/s158').resolve()
             and audit == root.parent / 'audit' and audit_path is not None)
-        exact_production = (root == default_entry_root().resolve() and audit_path is None
+        exact_production = (root == default_entry_root(technical_variant).resolve() and audit_path is None
             and transport is None and clock is None and day is None)
         if (type(live) is not bool or _overlaps(root, audit)
             or any(_overlaps(path, old) for path in (root, audit) for old in protected)
             or live and not (exact_production or development)
             or not live and (transport is None or audit_path is None
-                or any(not path.is_relative_to(temporary) or _overlaps(path, production) for path in (root, audit)))):
+                or any(not path.is_relative_to(temporary) for path in (root, audit))
+                or any(_overlaps(path, production) for path in (root, audit) for production in productions))):
             raise ValueError('exact independent integrated entry required')
         self.root, self.product = root, None
         self.transport, self.observations, self.clock, self.day = transport, observations, clock, day
         self.config = LocalProductConfig(root / 'DynamicSubjectAgent/m0/experiments', root / 'state.json')
         self.audit_path = audit
-        self.grant = ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True)
+        self.grant = ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True,
+            technical_variant=technical_variant)
         fresh = not root.exists()
         if fresh and (audit.exists() or audit.with_name(audit.name + '-initialized').exists()):
             raise ValueError('orphan audit preserved; cannot attach a new identity')
@@ -99,6 +109,8 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
                 value = dict(version=ENTRY_VERSION, binding=dict(APPROVED_BINDING),
                     profile_id=self.product.profile_id, timeline_id=self.product.timeline_id,
                     audit_path=str(self.audit_path))
+                if technical_variant != 'baseline':
+                    value['technical_variant'] = technical_variant
                 with (root / 'current.json').open('x', encoding='utf-8') as output:
                     output.write(canonical_json(value)); output.flush(); os.fsync(output.fileno())
             value = self._read_pointer()
@@ -119,7 +131,11 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
             or not pointer.is_file()):
             raise ValueError('partial integrated entry preserved; cannot recreate')
         value = json.loads(pointer.read_text(encoding='utf-8'))
-        if (type(value) is not dict or set(value) != {'version', 'binding', 'profile_id', 'timeline_id', 'audit_path'}
+        keys = {'version', 'binding', 'profile_id', 'timeline_id', 'audit_path'}
+        if self.technical_variant != 'baseline':
+            keys.add('technical_variant')
+        if (type(value) is not dict or set(value) != keys
+            or value.get('technical_variant', 'baseline') != self.technical_variant
             or value['version'] != ENTRY_VERSION or value['binding'] != APPROVED_BINDING
             or value['audit_path'] != str(self.audit_path)
             or any(type(value[key]) is not str or str(UUID(value[key])) != value[key]
@@ -129,7 +145,7 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
 
     def _validate_current_identity(self):
         validate_integrated_character_entry(self.config, profile_id=self.identity[0],
-            timeline_id=self.identity[1], live=True)
+            timeline_id=self.identity[1], live=True, technical_variant=self.technical_variant)
 
     @staticmethod
     def _history_state(product):
@@ -173,7 +189,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--initialize-only', action='store_true')
     parser.add_argument('--port', type=int, default=8797)
+    parser.add_argument('--technical-variant', choices=('baseline', 'focused'), default='baseline')
     args = parser.parse_args()
+    application_id = integrated_live_application_id(args.technical_variant)
     if args.port != 8797:
         raise SystemExit('Only the reviewed independent port is accepted.')
     if not args.initialize_only:
@@ -186,19 +204,20 @@ def main():
         except ConnectionRefusedError:
             pass
         else:
-            if existing != dict(application=APPLICATION_ID):
+            if existing != dict(application=application_id):
                 raise SystemExit('Unknown service; no entry opened.')
             return
-    entry = IntegratedCharacterChatEntry(default_entry_root())
+    entry = IntegratedCharacterChatEntry(default_entry_root(args.technical_variant), technical_variant=args.technical_variant)
     try:
         if args.initialize_only:
             audit = open_integrated_character_audit(entry.audit_path)
-            print(canonical_json(dict(status='initialized', application=APPLICATION_ID,
+            print(canonical_json(dict(status='initialized', application=application_id,
                 audit_attempts=len(audit.snapshot()), chat_turns=len(history(entry.product)),
                 activity_revision=entry.product.application.query_shared_activity().view['activity_revision'],
                 root=str(entry.root))), flush=True)
             return
-        server = integrated_character_server(entry.product, reopen=entry.reopen, port=8797, live=True)
+        server = integrated_character_server(entry.product, reopen=entry.reopen, port=8797,
+            live=True, technical_variant=args.technical_variant)
         print('Integrated character chat: http://127.0.0.1:8797', flush=True)
         try:
             server.serve_forever()

@@ -58,10 +58,10 @@ def test_initialize_only_empty_pause_readonly_scope_and_reopen(integrated_live_e
             raise AssertionError('initialize-only cannot start an HTTP server')
         with monkeypatch.context() as patch:
             patch.setattr(script, 'integrated_character_server', no_server)
-            patch.setattr(script, 'IntegratedCharacterChatEntry', lambda *args: entry)
-            patch.setattr(script, 'default_entry_root', lambda: root)
+            patch.setattr(script, 'IntegratedCharacterChatEntry', lambda *args, **kwargs: entry)
+            patch.setattr(script, 'default_entry_root', lambda *args: root)
             patch.setattr(script.argparse.ArgumentParser, 'parse_args',
-                lambda self: SimpleNamespace(initialize_only=True, port=8797))
+                lambda self: SimpleNamespace(initialize_only=True, port=8797, technical_variant='baseline'))
             script.main()
         result = json.loads(capsys.readouterr().out)
         assert result['status'] == 'initialized' and result['audit_attempts'] == result['chat_turns'] == result['activity_revision'] == 0
@@ -139,3 +139,39 @@ def test_partial_pointer_audit_and_production_paths_are_preserved(integrated_liv
     with pytest.raises(RuntimeError):
         script.IntegratedCharacterChatEntry(fresh, **opts)
     assert pointer.read_bytes() == saved and not called and not transport.calls
+
+
+def test_focused_pointer_root_and_authority_do_not_convert_baseline(integrated_live_entry_setup, monkeypatch):
+    script, desktop, root, options, transport, _ = integrated_live_entry_setup
+    baseline = script.IntegratedCharacterChatEntry(root, **options)
+    baseline.close()
+    original = (root / 'current.json').read_bytes()
+    assert 'technical_variant' not in json.loads(original)
+    with pytest.raises(ValueError, match='pointer'):
+        script.IntegratedCharacterChatEntry(root, **options, technical_variant='focused')
+    assert (root / 'current.json').read_bytes() == original
+    focused_root = root.with_name('focused-entry')
+    focused_options = dict(options, audit_path=root.with_name('focused-audit'), technical_variant='focused')
+    focused = script.IntegratedCharacterChatEntry(focused_root, **focused_options)
+    focused.close()
+    pointer = focused_root / 'current.json'
+    value = json.loads(pointer.read_text(encoding='utf-8'))
+    assert value['technical_variant'] == 'focused'
+    focused = script.IntegratedCharacterChatEntry(focused_root, **focused_options)
+    focused.close()
+    for variant in ('baseline', 'focused'):
+        production = script.default_entry_root(variant)
+        with pytest.raises(ValueError, match='independent'):
+            script.IntegratedCharacterChatEntry(production, **focused_options)
+        with pytest.raises(ValueError, match='independent'):
+            script.IntegratedCharacterChatEntry(production, technical_variant='focused' if variant == 'baseline' else 'baseline')
+    assert desktop.integrated_live_application_id() == desktop.LIVE_APPLICATION_ID
+    assert desktop.integrated_live_application_id('focused') == desktop.FOCUSED_APPLICATION_ID
+    # Disguising the pointer cannot change the sealed contract's actual mode.
+    del value['technical_variant']
+    pointer.write_text(json.dumps(value), encoding='utf-8')
+    saved = pointer.read_bytes(); opened = []
+    monkeypatch.setattr(script.IntegratedCharacterChatEntry, '_open', lambda self: opened.append(True))
+    with pytest.raises(RuntimeError):
+        script.IntegratedCharacterChatEntry(focused_root, **dict(focused_options, technical_variant='baseline'))
+    assert pointer.read_bytes() == saved and not opened and not transport.calls

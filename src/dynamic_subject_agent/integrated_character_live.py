@@ -17,6 +17,8 @@ INTEGRATED_LIVE_VERSION = 'integrated-character-live-s158-1'
 APPROVED_INTEGRATED_MATERIAL = '30715f56be4a693835739645f7d8c07be264f3a2396790f82113503a00f0b44c'
 APPROVED_INTEGRATED_LOCAL_CONTRACT = '0aedd5ec87801bab5f38d2a43ef30c2eba91ac780dc9ca6e22c47aaeaba97493'
 APPROVED_INTEGRATED_PROTOCOL = '3e57d187aecef5f3f631e24efe09e16357e802c6bb16525a9c81087ae06e199f'
+FOCUSED_POLICY_DIGEST = '14d005eee18a82085aba0a3f42e51beba26bc83f3e1b3f410ed17b537206f61c'
+FOCUSED_LIVE_VERSION = 'integrated-character-live-focused-s158-1'
 KINDS = (ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, ModelTaskKind.LIVING_ACTIVITY_CHOICE, ModelTaskKind.LIVING_ACTIVITY_SHARE)
 PURPOSES = frozenset(kind.value for kind in KINDS)
 
@@ -30,9 +32,11 @@ def protocol_witness():
 class ApprovedIntegratedCharacterGrant:
     review_basis: str
     confirmed: bool = False
+    technical_variant: str = 'baseline'
 
     def __post_init__(self):
-        if self.review_basis != APPROVED_INTEGRATED_REVIEW or self.confirmed is not True:
+        if (self.review_basis != APPROVED_INTEGRATED_REVIEW or self.confirmed is not True
+            or type(self.technical_variant) is not str or self.technical_variant not in ('baseline', 'focused')):
             raise ValueError('exact confirmed S158 human approval required')
 
     def validate(self):
@@ -42,16 +46,29 @@ class ApprovedIntegratedCharacterGrant:
             or digest(integrated_contract(APPROVED_BINDING)) != APPROVED_INTEGRATED_LOCAL_CONTRACT
             or digest(protocol_witness()) != APPROVED_INTEGRATED_PROTOCOL):
             raise ValueError('approved S158 material, policy, limits or protocol changed')
+        if self.technical_variant == 'focused':
+            from dynamic_subject_agent.integrated_character_focus import focused_policies
+            if digest(focused_policies()) != FOCUSED_POLICY_DIGEST:
+                raise ValueError('pinned same-use focused policies changed')
 
 
-def integrated_live_contract(binding):
-    ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True).validate()
+def integrated_live_contract(binding, *, technical_variant='baseline'):
+    ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True, technical_variant).validate()
     base = integrated_contract(binding)
-    return dict(base, version=INTEGRATED_LIVE_VERSION, authorization=INTEGRATED_APPROVAL,
+    live = dict(base, version=INTEGRATED_LIVE_VERSION, authorization=INTEGRATED_APPROVAL,
         provider='deepseek', credential_use='existing-Windows-slot-HTTPS-Bearer-only',
         excluded='offline-catchup-notifications-persona-rewrite-reflection-cloud-migration',
         technical_variant=dict(base['technical_variant'], name='integrated-live',
             approved_review_basis=APPROVED_INTEGRATED_REVIEW, protocol_sha=APPROVED_INTEGRATED_PROTOCOL))
+    if technical_variant == 'baseline': return live
+    from hashlib import sha256
+    from dynamic_subject_agent.integrated_character_focus import focused_policies
+    feedback, choice, share = focused_policies()
+    return dict(live, version=FOCUSED_LIVE_VERSION,
+        development_authorization='s158-same-use-whole-loop-2026-10-13',
+        technical_variant=dict(live['technical_variant'], expression_variant='focused',
+            feedback_policy_sha=sha256(feedback.encode()).hexdigest(),
+            choice_policy_sha=sha256(choice.encode()).hexdigest(), share_policy_sha=sha256(share.encode()).hexdigest()))
 
 
 class IntegratedCharacterCallAudit(NaturalFeedbackCallAudit):
@@ -93,7 +110,7 @@ class IntegratedCharacterDelivery(NaturalFeedbackDelivery):
         if type(grant) is not ApprovedIntegratedCharacterGrant or type(audit) is not IntegratedCharacterCallAudit:
             raise ValueError('exact S158 grant and independent audit required')
         grant.validate()
-        if contract != integrated_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+        if contract != integrated_live_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant=grant.technical_variant):
             raise ValueError('exact integrated LIVE contract required')
         self.grant, self.audit, self.contract = grant, audit, deepcopy(contract)
         self.run_digest = digest(dict(contract=contract, state_path=str(state_path.resolve()), audit_path=str(audit.path.resolve())))
@@ -101,7 +118,7 @@ class IntegratedCharacterDelivery(NaturalFeedbackDelivery):
 
     def _validate_contract(self):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if self.contract != integrated_live_contract({key: self.contract[key] for key in APPROVED_BINDING}):
+        if self.contract != integrated_live_contract({key: self.contract[key] for key in APPROVED_BINDING}, technical_variant=self.grant.technical_variant):
             raise ValueError('current integrated contract differs from approved use')
 
     def claim(self, operation, task, rebuild):
@@ -114,7 +131,7 @@ class IntegratedCharacterDelivery(NaturalFeedbackDelivery):
                 raise ValueError('integrated delivery already pending or unverified')
             if task.payload != rebuild():
                 raise ValueError('integrated request differs from actual canonical material')
-            integrated_remote_request_preview(task)
+            integrated_remote_request_preview(task, technical_variant=self.grant.technical_variant)
             request = digest(task.payload)
             attempt = digest(dict(run=self.run_digest, operation=operation, purpose=task.kind.value))
             self.audit.claim(attempt, request, purpose=task.kind.value, run_digest=self.run_digest)

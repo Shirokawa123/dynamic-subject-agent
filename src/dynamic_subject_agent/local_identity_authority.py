@@ -1373,7 +1373,7 @@ class LocalIdentityAuthority:
         if type(grant) is not ApprovedIntegratedCharacterGrant:
             raise ValueError('exact approved integrated grant required')
         grant.validate()
-        return self._activate_context_identity(integrated_live_contract(APPROVED_BINDING), audit_path, identity_id)
+        return self._activate_context_identity(integrated_live_contract(APPROVED_BINDING, technical_variant=grant.technical_variant), audit_path, identity_id)
 
     @_registry_mutation
     def activate_natural_feedback_live(self, *, grant, audit_path, identity_id):
@@ -1647,13 +1647,16 @@ class LocalIdentityAuthority:
             or shared_variant_for_contract(identity.qri.reviewed_chat_contract) != technical_variant):
             raise RuntimeError('shared-entry-identity-unverified')
 
-    def validate_integrated_character_entry(self, expected_identity_id, expected_timeline_id, *, live=True):
+    def validate_integrated_character_entry(self, expected_identity_id, expected_timeline_id, *, live=True, technical_variant='baseline'):
         if type(live) is not bool:
             raise ValueError('explicit integrated entry mode required')
+        if technical_variant not in ('baseline', 'focused') or not live and technical_variant != 'baseline':
+            raise ValueError('closed integrated entry variant required')
         _, record, identity = self._active_chat_record(expected_identity_id)
         if (identity.qri.provider_authority != (INTEGRATED_LIVE_AUTHORITY if live else INTEGRATED_AUTHORITY)
             or record.get('timeline_id') != expected_timeline_id
-            or contract_variant(identity.qri.reviewed_chat_contract) != ('integrated-live' if live else 'integrated-local')):
+            or contract_variant(identity.qri.reviewed_chat_contract) != ('integrated-live' if live else 'integrated-local')
+            or identity.qri.reviewed_chat_contract['technical_variant'].get('expression_variant', 'baseline') != technical_variant):
             raise RuntimeError('integrated-entry-identity-unverified')
 
     def validate_natural_feedback_entry(self, expected_identity_id, expected_timeline_id, *, technical_variant='multi-span'):

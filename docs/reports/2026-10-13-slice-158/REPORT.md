@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## focused同用途候选准备
+
+在保存温室首终态7854ba4后，集中细化三条行为策略，未改输入投影、raw2、4096或任何文字保护。独立focused version/policy pin与run digest沿同一schema9/审计family，baseline LOCAL/LIVE合同及策略仍逐值一致；不同模式的root/pointer/Authority不能互换。属于用户已批用途内的技术调整，不称新策略hash另获人类批准。
+
+候选核心与baseline完整链兼容2项、入口4项、wrapper3项通过；两项独立复核无可操作问题。原温室全77文件摘要在候选前留存，原SCENE/runner/分数不改。新[电车终点站场景](../../experiments/s158/FOCUSED-SCENE.md)在调用前冻结，近/中/远关系自然约束，仍按原长距资格独立判定，不通过强制段落字数凑门槛。准备提交推送后仅运行新的focused-loop-first，旧根不重跑；新体验focused根尚未初始化/启动。
+
 ## 首次真实温室场景：技术整链完成，人物效果未达
 
 工程dec099f提交推送后，固定11首次真实请求全部complete、0retry，12canonical（含零模型来源选择），同人同Timeline v1→反馈v2→后续选择v3；2条真实分享发表。原文、audit、metadata与首次评分保于本机[首景目录](../../../.artifacts/s158/live-loop-first/metadata.json)。没有新服务启动或旧场景重发。

@@ -3,17 +3,17 @@ from hashlib import sha256
 
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
-from dynamic_subject_agent.integrated_character import FEEDBACK_POLICY
+from dynamic_subject_agent.integrated_character import integrated_policies
 from dynamic_subject_agent.natural_feedback import feedback_choice_policy
 from dynamic_subject_agent.natural_feedback_choice_budget import choice_protocol
 from dynamic_subject_agent.natural_feedback_remote_preview import validate_payload
 from dynamic_subject_agent.living_activity import living_policies
 
 
-def integrated_remote_request_preview(task):
-    policies = {ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK: FEEDBACK_POLICY,
-        ModelTaskKind.LIVING_ACTIVITY_CHOICE: feedback_choice_policy(),
-        ModelTaskKind.LIVING_ACTIVITY_SHARE: living_policies('action-contract')[1]}
+def integrated_remote_request_preview(task, *, technical_variant='baseline'):
+    feedback, choice, share_policy = integrated_policies(technical_variant=technical_variant)
+    policies = {ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK: feedback,
+        ModelTaskKind.LIVING_ACTIVITY_CHOICE: choice, ModelTaskKind.LIVING_ACTIVITY_SHARE: share_policy}
     if (type(task) is not ModelTask or task.kind not in policies or type(task.payload) is not dict
         or set(task.payload) != {'policy', 'payload'} or task.payload['policy'] != policies[task.kind]):
         raise ValueError('exact integrated task and policy required')

@@ -1,5 +1,7 @@
 # 当前工作
 
+S158 focused同用途候选已准备：只修F1已完成时态/实质新取舍/单重点分享，原payload/raw2/4096/全部保护与baseline逐值保持；同schema9/audit family独立policy/version/root/run digest。核心+baseline2、入口4、wrapper3 Fake与双复核通过。工程commit/push后只执行[全新电车首景](../experiments/s158/FOCUSED-SCENE.md)，原温室77文件/首评分全保、不重跑；长距独立判定，体验/隔日仍待真实结果。
+
 S158首真实温室已终态：dec099f后11首次/11complete/0retry/12canonical、两分享、v1→v2→v3；精确更名/过窗真重开/F1传递成立，单目标长距仍未验。正文澄清但intent=chat原检查保false；首评分2/1/2/1/0，分享偏播报、后续仅同义改写、末答误把F1当待办且错述初稿，scene-effect-not-met全保。当前同片继续已批用途内的F1时态/实质取舍/单重点分享候选与新场景，不重跑此景、不放宽4096/原保护，不另开切片。
 
 S158 LIVE工程阶段就绪：9新发送/审计/恢复、3入口、7冻结执行器Fake及34相关兼容通过，双复核无未解发现。独立approved grant/三用途audit/ticket与schema9同链，LOCAL/旧root不转换；新experience-live空入口零模型初始化，chat0/plan0/audit0、8797常驻未批。工程commit/push后只执行[新温室首景](../experiments/s158/SCENE.md)，固定11首次0retry/失败终态、实际长距资格独立记录；原失败、4096和全部文字保护保持，人物效果尚待真实核验。

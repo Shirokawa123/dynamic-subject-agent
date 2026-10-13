@@ -134,6 +134,33 @@ def test_unapproved_grant_and_manual_opportunity_have_no_live_call(integrated_li
     assert len(transport.calls)==before
 
 
+def test_focused_candidate_keeps_projection_budget_and_independent_exact_identity(integrated_live_fixture):
+    from dynamic_subject_agent.integrated_character import integrated_policies
+    from dynamic_subject_agent.local_product import validate_integrated_character_entry
+    opening,config,options,_=integrated_live_fixture
+    options['grant']=ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW,True,technical_variant='focused')
+    product,transport,_=start(integrated_live_fixture)
+    assert act(product,'share','integrated-focused-share-1').status=='committed'
+    preview=product.application.preview_natural_feedback(MESSAGE)
+    assert send(product,MESSAGE,'integrated-focused-feedback').status=='terminal'
+    wire=integrated_remote_request_preview(ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,preview.view),technical_variant='focused')
+    assert transport.calls[-1]==wire['body']
+    assert wire['body']['max_tokens']==4096 and wire['automatic_retries']==0
+    assert set(preview.view['payload'])=={'turn','background','exchange','evidence','current_plan','activity_revision','current_feedback'}
+    assert set(preview.view['payload']['evidence'])=={'shared_experience','latest_share'}
+    assert preview.view['policy']==integrated_policies(technical_variant='focused')[0]
+    validate_integrated_character_entry(config,profile_id=product.profile_id,timeline_id=product.timeline_id,technical_variant='focused')
+    with pytest.raises(RuntimeError):
+        validate_integrated_character_entry(config,profile_id=product.profile_id,timeline_id=product.timeline_id)
+    product.close();calls=len(transport.calls);product=opening(transport)
+    assert len(transport.calls)==calls and '杉架' in state(product)['current_plan'].composition
+    saved=config.state_path.read_bytes()
+    with pytest.raises(RuntimeError,match='activation-conflict'):
+        open_integrated_character_product_live(config,identity_id=options['identity_id'],audit_path=options['audit_path'],
+            grant=ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW,True),_transport=transport)
+    assert config.state_path.read_bytes()==saved and len(transport.calls)==calls
+
+
 @pytest.mark.parametrize('prepared',[False,True])
 def test_live_feedback_cold_recovery_does_not_call_provider(integrated_live_fixture,monkeypatch,prepared):
     from dynamic_subject_agent.timeline import TimelineEngine,FaultPoint,PublicationInterrupted
