@@ -1,5 +1,15 @@
 # S158：整体运行闭环的本地准备
 
+## 首次真实温室场景：技术整链完成，人物效果未达
+
+工程dec099f提交推送后，固定11首次真实请求全部complete、0retry，12canonical（含零模型来源选择），同人同Timeline v1→反馈v2→后续选择v3；2条真实分享发表。原文、audit、metadata与首次评分保于本机[首景目录](../../../.artifacts/s158/live-loop-first/metadata.json)。没有新服务启动或旧场景重发。
+
+明确反馈仅把蕨庭改成叶庭，其余逐字保持；3话题退出两轮窗，实际重开0模型，新choice收到F1且保新名。初稿只有1处目标，无同字段长距资格，专项仍未验。含糊反馈正文确实询问目标、无effect，但raw intent=chat，原clarify标签检查保false，不改判。
+
+人物首评分：自主取舍2、分享自然度1、指称澄清2、反馈后续选择1、忠实交流0。两条share均偏整版说明；后续choice只将蕨丛泛化为叶丛、理由重复已完成的改名。末答错误声称首个正式方案一直写叶庭，又把已完成反馈当成当前待确认请求；当前布局部分准确不能抵消时间归属错误。首景终态scene-effect-not-met，全结果保留；S158继续，不把11次结构成功当人物闭环通过。
+
+下一片内调整针对整体行为：明确F1是已完成的历史反馈且当前消息优先；新活动不能把已完成改名或同义改写冒充新取舍；分享只选一个实际安排自然开口。保持同投影/Provider/slot/4096/原保护，作为独立同用途技术候选后用新场景验证，不修改本首景标准、正文或分数。
+
 ## 三用途批准后的LIVE工程阶段
 
 用户对准确审阅basis `35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95`回复“同意”，批准事实保存于[approval.json](../../experiments/s158/approval.json)与方向/current，原审阅对象保持冻结。新增独立integrated-live/Grant/Manifest/publication key/三用途审计；LOCAL与旧资格不转换。发送前claim/consume双核sealed定义、当前head、权限、F1/S1与已提交方案，单thread一次票据，0自动重试。Provider严格验证原raw2/choice/share，audit记录原模型DTO；Cognition同payload归一化，最终Publication重算。
