@@ -1,0 +1,9 @@
+{
+  "version": "s158-integrated-three-purpose-approval-1",
+  "approved_review_basis": "35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95",
+  "user_reply": "同意",
+  "date": "2026-10-13",
+  "scope": "Three exact outbound uses described in REVIEW.md and frozen review.json; existing material/provider/credential and limits only",
+  "persistent_server_start_approved": false,
+  "next_day_background_action_approved": false
+}

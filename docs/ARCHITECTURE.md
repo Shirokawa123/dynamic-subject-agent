@@ -2,6 +2,8 @@
 
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 
+2026-10-13用户批准三项准确用途basis35da99cc…50d3d95后，新增独立integrated-live资格/Manifest/Grant/publication key与三用途审计，复用schema9而不转换LOCAL或旧root。LIVE claim/consume两次从sealed/当前head/权限重建精确请求、同thread一次票据；raw2严格校验和审计，Cognition构造本地proposal，Publication再裁决。原4096/direct-final/0retry/全部编辑保护保持。9新LIVE Fake、3入口、7执行器与34相关兼容过，双复核接纳；新空体验root零请求初始化、8797持续启动未批。真实新温室场景尚待工程阶段提交后执行，人物效果不由工程替代。
+
 独立integrated-local资格/schema9复用SharedActivityRecord的living/feedback、Authority/Host/Facade与单Publication。IntegratedCharacterCognition协调普通反馈、活动、分享及本地控制；最终提交统一重算组合record。S1只进入回复依赖，精确编辑由有效plan＋完整当前F独立裁决；F派生plan及share沿原源失效过滤，旧schema6/8不迁移。普通聊天失败可继续新交流，活动/分享失败需关注；冷恢复不重调模型。
 
 统一LOCAL页面通过Facade接活动/分享/反馈/草稿/原请求恢复；本地composition在身份访问前拒remote。12新核心/恢复/preview、2HTTP和66旧相关兼容通过，双复核补registry锁后接纳。原已审包11合成提议/13canonical完成同人链，0真实/凭据；未发送样例和三项新增跨用途待审，不称真实人物或整片完成，见[S158报告](reports/2026-10-13-slice-158/REPORT.md)。

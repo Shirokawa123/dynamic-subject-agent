@@ -98,6 +98,11 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('version') == 'integrated-character-live-s158-1':
+        from dynamic_subject_agent.integrated_character_live import integrated_live_contract
+        if contract != integrated_live_contract({key: contract[key] for key in APPROVED_BINDING}):
+            raise ValueError('exact approved integrated LIVE contract required')
+        return 'integrated-live'
     if contract.get('version') == 'integrated-character-local-s158-1':
         from dynamic_subject_agent.integrated_character import integrated_contract
         if contract != integrated_contract({key: contract[key] for key in APPROVED_BINDING}):
@@ -211,6 +216,8 @@ def _legacy_followup_contract(binding):
 
 def whole_publication_key(contract):
     variant = contract_variant(contract)
+    if variant == 'integrated-live':
+        return 'original-integrated-character-live-s158-' + digest(contract)
     if variant == 'integrated-local':
         return 'original-integrated-character-local-s158-' + digest(contract)
     if variant=='feedback-scoped-live':
@@ -259,7 +266,7 @@ def policy_for_contract(contract):
     variant = contract_variant(contract)
     if variant == "followup-legacy":
         raise ValueError("legacy followup qualification is receipt-only")
-    if variant in ("integrated-local", "shared-local", "shared-live", "feedback-local", "feedback-live", "feedback-scoped-live", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
+    if variant in ("integrated-live", "integrated-local", "shared-local", "shared-live", "feedback-local", "feedback-live", "feedback-scoped-live", "living-local", "living-live", "living-final-text-live", 'working-live','working-fact-faithful-live'):
         raise ValueError("this local qualification has no original-whole remote policy")
     policy = (_grounded_policy() if variant in ("grounded", "context-boundary") else WHOLE_USE_POLICY + JSON_EXAMPLE_SUFFIX
         if variant == "json-example" else WHOLE_USE_POLICY)

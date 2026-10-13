@@ -685,9 +685,9 @@ class _ApplicationRouter:
         return self._apply_shared_activity(request,SharedActivityStepRequest)
 
     def preview_natural_feedback(self, text):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITIES, INTEGRATED_AUTHORITY
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITIES, INTEGRATED_AUTHORITIES
         self._require_open()
-        if (self._binding.provider_authority not in (*FEEDBACK_AUTHORITIES, INTEGRATED_AUTHORITY) or type(text) is not str
+        if (self._binding.provider_authority not in (*FEEDBACK_AUTHORITIES, *INTEGRATED_AUTHORITIES) or type(text) is not str
             or not text.strip() or len(text) > 1000 or '\x00' in text):
             return SharedActivityResponse('unavailable', problem_code='natural-feedback-preview-unavailable')
         try:

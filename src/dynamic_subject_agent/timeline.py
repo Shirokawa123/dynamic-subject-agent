@@ -29,7 +29,7 @@ from dynamic_subject_agent.first_life import (
 from dynamic_subject_agent.first_life_authorization import ShareAuthorization, ShareAuthorizationChanged, decode_share_authorization, ChatAuthorization, decode_chat_authorization
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_INTENT, WholeContextInput, CONTEXT_DDL, CONTEXT_RECEIPT, CONTEXT_VERSION
-from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY
+from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITIES
 from dynamic_subject_agent.shared_activity import SHARED_AUTHORITY, LIVING_AUTHORITY, LIVING_AUTHORITIES, LIVING_INTENT, SHARED_AUTHORITIES, SHARED_INTENT, SHARED_DDL, SharedActivityInput, SharedActivityRecord, decode_record as decode_shared_record, WORKING_AUTHORITY, WORKING_INTENT, FEEDBACK_AUTHORITY, FEEDBACK_INTENT, FEEDBACK_RUNTIME_CONTRACT, FEEDBACK_SCOPED_AUTHORITY
 from contextlib import contextmanager
 
@@ -4798,7 +4798,7 @@ class TimelineEngine:
             effective = authorization
             if WORKING_INTENT in self._authority.allowed_intents and record.working is not None and record.working['permission']['source_blocked']:
                 effective = replace(authorization,history_enabled=False)
-            integrated = self._authority.provider_authority == INTEGRATED_AUTHORITY
+            integrated = self._authority.provider_authority in INTEGRATED_AUTHORITIES
             if integrated and record.living is not None and record.living['permission']['source_blocked']:
                 effective = replace(authorization, history_enabled=False)
             view = self.shared_activity_basis(effective, exclude_operation_id=plan.operation_ref.operation_id)

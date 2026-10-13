@@ -1147,9 +1147,9 @@ class SubjectRuntime:
     def recover_original_whole_pending(self):
         pending = self._engine.pending_original_whole_operations()
         for operation_ref in pending:
-            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY, SharedActivityInput
+            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITIES, SharedActivityInput
             needs_life_attention = LIVING_INTENT in self._context.authority.allowed_intents
-            if self._context.authority.provider_authority == INTEGRATED_AUTHORITY:
+            if self._context.authority.provider_authority in INTEGRATED_AUTHORITIES:
                 command = self._engine._query_command(operation_ref)
                 needs_life_attention = type(command) is SharedActivityInput and command.input_kind in ('advance', 'share')
             if SHARED_INTENT in self._context.authority.allowed_intents:

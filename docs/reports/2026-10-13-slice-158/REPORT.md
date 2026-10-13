@@ -1,5 +1,15 @@
 # S158：整体运行闭环的本地准备
 
+## 三用途批准后的LIVE工程阶段
+
+用户对准确审阅basis `35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95`回复“同意”，批准事实保存于[approval.json](../../experiments/s158/approval.json)与方向/current，原审阅对象保持冻结。新增独立integrated-live/Grant/Manifest/publication key/三用途审计；LOCAL与旧资格不转换。发送前claim/consume双核sealed定义、当前head、权限、F1/S1与已提交方案，单thread一次票据，0自动重试。Provider严格验证原raw2/choice/share，audit记录原模型DTO；Cognition同payload归一化，最终Publication重算。
+
+工程验证：9项LIVE Fake、3项新入口、7项执行器检查通过；34项LOCAL/旧choice/living-live兼容以及原LOCAL入口1项针对性检查通过。HTML JavaScript/PowerShell语法过；两独立复核无未解可操作发现。测试首轮将unknown后的读取误期望为available，按既有unknown关闭合同修测试；凭据不可用夹具误传异常构造参数也只修测试。产品未因此放宽失败保护，日志均保本机。
+
+独立experience-live零模型初始化成功：空chat/活动版本0/audit0；未启动8797或操作旧入口。已准备准确CLI/隐藏启动器及[启动草案](../../experiments/s158/ENTRY-START.md)，持续启动尚待用户单独批准。模型用途批准不替代启动批准。
+
+新温室场景与固定词对派生规则在真实调用前写入[SCENE](../../experiments/s158/SCENE.md)。执行器每次next只推进一个首次stage，先独占持久attempt再arm，unknown或技术失败仅readonly inspect，不重发；短稿继续普通闭环而将长距专项列未验。五项人物评分需主窗口按原文首次登记，结构结束不自动当人物通过。工程阶段提交推送后才执行真实首景，下文LOCAL结果均为历史工程证据。
+
 用户2026-10-13要求整体推进作为一个切片，并明确继续。本轮以main ba21843为基线（fetch后与origin/main一致），保留全部旧未跟踪成果、S155/S156/S157真实终态与旧入口。S158尚未整片收口；本报告记录已验证工程阶段和准确新用途待审。
 
 ## 已交付的整体改动

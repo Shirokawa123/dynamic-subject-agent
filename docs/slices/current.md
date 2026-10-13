@@ -1,5 +1,9 @@
 # 当前工作
 
+S158 LIVE工程阶段就绪：9新发送/审计/恢复、3入口、7冻结执行器Fake及34相关兼容通过，双复核无未解发现。独立approved grant/三用途audit/ticket与schema9同链，LOCAL/旧root不转换；新experience-live空入口零模型初始化，chat0/plan0/audit0、8797常驻未批。工程commit/push后只执行[新温室首景](../experiments/s158/SCENE.md)，固定11首次0retry/失败终态、实际长距资格独立记录；原失败、4096和全部文字保护保持，人物效果尚待真实核验。
+
+S158三项用途已于2026-10-13获用户“同意”，准确basis35da99cc…50d3d95由[方向记录](../plans/character-chat-direction.md)承接。本轮从c252fda已push基线继续独立LIVE资格/审计/一次送达、统一真实入口准备及新场景整体验收；原LOCAL与旧root不转换，全部原4096/保护/旧首失败保持。下文“用途待批”为批准前历史；新常驻与后日后台动作仍先做具体准备再集中审。
+
 S158本地整体阶段：独立组合资格/schema9与同一Facade/Timeline/Publication已接聊天、活动、分享、精确反馈和控制恢复；12新核心/恢复/preview＋2HTTP、66旧兼容过，双复核补registry锁后无剩余发现。原已审包11合成/13canonical/12checks全过，0真实模型/凭据，未启动新常驻。旧失败/未提交/4096与文字保护全保，工程与人物分开，见[报告](../reports/2026-10-13-slice-158/REPORT.md)。
 
 唯一S158继续；当前实际阻塞是[三项准确新用途](../experiments/s158/REVIEW.md)，basis 35da99cc…50d3d95。LOCAL可运行与05/09/10/11实际未发送样例已齐，尚未批准，不借旧grant外发。批准后同片接LIVE与新完整真实验收；完整人物效果/实际隔日/新持续入口仍未完成，不把本地阶段当整片收口。

@@ -159,8 +159,8 @@ def _open_loaded_local_product(
         if loaded.qri.provider_authority in SHARED_AUTHORITIES:
             from dynamic_subject_agent.working_understanding_cognition import WorkingUnderstandingCognition
             from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
-            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY
-            expected_cognition = IntegratedCharacterCognition if loaded.qri.provider_authority == INTEGRATED_AUTHORITY else WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
+            from dynamic_subject_agent.shared_activity import INTEGRATED_AUTHORITY, INTEGRATED_LIVE_AUTHORITY, INTEGRATED_AUTHORITIES
+            expected_cognition = IntegratedCharacterCognition if loaded.qri.provider_authority in INTEGRATED_AUTHORITIES else WorkingUnderstandingCognition if loaded.qri.provider_authority in WORKING_AUTHORITIES else SharedActivityCognition
             live = loaded.qri.provider_authority in (SHARED_LIVE_AUTHORITY, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_SCOPED_AUTHORITY, *LIVING_LIVE_AUTHORITIES, *WORKING_LIVE_AUTHORITIES)
             if (type(cognition) is not expected_cognition or cognition.gateway is None
                 or cognition.provider_authority != loaded.qri.provider_authority
@@ -172,7 +172,8 @@ def _open_loaded_local_product(
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
                 from dynamic_subject_agent.working_understanding_live import WorkingUnderstandingDelivery
                 from dynamic_subject_agent.natural_feedback_live import NaturalFeedbackDelivery
-                expected_delivery = NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
+                from dynamic_subject_agent.integrated_character_live import IntegratedCharacterDelivery
+                expected_delivery = IntegratedCharacterDelivery if loaded.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY else NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -701,6 +702,10 @@ def validate_natural_feedback_entry(config, *, profile_id, timeline_id, technica
     LocalIdentityAuthority(config).validate_natural_feedback_entry(profile_id,timeline_id,technical_variant=technical_variant)
 
 
+def validate_integrated_character_entry(config, *, profile_id, timeline_id, live=True):
+    LocalIdentityAuthority(config).validate_integrated_character_entry(profile_id, timeline_id, live=live)
+
+
 def validate_living_activity_entry(config, *, profile_id, timeline_id, technical_variant='baseline'):
     """Validate the exact current living-live identity before entry activation."""
     LocalIdentityAuthority(config).validate_living_activity_entry(profile_id, timeline_id, technical_variant=technical_variant)
@@ -860,15 +865,40 @@ def open_working_understanding_product_live(config, *, grant, audit_path, identi
 def open_integrated_character_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):
     """One independent LOCAL owner; remote gateways fail before any root access."""
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-    from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
-    from dynamic_subject_agent.living_activity import LivingClock, utc8_day
     if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
         raise ValueError('LOCAL-only integrated gateway required before any identity access')
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_integrated_character_local(
         binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
-    cognition = IntegratedCharacterCognition(envelope=loaded.reviewed_definition, gateway=gateway,
+    return _compose_integrated_character(config, authority=authority, loaded=loaded, gateway=gateway, clock=clock, day=day)
+
+
+def open_integrated_character_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None, clock=None, day=None):
+    from dynamic_subject_agent.integrated_character_live import (
+        ApprovedIntegratedCharacterGrant, IntegratedCharacterDelivery, open_integrated_character_audit)
+    from dynamic_subject_agent.integrated_character_provider import DeepSeekIntegratedCharacterAdapter
+    if type(grant) is not ApprovedIntegratedCharacterGrant or not isinstance(audit_path, Path) or not audit_path.is_absolute():
+        raise ValueError('exact integrated grant and absolute audit required')
+    grant.validate()
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_integrated_character_live(grant=grant, audit_path=audit_path, identity_id=identity_id)
+    delivery = IntegratedCharacterDelivery(grant=grant, audit=open_integrated_character_audit(audit_path),
+        contract=loaded.qri.reviewed_chat_contract, state_path=config.state_path)
+    transport = _transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver())
+    adapter = DeepSeekIntegratedCharacterAdapter(transport=transport, delivery=delivery,
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID),
+        observations=observations)
+    return _compose_integrated_character(config, authority=authority, loaded=loaded, gateway=ModelGateway(adapter),
+        delivery=delivery, clock=clock, day=day)
+
+
+def _compose_integrated_character(config, *, authority, loaded, gateway, delivery=None, clock=None, day=None):
+    from dynamic_subject_agent.integrated_character_cognition import IntegratedCharacterCognition
+    from dynamic_subject_agent.living_activity import LivingClock, utc8_day
+    cognition = IntegratedCharacterCognition(provider_authority=loaded.qri.provider_authority,
+        envelope=loaded.reviewed_definition, gateway=gateway, delivery=delivery,
         contract=loaded.qri.reviewed_chat_contract,
+        snapshot_loader=lambda: authority.try_whole_scope_snapshot(loaded.qri.profile_id, loaded.timeline_id),
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
