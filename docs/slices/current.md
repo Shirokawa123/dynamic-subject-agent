@@ -1,5 +1,7 @@
 # 当前工作
 
+S158海港11首次全部complete/0retry、12canonical/两分享/v1→v2→v3；六目标精确反馈、澄清、过窗重开和真实新手势/重心取舍成立。首评分2/2/2/2/1，末答缺具体变化，scene-effect-not-met全保；初稿跨度117、长距仍未验。当前同片补只读来源约束变化视图和准确未发送用途方案，既有LIVE字段不扩；另备仅长距新五步专项，3Fake/check过，不续六步/不人物打满。8797及真实隔日仍待，全部旧终态/4096/原保护保持。
+
 S158 intent-text有限接口候选已备：有frame严格首行[revise]/[chat]/[clarify]＋正文，保持模型可拒/Python原裁决；无frame正文NoOp，choice/share JSON不改。同用途/字段/4096/所有界限，前三合同不变；7核心/decoder兼容＋1入口＋4helper、双复核过。工程push后仅[新海港长画幅](../experiments/s158/INTENT-SCENE.md)首次，250–350字明确合成长距专项约束，旧三终态不重发不改判。
 
 S158道具间5首次已终态：前4complete，第5raw嵌套json_object外壳被strict raw2拒绝/方案v1/后6未验，0retry，全部首次保留；普通正文、活动、分享、澄清有真提交但不称完整通过，仍1目标长距未验。下一同片有限接口候选把可写请求表示为严格首行意图＋正文，仍三意图与Python原frame裁决/角色可拒，不解包旧失败或放宽界限。
