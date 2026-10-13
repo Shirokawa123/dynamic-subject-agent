@@ -177,30 +177,35 @@ def test_focused_pointer_root_and_authority_do_not_convert_baseline(integrated_l
     assert pointer.read_bytes() == saved and not opened and not transport.calls
 
 
-def test_conversation_mode_pointer_and_all_production_roots_stay_isolated(integrated_live_entry_setup, monkeypatch):
+@pytest.mark.parametrize('variant,folder,application', [
+    ('conversation-text', 'experience-conversation', 'integrated-character-conversation-s158'),
+    ('intent-text', 'experience-intent', 'integrated-character-intent-s158')], ids=['conversation', 'intent'])
+def test_text_mode_pointer_and_all_production_roots_stay_isolated(integrated_live_entry_setup, monkeypatch, variant, folder, application):
     script, desktop, root, options, transport, _ = integrated_live_entry_setup
-    opts = dict(options, technical_variant='conversation-text')
+    opts = dict(options, technical_variant=variant)
     entry = script.IntegratedCharacterChatEntry(root, **opts)
     identity = entry.identity
     entry.close()
     pointer = root / 'current.json'
     original = pointer.read_bytes()
-    assert json.loads(original)['technical_variant'] == 'conversation-text'
+    assert json.loads(original)['technical_variant'] == variant
     entry = script.IntegratedCharacterChatEntry(root, **opts)
     assert entry.identity == identity
     entry.close()
     assert pointer.read_bytes() == original and not transport.calls
-    assert desktop.integrated_live_application_id('conversation-text') == 'integrated-character-conversation-s158'
-    assert script.default_entry_root('conversation-text') == script.ROOT / '.artifacts/s158/experience-conversation/entry'
-    for selected in ('baseline', 'focused', 'conversation-text'):
+    assert desktop.integrated_live_application_id(variant) == application
+    assert script.default_entry_root(variant) == script.ROOT / '.artifacts/s158' / folder / 'entry'
+    for selected in ('baseline', 'focused', 'conversation-text', 'intent-text'):
         production = script.default_entry_root(selected)
         with pytest.raises(ValueError, match='independent'):
             script.IntegratedCharacterChatEntry(production, **opts)
-        for requested in ('baseline', 'focused', 'conversation-text'):
+        for requested in ('baseline', 'focused', 'conversation-text', 'intent-text'):
             if selected != requested:
                 with pytest.raises(ValueError, match='independent'):
                     script.IntegratedCharacterChatEntry(production, technical_variant=requested)
-    for previous in ('baseline', 'focused'):
+    for previous in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+        if previous == variant:
+            continue
         with pytest.raises(ValueError, match='pointer'):
             script.IntegratedCharacterChatEntry(root, **dict(opts, technical_variant=previous))
     assert pointer.read_bytes() == original

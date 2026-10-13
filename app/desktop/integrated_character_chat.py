@@ -9,13 +9,14 @@ APPLICATION_ID = 'integrated-character-local-s158'
 LIVE_APPLICATION_ID = 'integrated-character-live-s158'
 FOCUSED_APPLICATION_ID = 'integrated-character-focused-s158'
 CONVERSATION_APPLICATION_ID = 'integrated-character-conversation-s158'
+INTENT_APPLICATION_ID = 'integrated-character-intent-s158'
 
 
 def integrated_live_application_id(technical_variant='baseline'):
-    if technical_variant not in ('baseline', 'focused', 'conversation-text'):
+    if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text'):
         raise ValueError('closed integrated entry variant required')
     return {'baseline': LIVE_APPLICATION_ID, 'focused': FOCUSED_APPLICATION_ID,
-        'conversation-text': CONVERSATION_APPLICATION_ID}[technical_variant]
+        'conversation-text': CONVERSATION_APPLICATION_ID, 'intent-text': INTENT_APPLICATION_ID}[technical_variant]
 
 
 class IntegratedCharacterChatAdapter(LivingActivityChatAdapter):

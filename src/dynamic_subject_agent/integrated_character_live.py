@@ -21,6 +21,8 @@ FOCUSED_POLICY_DIGEST = '14d005eee18a82085aba0a3f42e51beba26bc83f3e1b3f410ed17b5
 FOCUSED_LIVE_VERSION = 'integrated-character-live-focused-s158-1'
 CONVERSATION_LIVE_VERSION = 'integrated-character-live-conversation-s158-1'
 CONVERSATION_TEXT_POLICY_SHA = '2ff0ae3b3ac8c919757ee9b6576b72cdaa99fa9541e6bed853ee8db1eaa44b2d'
+INTENT_TEXT_LIVE_VERSION = 'integrated-character-live-intent-text-s158-1'
+INTENT_TEXT_POLICY_SHA = '718ef897d8f479c7cc3e55eb37f68b873e20c7b9aa78159915f18cda80f0b7df'
 KINDS = (ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, ModelTaskKind.LIVING_ACTIVITY_CHOICE, ModelTaskKind.LIVING_ACTIVITY_SHARE)
 PURPOSES = frozenset(kind.value for kind in KINDS)
 
@@ -38,7 +40,7 @@ class ApprovedIntegratedCharacterGrant:
 
     def __post_init__(self):
         if (self.review_basis != APPROVED_INTEGRATED_REVIEW or self.confirmed is not True
-            or type(self.technical_variant) is not str or self.technical_variant not in ('baseline', 'focused', 'conversation-text')):
+            or type(self.technical_variant) is not str or self.technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text')):
             raise ValueError('exact confirmed S158 human approval required')
 
     def validate(self):
@@ -48,15 +50,19 @@ class ApprovedIntegratedCharacterGrant:
             or digest(integrated_contract(APPROVED_BINDING)) != APPROVED_INTEGRATED_LOCAL_CONTRACT
             or digest(protocol_witness()) != APPROVED_INTEGRATED_PROTOCOL):
             raise ValueError('approved S158 material, policy, limits or protocol changed')
-        if self.technical_variant in ('focused', 'conversation-text'):
+        if self.technical_variant in ('focused', 'conversation-text', 'intent-text'):
             from dynamic_subject_agent.integrated_character_focus import focused_policies
             if digest(focused_policies()) != FOCUSED_POLICY_DIGEST:
                 raise ValueError('pinned same-use focused policies changed')
-        if self.technical_variant == 'conversation-text':
+        if self.technical_variant in ('conversation-text', 'intent-text'):
             from hashlib import sha256
             from dynamic_subject_agent.integrated_character_text import CONVERSATION_TEXT_POLICY
             if sha256(CONVERSATION_TEXT_POLICY.encode()).hexdigest() != CONVERSATION_TEXT_POLICY_SHA:
                 raise ValueError('pinned no-effect conversation text policy changed')
+            if self.technical_variant == 'intent-text':
+                from dynamic_subject_agent.integrated_character_text import INTENT_TEXT_POLICY
+                if sha256(INTENT_TEXT_POLICY.encode()).hexdigest() != INTENT_TEXT_POLICY_SHA:
+                    raise ValueError('pinned strict first-line intent policy changed')
 
 
 def integrated_live_contract(binding, *, technical_variant='baseline'):
@@ -77,10 +83,15 @@ def integrated_live_contract(binding, *, technical_variant='baseline'):
             feedback_policy_sha=sha256(feedback.encode()).hexdigest(),
             choice_policy_sha=sha256(choice.encode()).hexdigest(), share_policy_sha=sha256(share.encode()).hexdigest()))
     if technical_variant == 'focused': return focused
-    return dict(focused, version=CONVERSATION_LIVE_VERSION,
+    conversation = dict(focused, version=CONVERSATION_LIVE_VERSION,
         technical_variant=dict(focused['technical_variant'], expression_variant='conversation-text',
             conversation_text_policy_sha=CONVERSATION_TEXT_POLICY_SHA,
             output_selection='independent-writable-frame-json-otherwise-text-no-effect-1'))
+    if technical_variant == 'conversation-text': return conversation
+    return dict(conversation, version=INTENT_TEXT_LIVE_VERSION,
+        technical_variant=dict(conversation['technical_variant'], expression_variant='intent-text',
+            intent_text_policy_sha=INTENT_TEXT_POLICY_SHA,
+            output_selection='independent-writable-frame-strict-intent-line-otherwise-text-no-effect-1'))
 
 
 class IntegratedCharacterCallAudit(NaturalFeedbackCallAudit):

@@ -49,10 +49,11 @@ class DeepSeekIntegratedCharacterAdapter(ProviderAdapter):
             observed = BudgetObservedTransport(self.transport)
             payload = actual.payload['payload']
             if 'response_format' not in request['body']:
-                from dynamic_subject_agent.integrated_character_text import conversation_text_proposal
+                from dynamic_subject_agent.integrated_character_text import conversation_text_proposal, intent_text_proposal
                 text = _post_text_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096)
-                value = conversation_text_proposal(text, payload)
-                row['output_mode'] = 'plain-text-local-no-effect-wrapper'
+                tagged = request['output_contract']['final_content'] == 'intent-prefixed-text'
+                value = intent_text_proposal(text, payload) if tagged else conversation_text_proposal(text, payload)
+                row['output_mode'] = 'strict-intent-text' if tagged else 'plain-text-local-no-effect-wrapper'
             else:
                 value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
                     require_complete=True, discard_reasoning=True, safe_diagnostics=True)

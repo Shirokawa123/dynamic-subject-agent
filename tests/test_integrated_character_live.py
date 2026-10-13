@@ -31,6 +31,8 @@ class IntegratedTransport(DeepSeekTransport):
         value=self.synthetic.invoke(ModelTask(kind,dict(policy=body['messages'][0]['content'],payload=payload))).value
         if self.fault=='extra': value=dict(value,activity_revision=1)
         content='' if self.fault in ('blank','length') else value['reply_text'] if 'response_format' not in body else canonical_json(value)
+        if self.fault not in ('blank','length') and 'response_format' not in body and '第一行只能是[revise]' in body['messages'][0]['content']:
+            content=f"[{value['intent']}]\n{value['reply_text']}"
         if self.fault=='trailing': content += ','
         return DeepSeekHttpResponse(200,canonical_json(dict(model='deepseek-flash',choices=[dict(
             finish_reason='length' if self.fault=='length' else 'stop',message=dict(role='assistant',content=content,
@@ -198,6 +200,32 @@ def test_text_selection_preserves_complete_feedback_source_length_bound():
     payload['turn']['current_message']=' '*(401-len(MESSAGE))+MESSAGE
     assert len(payload['turn']['current_message'])==401 and not has_writable_frame(payload)
     assert conversation_text_proposal('这一轮先保留方案。',payload)==dict(intent='chat',reply_text='这一轮先保留方案。')
+
+
+def test_strict_intent_text_live_preserves_model_choice_and_exact_frame(integrated_live_fixture):
+    opening,_,options,_=integrated_live_fixture
+    options['grant']=ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW,True,technical_variant='intent-text')
+    product,transport,observations=start(integrated_live_fixture)
+    original=state(product)['current_plan']
+    transport.synthetic.override=dict(intent='chat',reply_text='我这次想保留原名。')
+    assert send(product,MESSAGE,'intent-text-refusal-1').status=='terminal'
+    assert state(product)['current_plan']==original
+    transport.synthetic.override=None
+    preview=product.application.preview_natural_feedback(MESSAGE)
+    expected=integrated_remote_request_preview(ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,preview.view),technical_variant='intent-text')
+    assert expected['output_contract']['final_content']=='intent-prefixed-text' and 'response_format' not in expected['body']
+    assert send(product,MESSAGE,'intent-text-accepted-1').status=='terminal'
+    assert transport.calls[-1]==expected['body'] and observations[-1]['output_mode']=='strict-intent-text'
+    assert asdict(state(product)['current_plan'])=={k:v.replace('松架','杉架') for k,v in asdict(original).items()}
+    assert history(product)[-1].assistant_text=='合成修订回复。'
+    assert len(open_integrated_character_audit(options['audit_path']).snapshot())==3
+
+
+@pytest.mark.parametrize('text',['收到，已经改了。','[revise],\n收到。','[revise]\n[chat]\n收到。','{"intent":"revise","reply_text":"收到。"},','[revise]\n'])
+def test_intent_decoder_is_strict_and_never_repairs_old_json(text):
+    from dynamic_subject_agent.integrated_character_text import intent_text_proposal
+    payload=dict(turn=dict(current_message=MESSAGE,history_enabled=True),current_plan=PLAN,activity_revision=1)
+    with pytest.raises(ValueError): intent_text_proposal(text,payload)
 
 
 @pytest.mark.parametrize('prepared',[False,True])

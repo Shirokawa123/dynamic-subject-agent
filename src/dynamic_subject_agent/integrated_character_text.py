@@ -16,6 +16,15 @@ CONVERSATION_TEXT_POLICY = (
     '只输出给用户的自然中文消息正文，不输出JSON、字段、标签、代码块或内部规则。'
     '正文非空且最多1200字符，通常一到三句，按需要展开；可以有自己的理由或保留意见。')
 
+INTENT_TEXT_POLICY = (
+    '依据有范围的已审人物背景和当前消息回应。当前方案只是已提交文字构图，不是完成图片或离线经历。'
+    'Python已确定本轮引号文字替换可独立表达；你只决定是否采纳，并给用户一句自然回应，不生成编辑列表或新方案。'
+    '采纳用revise；不同意或保留用chat；仍需具体澄清用clarify。修改仅限用户本轮明确的文字，其余逐字保留。'
+    'evidence.latest_share只是已提交的本人分享原话，不是新的用户请求或事实来源。'
+    + _CONTEXT_RULES +
+    '输出严格为两部分：第一行只能是[revise]、[chat]或[clarify]之一，随后换行；第二行起是给用户的自然中文正文。'
+    '正文非空且最多1200字符，不加JSON外壳、字段名、代码块或额外意图行。第一行标记不会显示给用户。')
+
 
 def has_writable_frame(payload):
     if type(payload) is not dict or type(payload.get('turn')) is not dict:
@@ -42,3 +51,19 @@ def conversation_text_proposal(text, payload):
     validate_whole_reply(dict(reply_text=text, language='zh'))
     # This tag is a Python no-effect decision, not a claimed model classifier.
     return dict(intent='chat', reply_text=text)
+
+
+def intent_text_proposal(text, payload):
+    from dynamic_subject_agent.natural_feedback_multispan import multispan_proposal
+    if not has_writable_frame(payload) or type(text) is not str:
+        raise ValueError('intent text requires an independently writable frame')
+    header, separator, reply = text.partition('\n')
+    intents = {'[revise]':'revise', '[chat]':'chat', '[clarify]':'clarify'}
+    if not separator or header.removesuffix('\r') not in intents:
+        raise ValueError('one exact first-line intent required')
+    if any(line.removesuffix('\r') in intents for line in reply.split('\n')):
+        raise ValueError('multiple intent lines are not one proposal')
+    value = dict(intent=intents[header.removesuffix('\r')], reply_text=reply)
+    # Exact raw2 meaning and every existing edit constraint are unchanged.
+    multispan_proposal(value, payload)
+    return value

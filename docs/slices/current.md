@@ -1,5 +1,7 @@
 # 当前工作
 
+S158 intent-text有限接口候选已备：有frame严格首行[revise]/[chat]/[clarify]＋正文，保持模型可拒/Python原裁决；无frame正文NoOp，choice/share JSON不改。同用途/字段/4096/所有界限，前三合同不变；7核心/decoder兼容＋1入口＋4helper、双复核过。工程push后仅[新海港长画幅](../experiments/s158/INTENT-SCENE.md)首次，250–350字明确合成长距专项约束，旧三终态不重发不改判。
+
 S158道具间5首次已终态：前4complete，第5raw嵌套json_object外壳被strict raw2拒绝/方案v1/后6未验，0retry，全部首次保留；普通正文、活动、分享、澄清有真提交但不称完整通过，仍1目标长距未验。下一同片有限接口候选把可写请求表示为严格首行意图＋正文，仍三意图与Python原frame裁决/角色可拒，不解包旧失败或放宽界限。
 
 S158 conversation-text准备通过：无独立可写frame普通交流纯正文→本地NoOp，可写仍strict JSON，无删逗号/fallback；同原三用途/4096/保护，baseline/focused旧合同不改。2模式/兼容＋1完整F长度＋1入口＋5helper过，双复核补400字分流后无剩余finding。工程commit/push后仅[新道具间](../experiments/s158/CONVERSATION-SCENE.md)首次；原温室/电车终态全保，新工程无effect与人工澄清效果分开，不伪造model intent。

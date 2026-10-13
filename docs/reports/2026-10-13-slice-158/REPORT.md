@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## intent-text有限接口候选准备
+
+有frame的反馈用严格首行三意图＋原正文，模型仍能拒绝/澄清；无frame继续普通正文NoOp，choice/share仍JSON。原两项语义值、同三用途/字段/4096及所有裁决界限保持，旧非法JSON不修补。7核心/严格decoder/旧conversation兼容、1新入口、4执行器检查通过；双复核无可操作发现。前三合同逐值保持，新mode独立version/root/run digest。
+
+新[海港长画幅首景](../../experiments/s158/INTENT-SCENE.md)明确把250–350字和近/远铭牌实写要求标为长距专项合成约束，不冒充自然用户代表性；原>160/≤8/≤4/160/240和五评分保持。工程提交后只运行新intent-loop-first；原温室/电车/道具间终态全保，实际效果尚待核。
+
 ## conversation-text道具间首次：正文路径成立，修改外壳拒绝
 
 f950cde后5首次真实/0retry，前4complete；第5明确反馈stop/103chars/43completion，但raw为`{type:json_object,reply_text:嵌套JSON字符串}`，严格raw2拒绝、1failed-closed，方案仍v1，后6未验。原final/metadata/audit保在conversation-loop-first，未解包补接纳、未重跑。首稿仍1文字目标，长距未验；已提交普通正文和具体澄清不证明完整人物闭环。
