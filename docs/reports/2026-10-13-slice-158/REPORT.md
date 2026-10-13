@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## conversation-text道具间首次：正文路径成立，修改外壳拒绝
+
+f950cde后5首次真实/0retry，前4complete；第5明确反馈stop/103chars/43completion，但raw为`{type:json_object,reply_text:嵌套JSON字符串}`，严格raw2拒绝、1failed-closed，方案仍v1，后6未验。原final/metadata/audit保在conversation-loop-first，未解包补接纳、未重跑。首稿仍1文字目标，长距未验；已提交普通正文和具体澄清不证明完整人物闭环。
+
+下一有限接口调整保同样三意图/正文内容、原frame及全部界限：有独立frame时用严格首行意图标记加正文，模型仍可保留或澄清；无frame仍只聊天NoOp。旧JSON解析继续拒原样本，不按生成台词擅自修改。这是同用途表示协议替换，不新增资料或自动重试。
+
 ## conversation-text整体分工候选准备
 
 普通无独立可写frame的交流接已有严格完成正文机制，原文形成显式本地NoOp DTO；可写frame继续raw2 JSON，无格式修补或失败fallback。choice/share沿focused；相同用途/字段/模型/4096/原保护，独立version/root/run digest，旧baseline/focused合同不改。2项模式与兼容、400字边界1项、入口新增1项、执行器5项通过；双复核发现的400字分流遗漏已修并关闭，无剩余finding。

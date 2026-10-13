@@ -1,5 +1,7 @@
 # 当前工作
 
+S158道具间5首次已终态：前4complete，第5raw嵌套json_object外壳被strict raw2拒绝/方案v1/后6未验，0retry，全部首次保留；普通正文、活动、分享、澄清有真提交但不称完整通过，仍1目标长距未验。下一同片有限接口候选把可写请求表示为严格首行意图＋正文，仍三意图与Python原frame裁决/角色可拒，不解包旧失败或放宽界限。
+
 S158 conversation-text准备通过：无独立可写frame普通交流纯正文→本地NoOp，可写仍strict JSON，无删逗号/fallback；同原三用途/4096/保护，baseline/focused旧合同不改。2模式/兼容＋1完整F长度＋1入口＋5helper过，双复核补400字分流后无剩余finding。工程commit/push后仅[新道具间](../experiments/s158/CONVERSATION-SCENE.md)首次；原温室/电车终态全保，新工程无effect与人工澄清效果分开，不伪造model intent。
 
 S158 focused电车首1次已failed-closed：0d9d3cb后stop/297chars/202completion，JSON对象外多逗号触发response-content-json，canonical0/后10未验，全原文保留无补接纳/重发。继续同片把无独立编辑资格的普通交流接已有纯正文机制，明确可编辑请求仍严格JSON/Python frame；只作同用途协议分工，原4096/保护保持，先实现验证再新景。温室/电车终态不改。
