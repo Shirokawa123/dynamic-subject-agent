@@ -2,6 +2,8 @@
 
 ## 从已提交变化支撑接话，而非要求模型猜旧稿
 
+用途获批后的接线继续复用上面的机制：从同一有效view生成reply/share字段，发送前claim/consume重建，Publication按已封存contract重算表达依赖。引用旧变化的回复/分享继承旧plan来源，但持久plan不因表达引用被污染。独立复核指出sourcefree变化也可能越过交流边界；新用途收紧为前一plan产生head与当前result head均晚于cutoff才可展开，未知证明抑制，不改变原currentplan用途。此为批准边界的实现校正，无新增Provider参数或心理机制研究需求。
+
 海港首景实际v3调整了手势与重心，但接话只见current_plan，不能可靠区分保留内容与新变化。用户结果是能具体回答“后来改了什么”；验收应以canonical实际差异、来源失效过滤和真实末答对应为准。
 
 2026-10-13再次定向检索[Event Sourcing](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)及[Materialized View](https://learn.microsoft.com/en-us/azure/architecture/patterns/materialized-view)：从同一事件权威重建只读视图适用于此缺口。仓库已保存LifeFieldDiff，复用而不新增事实库/模型摘要；具体权限双检为本仓设计，并非官方资料证明的现成安全性。build_record会对存储旧稿计算before，即使该旧稿对当前请求已不可见，因此必须从verified链记下结果产生前的plan依赖，同时验证新旧依赖仍有效；仅检查当前result权限不足。

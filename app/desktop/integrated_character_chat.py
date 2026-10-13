@@ -10,13 +10,15 @@ LIVE_APPLICATION_ID = 'integrated-character-live-s158'
 FOCUSED_APPLICATION_ID = 'integrated-character-focused-s158'
 CONVERSATION_APPLICATION_ID = 'integrated-character-conversation-s158'
 INTENT_APPLICATION_ID = 'integrated-character-intent-s158'
+CHANGES_APPLICATION_ID = 'integrated-character-changes-s158'
 
 
 def integrated_live_application_id(technical_variant='baseline'):
-    if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+    if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
         raise ValueError('closed integrated entry variant required')
     return {'baseline': LIVE_APPLICATION_ID, 'focused': FOCUSED_APPLICATION_ID,
-        'conversation-text': CONVERSATION_APPLICATION_ID, 'intent-text': INTENT_APPLICATION_ID}[technical_variant]
+        'conversation-text': CONVERSATION_APPLICATION_ID, 'intent-text': INTENT_APPLICATION_ID,
+        'change-evidence': CHANGES_APPLICATION_ID}[technical_variant]
 
 
 class IntegratedCharacterChatAdapter(LivingActivityChatAdapter):
@@ -42,6 +44,8 @@ class IntegratedCharacterChatAdapter(LivingActivityChatAdapter):
                 latest_share=data['evidence']['latest_share'], current_feedback=data['current_feedback'],
                 projection_digest=digest(response.view),
                 limitations=['明确指出要替换的文字时才修改；含糊指称先澄清，其他内容逐字保留。'])
+            if 'current_result_change' in data:
+                scope['current_result_change'] = data['current_result_change']
             return dict(ok=True, message_scope=self._plain(scope),
                 scope_key=sha256((self.product.profile_id + ':' + self.product.timeline_id).encode()).hexdigest())
 

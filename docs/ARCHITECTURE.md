@@ -2,6 +2,8 @@
 
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 
+变化用途basis38ecaf3b…731ab92获准后新增独立change-evidence grant/contract，仍同schema9/audit family；旧四mode逐值保持、旧root不升级。仅reply/share新增current_result_change，claim/consume按当前head/权限重建，Publication用Runtime所持已封存合同摘要核验并重算。引用变化的reply/share继承旧/新来源，plan不受表达引用污染。sourcefree也须旧plan真实产生位置和当前result均晚于cutoff，history关闭或证明不足为null；新mode只读Facade与出站同资格。入口实际参考展示最近一次变化，默认启动尚未切换/8797未启动。
+
 当前新增只读`ApplicationFacade.query_current_activity_change()`，仅integrated资格：从verified Publication前缀重建当前结果发生前的plan依赖，并与当前result依赖一起按有效source过滤；普通chat/share与重开保留同result证明。仅revise提供最多三字段完整最小变化片段，before≤160/after≤240，超界只标unexpanded_fields，未知/失效为None而非“从未变”。无新持久字段、store或模型调用；原出站合同不变，新增reply/share字段只由无sender的review preview准备，待准确用途批准。
 
 2026-10-13用户批准三项准确用途basis35da99cc…50d3d95后，新增独立integrated-live资格/Manifest/Grant/publication key与三用途审计，复用schema9而不转换LOCAL或旧root。LIVE claim/consume两次从sealed/当前head/权限重建精确请求、同thread一次票据；raw2严格校验和审计，Cognition构造本地proposal，Publication再裁决。原4096/direct-final/0retry/全部编辑保护保持。9新LIVE Fake、3入口、7执行器与34相关兼容过，双复核接纳；新空体验root零请求初始化、8797持续启动未批。真实新温室场景尚待工程阶段提交后执行，人物效果不由工程替代。

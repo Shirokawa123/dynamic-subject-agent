@@ -7835,8 +7835,13 @@ class RuntimeHost:
         from dynamic_subject_agent.current_activity_change import current_activity_change
         if binding.provider_authority not in INTEGRATED_AUTHORITIES:
             return SharedActivityResponse('unavailable', problem_code='independent-integrated-authority-required')
-        view, _, _ = self._read_shared_activity(binding)
-        return SharedActivityResponse('available', view=dict(current_activity_change=current_activity_change(view)))
+        view, _, cognition = self._read_shared_activity(binding)
+        if cognition.contract.get('technical_variant', {}).get('expression_variant') == 'change-evidence':
+            from dynamic_subject_agent.integrated_character_changes import eligible_current_change
+            change = eligible_current_change(view, enabled=view.get('effective_history_enabled') is True)
+        else:
+            change = current_activity_change(view)
+        return SharedActivityResponse('available', view=dict(current_activity_change=change))
 
     def query_shared_activity(self, binding, *, preview=False, request=None):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse

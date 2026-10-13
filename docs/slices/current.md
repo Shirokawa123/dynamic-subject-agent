@@ -1,5 +1,9 @@
 # 当前工作
 
+S158 change-evidence工程准备完成：新reply/share变化字段在同Timeline/claim/consume/Publication贯通，choice及旧4mode合同逐值不变；9新后端＋3入口＋5runner/旧30兼容通过。双复核P1 sourcefree跨context差异已补双head边界并验证，无剩余finding。工程commit/push后仅[普通放映室首景](../experiments/s158/CHANGE-SCENE.md)首次11阶段，保全部旧33次终态和原保护；体验root尚未初始化、8797/实际隔日后台仍未批。
+
+S158变化用途已获用户“同意”，准确basis `38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92`。当前实现独立change-evidence资格/同一schema9，reply/share从当前verified链派生变化并在claim/consume/Publication核验，choice沿原字段；旧四mode/root不升级。先工程/Fake/复核提交推送，再冻结未见普通完整首景，检验真实变化能否忠实接话；保全部旧终态/原4096/保护，不再补抽长稿。8797常驻与实际隔日后台仍未批准。
+
 S158当前：本地来源双检变化视图已实现/fe792eb已push，29纯＋6Interface＋2未发送wire过、双复核接纳；原LIVE不扩。两准确历史样例与[新增reply/share变化字段审阅](../experiments/s158/CHANGE-REVIEW.md)就绪，basis38ecaf3b…731ab92待批。索道五首次complete/0retry/四目标精确，但188字稿目标跨度113，long-span-not-met全保，不继续随机新景补抽。累计33首次，旧终态/4096/原保护全保；长距实景、忠实回顾新数据、8797体验与实际隔日仍未完成。
 
 S158海港11首次全部complete/0retry、12canonical/两分享/v1→v2→v3；六目标精确反馈、澄清、过窗重开和真实新手势/重心取舍成立。首评分2/2/2/2/1，末答缺具体变化，scene-effect-not-met全保；初稿跨度117、长距仍未验。当前同片补只读来源约束变化视图和准确未发送用途方案，既有LIVE字段不扩；另备仅长距新五步专项，3Fake/check过，不续六步/不人物打满。8797及真实隔日仍待，全部旧终态/4096/原保护保持。

@@ -12,6 +12,9 @@ from dynamic_subject_agent.natural_feedback_live import NaturalFeedbackCallAudit
 from dynamic_subject_agent.natural_feedback_choice_budget import choice_protocol
 
 APPROVED_INTEGRATED_REVIEW = '35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95'
+APPROVED_CHANGE_REVIEW = '38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92'
+CHANGE_EVIDENCE_VERSION = 'integrated-character-live-change-evidence-s158-1'
+CHANGE_POLICY_SHA = '226872e12c9920f1fcf3045a4f2cc5d872b6cb6d426f69b3e53c48e654eb9650'
 INTEGRATED_APPROVAL = 'user-approved-integrated-character-use-2026-10-13'
 INTEGRATED_LIVE_VERSION = 'integrated-character-live-s158-1'
 APPROVED_INTEGRATED_MATERIAL = '30715f56be4a693835739645f7d8c07be264f3a2396790f82113503a00f0b44c'
@@ -39,8 +42,9 @@ class ApprovedIntegratedCharacterGrant:
     technical_variant: str = 'baseline'
 
     def __post_init__(self):
-        if (self.review_basis != APPROVED_INTEGRATED_REVIEW or self.confirmed is not True
-            or type(self.technical_variant) is not str or self.technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text')):
+        expected = APPROVED_CHANGE_REVIEW if self.technical_variant == 'change-evidence' else APPROVED_INTEGRATED_REVIEW
+        if (self.review_basis != expected or self.confirmed is not True
+            or type(self.technical_variant) is not str or self.technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence')):
             raise ValueError('exact confirmed S158 human approval required')
 
     def validate(self):
@@ -50,23 +54,28 @@ class ApprovedIntegratedCharacterGrant:
             or digest(integrated_contract(APPROVED_BINDING)) != APPROVED_INTEGRATED_LOCAL_CONTRACT
             or digest(protocol_witness()) != APPROVED_INTEGRATED_PROTOCOL):
             raise ValueError('approved S158 material, policy, limits or protocol changed')
-        if self.technical_variant in ('focused', 'conversation-text', 'intent-text'):
+        if self.technical_variant in ('focused', 'conversation-text', 'intent-text', 'change-evidence'):
             from dynamic_subject_agent.integrated_character_focus import focused_policies
             if digest(focused_policies()) != FOCUSED_POLICY_DIGEST:
                 raise ValueError('pinned same-use focused policies changed')
-        if self.technical_variant in ('conversation-text', 'intent-text'):
+        if self.technical_variant in ('conversation-text', 'intent-text', 'change-evidence'):
             from hashlib import sha256
             from dynamic_subject_agent.integrated_character_text import CONVERSATION_TEXT_POLICY
             if sha256(CONVERSATION_TEXT_POLICY.encode()).hexdigest() != CONVERSATION_TEXT_POLICY_SHA:
                 raise ValueError('pinned no-effect conversation text policy changed')
-            if self.technical_variant == 'intent-text':
+            if self.technical_variant in ('intent-text', 'change-evidence'):
                 from dynamic_subject_agent.integrated_character_text import INTENT_TEXT_POLICY
                 if sha256(INTENT_TEXT_POLICY.encode()).hexdigest() != INTENT_TEXT_POLICY_SHA:
                     raise ValueError('pinned strict first-line intent policy changed')
+            if self.technical_variant == 'change-evidence':
+                from dynamic_subject_agent.integrated_character_change_preview import CHANGE_POLICY
+                if sha256(CHANGE_POLICY.encode()).hexdigest() != CHANGE_POLICY_SHA:
+                    raise ValueError('approved current-change policy changed')
 
 
 def integrated_live_contract(binding, *, technical_variant='baseline'):
-    ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True, technical_variant).validate()
+    review = APPROVED_CHANGE_REVIEW if technical_variant == 'change-evidence' else APPROVED_INTEGRATED_REVIEW
+    ApprovedIntegratedCharacterGrant(review, True, technical_variant).validate()
     base = integrated_contract(binding)
     live = dict(base, version=INTEGRATED_LIVE_VERSION, authorization=INTEGRATED_APPROVAL,
         provider='deepseek', credential_use='existing-Windows-slot-HTTPS-Bearer-only',
@@ -88,10 +97,17 @@ def integrated_live_contract(binding, *, technical_variant='baseline'):
             conversation_text_policy_sha=CONVERSATION_TEXT_POLICY_SHA,
             output_selection='independent-writable-frame-json-otherwise-text-no-effect-1'))
     if technical_variant == 'conversation-text': return conversation
-    return dict(conversation, version=INTENT_TEXT_LIVE_VERSION,
+    intent = dict(conversation, version=INTENT_TEXT_LIVE_VERSION,
         technical_variant=dict(conversation['technical_variant'], expression_variant='intent-text',
             intent_text_policy_sha=INTENT_TEXT_POLICY_SHA,
             output_selection='independent-writable-frame-strict-intent-line-otherwise-text-no-effect-1'))
+    if technical_variant == 'intent-text': return intent
+    return dict(intent, version=CHANGE_EVIDENCE_VERSION,
+        change_authorization='user-approved-current-change-evidence-2026-10-13',
+        technical_variant=dict(intent['technical_variant'], expression_variant='change-evidence',
+            approved_change_review_basis=APPROVED_CHANGE_REVIEW, change_policy_sha=CHANGE_POLICY_SHA,
+            change_projection='verified-before-and-current-sources-minimal-complete-excerpts-1',
+            max_change_fields=3, max_change_before_chars=160, max_change_after_chars=240))
 
 
 class IntegratedCharacterCallAudit(NaturalFeedbackCallAudit):

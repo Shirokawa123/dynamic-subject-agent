@@ -32,10 +32,11 @@ APPLICATION_ID = LIVE_APPLICATION_ID
 
 
 def default_entry_root(technical_variant='baseline'):
-    if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+    if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
         raise ValueError('closed integrated entry variant required')
     name = {'baseline': 'experience-live', 'focused': 'experience-focused',
-        'conversation-text': 'experience-conversation', 'intent-text': 'experience-intent'}[technical_variant]
+        'conversation-text': 'experience-conversation', 'intent-text': 'experience-intent',
+        'change-evidence': 'experience-changes'}[technical_variant]
     return ROOT / '.artifacts/s158' / name / 'entry'
 
 
@@ -54,7 +55,7 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
     def __init__(self, root, *, live=True, package_path=DEFAULT_PACKAGE,
                  transport=None, audit_path=None, observations=None, clock=None, day=None,
                  technical_variant='baseline'):
-        if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+        if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
             raise ValueError('closed integrated entry variant required')
         self.technical_variant = technical_variant
         root = Path(root).resolve()
@@ -65,7 +66,7 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
             *(ROOT / '.artifacts' / ('s' + str(number)) for number in range(148, 158))]
         protected = [path.resolve() for path in protected]
         productions = tuple(default_entry_root(variant).resolve().parent
-            for variant in ('baseline', 'focused', 'conversation-text', 'intent-text'))
+            for variant in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'))
         temporary = Path(tempfile.gettempdir()).resolve()
         development = (root.is_relative_to((ROOT / '.artifacts/s158').resolve())
             and not any(_overlaps(path, production) for path in (root, audit) for production in productions)
@@ -85,7 +86,11 @@ class IntegratedCharacterChatEntry(OriginalWholeChatEntry):
         self.transport, self.observations, self.clock, self.day = transport, observations, clock, day
         self.config = LocalProductConfig(root / 'DynamicSubjectAgent/m0/experiments', root / 'state.json')
         self.audit_path = audit
-        self.grant = ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW, True,
+        review_basis = APPROVED_INTEGRATED_REVIEW
+        if technical_variant == 'change-evidence':
+            from dynamic_subject_agent.integrated_character_live import APPROVED_CHANGE_REVIEW
+            review_basis = APPROVED_CHANGE_REVIEW
+        self.grant = ApprovedIntegratedCharacterGrant(review_basis, True,
             technical_variant=technical_variant)
         fresh = not root.exists()
         if fresh and (audit.exists() or audit.with_name(audit.name + '-initialized').exists()):
@@ -191,7 +196,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--initialize-only', action='store_true')
     parser.add_argument('--port', type=int, default=8797)
-    parser.add_argument('--technical-variant', choices=('baseline', 'focused', 'conversation-text', 'intent-text'), default='baseline')
+    parser.add_argument('--technical-variant', choices=('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'), default='baseline')
     args = parser.parse_args()
     application_id = integrated_live_application_id(args.technical_variant)
     if args.port != 8797:

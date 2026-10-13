@@ -844,6 +844,9 @@ class SubjectRuntime:
         self._engine._life_share_guard = getattr(cognition, "share_guard", None)
         self._engine._life_chat_guard = getattr(cognition, "chat_guard", None)
         self._engine._original_whole_publication_guard = getattr(cognition, "publication_guard", None)
+        if getattr(cognition, 'supports_integrated_character', False):
+            from copy import deepcopy
+            self._engine._integrated_character_contract = deepcopy(getattr(cognition, 'contract', None))
         if getattr(cognition, 'supports_whole_context', False):
             cognition._context_revision_at = lambda head: self._engine.whole_context_basis(expected_head=head)['context_revision']
         self._interrupt_at = interrupt_at

@@ -1,0 +1,10 @@
+{
+  "version": "s158-current-change-approval-1",
+  "approved_review_basis": "38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92",
+  "base_approved_review": "35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95",
+  "user_reply": "同意",
+  "date": "2026-10-13",
+  "scope": "Bounded source-safe current_result_change for natural feedback/reply and sharing only, as frozen in CHANGE-REVIEW.md and change-review.json",
+  "persistent_server_start_approved": false,
+  "next_day_background_action_approved": false
+}

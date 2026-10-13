@@ -1,5 +1,13 @@
 # S158：整体运行闭环的本地准备
 
+## 变化用途获批后的完整工程接线
+
+用户“同意”准确承接change-review basis38ecaf3b…731ab92，独立批准记录保留，冻结review及四个被审文件逐哈希未变。新增change-evidence资格/version/独立entry root，沿同schema9和审计family，旧四个LIVE合同与改动前快照逐值相等。reply/share的实际变化按当前verified view构造，choice原字段不变；发送前两次重建，Publication以密封contract重算，旧before来源只进入回复/分享依赖，不污染plan。
+
+新后端9项独立用例通过（首8、最终重验5＋新增边界1），覆盖exact新批准/wire、精确修改、源撤回、权限竞争零发送、表达依赖和2 prepared冷恢复；入口3项Fake通过，执行器5项（包含完整revise、合法defer不冒充通过、首次失败0retry）通过，旧core/LIVE30项兼容通过。页面JS/PowerShell纯语法和diff检查通过；没有实际服务启动或新用途真实请求。各测试临时根和失败工件保留；runner前两次配置错误分别缺src/不满足临时布局，模型前失败后仅修运行环境。
+
+双复核发现sourcefree变化越过context边界的P1，已补旧plan origin与当前result head双越cutoff、统一出站/表达依赖/Facade资格；keep/defer不刷新origin，跨边界首newplan仍不展开，下次真正修订才恢复。最终边界Interface验证通过，双复核确认源码闭合，无剩余可操作发现。新生产experience-changes尚未初始化；先提交推送工程，再仅[普通放映室新首景](../../experiments/s158/CHANGE-SCENE.md)11阶段验证真实接话，不补抽长稿或重跑任何旧终态。
+
 ## 长距五步首次终态与当前待审
 
 fe792eb工程已push后，山间索道五次首次全部complete/0retry，澄清无effect，四处山信→山音精确提交、其他文字完整保持；原初稿composition188字符，同字段目标跨度113。因此终态为long-span-not-met，未达到>160，不继续后六步、不打人物评分、不补抽新场景。原稿/raw/normalized/audit/metadata保于long-span-first，只读inspect零产品打开/零请求核五条complete。此处仍只有短跨度真实修改证据，长距多跨度实景仍是未完成项。

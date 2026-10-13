@@ -1650,7 +1650,7 @@ class LocalIdentityAuthority:
     def validate_integrated_character_entry(self, expected_identity_id, expected_timeline_id, *, live=True, technical_variant='baseline'):
         if type(live) is not bool:
             raise ValueError('explicit integrated entry mode required')
-        if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text') or not live and technical_variant != 'baseline':
+        if technical_variant not in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence') or not live and technical_variant != 'baseline':
             raise ValueError('closed integrated entry variant required')
         _, record, identity = self._active_chat_record(expected_identity_id)
         if (identity.qri.provider_authority != (INTEGRATED_LIVE_AUTHORITY if live else INTEGRATED_AUTHORITY)

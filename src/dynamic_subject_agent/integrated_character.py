@@ -47,7 +47,7 @@ def integrated_choice_preview(envelope, identity, view, contract):
 def integrated_policies(*, contract=None, technical_variant=None):
     from dynamic_subject_agent.natural_feedback import feedback_choice_policy
     variant = technical_variant if technical_variant is not None else (contract or {}).get('technical_variant', {}).get('expression_variant', 'baseline')
-    if variant in ('focused', 'conversation-text', 'intent-text'):
+    if variant in ('focused', 'conversation-text', 'intent-text', 'change-evidence'):
         from dynamic_subject_agent.integrated_character_focus import focused_policies
         return focused_policies()
     if variant != 'baseline':
@@ -62,11 +62,15 @@ def integrated_feedback_preview(envelope, identity, message, dialogue, enabled, 
     payload['evidence'] = dict(payload['evidence'], latest_share=None if share is None else dict(text=share['text']))
     policy = integrated_policies(contract=contract)[0]
     mode = contract.get('technical_variant', {}).get('expression_variant')
-    if mode in ('conversation-text', 'intent-text'):
+    if mode in ('conversation-text', 'intent-text', 'change-evidence'):
         from dynamic_subject_agent.integrated_character_text import has_writable_frame, CONVERSATION_TEXT_POLICY, INTENT_TEXT_POLICY
         if not has_writable_frame(payload): policy = CONVERSATION_TEXT_POLICY
-        elif mode == 'intent-text': policy = INTENT_TEXT_POLICY
-    return dict(policy=policy, payload=payload)
+        elif mode in ('intent-text', 'change-evidence'): policy = INTENT_TEXT_POLICY
+    result = dict(policy=policy, payload=payload)
+    if mode == 'change-evidence':
+        from dynamic_subject_agent.integrated_character_changes import add_change_evidence
+        result = add_change_evidence(result, view, enabled=enabled)
+    return result
 
 
 def integrated_share_preview(envelope, identity, view, contract):
@@ -75,19 +79,28 @@ def integrated_share_preview(envelope, identity, view, contract):
     if result is None or result.plan is None or result.event.kind not in ('start', 'revise'):
         raise ValueError('actual new plan required for share preview')
     # F-derived plan is explicit in the review; no F quote is sent to share.
-    return dict(policy=integrated_policies(contract=contract)[2], payload=dict(
+    preview = dict(policy=integrated_policies(contract=contract)[2], payload=dict(
         background=choice['payload']['background'], shared_experience=choice['payload']['shared_experience'],
         activity_result=dict(action=result.event.kind, plan=asdict(result.plan))))
+    if contract.get('technical_variant', {}).get('expression_variant') == 'change-evidence':
+        from dynamic_subject_agent.integrated_character_changes import add_change_evidence
+        preview = add_change_evidence(preview, view, enabled=view.get('effective_history_enabled') is True)
+    return preview
 
 
 def build_integrated_record(view, *, command, authorization, permission, head_sequence,
-                            choice=None, share=None, proposal=None):
+                            choice=None, share=None, proposal=None, contract=None):
     """Adjudicate one command once; keep reply lineage out of exact plan edits."""
     living = build_living_record(view, command=command, authorization=authorization,
         permission=permission, head_sequence=head_sequence, choice=choice, share=share)
     if type(command) is SharedActivityInput and command.input_kind == 'share':
         before = view['record'].feedback or initial_feedback()
-        return replace(living, feedback=dict(sources=[dict(x) for x in before['sources']], proposal=None))
+        record = replace(living, feedback=dict(sources=[dict(x) for x in before['sources']], proposal=None))
+        if (contract or {}).get('technical_variant', {}).get('expression_variant') == 'change-evidence':
+            from dynamic_subject_agent.integrated_character_changes import add_change_expression_dependencies
+            record = add_change_expression_dependencies(record, view,
+                enabled=authorization.history_enabled and not permission['source_blocked'], sharing=True)
+        return record
     effective = replace(authorization, history_enabled=False) if permission['source_blocked'] else authorization
     feedback = scoped_feedback_record(view, command=command, authorization=effective,
         head_sequence=head_sequence, choice=choice, proposal=proposal)
@@ -95,5 +108,10 @@ def build_integrated_record(view, *, command, authorization, permission, head_se
         return replace(living, feedback=feedback.feedback)
     # Python's frame uses only the effective current plan and the complete new
     # user quote. S1 affects expression, never the independently computed edit.
-    return replace(feedback, authorization=asdict(authorization), living=living.living,
+    record = replace(feedback, authorization=asdict(authorization), living=living.living,
         reply_dependencies=tuple(sorted(set(feedback.reply_dependencies) | set(living.reply_dependencies))))
+    if (contract or {}).get('technical_variant', {}).get('expression_variant') == 'change-evidence':
+        from dynamic_subject_agent.integrated_character_changes import add_change_expression_dependencies
+        record = add_change_expression_dependencies(record, view,
+            enabled=authorization.history_enabled and not permission['source_blocked'], ordinary=True)
+    return record

@@ -179,7 +179,8 @@ def test_focused_pointer_root_and_authority_do_not_convert_baseline(integrated_l
 
 @pytest.mark.parametrize('variant,folder,application', [
     ('conversation-text', 'experience-conversation', 'integrated-character-conversation-s158'),
-    ('intent-text', 'experience-intent', 'integrated-character-intent-s158')], ids=['conversation', 'intent'])
+    ('intent-text', 'experience-intent', 'integrated-character-intent-s158'),
+    ('change-evidence', 'experience-changes', 'integrated-character-changes-s158')], ids=['conversation', 'intent', 'changes'])
 def test_text_mode_pointer_and_all_production_roots_stay_isolated(integrated_live_entry_setup, monkeypatch, variant, folder, application):
     script, desktop, root, options, transport, _ = integrated_live_entry_setup
     opts = dict(options, technical_variant=variant)
@@ -195,15 +196,15 @@ def test_text_mode_pointer_and_all_production_roots_stay_isolated(integrated_liv
     assert pointer.read_bytes() == original and not transport.calls
     assert desktop.integrated_live_application_id(variant) == application
     assert script.default_entry_root(variant) == script.ROOT / '.artifacts/s158' / folder / 'entry'
-    for selected in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+    for selected in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
         production = script.default_entry_root(selected)
         with pytest.raises(ValueError, match='independent'):
             script.IntegratedCharacterChatEntry(production, **opts)
-        for requested in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+        for requested in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
             if selected != requested:
                 with pytest.raises(ValueError, match='independent'):
                     script.IntegratedCharacterChatEntry(production, technical_variant=requested)
-    for previous in ('baseline', 'focused', 'conversation-text', 'intent-text'):
+    for previous in ('baseline', 'focused', 'conversation-text', 'intent-text', 'change-evidence'):
         if previous == variant:
             continue
         with pytest.raises(ValueError, match='pointer'):
@@ -216,3 +217,37 @@ def test_text_mode_pointer_and_all_production_roots_stay_isolated(integrated_liv
     with pytest.raises(RuntimeError):
         script.IntegratedCharacterChatEntry(root, **dict(opts, technical_variant='focused'))
     assert pointer.read_bytes() == disguised and not opened and not transport.calls
+
+
+def test_change_evidence_uses_new_approval_and_http_preview_preserves_exact_field(integrated_live_entry_setup):
+    from dynamic_subject_agent.integrated_character_live import APPROVED_CHANGE_REVIEW, APPROVED_INTEGRATED_REVIEW
+    from test_integrated_character_live import IntegratedTransport
+    script, desktop, root, options, _, _ = integrated_live_entry_setup
+    transport=IntegratedTransport()
+    entry=script.IntegratedCharacterChatEntry(root, **dict(options,transport=transport,technical_variant='change-evidence'))
+    assert entry.grant.review_basis==APPROVED_CHANGE_REVIEW!=APPROVED_INTEGRATED_REVIEW
+    assert script.default_entry_root()==script.ROOT/'.artifacts/s158/experience-live/entry'
+    bridge=SimpleNamespace(living_activity_server=lambda *args,**kwargs:
+        desktop.integrated_character_server(*args,**kwargs,live=True,technical_variant='change-evidence'))
+    try:
+        with http_entry(entry,bridge,simulation=True) as http:
+            assert http.get('/health')==dict(application='integrated-character-changes-s158')
+            assert '最近一次实际变化' in http.page and "'s158-live-draft:'" in http.page
+            scope=http.post('/message-scope',dict(text='未发送的变化问题。'))['message_scope']
+            assert scope['current_result_change'] is None and not transport.calls
+            control(http,paused=False,sharing=True)
+            assert action(http,'simulation')[0]['living_status']=='replayed'
+            chat(http,MESSAGE)
+            text='这次实际改了哪几个字？'
+            actual=entry.product.application.preview_natural_feedback(text)
+            assert actual.status=='previewed'
+            expected=actual.view['payload']['current_result_change']
+            assert expected is not None
+            sent=len(transport.calls)
+            assert http.post('/message-scope',dict(text=text))['message_scope']['current_result_change']==expected
+            before=http.get('/status')['scope_key']
+            assert http.post('/reload',{})['ok']
+            assert http.get('/status')['scope_key']==before
+            assert http.post('/message-scope',dict(text=text))['message_scope']['current_result_change']==expected
+            assert len(transport.calls)==sent
+    finally:entry.close()

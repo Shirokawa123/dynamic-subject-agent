@@ -94,7 +94,7 @@ class IntegratedCharacterCognition(SharedActivityCognition):
                 raise ShareAuthorizationChanged('integrated-permission-changed')
             record = build_integrated_record(view, command=command, authorization=authorization,
                 permission=permission, head_sequence=plan.expected_basis.head_sequence+1,
-                choice=choice, share=share, proposal=feedback)
+                choice=choice, share=share, proposal=feedback, contract=self.contract)
             if record.kind == 'decision':
                 text = record.result.event.summary
             proposal = self._bounded_noop_proposal(context=context, basis=basis,

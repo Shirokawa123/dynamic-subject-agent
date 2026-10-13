@@ -11,6 +11,20 @@ from dynamic_subject_agent.living_activity import living_policies
 
 
 def integrated_remote_request_preview(task, *, technical_variant='baseline'):
+    if technical_variant == 'change-evidence':
+        from dynamic_subject_agent.integrated_character_changes import without_change_evidence
+        from dynamic_subject_agent.integrated_character_change_preview import CHANGE_POLICY, current_change_request_preview
+        if type(task) is not ModelTask or task.kind not in (
+            ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK, ModelTaskKind.LIVING_ACTIVITY_CHOICE, ModelTaskKind.LIVING_ACTIVITY_SHARE):
+            raise ValueError('exact integrated change purpose required')
+        if task.kind is ModelTaskKind.LIVING_ACTIVITY_CHOICE:
+            return integrated_remote_request_preview(task, technical_variant='intent-text')
+        if (type(task.payload) is not dict or set(task.payload) != {'policy', 'payload'}
+            or type(task.payload['policy']) is not str or not task.payload['policy'].endswith('\n\n' + CHANGE_POLICY)):
+            raise ValueError('exact approved current-change policy required')
+        base = ModelTask(task.kind, dict(policy=task.payload['policy'][:-len('\n\n' + CHANGE_POLICY)],
+            payload=without_change_evidence(task.payload['payload'])))
+        return current_change_request_preview(base, task.payload['payload']['current_result_change'])
     feedback, choice, share_policy = integrated_policies(technical_variant=technical_variant)
     policies = {ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK: feedback,
         ModelTaskKind.LIVING_ACTIVITY_CHOICE: choice, ModelTaskKind.LIVING_ACTIVITY_SHARE: share_policy}

@@ -1,5 +1,7 @@
 # 角色聊天产品方向记录
 
+2026-10-13 S158变化用途准确批准：用户对上一轮[CHANGE-REVIEW](../experiments/s158/CHANGE-REVIEW.md)明确答复“同意”，绑定basis `38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92`。仅普通接话/自然反馈和分享增加当前有效修订的有界变化片段，双检旧plan与新result来源，最多三字段/160与240，超界不截取；同已审资料/DeepSeek/default Windows slot/4096/一次0retry，choice和原修改界限不扩。自主完成独立候选接线、验证、阶段提交推送与未见普通完整首验，旧首稿/失败/评分不重跑；8797常驻、隔日后台、其他材料或凭据用途仍未新增批准。冻结待审文件不覆写，批准由change-approval.json承接。
+
 2026-10-13 S158助手阶段事实与待审（非新用户批准）：海港11首次完成整体状态链、真实新手势重心/分享/过窗重开成立，人物2/2/2/2/1因末答缺实际变化；原评分终态保留。新增只读来源双检变化视图已实现37检查通过，旧稿依赖撤回不能经before泄露；准确[reply/share变化字段审阅](../experiments/s158/CHANGE-REVIEW.md) basis `38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92`及两历史未发送样例备好，尚未批准。另索道5首次精确短修改成立、目标跨度113未达>160，保long-span-not-met且不再随机换景补抽。全部旧终态/4096/原界限保持；现有用途继续有效，新字段、8797常驻和实际隔日后台未获得新增批准。
 
 2026-10-13 S158准确用途批准：用户对上一轮三项集中审阅明确答复“同意”，绑定[review.json](../experiments/s158/review.json) basis `35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95`。允许原最小已审人物/DeepSeek/default Windows slot中，feedback增加有效S1及其两轮合法派生历史，在线choice增加有效F1/反馈派生plan，share使用反馈派生plan但不发F原话；4096、单动作一次0自动重试、全部原文字保护和停用过滤保持。原审阅对象unapproved状态作为历史冻结不覆写，批准由本条及独立Grant承接；自主完成同片LIVE接线、验证与阶段commit/push，不重发旧终态。新常驻启动、实际隔日后台动作、更多资料/Provider/key、云/通知、迁移删除及人格重写/Reflection未由此次批准扩展。
