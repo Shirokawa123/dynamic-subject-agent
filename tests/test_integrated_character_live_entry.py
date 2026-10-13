@@ -175,3 +175,39 @@ def test_focused_pointer_root_and_authority_do_not_convert_baseline(integrated_l
     with pytest.raises(RuntimeError):
         script.IntegratedCharacterChatEntry(focused_root, **dict(focused_options, technical_variant='baseline'))
     assert pointer.read_bytes() == saved and not opened and not transport.calls
+
+
+def test_conversation_mode_pointer_and_all_production_roots_stay_isolated(integrated_live_entry_setup, monkeypatch):
+    script, desktop, root, options, transport, _ = integrated_live_entry_setup
+    opts = dict(options, technical_variant='conversation-text')
+    entry = script.IntegratedCharacterChatEntry(root, **opts)
+    identity = entry.identity
+    entry.close()
+    pointer = root / 'current.json'
+    original = pointer.read_bytes()
+    assert json.loads(original)['technical_variant'] == 'conversation-text'
+    entry = script.IntegratedCharacterChatEntry(root, **opts)
+    assert entry.identity == identity
+    entry.close()
+    assert pointer.read_bytes() == original and not transport.calls
+    assert desktop.integrated_live_application_id('conversation-text') == 'integrated-character-conversation-s158'
+    assert script.default_entry_root('conversation-text') == script.ROOT / '.artifacts/s158/experience-conversation/entry'
+    for selected in ('baseline', 'focused', 'conversation-text'):
+        production = script.default_entry_root(selected)
+        with pytest.raises(ValueError, match='independent'):
+            script.IntegratedCharacterChatEntry(production, **opts)
+        for requested in ('baseline', 'focused', 'conversation-text'):
+            if selected != requested:
+                with pytest.raises(ValueError, match='independent'):
+                    script.IntegratedCharacterChatEntry(production, technical_variant=requested)
+    for previous in ('baseline', 'focused'):
+        with pytest.raises(ValueError, match='pointer'):
+            script.IntegratedCharacterChatEntry(root, **dict(opts, technical_variant=previous))
+    assert pointer.read_bytes() == original
+    value = json.loads(original); value['technical_variant'] = 'focused'
+    pointer.write_text(json.dumps(value), encoding='utf-8')
+    disguised = pointer.read_bytes(); opened = []
+    monkeypatch.setattr(script.IntegratedCharacterChatEntry, '_open', lambda self: opened.append(True))
+    with pytest.raises(RuntimeError):
+        script.IntegratedCharacterChatEntry(root, **dict(opts, technical_variant='focused'))
+    assert pointer.read_bytes() == disguised and not opened and not transport.calls

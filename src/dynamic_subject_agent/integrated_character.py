@@ -47,7 +47,7 @@ def integrated_choice_preview(envelope, identity, view, contract):
 def integrated_policies(*, contract=None, technical_variant=None):
     from dynamic_subject_agent.natural_feedback import feedback_choice_policy
     variant = technical_variant if technical_variant is not None else (contract or {}).get('technical_variant', {}).get('expression_variant', 'baseline')
-    if variant == 'focused':
+    if variant in ('focused', 'conversation-text'):
         from dynamic_subject_agent.integrated_character_focus import focused_policies
         return focused_policies()
     if variant != 'baseline':
@@ -60,7 +60,11 @@ def integrated_feedback_preview(envelope, identity, message, dialogue, enabled, 
     share = latest_share(view, enabled)
     payload = dict(preview['payload'])
     payload['evidence'] = dict(payload['evidence'], latest_share=None if share is None else dict(text=share['text']))
-    return dict(policy=integrated_policies(contract=contract)[0], payload=payload)
+    policy = integrated_policies(contract=contract)[0]
+    if contract.get('technical_variant', {}).get('expression_variant') == 'conversation-text':
+        from dynamic_subject_agent.integrated_character_text import has_writable_frame, CONVERSATION_TEXT_POLICY
+        if not has_writable_frame(payload): policy = CONVERSATION_TEXT_POLICY
+    return dict(policy=policy, payload=payload)
 
 
 def integrated_share_preview(envelope, identity, view, contract):

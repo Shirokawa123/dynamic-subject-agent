@@ -14,6 +14,12 @@ def integrated_remote_request_preview(task, *, technical_variant='baseline'):
     feedback, choice, share_policy = integrated_policies(technical_variant=technical_variant)
     policies = {ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK: feedback,
         ModelTaskKind.LIVING_ACTIVITY_CHOICE: choice, ModelTaskKind.LIVING_ACTIVITY_SHARE: share_policy}
+    plain_reply = False
+    if technical_variant == 'conversation-text' and type(task) is ModelTask and task.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
+        from dynamic_subject_agent.integrated_character_text import has_writable_frame, CONVERSATION_TEXT_POLICY
+        if not has_writable_frame(task.payload['payload']):
+            policies[task.kind] = CONVERSATION_TEXT_POLICY
+            plain_reply = True
     if (type(task) is not ModelTask or task.kind not in policies or type(task.payload) is not dict
         or set(task.payload) != {'policy', 'payload'} or task.payload['policy'] != policies[task.kind]):
         raise ValueError('exact integrated task and policy required')
@@ -46,6 +52,11 @@ def integrated_remote_request_preview(task, *, technical_variant='baseline'):
     protocol = choice_protocol(kind, 'choice-final')
     body = dict(model=protocol['model'], messages=[dict(role='system', content=policies[task.kind]),
         dict(role='user', content=canonical_json(payload))], **protocol['expression'])
+    if plain_reply:
+        body.pop('response_format')
+        output = dict(final_content='natural-text', nonempty=True, max_chars=1200,
+            local_wrapper=dict(intent='chat-typed-no-effect', reply_text='original-final-content'),
+            classifier='not-model-generated', effect='none; independently ineligible for plan mutation')
     wire = canonical_json(body).encode()
     if len(wire) > 65536:
         raise ValueError('bounded integrated wire required')

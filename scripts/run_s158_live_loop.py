@@ -164,6 +164,14 @@ def normalized(raw, preview, kind):
     return multispan_proposal(raw, preview['payload']) if kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK else raw
 
 
+def decode_model_final(final, preview, kind):
+    return json.loads(final)
+
+
+def reference_checks(value, before, after):
+    return dict(reference_clarifies_without_effect=value['intent']=='clarify')
+
+
 def next_stage(report):
     require(report['status'] == 'ready', 'terminal-or-reserved-attempt-cannot-resend')
     index = report['next_stage']
@@ -218,7 +226,7 @@ def next_stage(report):
                 problem_code=getattr(getattr(result,'problem',None),'code',getattr(result,'problem_code','')))
             persist(report)
             require(transport.total==1 and row['status'] in ('terminal','committed') and not row['failure_code'], 'first-technical-stage-failed-or-unknown')
-            raw=json.loads(transport.final); value=normalized(raw,preview.view,kind)
+            raw=decode_model_final(transport.final,preview.view,kind); value=normalized(raw,preview.view,kind)
             save(ROOT/'normalized'/(label+'.json'),value,exclusive=True)
             rows=audit()
             require(len(rows)==audited+1 and rows[-1]['status']=='complete'
@@ -251,7 +259,7 @@ def next_stage(report):
                 report['long_distance']=dict(eligible=report['feedback']['long_eligible'],status='eligible-awaiting-feedback' if report['feedback']['long_eligible'] else 'not-tested-this-scene')
             if index in (3,5,6,7):
                 require(after['current_plan']==before['current_plan'] and after['activity_revision']==before['activity_revision'], 'non-correction-changed-plan')
-            if index==3: report['checks']['reference_clarifies_without_effect']=value['intent']=='clarify'
+            if index==3: report['checks'].update(reference_checks(value,before,after))
             if index==4:
                 require(value['intent']=='revise', 'explicit-feedback-not-applied-bounded-end')
                 require(after['current_plan']==report['feedback']['expected_plan'] and after['activity_revision']==before['activity_revision']+1, 'feedback-not-exact-frame')

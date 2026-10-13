@@ -1,5 +1,13 @@
 # S158开工证据：一个权威状态中的交流、活动与分享
 
+## 普通交流与状态提议的协议分工
+
+focused首请求在JSON对象外生成逗号，原严格拒绝并保留终态，不能修补成成功。针对用户体验中多数无修改轮，复核仓库S144及`_post_text_reply_content`已有完成正文/丢弃reasoning/长度校验，选择复用而非再建JSON修复器。
+
+2026-10-13通过context7-mcp实际resolve/query官方DeepSeek文档：[/chat/completions](https://api-docs.deepseek.com/api/create-chat-completion)的response_format可省略、默认text；[JSON模式](https://api-docs.deepseek.com/guides/json_mode)要求显式格式及提示，文档说明不能替代本仓实际输出检查。本次无新SDK/依赖/Endpoint；不采用其他API的json_schema能力或把文档保证当已观测可靠性。
+
+conversation-text候选在请求前由Python按当前方案、完整消息≤400及原frame/多跨度界限选择：可写frame仍严格JSON意图；其余普通交流只输出正文，在本地包装为chat typedNoOp，绝不生成edit。原文/本地DTO/审计解释分开；临时正文逗号不被解析为命令，可写JSON逗号仍拒绝。权限、来源容量和最终CAS继续终审。这是同输入用途的技术分工，非新增自然指称写入或放宽原界限。原场景不改判；新场景无模型intent标签，因此工程只核无effect，澄清内容沿原人工语义尺度评价。
+
 结果与验收沿[S158](../slices/slice-158-integrated-character-loop.md)。已证缺口是feedback与living互斥的资格、schema和裁决分派，不是缺少另一个Agent框架。只读调查核了两种实际builder与S142/S150批准，不将相同字段形状视为新来源跨用途已获准。
 
 ## 定向一手核对与取舍

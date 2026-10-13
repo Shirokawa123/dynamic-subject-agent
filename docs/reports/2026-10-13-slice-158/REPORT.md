@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## conversation-text整体分工候选准备
+
+普通无独立可写frame的交流接已有严格完成正文机制，原文形成显式本地NoOp DTO；可写frame继续raw2 JSON，无格式修补或失败fallback。choice/share沿focused；相同用途/字段/模型/4096/原保护，独立version/root/run digest，旧baseline/focused合同不改。2项模式与兼容、400字边界1项、入口新增1项、执行器5项通过；双复核发现的400字分流遗漏已修并关闭，无剩余finding。
+
+原执行器仅提取默认行为不变的decode/reference两hook，新场景才选择TEXT解码与NoOp工程判据；原始response/final/hash全保，不伪造模型生成intent。原温室标签false与两首景终态不改，新[道具间场景](../../experiments/s158/CONVERSATION-SCENE.md)继续原五项人工语义尺度。工程提交推送后才新首次；新常驻/真实隔日未因此获批。
+
 ## focused电车首次：原JSON格式拒绝，未进入人物链
 
 0d9d3cb工程提交后新电车首1请求HTTP200/stop，final297字符/202completion，原始final为JSON对象后带额外逗号；response-content-json失败关闭，audit1 failed-closed、canonical0/无方案，后10未执行。全部原文/metadata留于[focused首景](../../../.artifacts/s158/focused-loop-first/metadata.json)，未删除逗号补接纳、未重发或评分为人物通过。

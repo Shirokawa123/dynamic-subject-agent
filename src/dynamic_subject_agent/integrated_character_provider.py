@@ -3,7 +3,7 @@ from hashlib import sha256
 from time import perf_counter
 
 from dynamic_subject_agent.cognition import CredentialRef
-from dynamic_subject_agent.deepseek import (DeepSeekTransport, _post_json_reply_content, DeepSeekResponseDiagnosticFailure,
+from dynamic_subject_agent.deepseek import (DeepSeekTransport, _post_json_reply_content, _post_text_reply_content, DeepSeekResponseDiagnosticFailure,
     DEEPSEEK_ENDPOINT, DEEPSEEK_TIMEOUT_SECONDS, DEEPSEEK_CREDENTIAL_BACKEND_ID, DEEPSEEK_CREDENTIAL_KEY_ID)
 from dynamic_subject_agent.character_dialogue_provider import CharacterCredentialUnavailable
 from dynamic_subject_agent.natural_feedback_output_metadata import BudgetObservedTransport
@@ -47,9 +47,16 @@ class DeepSeekIntegratedCharacterAdapter(ProviderAdapter):
             raise ModelGatewayFailure('delivery-unverified') from None
         try:
             observed = BudgetObservedTransport(self.transport)
-            value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
-                require_complete=True, discard_reasoning=True, safe_diagnostics=True)
             payload = actual.payload['payload']
+            if 'response_format' not in request['body']:
+                from dynamic_subject_agent.integrated_character_text import conversation_text_proposal
+                text = _post_text_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096)
+                value = conversation_text_proposal(text, payload)
+                row['output_mode'] = 'plain-text-local-no-effect-wrapper'
+            else:
+                value = _post_json_reply_content(observed, self.credential_ref, wire, max_output_tokens=4096,
+                    require_complete=True, discard_reasoning=True, safe_diagnostics=True)
+                row['output_mode'] = 'strict-json'
             if actual.kind is ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK:
                 # Validate without rewriting raw protocol. Cognition constructs
                 # the same bounded proposal again and Publication adjudicates it.

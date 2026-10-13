@@ -30,7 +30,8 @@ class IntegratedTransport(DeepSeekTransport):
         kind=ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK if 'turn' in payload else ModelTaskKind.LIVING_ACTIVITY_SHARE if 'activity_result' in payload else ModelTaskKind.LIVING_ACTIVITY_CHOICE
         value=self.synthetic.invoke(ModelTask(kind,dict(policy=body['messages'][0]['content'],payload=payload))).value
         if self.fault=='extra': value=dict(value,activity_revision=1)
-        content='' if self.fault in ('blank','length') else canonical_json(value)
+        content='' if self.fault in ('blank','length') else value['reply_text'] if 'response_format' not in body else canonical_json(value)
+        if self.fault=='trailing': content += ','
         return DeepSeekHttpResponse(200,canonical_json(dict(model='deepseek-flash',choices=[dict(
             finish_reason='length' if self.fault=='length' else 'stop',message=dict(role='assistant',content=content,
                 reasoning_content='SYNTHETIC_REASONING_NEVER_RETAIN'))],
@@ -159,6 +160,44 @@ def test_focused_candidate_keeps_projection_budget_and_independent_exact_identit
         open_integrated_character_product_live(config,identity_id=options['identity_id'],audit_path=options['audit_path'],
             grant=ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW,True),_transport=transport)
     assert config.state_path.read_bytes()==saved and len(transport.calls)==calls
+
+
+def test_conversation_text_turns_are_no_effect_and_eligible_edits_remain_strict_json(integrated_live_fixture):
+    from dynamic_subject_agent.integrated_character_text import conversation_text_proposal
+    opening,_,options,_=integrated_live_fixture
+    options['grant']=ApprovedIntegratedCharacterGrant(APPROVED_INTEGRATED_REVIEW,True,technical_variant='conversation-text')
+    product,transport,observations=start(integrated_live_fixture)
+    original=state(product)['current_plan']
+    assert act(product,'share','conversation-mode-share-1').status=='committed'
+    preview=product.application.preview_natural_feedback('那一处也改掉。')
+    expected=integrated_remote_request_preview(ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,preview.view),technical_variant='conversation-text')
+    assert 'response_format' not in expected['body'] and expected['body']['max_tokens']==4096
+    assert send(product,'那一处也改掉。','conversation-mode-ambiguous').status=='terminal'
+    assert transport.calls[-1]==expected['body'] and observations[-1]['output_mode']=='plain-text-local-no-effect-wrapper'
+    assert state(product)['current_plan']==original
+    # Literal punctuation in prose is not parsed or repaired as a state command.
+    transport.fault='trailing'
+    assert send(product,'说说别的。','conversation-mode-prose-comma').status=='terminal'
+    assert history(product)[-1].assistant_text.endswith(',') and state(product)['current_plan']==original
+    candidate=product.application.preview_natural_feedback(MESSAGE)
+    exact=integrated_remote_request_preview(ModelTask(ModelTaskKind.NATURAL_ACTIVITY_FEEDBACK,candidate.view),technical_variant='conversation-text')
+    assert exact['body']['response_format']=={'type':'json_object'}
+    with pytest.raises(ValueError,match='eligible edit'):
+        conversation_text_proposal('不能当成普通文字。',candidate.view['payload'])
+    count=len(transport.calls)
+    assert send(product,MESSAGE,'conversation-mode-json-comma').status=='failed-closed'
+    assert len(transport.calls)==count+1 and state(product)['current_plan']==original
+    assert open_integrated_character_audit(options['audit_path']).snapshot()[-1]['status']=='failed-closed'
+    assert observations[-1]['error_code']=='response-content-json'
+
+
+def test_text_selection_preserves_complete_feedback_source_length_bound():
+    from dynamic_subject_agent.integrated_character_text import has_writable_frame, conversation_text_proposal
+    payload=dict(turn=dict(current_message=MESSAGE,history_enabled=True),current_plan=PLAN)
+    assert has_writable_frame(payload)
+    payload['turn']['current_message']=' '*(401-len(MESSAGE))+MESSAGE
+    assert len(payload['turn']['current_message'])==401 and not has_writable_frame(payload)
+    assert conversation_text_proposal('这一轮先保留方案。',payload)==dict(intent='chat',reply_text='这一轮先保留方案。')
 
 
 @pytest.mark.parametrize('prepared',[False,True])
