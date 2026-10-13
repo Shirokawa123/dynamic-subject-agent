@@ -1,5 +1,15 @@
 # S158：整体运行闭环的本地准备
 
+## 放映室首次：实际变化能支撑忠实回顾，试用保留自然度限制
+
+7ff7cf5工程已push后，新放映室11首次全部complete/0retry、12canonical，v1→精确反馈v2→新活动v3、两次分享；14工程检查全真。两处映川→映汀后其他字符逐字保持，三次换题/真重开零调用，F1继续进入新选择；v3实际增加左手压住翻动页角，share与末答读取同一有界变化。新用途首景未放宽任何原界限，全部raw/DTO/审计/首次分数保在change-loop-first；同字段长距无资格，不补齐原未验项。
+
+主窗口对照原文与独立语义复核后首次评分2/1/1/2/2，scene-effect-not-met保持。自主构图与具体新动作成立；末答正确归属改名请求，清楚区分新增压页/焦点表达与低机位、斜光、门牌虚焦和桌面留白的保留，忠实回顾从海港1提升为本景2。分享首条仍偏整版说明，次条虽抓住手势但“这次压低机位”对已有安排有时态歧义；澄清多问字与称呼区别，未达只问缺失新词的2分标准。没有为自然度不足继续改题补抽或重评分。
+
+本片累计44真实首次，各原终态全保。当前收敛为可交用户判断的有限试用入口，继续把分享自然度、澄清简洁和长距/实际隔日列为同片未完成项，不又拆协议切片。新experience-changes已零模型初始化chat0/activity0/audit0，桌面命令明确选该入口，旧root/入口/草稿保留；8797仍未启动，准确[启动准备](../../experiments/s158/CHANGE-ENTRY-START.md)待批准。启动前不会自动发送试验消息、开启生活或分享。
+
+独立只读从active registry/唯一active binding选实际canonical，schema9/head0/全部操作发表0、audit0，paused=true/sharing=false，20文件size/mtime/SHA前后同；未构造Product/Host/Authority，不重复打开真实场景。启动review basis `fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06`冻结准确命令、源树/文件摘要、pointer/初始化及只读回执；状态仍待批。本次未创建任何调度或新持续进程。
+
 ## 变化用途获批后的完整工程接线
 
 用户“同意”准确承接change-review basis38ecaf3b…731ab92，独立批准记录保留，冻结review及四个被审文件逐哈希未变。新增change-evidence资格/version/独立entry root，沿同schema9和审计family，旧四个LIVE合同与改动前快照逐值相等。reply/share的实际变化按当前verified view构造，choice原字段不变；发送前两次重建，Publication以密封contract重算，旧before来源只进入回复/分享依赖，不污染plan。

@@ -1,5 +1,7 @@
 # 当前工作
 
+S158当前交付：7ff7cf5后放映室11首次全部complete/14工程检查全真，v1→精确两处改名v2→新增压页手势v3，两分享/过窗重开成立；首评分2/1/1/2/2、scene-effect-not-met保留，末答忠实回顾已证，分享播报/时态和澄清多问仍不足，不再换景补抽。累计44首次全保。change-evidence独立空体验入口零模型初始化并只读核chat0/head0/activity0/audit0、暂停/分享关闭，CMD已指向它，8797尚未启动；准确[有限试用启动审阅](../experiments/s158/CHANGE-ENTRY-START.md) basis `fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06`待批。长距真实多跨度/实际隔日仍未完成，S158不整片收口。
+
 S158 change-evidence工程准备完成：新reply/share变化字段在同Timeline/claim/consume/Publication贯通，choice及旧4mode合同逐值不变；9新后端＋3入口＋5runner/旧30兼容通过。双复核P1 sourcefree跨context差异已补双head边界并验证，无剩余finding。工程commit/push后仅[普通放映室首景](../experiments/s158/CHANGE-SCENE.md)首次11阶段，保全部旧33次终态和原保护；体验root尚未初始化、8797/实际隔日后台仍未批。
 
 S158变化用途已获用户“同意”，准确basis `38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92`。当前实现独立change-evidence资格/同一schema9，reply/share从当前verified链派生变化并在claim/consume/Publication核验，choice沿原字段；旧四mode/root不升级。先工程/Fake/复核提交推送，再冻结未见普通完整首景，检验真实变化能否忠实接话；保全部旧终态/原4096/保护，不再补抽长稿。8797常驻与实际隔日后台仍未批准。

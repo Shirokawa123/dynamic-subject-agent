@@ -1,0 +1,58 @@
+{
+  "version": "s158-change-entry-start-review-1",
+  "status": "unapproved",
+  "date": "2026-10-13",
+  "engineering_commit": "7ff7cf5",
+  "approved_data_basis": "38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92",
+  "action": "one-hidden-loopback-server-start",
+  "command": [
+    "powershell.exe",
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "scripts/start_integrated_character_chat.ps1",
+    "-Python",
+    "D:/anaconda3/python.exe",
+    "-TechnicalVariant",
+    "change-evidence"
+  ],
+  "cwd": "E:/dynamic-subject-agent",
+  "host": "127.0.0.1",
+  "port": 8797,
+  "expected_health": {
+    "application": "integrated-character-changes-s158"
+  },
+  "entry_root": ".artifacts/s158/experience-changes/entry",
+  "audit_root": ".artifacts/s158/experience-changes/audit",
+  "initial_state": {
+    "chat_turns": 0,
+    "activity_revision": 0,
+    "audit_attempts": 0,
+    "canonical_head": 0,
+    "paused": true,
+    "sharing_enabled": false
+  },
+  "startup_model_requests": 0,
+  "automatic_retries": 0,
+  "open_browser": false,
+  "system_service": false,
+  "notification": false,
+  "next_day_background_action": false,
+  "known_limits": "first ordinary scene scores 2/1/1/2/2; sharing and clarification need improvement; real long span and next day remain unverified",
+  "files": {
+    "docs/experiments/s158/CHANGE-ENTRY-START.md": "01ec10bf8bced5796a18aedc91f7c215ca4bd917092fede8bfa3a6ee03fcbada",
+    "scripts/serve_integrated_character_chat.py": "2b8645e43091cc006d3c23e70d710cf2f3363027e7c885b34e2f9c15287b5a35",
+    "scripts/start_integrated_character_chat.ps1": "77c166fb5d0d504799d4401c30214befe6468bad91035b02a6a9a569bb24b75a",
+    "app/desktop/Start-IntegratedCharacterChat.cmd": "670a074218b88b3de7c8539a90fe8d94567aae5c45ec47c2f43ae1dbd00e2212",
+    "docs/experiments/s158/change-approval.json": "a65da617fc12477adf6506f59c1ebd7b029bf3059588302e4d761e0e40b12cb5",
+    "docs/experiments/s158/change-review.json": "c696231a78fff87169ab7259f6232bdc6f6311ff5e0f98acd7840d408d65d4c1",
+    ".artifacts/s158/experience-changes/entry/current.json": "51531aa6c34be490aa4f0084f7200b43fa7f9e265a4aafe85766e506fa80093d",
+    ".artifacts/s158/change-entry-initialize-first.log": "7c61155d747a7773674725bafb773acdfdf9b685bb142a664446ee67231b297d",
+    ".artifacts/s158/change-entry-readonly.json": "33aae14ab8a9f955d7a6a66789cdf5c3f97fb6fbeef112a5368fcee7aa96516d"
+  },
+  "source_tree_files": 202,
+  "source_tree_sha256": "0e07355d5b6dd12c6bff72eda13c76e43f2c3a06250bb4a1916ac7863dc97550",
+  "live_contract_sha256": "4e73cdea4cb6e13ae03e3c7d85eca5b50f20649d2114c356ca47260699096427",
+  "review_basis": "fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06"
+}
