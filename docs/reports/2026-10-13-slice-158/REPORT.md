@@ -1,12 +1,18 @@
 # S158：整体运行闭环的本地准备
 
+## 长距五步首次终态与当前待审
+
+fe792eb工程已push后，山间索道五次首次全部complete/0retry，澄清无effect，四处山信→山音精确提交、其他文字完整保持；原初稿composition188字符，同字段目标跨度113。因此终态为long-span-not-met，未达到>160，不继续后六步、不打人物评分、不补抽新场景。原稿/raw/normalized/audit/metadata保于long-span-first，只读inspect零产品打开/零请求核五条complete。此处仍只有短跨度真实修改证据，长距多跨度实景仍是未完成项。
+
+本片累计33次真实首次（温室11/电车1/道具间5/海港11/索道5），各原终态全保；新增变化用途尚零发送。当前待审[两用途同一有界变化字段](../../experiments/s158/CHANGE-REVIEW.md)，准确basis `38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92`。待批期间现有LIVE请求不加字段；新常驻与真实隔日未执行，不称S158整体完成。
+
 ## 当前变化的本地事实视图与未发送候选
 
 只读Facade已贯通Timeline内存来源证明与完整有界变化提取；同时检查旧plan与新result依赖，避免来源撤回后新独立方案将旧before重新带出。29纯函数、6Interface、2未发送wire检查通过，双独立复核无可操作发现。查询零模型/零Publication，chat/share/重开保持证明，history/context/source失效整项过滤；旧schema和现有三用途payload保持。
 
 海港历史checkpoint生成两份具体未发送样例：composition由“右手扶栏、左手垂、安静”变为“左手搭栏、右手垂、重心左移、刚停步”，focus增加停步手势。真实终态片段来自既存metadata，不是重新生成或重新评分；share样例是原第二分享前的合法历史checkpoint，不声称当前还能再次分享。准备工具最终只读工件、77文件hash全同、零打开产品/模型/凭据，样例保存于change-review-first。
 
-准备失败原日志保留：首版transport类型不合；第二版正常产品打开虽未发请求/命令，但触发runtime数据库字节更新，严格全文件相同检查拒绝。因此最终工具只读原终态工件，不能声称此前打开阶段全文件字节未变。另只读核实正式Publication/审计与终态一致后记录具体结论。preview测试首轮仅因JSON把tuple序列化list而比较失败，修为比较既有wire，不改产品行为。
+准备失败原日志保留：首版transport类型不合；第二版正常产品打开虽未发请求/命令，但触发runtime数据库字节更新，严格全文件相同检查拒绝。因此最终工具只读原终态工件，不能声称此前打开阶段全文件字节未变。独立SQLite mode=ro核原校验器12条Publication/head12、全部final_view、7轮canonical_history及11个stage after逐值相同，operation_failure0、audit11条全complete；正常open/close会写host实例lease与Timeline admission gate，现均closed。缺少变化前表快照，不能进一步声称只改这些字段；没有恢复覆盖原文件。preview测试首轮仅因JSON把tuple序列化list而比较失败，修为比较既有wire，不改产品行为。
 
 ## intent-text海港首次：整体链完成，忠实回顾仍缺依据
 

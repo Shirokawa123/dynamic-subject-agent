@@ -1,0 +1,45 @@
+{
+  "version": "s158-current-change-review-1",
+  "status": "unapproved",
+  "base_approved_review": "35da99cca813588f534a83be0a2fdeab5730f2e2793ba03726fd5f06d50d3d95",
+  "purposes": [
+    "natural-activity-feedback",
+    "living-activity-share"
+  ],
+  "added_field": "current_result_change",
+  "model": "deepseek-flash",
+  "endpoint": "https://api.deepseek.com/chat/completions",
+  "credential_use": "existing-default-Windows-slot-HTTPS-Bearer-only",
+  "max_tokens": 4096,
+  "requests_per_action": 1,
+  "automatic_retries": 0,
+  "max_changed_fields": 3,
+  "before_chars": 160,
+  "after_chars": 240,
+  "source_rule": "verified-old-plan-and-current-result-dependencies-both-valid",
+  "unknown_value": null,
+  "overflow_rule": "whole-field-unexpanded-no-excerpts",
+  "policy_sha256": "226872e12c9920f1fcf3045a4f2cc5d872b6cb6d426f69b3e53c48e654eb9650",
+  "files": {
+    "docs/experiments/s158/CHANGE-REVIEW.md": "dbfce4863d1f93f24afaf2a6a6105032941e700b2179edbb92e1cbcd6f252cdc",
+    "src/dynamic_subject_agent/current_activity_change.py": "de3c9df0a3537ae941c1f76f8adf77dbfdecfb0effa3a294a69ad42f0469f544",
+    "src/dynamic_subject_agent/integrated_character_change_preview.py": "b202bb2f5fb30b89e670e17594c537a7368d8c3e53997c528e53144798d6646f",
+    "scripts/prepare_s158_change_review.py": "978d3c2d34df6159cc2702dd5aac22dafe94cb35d1ee5433f2662371487d8092"
+  },
+  "samples": {
+    "faithful-reply": {
+      "file_sha256": "6afd5582761ea16d0b19ebecca59c3948ab6e8441f2e9b735d15e17d85c8f44b",
+      "path": ".artifacts\\s158\\change-review-first\\faithful-reply.json",
+      "wire_sha256": "372352ec20b347d80af4b88d68958b922f48401061bb1ac18c8b697a47ce40e4"
+    },
+    "second-share": {
+      "file_sha256": "09a138ad9cee7067388c8334c5b354370ab50428965a0acbbb4f591771006f47",
+      "path": ".artifacts\\s158\\change-review-first\\second-share.json",
+      "wire_sha256": "4c7bfdb5b500c86311ed15d26331fbbdc1a93be6490f60a1311595fcbf538267"
+    }
+  },
+  "source": "terminal-historical-checkpoints-not-current-delivery-authority",
+  "persistent_server_start": false,
+  "next_day_background_action": false,
+  "review_basis": "38ecaf3bd9125456e8cfb3305b8850fc3fe49bbe3399a0bc6ef939f93731ab92"
+}
