@@ -7830,6 +7830,14 @@ class RuntimeHost:
             preview=scoped_preview(preview,cognition.contract)
         return SharedActivityResponse('previewed', view=preview)
 
+    def query_current_activity_change(self, binding):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        from dynamic_subject_agent.current_activity_change import current_activity_change
+        if binding.provider_authority not in INTEGRATED_AUTHORITIES:
+            return SharedActivityResponse('unavailable', problem_code='independent-integrated-authority-required')
+        view, _, _ = self._read_shared_activity(binding)
+        return SharedActivityResponse('available', view=dict(current_activity_change=current_activity_change(view)))
+
     def query_shared_activity(self, binding, *, preview=False, request=None):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         view, _, cognition = self._read_shared_activity(binding, request)

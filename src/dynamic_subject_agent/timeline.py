@@ -4644,6 +4644,7 @@ class TimelineEngine:
         publications = self._verified_publications()
         record = initial_record()
         dependencies = {}
+        result_before_dependencies = None
         for outcome, command, _ in publications:
             current = outcome.shared_record
             if current is None or current.revision != record.revision + 1:
@@ -4665,6 +4666,13 @@ class TimelineEngine:
                         raise PublicationFailedClosed('feedback-source-invalid', 'feedback is not a complete committed user message')
             elif current.feedback is not None:
                 raise PublicationFailedClosed('feedback-prefix-invalid', 'old contract cannot carry feedback')
+            if current.result is None:
+                result_before_dependencies = None
+            elif record.result is None or current.result.event.event_id != record.result.event.event_id:
+                # Differences may retain an old plan even when that plan was
+                # unavailable to the new choice. Keep its independent source
+                # proof from the verified prefix, never infer it from new refs.
+                result_before_dependencies = tuple(record.source_dependencies) if record.plan is not None else None
             dependencies[outcome.head_sequence] = current.reply_dependencies
             record = current
             if LIVING_INTENT in self._authority.allowed_intents and current.living is None:
@@ -4708,6 +4716,7 @@ class TimelineEngine:
             working_visible = visible_understanding(record, authorization.history_enabled, cutoff)
         return dict(revision=record.revision, source=record.source, visible_source=visible['source'], phase=record.phase,
             current_plan=visible['current_plan'], result=record.result, visible_result=visible['result'],
+            result_before_dependencies=result_before_dependencies,
             activity_revision=record.activity_revision, decision=record.decision, record=record,
             basis=_canonical_value(basis), context_revision=context['context_revision'], cutoff_sequence=cutoff,
             valid_sources=visible['valid_sources'], reply_dependencies=dependencies, dialogue_dependencies=tuple(sorted(dialogue_dependencies)),

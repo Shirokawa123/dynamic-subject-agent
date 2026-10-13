@@ -1,5 +1,13 @@
 # S158：整体运行闭环的本地准备
 
+## 当前变化的本地事实视图与未发送候选
+
+只读Facade已贯通Timeline内存来源证明与完整有界变化提取；同时检查旧plan与新result依赖，避免来源撤回后新独立方案将旧before重新带出。29纯函数、6Interface、2未发送wire检查通过，双独立复核无可操作发现。查询零模型/零Publication，chat/share/重开保持证明，history/context/source失效整项过滤；旧schema和现有三用途payload保持。
+
+海港历史checkpoint生成两份具体未发送样例：composition由“右手扶栏、左手垂、安静”变为“左手搭栏、右手垂、重心左移、刚停步”，focus增加停步手势。真实终态片段来自既存metadata，不是重新生成或重新评分；share样例是原第二分享前的合法历史checkpoint，不声称当前还能再次分享。准备工具最终只读工件、77文件hash全同、零打开产品/模型/凭据，样例保存于change-review-first。
+
+准备失败原日志保留：首版transport类型不合；第二版正常产品打开虽未发请求/命令，但触发runtime数据库字节更新，严格全文件相同检查拒绝。因此最终工具只读原终态工件，不能声称此前打开阶段全文件字节未变。另只读核实正式Publication/审计与终态一致后记录具体结论。preview测试首轮仅因JSON把tuple序列化list而比较失败，修为比较既有wire，不改产品行为。
+
 ## intent-text海港首次：整体链完成，忠实回顾仍缺依据
 
 30e35c5后11首次真实请求全部complete，0retry、12canonical、v1→反馈v2→新活动v3、两次分享；首次metadata/raw/audit/人工评分保于intent-loop-first。六处潮序→潮声逐字精确，其他内容保持；含糊指称询问新词且无effect，三次换题和真重开零请求后F1仍影响新活动。后续方案真正把右手扶栏改成左手扶栏，并调整重心与停步姿态；两次分享均聚焦具体画面关系。

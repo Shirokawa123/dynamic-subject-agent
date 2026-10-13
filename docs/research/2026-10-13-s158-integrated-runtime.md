@@ -1,5 +1,15 @@
 # S158开工证据：一个权威状态中的交流、活动与分享
 
+## 从已提交变化支撑接话，而非要求模型猜旧稿
+
+海港首景实际v3调整了手势与重心，但接话只见current_plan，不能可靠区分保留内容与新变化。用户结果是能具体回答“后来改了什么”；验收应以canonical实际差异、来源失效过滤和真实末答对应为准。
+
+2026-10-13再次定向检索[Event Sourcing](https://learn.microsoft.com/en-us/azure/architecture/patterns/event-sourcing)及[Materialized View](https://learn.microsoft.com/en-us/azure/architecture/patterns/materialized-view)：从同一事件权威重建只读视图适用于此缺口。仓库已保存LifeFieldDiff，复用而不新增事实库/模型摘要；具体权限双检为本仓设计，并非官方资料证明的现成安全性。build_record会对存储旧稿计算before，即使该旧稿对当前请求已不可见，因此必须从verified链记下结果产生前的plan依赖，同时验证新旧依赖仍有效；仅检查当前result权限不足。
+
+拟提供只读Facade变化视图：仅当前可见revise结果、最多subject/composition/focus三字段；最长公共前后缀外的最小连续片段覆盖该字段全部变化，before≤160/after≤240，超界整字段只标unexpanded而不裁剪；未知/无权限返回None，不能解释为从未变化。纯本地Interface先验并保持所有既有出站字节。准确新reply/share字段另作未发送审阅，不进入choice，不以同名数据推定已有授权。
+
+这是事实视图工程，没有新增心理学或人格机制；沿已读交流澄清研究，不声称获得人物自省。未选完整历史/整份旧稿是因最小数据边界，未选模型摘要是因会引入新的事实误差和调用。标准库自建短派生函数，无外部依赖/代码引入或许可新增。
+
 ## 意图与正文的严格两部分表示
 
 conversation-text实测普通交流/澄清成立，但可写反馈返回嵌套JSON外壳被原样拒绝。下一有限同用途候选不解包旧失败：有frame时首行仅[revise]/[chat]/[clarify]、换行后原正文；三种意图意义、正文1200、完整F400、所有编辑界限及角色可拒绝保持。exact parser拒未知标记、重复意图行、无frame、旧JSON和空正文；LF/CRLF只规范首行分隔，正文不trim。沿同一官方text模式和已有strict final transport，没有新增数据、库或调用。

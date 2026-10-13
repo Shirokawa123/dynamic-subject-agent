@@ -684,6 +684,14 @@ class _ApplicationRouter:
             return SharedActivityResponse('unavailable',problem_code='independent-working-authority-required')
         return self._apply_shared_activity(request,SharedActivityStepRequest)
 
+    def query_current_activity_change(self):
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse
+        self._require_open()
+        try:
+            return self._host.query_current_activity_change(self._binding)
+        except Exception:
+            return SharedActivityResponse('failed-closed', problem_code='current-activity-change-unverified')
+
     def preview_natural_feedback(self, text):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse, FEEDBACK_AUTHORITIES, INTEGRATED_AUTHORITIES
         self._require_open()
@@ -1623,6 +1631,9 @@ class ApplicationFacade:
 
     def query_shared_activity(self, request=None):
         return self.__router.query_shared_activity(request)
+
+    def query_current_activity_change(self):
+        return self.__router.query_current_activity_change()
 
     def query_working_understanding(self, request=None):
         return self.__router.query_working_understanding(request)

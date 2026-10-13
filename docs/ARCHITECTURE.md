@@ -2,6 +2,8 @@
 
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 
+当前新增只读`ApplicationFacade.query_current_activity_change()`，仅integrated资格：从verified Publication前缀重建当前结果发生前的plan依赖，并与当前result依赖一起按有效source过滤；普通chat/share与重开保留同result证明。仅revise提供最多三字段完整最小变化片段，before≤160/after≤240，超界只标unexpanded_fields，未知/失效为None而非“从未变”。无新持久字段、store或模型调用；原出站合同不变，新增reply/share字段只由无sender的review preview准备，待准确用途批准。
+
 2026-10-13用户批准三项准确用途basis35da99cc…50d3d95后，新增独立integrated-live资格/Manifest/Grant/publication key与三用途审计，复用schema9而不转换LOCAL或旧root。LIVE claim/consume两次从sealed/当前head/权限重建精确请求、同thread一次票据；raw2严格校验和审计，Cognition构造本地proposal，Publication再裁决。原4096/direct-final/0retry/全部编辑保护保持。9新LIVE Fake、3入口、7执行器与34相关兼容过，双复核接纳；新空体验root零请求初始化、8797持续启动未批。真实新温室场景尚待工程阶段提交后执行，人物效果不由工程替代。
 
 独立integrated-local资格/schema9复用SharedActivityRecord的living/feedback、Authority/Host/Facade与单Publication。IntegratedCharacterCognition协调普通反馈、活动、分享及本地控制；最终提交统一重算组合record。S1只进入回复依赖，精确编辑由有效plan＋完整当前F独立裁决；F派生plan及share沿原源失效过滤，旧schema6/8不迁移。普通聊天失败可继续新交流，活动/分享失败需关注；冷恢复不重调模型。
