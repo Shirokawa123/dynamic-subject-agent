@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-14：S158 change-evidence有限试用入口获准确批准后一次隐藏启动，PID13752只监听127.0.0.1:8797；health/首页/status通过，同active身份/空canonical/audit0、暂停/分享关闭，0模型请求。人物首评分2/1/1/2/2、长距与实际隔日限制保持；[启动回执](experiments/s158/change-entry-start-approval.json)，S158未收口。
+
 - 2026-10-13：S158放映室11首次全complete/0retry，实际压页新取舍及忠实回顾成立；首评分2/1/1/2/2全保，分享/澄清仍欠自然，累计44首次不重跑。独立空体验入口零模型初始化/只读核空且暂停，CMD选change-evidence；[8797有限试用启动](experiments/s158/CHANGE-ENTRY-START.md) basis fb4b5922…a68c06待批，长距/实际隔日及整片未完成。
 
 - 2026-10-13：S158实际变化reply/share用途获准确批准，change-evidence独立资格/新入口接线完成；9新后端＋3入口＋5runner和旧30兼容过，双复核补sourcefree边界反例后闭合。原4合同/旧终态保持，工程push后首次普通放映室验忠实回顾；8797与实际隔日后台未批。

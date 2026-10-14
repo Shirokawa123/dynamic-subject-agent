@@ -1,5 +1,11 @@
 # S158：整体运行闭环的本地准备
 
+## 2026-10-14 独立有限试用入口已按批准启动
+
+用户对冻结启动basis `fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06`答“同意”，读核中断后答“继续”。复核review/文件/源树/合同/pointer和端口空闲后，仅一次隐藏启动change-evidence入口PID13752；只监听127.0.0.1:8797，health为integrated-character-changes-s158，首页含实际变化视图且/status active。status与只读SQLite确认同pointer身份、chat0、canonical各操作/发表/故障0、audit0；默认paused=true、sharing=false。未打开浏览器/抢占焦点，启动与只读核验0模型请求、未创建系统服务/通知/隔日调度。本机stdout/stderr及[唯一启动回执](../../../.artifacts/s158/experience-changes/launch/042bc9d9cf09459abcbb2f3008abecc6/start-receipt.json)保留，旧root、失败和草稿未迁移。
+
+现在可经`http://127.0.0.1:8797/`有限试用同一人物整体入口；首次实际场景的分享/澄清评分仍1，真实长距与实际隔日未验。对用户体验的判断需使用该入口新交互，不把服务健康等同S158完整人物通过。
+
 ## 放映室首次：实际变化能支撑忠实回顾，试用保留自然度限制
 
 7ff7cf5工程已push后，新放映室11首次全部complete/0retry、12canonical，v1→精确反馈v2→新活动v3、两次分享；14工程检查全真。两处映川→映汀后其他字符逐字保持，三次换题/真重开零调用，F1继续进入新选择；v3实际增加左手压住翻动页角，share与末答读取同一有界变化。新用途首景未放宽任何原界限，全部raw/DTO/审计/首次分数保在change-loop-first；同字段长距无资格，不补齐原未验项。

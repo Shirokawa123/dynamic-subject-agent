@@ -1,0 +1,12 @@
+{
+  "version": "s158-change-entry-start-approval-1",
+  "approved_review_basis": "fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06",
+  "user_reply": "同意",
+  "resume_after_interrupt": "继续",
+  "date": "2026-10-14",
+  "scope": "One hidden 127.0.0.1:8797 change-evidence trial entry start under CHANGE-ENTRY-START.md",
+  "single_dispatch_consumed": true,
+  "pid": 13752,
+  "local_receipt": ".artifacts/s158/experience-changes/launch/042bc9d9cf09459abcbb2f3008abecc6/start-receipt.json",
+  "next_day_background_action_approved": false
+}
