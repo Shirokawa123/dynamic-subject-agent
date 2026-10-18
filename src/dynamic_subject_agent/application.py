@@ -1710,6 +1710,17 @@ class ApplicationFacade:
         return self.__router.preview_character_identity_preparation(request)
 
     @staticmethod
+    def preview_memorie_companion_preparation(request: object):
+        """Read-only source/definition/use review; never opens a product or sender."""
+        from dynamic_subject_agent.memorie_companion_preparation import prepare_memorie_companion
+        return prepare_memorie_companion(request)
+
+    @staticmethod
+    def preview_memorie_companion_message(prepared: object, message: str, exchange=()):
+        from dynamic_subject_agent.memorie_companion_preparation import preview_memorie_wire
+        return preview_memorie_wire(prepared, message, exchange)
+
+    @staticmethod
     def preview_original_character_whole_use_preparation(request: object):
         """Pure author review; does not create or open a product authority."""
         from dynamic_subject_agent.original_whole_use_preparation import prepare_original_whole_use

@@ -1,5 +1,9 @@
 # 产品架构
 
+### Slice-160：梅莫莉定义与游戏面板的只读/合成准备
+
+新增Facade静态人物准备与准确请求预览，复用S103完整定义准备/校验，保留原文支持于本地。新模块没有sender或身份写入，候选remote_authorized/identity_created均false；新人物/用途待准确[审阅](experiments/s160/REVIEW.md)。游戏面板DLL与HTTP Adapter已编译/合成验证，Adapter仅调用Facade和原请求查询；草稿/原UUID本地保存不成为聊天事实，POST提交前核scope。正式新资格、Provider/Gateway/审计与Publication装配尚未实现，不能由静态候选或姓名推断具备新用途资格；未安装启动或验人物效果，见[阶段报告](reports/2026-10-18-slice-160/REPORT.md)。旧身份/合同/出站字节保持。
+
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 
 变化用途basis38ecaf3b…731ab92获准后新增独立change-evidence grant/contract，仍同schema9/audit family；旧四mode逐值保持、旧root不升级。仅reply/share新增current_result_change，claim/consume按当前head/权限重建，Publication用Runtime所持已封存合同摘要核验并重算。引用变化的reply/share继承旧/新来源，plan不受表达引用污染。sourcefree也须旧plan真实产生位置和当前result均晚于cutoff，history关闭或证明不足为null；新mode只读Facade与出站同资格。入口实际参考展示最近一次变化，默认启动尚未切换/8797未启动。

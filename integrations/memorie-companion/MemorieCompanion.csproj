@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>DynamicSubject.MemorieCompanion</AssemblyName>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <BepCore>$(MemorieBepInExDirectory)/BepInEx/core</BepCore>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="BepInEx.Core"><HintPath>$(BepCore)/BepInEx.Core.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BepInEx.Unity.IL2CPP"><HintPath>$(BepCore)/BepInEx.Unity.IL2CPP.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2CppInterop.Runtime"><HintPath>$(BepCore)/Il2CppInterop.Runtime.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2CppInterop.Common"><HintPath>$(BepCore)/Il2CppInterop.Common.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Il2Cppmscorlib"><HintPath>$(MemorieBuildReferences)/Il2Cppmscorlib.dll</HintPath><Private>false</Private><Aliases>Il2Cpp</Aliases></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(MemorieBuildReferences)/UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="CheckPrivateReferences" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(BepCore)/BepInEx.Core.dll')" Text="Set MemorieBepInExDirectory to the reviewed isolated BepInEx runtime." />
+    <Error Condition="!Exists('$(MemorieBuildReferences)/UnityEngine.CoreModule.dll')" Text="Set MemorieBuildReferences to the private compatible compile references." />
+  </Target>
+</Project>

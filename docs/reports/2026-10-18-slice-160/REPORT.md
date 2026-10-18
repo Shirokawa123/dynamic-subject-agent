@@ -1,0 +1,41 @@
+# S160工程准备：人物包、游戏面板与本机通信候选
+
+2026-10-18，用户在本机勘察后明确“继续”。本片整体目标仍为通关后梅莫莉自由交流与学习接续；本轮完成可审准备，**没有完成整片、真实游戏接入或人物效果验收**。
+
+## 已完成
+
+- 独立调查者完整通读55话的611条台词与28条选项，并核关联计时/点击台词、20条独白及Tutorial静态引用。主窗口接纳30条有节点/line ID/文本摘要指纹支持的派生认识、4条有条件作者解释，组织为连贯通关后起点，原文和完整候选仅本地保留。原作前史与新自由聊天分开，不套用纱雾的初识/绘画推荐情境。
+- `ApplicationFacade.preview_memorie_companion_preparation`经新纯模块核本地来源、人物组织与人格sidecar，复用S103完整定义准备/校验；`preview_memorie_companion_message`生成准确未发送字节。缺文件为unavailable，类型错误拒绝，篡改/依据不符FailedClosed；没有sender、credential resolver或身份写入。
+- 独立C#游戏面板候选：BepInEx IL2CPP组件、新增收起入口、中文系统字体、可滚动正文、草稿/原请求本地保存及异步loopback通信。只按点击连接/提交，模型正文不作为Yarn/动作命令执行。DLL不包含人物原文或已提交聊天事实库。
+- 新游戏HTTP Adapter复用既有OriginalWholeChatAdapter的Facade提交/原请求查询语义；POST带token和人物scope，在提交前拒绝错scope且不返回另一身份历史。客户端不自动重发，not-found经核实后才允许明确继续提交同一UUID/原文；等待期间新稿不被旧回执覆盖。未核身份/历史时保持不可用。
+- 构建及安装准备脚本已生成[候选2安装包](../../../.artifacts/s160/candidate-2/package-manifest.json)与[229文件计划](../../../.artifacts/s160/install-plan-final.json)。构建输出限本仓`.artifacts`新目录；安装默认只准备计划，Apply必须精确批准回执，拒绝路径越界/重解析点、冲突覆盖或已运行游戏，实际复制为不覆盖的File.Copy；没有安装或启动动作。
+
+## 研究与复用取舍
+
+本轮复用[S159原作/接缝证据](../2026-10-18-slice-159/REPORT.md)，核[BepInEx官方IL2CPP教程](https://docs.bepinex.dev/master/articles/dev_guide/plugin_tutorial/2_plugin_start.html)及BasePlugin源码、固定785运行时、上游桥7394056的同Unity6000.3.6编译引用。Context7没有可调用接口，按技能回退官方文档/源码。
+
+原桥只有计时API，未复制其GPL业务逻辑；原DialogueRunner同时掌管剧情/语音/动画，首个候选用独立只呈现文字的面板，避免把模型正文注入剧情程序。现有Presenter和动作仍保留作后续受控表现接缝；IMGUI实际接口、字体和输入须游戏运行验证，静态引用与编译不证明这些通过。没有另造角色事实库或另接游戏内Provider。
+
+人格解释借鉴有界叙事连续性：保留S44→45→46为何改变选择，以及S52–55重逢后的处境，不只列性格标签。[McAdams与McLean原刊摘要](https://www.psychologicalscience.org/journals/current-directions/0963721413475622/)是人的叙事身份框架，只作设计类比；[Bickmore原始HCI研究](https://dspace.mit.edu/entities/publication/731499dd-dcd5-4263-9e4b-e3c874e7f251)的跨次互动/既往记忆启发不直接证明游戏陪伴有效。没有新增心理状态模型、人格自动重写或Reflection。
+
+拟用协议本轮核[DeepSeek官方Chat Completions文档](https://api-docs.deepseek.com/api/create-chat-completion/)，确认deepseek-flash、thinking disabled、普通text与4096参数支持；这是参数依据，0真实请求。拟用投影仅为派生人物/解释、本次用户文本和两完整轮；实际计时、待办、日历等新用途不在本次拟请求中。
+
+依赖仅在隔离研究/构建目录：SDK8.0.426经微软release metadata的SHA512校验，BepInEx785官方运行时来源固定，私有编译引用不进入安装包或Git。BepInEx为LGPL-2.1，依赖及Doorstop按各自上游许可；本轮仅本机验证包，不发布游戏资产。生产Python依赖未改。
+
+## 验证与复核
+
+最终人物准备和HTTP/C#合成客户行为19项通过，含完整定义重算、源篡改、两轮边界、原请求查询、错scope拒绝、失败重连零POST、合法1000/1200 Unicode标量历史，以及两份最大合法Unicode草稿经默认JSON编码保存重开。最终DLL和C#harness均0警告/0错误编译；这些是工程结果，不是梅莫莉回复质量或真实Publication通过。
+
+55项既有相关检查在组合运行中通过；旧HTTP拒绝检查曾出现Windows10053连接中止，未修改旧入口。该项在0a03128归档基线与当前代码的独立运行均通过；因此56项均有通过记录，但不宣称整组运行已稳定全绿。最初31个旧identity setup错误来自TEMP未指向实验目录，按既有约定修正环境后通过；首次日志保留。
+
+按code-review技能两路只读复核，已修完整定义仅自报hash、S08祝愿主语误读、原请求未到达永久卡住、失败重连错Timeline、长正文不可见、写盘失败新稿丢失及UTF16/JSON字节上限问题；delta复核关闭全部报告项。更正前人物包/依据保留在`review-original`，没有把旧basis用于本次审阅。C#record在所用interop引用下产生编译元数据错误，改用简单不可变DTO后通过，失败日志保留。
+
+安装脚本实际Parser及PlanOnly通过，229文件逐一校hash并确认无冲突；Apply和启动未执行。游戏2299文件前后相对路径/大小/mtime保持，0新增/删除/变化。所有新测试使用Fake Interface或合成资料，真实Provider/凭据/游戏启动均为0。
+
+## 当前交付与下一门槛
+
+[集中审阅](../../experiments/s160/REVIEW.md)绑定本地[review.json](../../../.artifacts/s160/review.json)，basis `88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496`。人物定义basis00c2a880…eca2e2/use basis8fbf7f3d…da641a，源准备对象仍unconfirmed，不生成批准回执。
+
+**仍需正式新资格、ModelGateway/发送审计与Publication生产装配，以及真实游戏/人物/重启/隔日验收。** 当前HTTP服务器只是可复用Adapter，不能接旧reviewed-chat或S158装配就称完成梅莫莉运行，也不能以subject_name检查代替生产资格。准确人物/模型用途与本机试验获批后在同一S160继续；旧身份、草稿、S158未验及所有首失败保持。
+
+主窗口拥有全部写入、构建与接纳；一名只读人物调查者、两名按code-review技能委派的只读复核者协作，模型/档位继承宿主，实际用量未知。未因协作扩大游戏资料的产品Provider用途。
