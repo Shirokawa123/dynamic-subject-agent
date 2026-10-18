@@ -1181,6 +1181,10 @@ class _CognitionAssembly:
         if self._single_cognition is not None:
             cognition = self._single_cognition
             if cognition.provider_authority == qri.provider_authority:
+                from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+                cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
+                    and qri.reviewed_chat_contract is not None
+                    and qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION)
                 return cognition
             raise RuntimeHostRejected(
                 "cognition-assembly-mismatch",
@@ -3405,7 +3409,7 @@ class RuntimeLease:
     def recover_original_whole_pending(self):
         self._require_active()
         self._host._require_binding_permit(self.binding)
-        if self.binding.provider_authority not in WHOLE_AUTHORITIES:
+        if self.binding.provider_authority not in WHOLE_AUTHORITIES and not self._host.supports_memorie_request_lookup(self.binding):
             raise RuntimeHostRejected("original-whole-unavailable", "this is not the whole chat runtime")
         return self._lane.worker.call("recover_original_whole_pending")
 

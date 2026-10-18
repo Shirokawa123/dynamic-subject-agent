@@ -15,6 +15,10 @@
     <Reference Include="Il2CppInterop.Common"><HintPath>$(BepCore)/Il2CppInterop.Common.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Il2Cppmscorlib"><HintPath>$(MemorieBuildReferences)/Il2Cppmscorlib.dll</HintPath><Private>false</Private><Aliases>Il2Cpp</Aliases></Reference>
     <Reference Include="UnityEngine.CoreModule"><HintPath>$(MemorieBuildReferences)/UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UIModule"><HintPath>$(MemorieBuildReferences)/UnityEngine.UIModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(MemorieBuildReferences)/UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.UI"><HintPath>$(MemorieBuildReferences)/UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Unity.TextMeshPro"><HintPath>$(MemorieBuildReferences)/Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <Target Name="CheckPrivateReferences" BeforeTargets="ResolveReferences">
     <Error Condition="!Exists('$(BepCore)/BepInEx.Core.dll')" Text="Set MemorieBepInExDirectory to the reviewed isolated BepInEx runtime." />

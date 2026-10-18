@@ -1,8 +1,10 @@
 # 产品架构
 
-### Slice-160：梅莫莉定义与游戏面板的只读/合成准备
+### Slice-160：独立梅莫莉聊天资格与游戏面板
 
-新增Facade静态人物准备与准确请求预览，复用S103完整定义准备/校验，保留原文支持于本地。新模块没有sender或身份写入，候选remote_authorized/identity_created均false；新人物/用途待准确[审阅](experiments/s160/REVIEW.md)。游戏面板DLL与HTTP Adapter已编译/合成验证，Adapter仅调用Facade和原请求查询；草稿/原UUID本地保存不成为聊天事实，POST提交前核scope。正式新资格、Provider/Gateway/审计与Publication装配尚未实现，不能由静态候选或姓名推断具备新用途资格；未安装启动或验人物效果，见[阶段报告](reports/2026-10-18-slice-160/REPORT.md)。旧身份/合同/出站字节保持。
+用户已批准exact[审阅](experiments/s160/REVIEW.md)。Facade准备/预览仍只读，批准回执另存；正式`memorie-companion-chat-s160-1`沿reviewed-chat家族发布独立exact QRI，绑定本次definition/asset/scope/use，不升级旧资格。LocalIdentityAuthority持有封存、选择、激活、history/identity版本与Host恢复；production composition经ModelGateway装配单次纯正文DeepSeek请求和独立metadata-only无限次数审计。只投影已批30派生认识/4解释、本次文字与最多2完整已提交轮/4000字符，输出≤1200字符，4096 tokens/thinking disabled/30秒/0retry；无原文或游戏/计时状态外发。
+
+Runtime沿单一schema1 Timeline和NoOp Domain提议，最终Publication按精确Memorie版本再次核history/identity版本；已claim但未pub候选可落失败终态，冷恢复关闭未完成请求、不重调模型。Facade/Host/Timeline的原UUID查询贯通这一准确版本，保只读snapshot；原CHAT路径不扩。游戏Adapter必须有正式composition witness，连接/发送手动触发；客户端只保存草稿/原UUID，完整聊天只有canonical store。实际IMGUI的ScrollView/TextArea因unstrip失败不可用，候选使用BeginGroup剪裁/滚轮、原生TMP输入与按钮捕获；旧候选和失败全保。当前游戏内最终点击/真实人物效果仍未通过，用户要求只后台测试；见[报告](reports/2026-10-18-slice-160/REPORT.md)。
 
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 

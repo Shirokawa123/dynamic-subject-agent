@@ -3755,7 +3755,7 @@ class TimelineEngine:
     def pending_original_whole_operations(self):
         """Schema-1 whole cold recovery verifies, then closes uncommitted work."""
         self._require_open()
-        if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES:
+        if getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES and not getattr(self, '_memorie_qualified', False):
             raise PreAdmissionRejected('original-whole-unavailable', 'this is not the whole runtime')
         self._verified_publications()
         if CONTEXT_INTENT in self._authority.allowed_intents:
@@ -5106,7 +5106,7 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PLAN_CLAIM)
             _begin(self._writer)
             life = LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents
-            if (life or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
+            if (life or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES or getattr(self, '_memorie_qualified', False)) and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone():
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot be claimed or published')
             existing = self._writer.execute(
                 """
@@ -6249,7 +6249,7 @@ class TimelineEngine:
             self._hit(FaultPoint.BEFORE_PUBLICATION_TRANSACTION)
             _begin(self._writer)
             _require_publication_gate(self._writer, self._authority)
-            if ((LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES)
+            if ((LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES or getattr(self, '_memorie_qualified', False))
                 and self._writer.execute('SELECT 1 FROM operation_failure WHERE operation_id=?', (operation_id,)).fetchone()):
                 raise CommitPlanRejected('operation-already-terminal', 'cancelled preparation cannot publish')
             existing = self._writer.execute(
@@ -7005,7 +7005,7 @@ class TimelineEngine:
                 """,
                 (operation_id,),
             ).fetchone()
-            if publication is not None or claimed is not None and getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES:
+            if publication is not None or (claimed is not None and getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES and not getattr(self, '_memorie_qualified', False)):
                 raise PublicationFailedClosed(
                     "operation-publication-already-started",
                     "a claimed or terminal Publication cannot become a cycle failure",

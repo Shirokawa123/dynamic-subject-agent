@@ -78,6 +78,7 @@ public sealed class CompanionPanel : MonoBehaviour
     {
         if (draft.Pending?.RequestId != value.Pending?.RequestId) historyScroll.y = float.MaxValue;
         draft = value;
+        gui?.SetDraftText(value.Text);
         if (!draftLoaded) return;
         try { DraftFile.Save(draftPath, value); draftHealthy = true; }
         catch { draftHealthy = false; message = "草稿未能写入磁盘，文字仍留在面板，请先复制保留。"; }
@@ -88,13 +89,17 @@ public sealed class CompanionPanel : MonoBehaviour
         if (!initialized) return;
         try
         {
-            gui ??= new NativeGui();
+            gui ??= new NativeGui(text => Save(new Draft(text, draft.Pending)));
             using var fontScope = gui.UseChineseFont();
-            var x = Math.Max(8, Screen.width - 416);
-            var y = Math.Max(8, Screen.height - 510);
+            var scale = Math.Clamp(Screen.height / 900f, 1f, 2f);
+            using var scaleScope = gui.UseScale(scale);
+            gui.SetInputVisible(opened);
+            var virtualHeight = Screen.height / scale;
+            var x = Math.Max(8, Screen.width / scale - 416);
+            var y = Math.Max(8, virtualHeight - 510);
             if (!opened)
             {
-                if (gui.Button(new Rect(x + 280, Screen.height - 48, 120, 34), "和梅莫莉聊聊")) opened = true;
+                if (gui.Button(new Rect(x + 280, virtualHeight - 48, 120, 34), "和梅莫莉聊聊")) opened = true;
                 return;
             }
             gui.Box(new Rect(x, y, 400, 494), "");
@@ -115,7 +120,7 @@ public sealed class CompanionPanel : MonoBehaviour
                 statusText = "原消息：" + excerpt + "\n" + statusText;
             }
             gui.WrappedLabel(new Rect(x + 16, y + 284, 368, 60), statusText);
-            var text = gui.TextArea(new Rect(x + 16, y + 350, 368, 78), draft.Text, 2000);
+            var text = gui.TextArea(new Rect(x + 16, y + 350, 368, 78), draft.Text, 2000, scale);
             if (text != draft.Text) Save(new Draft(text, draft.Pending));
             var busy = connecting != null || sending != null;
             if (!busy && gui.Button(new Rect(x + 16, y + 442, 92, 34), "连接"))
@@ -165,7 +170,7 @@ public sealed class CompanionPanel : MonoBehaviour
         }
     }
 
-    private void OnDestroy() => client.Dispose();
+    private void OnDestroy() { gui?.DisposeInput(); client.Dispose(); }
 }
 
 // Only the generated CoreModule is a compile reference. Resolve the game's own
@@ -175,8 +180,11 @@ internal sealed class NativeGui
     internal static string Stage = "initialize";
     private readonly Type type;
     private readonly object chineseFont;
-    internal NativeGui()
+    private NativeInput nativeInput;
+    private readonly Action<string> inputChanged;
+    internal NativeGui(Action<string> inputChanged)
     {
+        this.inputChanged = inputChanged;
         type = Type.GetType("UnityEngine.GUI, UnityEngine.IMGUIModule", throwOnError: true)!;
         var font = Type.GetType("UnityEngine.Font, UnityEngine.TextRenderingModule", throwOnError: true)!;
         chineseFont = font.GetMethod("CreateDynamicFontFromOSFont", new[] { typeof(string), typeof(int) })!
@@ -190,6 +198,14 @@ internal sealed class NativeGui
         font.SetValue(skin, chineseFont);
         return new FontScope(() => font.SetValue(skin, previous));
     }
+    internal IDisposable UseScale(float scale)
+    {
+        currentScale = scale;
+        var property = type.GetProperty("matrix", BindingFlags.Public | BindingFlags.Static)!;
+        var previous = property.GetValue(null);
+        property.SetValue(null, Matrix4x4.Scale(new Vector3(scale, scale, 1)));
+        return new FontScope(() => { nativeInput?.EndFrame(); property.SetValue(null, previous); });
+    }
     private sealed class FontScope : IDisposable
     {
         private readonly Action restore;
@@ -202,7 +218,13 @@ internal sealed class NativeGui
         return (type.GetMethod(name, BindingFlags.Public | BindingFlags.Static, null, types, null)
             ?? throw new MissingMethodException(name)).Invoke(null, args);
     }
-    internal bool Button(Rect rect, string text) => (bool)Call("Button", new[] { typeof(Rect), typeof(string) }, rect, text)!;
+    private float currentScale = 1;
+    internal bool Button(Rect rect, string text)
+    {
+        var nativeClick = nativeInput?.CaptureButton(rect, text, currentScale) ?? false;
+        var imguiClick = (bool)Call("Button", new[] { typeof(Rect), typeof(string) }, rect, text)!;
+        return nativeClick || imguiClick;
+    }
     internal void Label(Rect rect, string text) => Call("Label", new[] { typeof(Rect), typeof(string) }, rect, text);
     internal void WrappedLabel(Rect rect, string text)
     {
@@ -215,8 +237,19 @@ internal sealed class NativeGui
         finally { wrap.SetValue(style, previous); }
     }
     internal void Box(Rect rect, string text) => Call("Box", new[] { typeof(Rect), typeof(string) }, rect, text);
-    internal string TextArea(Rect rect, string text, int limit) =>
-        (string)Call("TextArea", new[] { typeof(Rect), typeof(string), typeof(int) }, rect, text, limit)!;
+    internal string TextArea(Rect rect, string text, int limit, float scale)
+    {
+        Stage = "native-input";
+        nativeInput ??= new NativeInput(inputChanged);
+        return nativeInput.Edit(rect, text, limit, scale);
+    }
+    internal void SetInputVisible(bool visible)
+    {
+        nativeInput?.SetVisible(visible);
+        nativeInput?.BeginFrame();
+    }
+    internal void SetDraftText(string text) => nativeInput?.Synchronize(text);
+    internal void DisposeInput() => nativeInput?.Dispose();
     internal Vector2 ScrollText(Rect rect, string text, Vector2 scroll)
     {
         var contentType = Type.GetType("UnityEngine.GUIContent, UnityEngine.IMGUIModule", true)!;
@@ -236,11 +269,26 @@ internal sealed class NativeGui
             Stage = "CalcHeight";
             var height = Math.Max(rect.height, (float)styleType.GetMethod("CalcHeight", new[] { contentType, typeof(float) })!
                 .Invoke(style, new object[] { content, width })!);
-            var result = (Vector2)Call("BeginScrollView", new[] { typeof(Rect), typeof(Vector2), typeof(Rect) },
-                rect, scroll, new Rect(0, 0, width, height))!;
-            try { Call("Label", new[] { typeof(Rect), contentType, styleType }, new Rect(0, 0, width, height), content, style); }
-            finally { Call("EndScrollView", Type.EmptyTypes); }
-            return result;
+            // The game's generated Begin/EndScrollView and Scroller bodies are
+            // explicit "Method unstripping failed" stubs. Keep native clipping
+            // with BeginGroup; own only the bounded scroll offset and arrows.
+            var offset = Math.Clamp(scroll.y, 0, Math.Max(0, height - rect.height));
+            var eventType = Type.GetType("UnityEngine.Event, UnityEngine.IMGUIModule", true)!;
+            var current = eventType.GetProperty("current")!.GetValue(null)!;
+            if (eventType.GetProperty("type")!.GetValue(current)!.ToString() == "ScrollWheel"
+                && rect.Contains((Vector2)eventType.GetProperty("mousePosition")!.GetValue(current)!))
+            {
+                offset = Math.Clamp(offset + ((Vector2)eventType.GetProperty("delta")!.GetValue(current)!).y * 24,
+                    0, Math.Max(0, height - rect.height));
+                eventType.GetMethod("Use", Type.EmptyTypes)!.Invoke(current, null);
+            }
+            if (Button(new Rect(rect.x + width, rect.y, 22, 28), "↑")) offset = Math.Max(0, offset - 140);
+            if (Button(new Rect(rect.x + width, rect.y + rect.height - 28, 22, 28), "↓"))
+                offset = Math.Min(Math.Max(0, height - rect.height), offset + 140);
+            Call("BeginGroup", new[] { typeof(Rect) }, new Rect(rect.x, rect.y, width, rect.height));
+            try { Call("Label", new[] { typeof(Rect), contentType, styleType }, new Rect(0, -offset, width, height), content, style); }
+            finally { Call("EndGroup", Type.EmptyTypes); }
+            return new Vector2(0, offset);
         }
         finally { wrap.SetValue(style, oldWrap); richText.SetValue(style, oldRichText); }
     }

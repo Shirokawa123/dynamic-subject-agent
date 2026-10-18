@@ -165,6 +165,27 @@ def test_publication_rechecks_history_revision_even_after_off_on(memorie_product
     assert len(transport.calls) == 1 and not history(product).projection.turns
 
 
+def test_cold_recovery_closes_claimed_reply_without_model_redelivery(memorie_product, monkeypatch):
+    from dynamic_subject_agent.timeline import TimelineEngine, FaultPoint
+    opening, _, _, audit_path = memorie_product
+    transport = MemorieTransport(); product = opening(transport)
+    original = TimelineEngine._hit
+    def interrupted(engine, point):
+        if point is FaultPoint.BEFORE_PUBLICATION_TRANSACTION:
+            raise OSError('synthetic interrupted after durable claim')
+        return original(engine, point)
+    monkeypatch.setattr(TimelineEngine, '_hit', interrupted)
+    result = send(product, '合成：已交付但未提交。', 'cold')
+    assert result.status == 'pending' and len(transport.calls) == 1
+    product.close()
+    monkeypatch.setattr(TimelineEngine, '_hit', original)
+    next_transport = MemorieTransport(); restored = opening(next_transport)
+    recovered = send(restored, '合成：已交付但未提交。', 'cold')
+    assert recovered.status == 'failed-closed', recovered
+    assert not next_transport.calls and not history(restored).projection.turns
+    assert MemorieCallAudit(audit_path).counts() == (None, 1, None)
+
+
 def test_qualified_http_send_lookup_and_restart_never_wait_or_resubmit(memorie_product, monkeypatch):
     import importlib, sys, time
     from threading import Thread

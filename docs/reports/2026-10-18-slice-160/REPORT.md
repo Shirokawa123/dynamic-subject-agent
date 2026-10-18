@@ -1,5 +1,19 @@
 # S160工程准备：人物包、游戏面板与本机通信候选
 
+## 2026-10-18继续：后台验证接续
+
+用户先“继续吧”，随后在UI验证中明确“现在可以，继续验证”；再次Esc后明确“接下来在后台测试吧，我要用电脑了”。从此停止所有窗口/键鼠操作，只做独立后台验证，当前游戏/面板草稿不提交、不覆盖。
+
+生产delta补齐单cognition资格标记、最终guard拒绝后的已claim失败终态、bootstrap/lease冷恢复；独立双复核均无剩余finding。扩展组合99通过/1测试错误：未完成Publication时历史为unavailable，旧断言错误地读取None；删除该错误前置断言后，准确验证重开失败终态/零重发/空canonical的专项通过。合计100项有通过记录，未冒称单次整组合全绿。首次挂起运行已终止并保日志；新合成中首guard漏标记及其失败证据保留。
+
+正式experience独立身份已按exact批准封存/激活，8798以隐藏本机进程运行，health/application/protocol及ready可核，初始canonical0/audit0。`start-memorie-companion.cmd`和脚本供手动重开，不注册系统服务/开机任务/通知；启动不调模型。旧身份与root不迁移。
+
+实际GUI诊断确认BeginScrollView核心、EndScrollView和Scroller的生成IL为`Method unstripping failed`，非仅反射参数问题；改BeginGroup/EndGroup后滚动区域绘出，旧TextArea又报NotSupported。随后采用游戏现有TMP原生输入和字体，candidate7实际完整面板/中文测试文本/草稿落盘通过，未发送。原生shield截获旧按钮，candidate9补透明原生Button捕获、1帧点击队列和原条件消费；双向即时同步关闭回复与新稿竞争，监听器/收起/清理及capture经只读delta复核。候选9已编译0警告0错误并安装，实际点击未验；最近初始画面入口状态仍需后续核，不能称可用。
+
+只替换自己新装的DLL，每次核旧摘要、保前候选及日志、正常关闭本次试验游戏；旧原始2299文件全部仍在，当前仅`SavesDir/steam_autocloud.vdf`的元数据因正常游戏/Steam启动变化，未读写存档正文。兼容回执在本机。截止转后台0真实模型/凭据调用，测试草稿精确保留。下一步以另一个独立开发Timeline做固定首次真实后台场景，不写当前体验聊天或游戏草稿；游戏内人物/真实隔日仍不由后台工程替代。
+
+后台参考核[Unity6000.3 GUI官方源码](https://github.com/Unity-Technologies/UnityCsReference/blob/6000.3/Modules/IMGUI/GUI.cs)和[TMP官方SetTextWithoutNotify](https://docs.unity3d.com/ja/Packages/com.unity.textmeshpro%403.0/api/TMPro.TMP_InputField.SetTextWithoutNotify.html)，本机PE元数据检查保于隔离诊断目录；无新产品依赖、来源或出站字段。
+
 ## 2026-10-18批准后接线与零模型游戏探针（未完成）
 
 用户对原审阅basis88ae7f75…24496明确“确认”，[批准记录](../../experiments/s160/APPROVAL.json)另存，原准备/review不改。人物包、准确样例、安装计划和安装脚本摘要核对一致。旧人物/聊天/进度不转换。

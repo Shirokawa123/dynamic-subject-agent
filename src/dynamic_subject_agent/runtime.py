@@ -1404,7 +1404,8 @@ class SubjectRuntime:
             )
 
         from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES
-        whole = getattr(self._context.authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+        whole = (getattr(self._context.authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+            or getattr(self._engine, '_memorie_qualified', False))
         shared = SHARED_INTENT in self._context.authority.allowed_intents
         if shared:
             prepared = self._engine.prepared_plan(operation_ref)
