@@ -1,5 +1,9 @@
 # 当前工作
 
+S160批准后进度：229新增文件安装、BepInEx/插件真实加载成立；首次展开IMGUI只绘标题并报TargetInvocationException，保首失败，诊断candidate3已留旧替换但未展开验。用户物理Esc停止电脑操作后不再调用UI。正式Memorie合同/审计/生产装配候选与8项Interface合成过，双复核接线遗漏已补、扩展组合及delta待核；0真实模型/凭据，experience/8798未初始化，不能称可用或收口，见[续记](../reports/2026-10-18-slice-160/REPORT.md)。
+
+2026-10-18用户对[S160准确集中审阅](../experiments/s160/REVIEW.md)明确“确认”，basis `88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496`：独立definition freeze、所列DeepSeek派生投影/同用途开发与手动日常聊天、229新增文件安装及一次可聚焦游戏试验均获批。[单独批准回执](../../.artifacts/s160/approval.json)绑定原对象/安装计划，冻结review保持pending历史不改。同一S160继续生产装配和真实试用，未验不冒称完成。
+
 S160工程准备交付：[报告](../reports/2026-10-18-slice-160/REPORT.md)与准确[人物定义/模型用途/本机试验审阅](../experiments/s160/REVIEW.md) basis `88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496`就绪待确认。人物包/Facade纯准备、DLL/HTTP协议、草稿恢复与安装计划已备，19新检查/双复核关闭，0产品模型/凭据/游戏安装启动，2299文件元数据同；正式新资格/生产装配与真实游戏/人物效果仍待，S160不整片收口，旧证据全保。
 
 2026-10-18唯一执行[S160：梅莫莉通关后自由交流与学习接续](slice-160-memorie-companion.md)。用户对S159后的推进建议明确“继续”；先形成有据人物包、游戏内文字面板/本地桥接、Facade及保存恢复的可编译/合成验证准备，再集中审exact freeze、新模型用途与游戏启动动作。整体用户结果同片推进，旧人物/Grant不转换，S159与S158旧证据和未达全保。

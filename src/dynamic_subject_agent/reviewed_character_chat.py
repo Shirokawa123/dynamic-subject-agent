@@ -116,7 +116,12 @@ def expression_projection(planning, value):
         planning.recent_dialogue, planning.has_prior_committed_exchange, planning.history_enabled)
 
 
-def chat_contract(envelope, scope_digest, review_request_basis):
+def chat_contract(envelope, scope_digest, review_request_basis, *, version=CHAT_VERSION):
+    from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION, contract as memorie_contract
+    if version == MEMORIE_VERSION:
+        return memorie_contract(envelope, scope_digest, review_request_basis)
+    if version != CHAT_VERSION:
+        raise ValueError('unknown reviewed-chat contract version')
     # Scope and complete-request recomputation are shared by activation and QRI recovery.
     scope = continuity_scope(envelope["definition_basis"])
     if sha256(canonical_json(scope).encode()).hexdigest() != scope_digest:
@@ -155,7 +160,7 @@ def matches_chat_source_contract(source, contract):
     try:
         if type(contract) is not dict or len(source.source_asset_refs) != 3: return False
         expected = chat_contract(dict(definition_basis=source.source_asset_refs[0].split(":", 1)[1],
-            runtime_asset_sha=source.source_asset_refs[1].split(":", 1)[1]), contract["scope_digest"], contract["review_request_basis"])
+            runtime_asset_sha=source.source_asset_refs[1].split(":", 1)[1]), contract["scope_digest"], contract["review_request_basis"], version=contract.get('version'))
         return expected == contract
     except Exception:
         return False

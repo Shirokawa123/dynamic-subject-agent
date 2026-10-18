@@ -36,6 +36,7 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    MEMORIE_COMPANION_REPLY = 'memorie-companion-reply'
     WORKING_UNDERSTANDING_FORM = 'working-understanding-form'
     WORKING_ACTIVITY_CHOICE = 'working-activity-choice'
     WORKING_ACTIVITY_REPLY = 'working-activity-reply'

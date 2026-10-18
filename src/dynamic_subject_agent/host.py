@@ -676,6 +676,9 @@ class _CognitionAssemblySlot:
                 "cognition-assembly-mismatch",
                 "QRI and cognition do not form one exact supported slot",
             )
+        from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+        cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
+            and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION)
         return cls(
             qualification_id=qri.qualification_id,
             qri_integrity_digest=qri.integrity_digest,
@@ -7572,7 +7575,8 @@ class RuntimeHost:
     def lookup_subject_request(self, binding, command, idempotency_key):
         """A separate read-only snapshot never leases or resumes the worker."""
         self._require_open()
-        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority not in WHOLE_AUTHORITIES
+        memorie = self.supports_memorie_request_lookup(binding)
+        if (type(binding) is not RuntimeAuthorityBinding or binding.provider_authority not in WHOLE_AUTHORITIES and not memorie
             or binding.host_root_id != self._location.root_id):
             raise RuntimeHostRejected('subject-request-lookup-unavailable', 'lookup requires this exact whole binding')
         self._require_binding_permit(binding)
@@ -7589,6 +7593,7 @@ class RuntimeHost:
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
             verifier = TimelineEngine(location, authority, reader, None)
+            verifier._memorie_request_lookup = memorie
             observed = verifier.lookup_subject_request(command, idempotency_key)
             if observed is None:
                 return None
@@ -7599,6 +7604,14 @@ class RuntimeHost:
             if reader.in_transaction:
                 reader.execute('ROLLBACK')
             reader.close()
+
+    def supports_memorie_request_lookup(self, binding):
+        if type(binding) is not RuntimeAuthorityBinding or binding.provider_authority != CHAT_AUTHORITY:
+            return False
+        from dynamic_subject_agent.memorie_companion_contract import VERSION, contract, SCOPE, USE_REVIEW
+        qri = self._qri_for_binding(binding)
+        return (qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == VERSION
+            and qri.reviewed_chat_contract == contract(qri.reviewed_chat_contract, SCOPE, USE_REVIEW))
 
     def _read_shared_activity(self, binding, request=None):
         from dynamic_subject_agent.timeline import _validate_idempotency_key

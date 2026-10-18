@@ -1,5 +1,19 @@
 # S160工程准备：人物包、游戏面板与本机通信候选
 
+## 2026-10-18批准后接线与零模型游戏探针（未完成）
+
+用户对原审阅basis88ae7f75…24496明确“确认”，[批准记录](../../experiments/s160/APPROVAL.json)另存，原准备/review不改。人物包、准确样例、安装计划和安装脚本摘要核对一致。旧人物/聊天/进度不转换。
+
+新增Memorie独立version合同，沿reviewed-chat资格家族发布不同exact QRI，固定本次definition/asset/scope/use basis；生产composition经Gateway接单次纯正文请求和独立无限次数metadata审计，复用同一Timeline/NoOp/Publication。面板必须具有正式composition witness；打开/初始化零模型。新入口与这套装配仍为待最终验证候选，**尚未建立正式experience身份或启动8798、尚无真实Provider/凭据访问**。
+
+8项正式装配与合成transport检查已通过，含准确preview字节相同、重启两轮接续、旧scope冲突、超时/缺凭据/截断/过长及激活两中断恢复。此前组合48过/2失败暴露新前缀缺状态映射，已修并保首日志；独立双复核另发现Facade/Host/Timeline原UUID查询资格、最终Publication guard路由、脚本先通用打开阻断pending激活恢复，均已补候选及对应整链/最终历史开关测试，扩展组合正在验证。后续须核最终结果与delta复核，不能用先前8项冒充后续diff全过。
+
+原批准229新增文件已按Apply计划安装，没有覆盖原游戏文件；第一次启动前游戏未运行，由本次试验Steam启动。BepInEx785生成interop并实际加载Memorie Companion，零模型。computer-use技能实际画面见游戏原房间及右下聊天按钮；展开后只绘出标题，日志`companion-panel-unavailable:TargetInvocationException`，**面板不可用、中文输入/完整对话未验**。保留candidate2与game-first.log；同用途兼容候选3仅增强受控方法/根异常类型诊断，0警告/0错误编译，正常关闭本次试验游戏后核原DLL摘要、替换自己新增的DLL并重启，未改原游戏/存档。
+
+用户以物理Esc停止电脑操作，已停止全部后续UI调用；candidate3展开与异常定位未验，游戏仍由本次试验进程运行。此处只保存可恢复工程进度，S160不收口。下一步先完成现有合成组合/复核，再在用户恢复电脑操作后定位IMGUI实际失败、验证中文输入/草稿及正式身份真实聊天；既批definition/use/安装范围不重问，不冒称已经可日常使用。
+
+以下为批准前准备阶段历史。
+
 2026-10-18，用户在本机勘察后明确“继续”。本片整体目标仍为通关后梅莫莉自由交流与学习接续；本轮完成可审准备，**没有完成整片、真实游戏接入或人物效果验收**。
 
 ## 已完成

@@ -1,0 +1,15 @@
+{
+  "definition_basis": "00c2a880579c2aa920f6c7c3440efe4d88a311bc2431523765bfb2e201eca2e2",
+  "definition_confirmed": true,
+  "install_confirmed": true,
+  "install_plan_sha256": "082dcc933cbe24f53f99ab74254fc5c04f4d6826b28a99bb45d99f5069d1ac14",
+  "model_use_confirmed": true,
+  "recorded_at": "2026-10-18T14:42:35.131345+00:00",
+  "review_basis": "88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496",
+  "review_sha256": "b0ec3b196fdc99a1385d469b2809cc8dcf92c624c55750ae3fbcd6e1a27577fe",
+  "rights_confirmed": true,
+  "trial_confirmed": true,
+  "use_review_basis": "8fbf7f3dbb4c15e24a1ae3c27d42918650b4b069882c5df8c3bd8d0331da641a",
+  "user_reply": "确认",
+  "version": "memorie-review-approval-s160-1"
+}

@@ -1,5 +1,6 @@
 """Two proposals for one character utterance; all persistent Domain effects are NoOp."""
 from dataclasses import asdict
+from contextlib import nullcontext
 from hashlib import sha256
 
 from dynamic_subject_agent.runtime import CognitionEngine, CognitionFailedClosed, ExpressionCandidate
@@ -19,8 +20,14 @@ class ReviewedCharacterChatCognition(CognitionEngine):
     supports_subject_tasks = False
     supports_text_effects = False
 
-    def __init__(self, *, envelope=None, gateway=None, budget=None, history_preference=None):
+    def __init__(self, *, envelope=None, gateway=None, budget=None, history_preference=None, companion=None):
         self.envelope, self.gateway, self.budget, self.history_preference = envelope, gateway, budget, history_preference
+        self.companion = companion
+
+    def publication_guard(self, plan):
+        if getattr(self, '_memorie_qualified', False) and self.companion is None:
+            raise ValueError('Memorie publication requires its exact current session')
+        return self.companion.publication_guard(plan) if self.companion is not None else nullcontext()
 
     def preflight(self, *, context, command):
         if self.gateway is None: raise PreAdmissionRejected("reviewed-character-chat-unavailable", "The character chat provider is not assembled.")
@@ -56,6 +63,8 @@ class ReviewedCharacterChatCognition(CognitionEngine):
         return value
 
     def propose(self, *, plan, context, command, basis):
+        if self.companion is not None:
+            return self.companion.propose(self, plan=plan, context=context, command=command, basis=basis)
         try:
             if self.budget.counts()[2] < 2: raise ValueError("budget insufficient")
         except Exception:

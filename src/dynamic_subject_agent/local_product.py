@@ -203,7 +203,17 @@ def _open_loaded_local_product(
         elif loaded.qri.provider_authority == LIFE_DORMANT_AUTHORITY:
             cognition = FirstLifeDormantCognition()
         elif loaded.qri.provider_authority == CHAT_AUTHORITY:
-            if type(cognition) is not ReviewedCharacterChatCognition:
+            from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+            if loaded.qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION:
+                from dynamic_subject_agent.memorie_companion_cognition import MemorieCompanionSession
+                if getattr(cognition, 'gateway', None) is not None and (type(cognition) is not ReviewedCharacterChatCognition
+                    or type(cognition.companion) is not MemorieCompanionSession
+                    or cognition.companion.contract != loaded.qri.reviewed_chat_contract
+                    or getattr(cognition, '_memorie_composition_witness', None) != loaded.qri.reviewed_chat_contract):
+                    raise ValueError('Memorie requires its exact independently qualified composition')
+                if type(cognition) is not ReviewedCharacterChatCognition:
+                    cognition = ReviewedCharacterChatCognition()
+            elif type(cognition) is not ReviewedCharacterChatCognition or cognition.companion is not None:
                 cognition = ReviewedCharacterChatCognition()
         else:
             cognition = ReviewedCharacterDormantCognition()
@@ -999,6 +1009,57 @@ def open_shared_activity_product_live(config, *, identity_id, grant, audit_path,
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_or_create_memorie_companion_product(config, *, approval_path, audit_path, preparation_json, _transport=None):
+    """Recovery precedes generic opening when a successor Host swap is pending."""
+    from dynamic_subject_agent.memorie_companion_contract import load_approval, DEFINITION
+    from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
+    from dynamic_subject_agent.source_character_authoring import LocalIdentitySelectRequest
+    from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
+    approval = load_approval(approval_path)
+    options = dict(approval_path=approval_path, audit_path=audit_path, _transport=_transport)
+    if config.state_path.exists():
+        try:
+            return open_memorie_companion_product(config, **options)
+        except RuntimeError as error:
+            if str(error) != 'reviewed-chat-definition-mismatch':
+                raise
+    with open_local_product(config, cognition=DormantDeepSeekCognition()) as dormant:
+        result = dormant.application.freeze_source_identity(ReviewedCharacterFreezeRequest(
+            preparation_json, DEFINITION, approval['rights_confirmed'], approval['definition_confirmed']))
+        if result.status not in ('created', 'replayed'):
+            raise ValueError('approved Memorie freeze unavailable')
+        selected = dormant.application.select_local_identity(LocalIdentitySelectRequest(result.view.identity_id, True))
+        if selected.status != 'selected':
+            raise ValueError('approved Memorie identity not selected')
+    return open_memorie_companion_product(config, **options)
+
+
+def open_memorie_companion_product(config, *, approval_path, audit_path, _transport=None):
+    """Compose the approved S160 lane. Opening performs zero credential/model calls."""
+    from dynamic_subject_agent.memorie_companion_contract import (
+        load_approval, DEFINITION, SCOPE, USE_REVIEW, MemorieCallAudit,
+    )
+    from dynamic_subject_agent.memorie_companion_cognition import MemorieCompanionSession
+    from dynamic_subject_agent.memorie_companion_provider import DeepSeekMemorieAdapter
+    from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
+    approval = load_approval(approval_path)
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_reviewed_chat(definition_basis=DEFINITION, scope_digest=SCOPE,
+        review_request_basis=USE_REVIEW, budget_path=audit_path, memorie_approval=approval)
+    gateway = ModelGateway(DeepSeekMemorieAdapter(
+        transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))
+    session = MemorieCompanionSession(envelope=loaded.reviewed_definition, contract=loaded.qri.reviewed_chat_contract,
+        audit=MemorieCallAudit(audit_path), gateway=gateway,
+        authorization=lambda: authority.memorie_authorization(loaded.qri.profile_id, loaded.timeline_id),
+        guard=authority.memorie_guard)
+    cognition = ReviewedCharacterChatCognition(envelope=loaded.reviewed_definition, gateway=gateway, companion=session)
+    cognition._memorie_composition_witness = loaded.qri.reviewed_chat_contract
+    product = _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+    product._memorie_composition_witness = loaded.qri.reviewed_chat_contract
+    return product
 
 
 def open_reviewed_character_chat_product(config, *, definition_basis, scope_digest, review_request_basis,

@@ -37,6 +37,8 @@ class CompletedOnLookupFacade(FakeWholeFacade):
 def memorie_http():
     facade = CompletedOnLookupFacade()
     product = SimpleNamespace(application=facade, profile_id=str(uuid4()), timeline_id=str(uuid4()))
+    from dynamic_subject_agent.memorie_companion_contract import contract, DEFINITION, ASSET, SCOPE, USE_REVIEW
+    product._memorie_composition_witness = contract(dict(definition_basis=DEFINITION, runtime_asset_sha=ASSET), SCOPE, USE_REVIEW)
     server = entry.memorie_companion_server(product, reopen=lambda: product)
     thread = Thread(target=server.serve_forever, daemon=True)
     thread.start()

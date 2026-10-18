@@ -581,7 +581,12 @@ class _ApplicationRouter:
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND,
                 problem=ApplicationProblemView('subject-request-not-found-or-not-authorized'))
         from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES
-        if (self._binding.provider_authority not in WHOLE_AUTHORITIES or command.declared_intent != 'ask-collaborator-status'
+        try:
+            memorie = self._host.supports_memorie_request_lookup(self._binding)
+        except Exception:
+            return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
+                problem=ApplicationProblemView('subject-request-lookup-unverified'))
+        if (self._binding.provider_authority not in WHOLE_AUTHORITIES and not memorie or command.declared_intent != 'ask-collaborator-status'
             or command.language != 'zh' or command.provenance != 'project-original' or len(command.utterance) > 1000
             or not isinstance(request.idempotency_key, str)):
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
@@ -1972,8 +1977,8 @@ def _from_runtime_result(result: RuntimeResult) -> ApplicationOperationResponse:
         )
     if state is OperationState.FAILED_CLOSED:
         failure = result.failure
-        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("original-whole-character-credential-unavailable", "reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable", "first-life-character-credential-unavailable", "first-life-share-character-credential-unavailable", "first-life-budget-unavailable", "first-life-share-not-attempted")
-            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("original-whole-transport-timeout", "original-whole-transport-delivery-ambiguous", "reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable", "first-life-transport-timeout", "first-life-transport-delivery-ambiguous", "first-life-share-transport-timeout", "first-life-share-transport-delivery-ambiguous")
+        reported_status = (ApplicationOperationStatus.UNAVAILABLE if failure is not None and failure.code in ("memorie-character-credential-unavailable", "original-whole-character-credential-unavailable", "reviewed-chat-character-credential-unavailable", "reviewed-chat-budget-unavailable", "first-life-character-credential-unavailable", "first-life-share-character-credential-unavailable", "first-life-budget-unavailable", "first-life-share-not-attempted")
+            else ApplicationOperationStatus.UNKNOWN if failure is not None and failure.code in ("memorie-transport-timeout", "memorie-transport-delivery-ambiguous", "original-whole-transport-timeout", "original-whole-transport-delivery-ambiguous", "reviewed-chat-transport-timeout", "reviewed-chat-transport-delivery-ambiguous", "reviewed-chat-attempt-unavailable", "first-life-transport-timeout", "first-life-transport-delivery-ambiguous", "first-life-share-transport-timeout", "first-life-share-transport-delivery-ambiguous")
             else ApplicationOperationStatus.FAILED_CLOSED)
         projection = AuthorizedOperationProjection(
             operation_kind=result.operation_ref.operation_kind,

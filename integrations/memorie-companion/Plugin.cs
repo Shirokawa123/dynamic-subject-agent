@@ -157,7 +157,9 @@ public sealed class CompanionPanel : MonoBehaviour
             if (!surfaceErrorLogged)
             {
                 surfaceErrorLogged = true;
-                Diagnostic?.Invoke("companion-panel-unavailable:" + error.GetType().Name);
+                var cause = error;
+                while (cause.InnerException != null) cause = cause.InnerException;
+                Diagnostic?.Invoke("companion-panel-unavailable:" + NativeGui.Stage + ":" + cause.GetType().Name);
             }
             message = "对话面板暂时不可用，草稿保留。";
         }
@@ -170,6 +172,7 @@ public sealed class CompanionPanel : MonoBehaviour
 // IMGUI module at runtime; missing stripped APIs leave the panel unavailable.
 internal sealed class NativeGui
 {
+    internal static string Stage = "initialize";
     private readonly Type type;
     private readonly object chineseFont;
     internal NativeGui()
@@ -193,9 +196,12 @@ internal sealed class NativeGui
         internal FontScope(Action restore) => this.restore = restore;
         public void Dispose() => restore();
     }
-    private object Call(string name, Type[] types, params object[] args) =>
-        (type.GetMethod(name, BindingFlags.Public | BindingFlags.Static, null, types, null)
+    private object Call(string name, Type[] types, params object[] args)
+    {
+        Stage = name;
+        return (type.GetMethod(name, BindingFlags.Public | BindingFlags.Static, null, types, null)
             ?? throw new MissingMethodException(name)).Invoke(null, args);
+    }
     internal bool Button(Rect rect, string text) => (bool)Call("Button", new[] { typeof(Rect), typeof(string) }, rect, text)!;
     internal void Label(Rect rect, string text) => Call("Label", new[] { typeof(Rect), typeof(string) }, rect, text);
     internal void WrappedLabel(Rect rect, string text)
@@ -227,6 +233,7 @@ internal sealed class NativeGui
         try
         {
             var width = rect.width - 22;
+            Stage = "CalcHeight";
             var height = Math.Max(rect.height, (float)styleType.GetMethod("CalcHeight", new[] { contentType, typeof(float) })!
                 .Invoke(style, new object[] { content, width })!);
             var result = (Vector2)Call("BeginScrollView", new[] { typeof(Rect), typeof(Vector2), typeof(Rect) },

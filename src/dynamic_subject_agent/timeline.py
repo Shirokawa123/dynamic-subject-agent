@@ -4208,7 +4208,8 @@ class TimelineEngine:
     def lookup_subject_request(self, command, idempotency_key):
         """Read a matched whole Admission from an already-open snapshot only."""
         self._require_open()
-        if (type(command) is not SubjectCommand or getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES
+        if (type(command) is not SubjectCommand or (getattr(self._authority, 'provider_authority', None) not in WHOLE_AUTHORITIES
+                and not getattr(self, '_memorie_request_lookup', False))
             or command.declared_intent != 'ask-collaborator-status' or command.language != 'zh'
             or command.provenance != 'project-original' or len(command.utterance) > 1000
             or not isinstance(idempotency_key, str)):
@@ -5337,7 +5338,8 @@ class TimelineEngine:
     def _share_publication_guard(self, plan):
         authorization = plan.chat_authorization or plan.share_authorization
         if authorization is None:
-            if getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES:
+            if (getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+                or getattr(self, '_memorie_qualified', False)):
                 guard = getattr(self, '_original_whole_publication_guard', None)
                 try:
                     if guard is None:

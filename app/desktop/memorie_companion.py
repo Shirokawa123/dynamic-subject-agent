@@ -5,12 +5,19 @@ import json
 import secrets
 
 from original_whole_chat import OriginalWholeChatAdapter
+from dynamic_subject_agent.memorie_companion_contract import contract, SCOPE, USE_REVIEW
 
 
 APPLICATION_ID = 'memorie-companion-s160'
 
 
 class MemorieCompanionAdapter(OriginalWholeChatAdapter):
+    def __init__(self, product, *, reopen):
+        witness = getattr(product, '_memorie_composition_witness', None)
+        if witness != contract(witness or {}, SCOPE, USE_REVIEW):
+            raise ValueError('qualified Memorie production composition required')
+        super().__init__(product, reopen=reopen)
+
     def _scoped_message(self, payload):
         if type(payload) is not dict or set(payload) != {'text', 'request_id', 'scope_key'}:
             raise ValueError('invalid-request')

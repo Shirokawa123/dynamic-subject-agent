@@ -844,6 +844,7 @@ class SubjectRuntime:
         self._engine._life_share_guard = getattr(cognition, "share_guard", None)
         self._engine._life_chat_guard = getattr(cognition, "chat_guard", None)
         self._engine._original_whole_publication_guard = getattr(cognition, "publication_guard", None)
+        self._engine._memorie_qualified = getattr(cognition, '_memorie_qualified', False)
         if getattr(cognition, 'supports_integrated_character', False):
             from copy import deepcopy
             self._engine._integrated_character_contract = deepcopy(getattr(cognition, 'contract', None))

@@ -8942,7 +8942,7 @@ class SubjectStudio:
             elif capabilities == CapabilityManifest.reviewed_character_chat() and is_reviewed_source(profile.source):
                 expected = chat_contract(dict(definition_basis=profile.source.source_asset_refs[0].split(":", 1)[1],
                     runtime_asset_sha=profile.source.source_asset_refs[1].split(":", 1)[1]),
-                    reviewed_chat_contract["scope_digest"], reviewed_chat_contract["review_request_basis"])
+                    reviewed_chat_contract["scope_digest"], reviewed_chat_contract["review_request_basis"], version=reviewed_chat_contract.get('version'))
             else:
                 raise StudioRejected("reviewed-chat-contract-invalid", "chat contract requires exact reviewed source")
             if expected != reviewed_chat_contract: raise StudioRejected("reviewed-chat-contract-invalid", "chat scope or configuration changed")
@@ -9850,7 +9850,7 @@ class SubjectStudio:
         if active_chat:
             try:
                 if type(qri.reviewed_chat_contract) is not dict: raise ValueError("chat contract missing")
-                expected_chat = chat_contract(snapshot.reviewed_definition, qri.reviewed_chat_contract["scope_digest"], qri.reviewed_chat_contract["review_request_basis"])
+                expected_chat = chat_contract(snapshot.reviewed_definition, qri.reviewed_chat_contract["scope_digest"], qri.reviewed_chat_contract["review_request_basis"], version=qri.reviewed_chat_contract.get('version'))
                 if expected_chat != qri.reviewed_chat_contract: raise ValueError("chat scope changed")
                 predecessor = self.query_qri(publication_key="reviewed-character-" + snapshot.reviewed_definition["definition_basis"])
                 if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
