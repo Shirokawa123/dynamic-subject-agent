@@ -4,6 +4,14 @@
 
 ### 后台首次结果及修正
 
+**后台阶段最终结果。** 5a90b7f提交后，在另一个独立开发Timeline冻结全新三步学习场景，分别用三个独立Python进程执行：3首次/3terminal/3canonical、0retry，回复94/117/128字符，同profile/同Timeline恢复成立。末答能接续前两轮内容，并明确看不到屏幕、不能替用户确认理解；仍将助手提出的两步建议表述为“测试目标”，未明确区分用户尚未采纳，保留建议归属的表达缺口，不评为完整人物通过。原首景第二步failed-closed及未执行第三步不重判、不补抽。
+
+累计实际5请求，三个audit分别1/1/3，全部complete，无自动重试；其中体验root保留上述1条误发合成消息，独立首景1提交、新场景3提交，共5canonical。完整正文仅在各自canonical，本机summary只存元数据。三轮Interface回执均为terminal、Living Memory no-op、effects0；Knowledge/Relationship/Goal在此Interface不暴露为null，不把null改称NoOp。实际原请求只读查询成功，没有知识/关系/目标写回权限扩展。
+
+修复后的C#实际client对8798只读连接通过；9项原请求/Unicode/未知mode不发送检查通过。当前后端在确认无pending、核自己启动的PID后仅后台重开，same scope/1合成turn恢复，audit仍1；未操作游戏/窗口/键鼠或面板草稿。局部目标/披露修复有明确Interface失败→通过证据，34相关检查保持通过；没有为数量另建矩阵或重跑所有旧证据。
+
+后台阶段已完成本次可独立验证的链路，S160整体仍未收口：最终candidate9按钮/入口、游戏内真实发送/收起焦点、实际隔日和日常人物效果均未验。新[启动器](../../../start-memorie-companion.cmd)只作手动工具，不能由后台工程通过推定游戏面板已可用。后续需在用户允许的UI窗口继续实际验证；不自动安排回访或后台生活。
+
 首次固定三步后台场景绑定5e4bec7，另用独立开发root：第一步实际1次模型/1canonical完成。私有runner错误地传`Facade.wait(timeout_seconds=40)`，超过原30秒上限，先记录unavailable/audit0；应用关闭等待期间真实任务完成。保原错误观测，另以原请求只读查询收回terminal/audit1，不重发。第二步含普通“学习目标”，被旧v1 topic marker误判为history restricted，在模型前failed-closed，第三步按冻结规则不执行；首终态与资料保留。
 
 同用途修正只在精确Memorie lane复用已有无topic-word的显式操作判断，并叠加whole disclosure的拒外发/撤回判断；两处近期历史选择使用相同谓词，旧CHAT/v1不改，出站字段/资料/上限不扩。Interface行为验证包含目标接续、显式“不要把之前聊天发给模型”零外发、关历史后只发当前句。初版仅复用first-life遗漏“发给”限制，合成检查发现并保首失败，补whole predicate后专项通过；其余34相关检查通过。
