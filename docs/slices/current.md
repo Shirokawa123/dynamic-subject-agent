@@ -1,5 +1,7 @@
 # 当前工作
 
+2026-10-18方向接续：用户已明确近期“先注重梅莫莉”，增强《梅莫莉：治愈物语》中的梅莫莉本人；[决定与方案准备项](../plans/character-chat-direction.md#2026-10-18以梅莫莉治愈物语承载日常学习陪伴的方向讨论)已同步PRODUCT和全局导航。此次仅人物/近期方向确认，具体游戏接入实施尚待任务承接，不追加并行执行切片；S158原交付、未达与未验事实保留，旧资料/身份不转换，新数据用途与运行合同不沿旧grant推定。
+
 2026-10-14用户对S158准确[8797有限试用启动](../experiments/s158/CHANGE-ENTRY-START.md) basis `fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06`答“同意”，中断只读核后又答“继续”。本次一次隐藏启动PID13752，127.0.0.1:8797/health正确；首页与状态接口可用、同pointer/active身份，canonical空、audit0、paused=true/sharing=false，0模型请求。旧root/草稿保持，真实人物首评分2/1/1/2/2及长距/实际隔日缺口照旧；启动不等于S158收口，不执行隔日后台。批准与本机回执见[启动批准](../experiments/s158/change-entry-start-approval.json)。
 
 S158当前交付：7ff7cf5后放映室11首次全部complete/14工程检查全真，v1→精确两处改名v2→新增压页手势v3，两分享/过窗重开成立；首评分2/1/1/2/2、scene-effect-not-met保留，末答忠实回顾已证，分享播报/时态和澄清多问仍不足，不再换景补抽。累计44首次全保。change-evidence独立空体验入口零模型初始化并只读核chat0/head0/activity0/audit0、暂停/分享关闭，CMD已指向它，8797尚未启动；准确[有限试用启动审阅](../experiments/s158/CHANGE-ENTRY-START.md) basis `fb4b5922110dbd423d9aa058b2945e38c3cd7370e47962d602a883f042a68c06`待批。长距真实多跨度/实际隔日仍未完成，S158不整片收口。
