@@ -113,6 +113,18 @@ def test_compiled_native_client_contract_against_interface(memorie_http, tmp_pat
     assert len(facade.submissions) == 2 and len(facade.lookups) == 3 and not facade.waits
 
 
+def test_compiled_harness_unknown_mode_cannot_fall_through_to_submission(memorie_http, tmp_path):
+    harness, runtime = os.environ.get('MEMORIE_CLIENT_HARNESS'), os.environ.get('MEMORIE_DOTNET')
+    if not harness or not runtime:
+        pytest.skip('explicit local compiled client contract runtime not selected')
+    facade, root = memorie_http
+    path = tmp_path / 'must-not-write.json'
+    result = subprocess.run([runtime, harness, root, str(path), 'unknown-mode'],
+        capture_output=True, text=True, encoding='utf-8', timeout=15)
+    assert result.returncode != 0 and 'Unknown client contract mode' in result.stderr
+    assert not facade.submissions and not path.exists()
+
+
 def test_compiled_client_accepts_legal_python_unicode_history_boundary(memorie_http, tmp_path):
     harness, runtime = os.environ.get('MEMORIE_CLIENT_HARNESS'), os.environ.get('MEMORIE_DOTNET')
     if not harness or not runtime:

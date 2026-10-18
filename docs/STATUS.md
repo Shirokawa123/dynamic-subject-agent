@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-18 S160：生产新资格/Facade/一次审计/Publication/冷恢复接通，100项有通过记录、双复核关闭；独立experience/8798零模型初始化。GUI已验滚动/中文草稿，原生按钮candidate9待实际验证；用户要求转纯后台，保游戏与草稿，0真实模型，详见[报告](reports/2026-10-18-slice-160/REPORT.md)。
+- 2026-10-18 S160：生产接线/冷恢复与100项已有通过记录；后台首真实回复完成，第二步“目标”误拦保failed-closed，局部谓词修正专项过；旧harness另误向体验入口发1合成消息，实际共2模型/2提交全保。游戏草稿不触、只后台，原生按钮candidate9待验，详见[报告](reports/2026-10-18-slice-160/REPORT.md)。
 
 - 2026-10-18：用户“确认”批准[S160 exact审阅](experiments/s160/REVIEW.md) basis88ae7f75…24496；229新增文件安装/插件加载成立，展开IMGUI报错保首失败，诊断candidate3待验，Esc后停止UI。生产候选8项Interface过/复核修正扩展组合待核；0真实模型/凭据/experience/8798，不称可用或整片收口，[报告](reports/2026-10-18-slice-160/REPORT.md)保后续与旧未达。
 

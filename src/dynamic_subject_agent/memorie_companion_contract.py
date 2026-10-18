@@ -126,3 +126,11 @@ def validate_reply(value):
     if not _text(value, 1200):
         raise ValueError('complete bounded final text required')
     return value
+
+
+def is_memorie_dialogue_control(message):
+    """Topic nouns are allowed; explicit transfer/withdrawal acts stay local."""
+    from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control
+    from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
+    return (is_first_life_dialogue_control(message)
+        or whole_dialogue_scope(message) in (WITHDRAWAL, UNRESOLVED))

@@ -2,6 +2,16 @@
 
 ## 2026-10-18继续：后台验证接续
 
+### 后台首次结果及修正
+
+首次固定三步后台场景绑定5e4bec7，另用独立开发root：第一步实际1次模型/1canonical完成。私有runner错误地传`Facade.wait(timeout_seconds=40)`，超过原30秒上限，先记录unavailable/audit0；应用关闭等待期间真实任务完成。保原错误观测，另以原请求只读查询收回terminal/audit1，不重发。第二步含普通“学习目标”，被旧v1 topic marker误判为history restricted，在模型前failed-closed，第三步按冻结规则不执行；首终态与资料保留。
+
+同用途修正只在精确Memorie lane复用已有无topic-word的显式操作判断，并叠加whole disclosure的拒外发/撤回判断；两处近期历史选择使用相同谓词，旧CHAT/v1不改，出站字段/资料/上限不扩。Interface行为验证包含目标接续、显式“不要把之前聊天发给模型”零外发、关历史后只发当前句。初版仅复用first-life遗漏“发给”限制，合成检查发现并保首失败，补whole predicate后专项通过；其余34相关检查通过。
+
+**另有一次执行错误必须保留：** C#只读probe构建参数错误后命令未检查退出码，继续执行旧harness，误向当前experience/8798提交了1条明确标“合成”的开发消息。该原请求已只读核为1次模型/1canonical/terminal，没有重发，也没有修改游戏面板草稿；此记录不删除、不伪称用户亲历。错误构建/原请求/终态证据保本机。随后构建失败即停止、正确只读probe编译运行，harness未知mode在连接前拒绝；后续真实场景只用独立开发root。
+
+此时累计2真实请求/2提交，分属上述两个独立Timeline；源原文、凭据、raw reasoning均未进入报告/Git，完整聊天只在各自canonical。游戏内发送/最终UI仍未验，不用这两次后台提交冒充人物MVP通过。
+
 用户先“继续吧”，随后在UI验证中明确“现在可以，继续验证”；再次Esc后明确“接下来在后台测试吧，我要用电脑了”。从此停止所有窗口/键鼠操作，只做独立后台验证，当前游戏/面板草稿不提交、不覆盖。
 
 生产delta补齐单cognition资格标记、最终guard拒绝后的已claim失败终态、bootstrap/lease冷恢复；独立双复核均无剩余finding。扩展组合99通过/1测试错误：未完成Publication时历史为unavailable，旧断言错误地读取None；删除该错误前置断言后，准确验证重开失败终态/零重发/空canonical的专项通过。合计100项有通过记录，未冒称单次整组合全绿。首次挂起运行已终止并保日志；新合成中首guard漏标记及其失败证据保留。

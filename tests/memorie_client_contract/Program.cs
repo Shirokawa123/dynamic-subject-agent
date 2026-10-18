@@ -3,9 +3,17 @@ using System.Text;
 
 var root = new Uri(args[0]);
 var path = args[1];
+var mode = args.Length > 2 ? args[2] : "contract";
+if (!new[] { "contract", "probe", "unicode-history", "reconnect-failure" }.Contains(mode))
+    throw new ArgumentException("Unknown client contract mode; no connection or submission was attempted.");
 using var firstClient = new CompanionClient(root);
 var state = await firstClient.ConnectAsync();
 if (!state.Ready) throw new Exception("Synthetic Interface must be ready.");
+if (args.Length > 2 && args[2] == "probe")
+{
+    Console.WriteLine($"client-contract: read-only native connect ready; committed={state.Turns.Length}; no submission");
+    return;
+}
 if (args.Length > 2 && args[2] == "unicode-history")
 {
     if (state.Turns.Length != 1 || state.Turns[0].User.EnumerateRunes().Count() != 1000

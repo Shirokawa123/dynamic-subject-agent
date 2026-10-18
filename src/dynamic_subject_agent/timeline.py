@@ -8130,6 +8130,11 @@ class TimelineEngine:
     def character_dialogue_before(self, operation_ref, *, expected_head, enabled):
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue, is_dialogue_control
+        if getattr(self, '_memorie_qualified', False):
+            # This exact lane has NoOp Domains: learning goals are conversation
+            # topics. Reuse the existing explicit-operation/disclosure boundary,
+            # without the v1 topic-word prohibition. Old chat keeps its predicate.
+            from dynamic_subject_agent.memorie_companion_contract import is_memorie_dialogue_control as is_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed("character-history-policy-invalid", "history preference must be explicit")
         whole = getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
@@ -8238,8 +8243,12 @@ class TimelineEngine:
 
     def _verified_dialogue_prefix(self, operation_ref: OperationRef, *, expected_head: int):
         from dynamic_subject_agent.recent_dialogue import is_dialogue_control
-        if LIFE_SYSTEM_INTENT in self._authority.allowed_intents or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES:
+        if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents
+            or getattr(self._authority, 'provider_authority', None) in WHOLE_AUTHORITIES
+            or getattr(self, '_memorie_qualified', False)):
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
+        if getattr(self, '_memorie_qualified', False):
+            from dynamic_subject_agent.memorie_companion_contract import is_memorie_dialogue_control as is_dialogue_control
 
         snapshot = self.query(operation_ref)
         frozen_row = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,

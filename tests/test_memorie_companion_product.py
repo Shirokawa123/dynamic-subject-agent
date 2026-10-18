@@ -186,6 +186,22 @@ def test_cold_recovery_closes_claimed_reply_without_model_redelivery(memorie_pro
     assert MemorieCallAudit(audit_path).counts() == (None, 1, None)
 
 
+def test_learning_goal_topic_continues_but_explicit_disclosure_stops_before_wire(memorie_product):
+    opening, _, _, _ = memorie_product
+    transport = MemorieTransport(); product = opening(transport)
+    first = '我准备先学二十五分钟。目标是弄清一个概念，而不是只把计时器跑完。'
+    assert send(product, first, 'study-goal').status == 'terminal'
+    assert send(product, '刚才我的学习目标是什么？', 'study-followup').status == 'terminal'
+    payload = json.loads(json.loads(transport.calls[1]['body'])['messages'][1]['content'])
+    assert payload['exchange'] == [dict(user_text=first, assistant_text='合成回复。')]
+    refused = send(product, '不要把之前的聊天发给模型。', 'disclosure')
+    assert refused.status == 'failed-closed' and len(transport.calls) == 2
+    assert len(history(product).projection.turns) == 2
+    assert product.application.set_reviewed_character_history(False).history_enabled is False
+    assert send(product, '只发这一句，聊聊魔法。', 'without-history').status == 'terminal'
+    assert json.loads(json.loads(transport.calls[2]['body'])['messages'][1]['content'])['exchange'] == []
+
+
 def test_qualified_http_send_lookup_and_restart_never_wait_or_resubmit(memorie_product, monkeypatch):
     import importlib, sys, time
     from threading import Thread

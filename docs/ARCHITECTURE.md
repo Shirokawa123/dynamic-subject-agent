@@ -6,6 +6,8 @@
 
 Runtime沿单一schema1 Timeline和NoOp Domain提议，最终Publication按精确Memorie版本再次核history/identity版本；已claim但未pub候选可落失败终态，冷恢复关闭未完成请求、不重调模型。Facade/Host/Timeline的原UUID查询贯通这一准确版本，保只读snapshot；原CHAT路径不扩。游戏Adapter必须有正式composition witness，连接/发送手动触发；客户端只保存草稿/原UUID，完整聊天只有canonical store。实际IMGUI的ScrollView/TextArea因unstrip失败不可用，候选使用BeginGroup剪裁/滚轮、原生TMP输入与按钮捕获；旧候选和失败全保。当前游戏内最终点击/真实人物效果仍未通过，用户要求只后台测试；见[报告](reports/2026-10-18-slice-160/REPORT.md)。
 
+Memorie近期历史使用同一局部控制谓词：学习目标等名词属于普通话题；复用first-life显式操作判断和whole拒外发/撤回/未明披露判断，实际限制仍在模型前关闭。既有v1/reviewed-chat topic marker不改变，不授予目标、记忆或文件写入。
+
 ### Slice-158：同一Timeline的LOCAL整体运行闭环
 
 变化用途basis38ecaf3b…731ab92获准后新增独立change-evidence grant/contract，仍同schema9/audit family；旧四mode逐值保持、旧root不升级。仅reply/share新增current_result_change，claim/consume按当前head/权限重建，Publication用Runtime所持已封存合同摘要核验并重算。引用变化的reply/share继承旧/新来源，plan不受表达引用污染。sourcefree也须旧plan真实产生位置和当前result均晚于cutoff，history关闭或证明不足为null；新mode只读Facade与出站同资格。入口实际参考展示最近一次变化，默认启动尚未切换/8797未启动。
