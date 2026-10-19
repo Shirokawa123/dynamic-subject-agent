@@ -147,7 +147,7 @@ def prepare_memorie_companion(request):
         return MemoriePreparationView('failed-closed', 'memorie-preparation-unverified')
 
 
-def preview_memorie_wire(prepared, message, exchange=()):
+def preview_memorie_wire(prepared, message, exchange=(), *, contract_version=None):
     """Prepare exact bytes for review; this function cannot contact a Provider."""
     if type(prepared) is not MemoriePreparationView or prepared.status != 'prepared':
         raise ValueError('prepared Memorie review required')
@@ -178,6 +178,11 @@ def preview_memorie_wire(prepared, message, exchange=()):
     body = dict(model='deepseek-flash', messages=[dict(role='system', content=POLICY),
         dict(role='user', content=canonical_json(projection))], thinking={'type': 'disabled'},
         max_tokens=4096, stream=False)
+    from dynamic_subject_agent.memorie_companion_contract import VERSION, contract, policy
+    if contract_version is not None and contract_version != VERSION:
+        contract(dict(definition_basis=prepared.definition_basis, runtime_asset_sha=definition['runtime_asset_sha']),
+            _digest(scope), prepared.review_basis, version=contract_version)
+        body['messages'][0]['content'] = policy(contract_version)
     wire = canonical_json(body).encode()
     if len(wire) > 65536:
         raise ValueError('Memorie request oversized')

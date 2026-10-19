@@ -2,6 +2,8 @@
 
 ### Slice-160：独立梅莫莉聊天资格与游戏面板
 
+2026-10-19新增显式attribution-2技术版本，父审阅/数据用途/limits不变，仅追加system来源与采纳/完成规则。Contract独立version/policy hash/parent；各资格/恢复/查询路径按闭集版本分派，旧baseline默认与字节保持，不自动升级既有root。Facade可生成精确新预览，人物效果待独立真实验证。插件candidate10只修已销毁原生组件的清理访问，已编译并在游戏关闭时换自有DLL，实际退出/UI效果仍未验，见[本日报告](reports/2026-10-19-slice-160/REPORT.md)。
+
 用户已批准exact[审阅](experiments/s160/REVIEW.md)。Facade准备/预览仍只读，批准回执另存；正式`memorie-companion-chat-s160-1`沿reviewed-chat家族发布独立exact QRI，绑定本次definition/asset/scope/use，不升级旧资格。LocalIdentityAuthority持有封存、选择、激活、history/identity版本与Host恢复；production composition经ModelGateway装配单次纯正文DeepSeek请求和独立metadata-only无限次数审计。只投影已批30派生认识/4解释、本次文字与最多2完整已提交轮/4000字符，输出≤1200字符，4096 tokens/thinking disabled/30秒/0retry；无原文或游戏/计时状态外发。
 
 Runtime沿单一schema1 Timeline和NoOp Domain提议，最终Publication按精确Memorie版本再次核history/identity版本；已claim但未pub候选可落失败终态，冷恢复关闭未完成请求、不重调模型。Facade/Host/Timeline的原UUID查询贯通这一准确版本，保只读snapshot；原CHAT路径不扩。游戏Adapter必须有正式composition witness，连接/发送手动触发；客户端只保存草稿/原UUID，完整聊天只有canonical store。实际IMGUI的ScrollView/TextArea因unstrip失败不可用，候选使用BeginGroup剪裁/滚轮、原生TMP输入与按钮捕获；旧候选和失败全保。当前游戏内最终点击/真实人物效果仍未通过，用户要求只后台测试；见[报告](reports/2026-10-18-slice-160/REPORT.md)。

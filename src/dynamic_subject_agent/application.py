@@ -1721,9 +1721,9 @@ class ApplicationFacade:
         return prepare_memorie_companion(request)
 
     @staticmethod
-    def preview_memorie_companion_message(prepared: object, message: str, exchange=()):
+    def preview_memorie_companion_message(prepared: object, message: str, exchange=(), *, contract_version=None):
         from dynamic_subject_agent.memorie_companion_preparation import preview_memorie_wire
-        return preview_memorie_wire(prepared, message, exchange)
+        return preview_memorie_wire(prepared, message, exchange, contract_version=contract_version)
 
     @staticmethod
     def preview_original_character_whole_use_preparation(request: object):

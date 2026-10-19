@@ -117,9 +117,9 @@ def expression_projection(planning, value):
 
 
 def chat_contract(envelope, scope_digest, review_request_basis, *, version=CHAT_VERSION):
-    from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION, contract as memorie_contract
-    if version == MEMORIE_VERSION:
-        return memorie_contract(envelope, scope_digest, review_request_basis)
+    from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS, contract as memorie_contract
+    if version in MEMORIE_VERSIONS:
+        return memorie_contract(envelope, scope_digest, review_request_basis, version=version)
     if version != CHAT_VERSION:
         raise ValueError('unknown reviewed-chat contract version')
     # Scope and complete-request recomputation are shared by activation and QRI recovery.

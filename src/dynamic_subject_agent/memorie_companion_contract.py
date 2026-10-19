@@ -12,6 +12,8 @@ from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 
 VERSION = 'memorie-companion-chat-s160-1'
+ATTRIBUTION_VERSION = 'memorie-companion-attribution-s160-2'
+VERSIONS = (VERSION, ATTRIBUTION_VERSION)
 DEFINITION = '00c2a880579c2aa920f6c7c3440efe4d88a311bc2431523765bfb2e201eca2e2'
 ASSET = '3cb87a26c47ca7f8bd34bd97c3e4a997eb254f00e6cc9fca136beb95382772a4'
 REVIEW = '88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496'
@@ -25,17 +27,35 @@ def digest(value):
     return sha256(canonical_json(value).encode()).hexdigest()
 
 
-def contract(envelope, scope_digest, review_request_basis):
+def policy(version=VERSION):
     from dynamic_subject_agent.memorie_companion_preparation import POLICY
+    if version == VERSION:
+        return POLICY
+    if version != ATTRIBUTION_VERSION:
+        raise ValueError('unknown Memorie technical version')
+    return POLICY + (
+        '接续交流时区分来源与阶段：exchange的user_text才是用户说过的话，assistant_text是你自己的回复。'
+        '你提出的办法仍是你的建议，不能因它出现在历史、用户听懂或觉得有意思，就说成用户的目标、决定或承诺。'
+        '用户明确采纳且指代清楚时可以承接，不要一律说未决定或反复索要确认；采纳也不等于已经执行或完成。'
+        '回顾时按实际证据自然区分“你说想做”“我刚才建议”“你后来决定”，未提供的采纳、进度或结果不要补造。'
+        '窗口里缺少证据只表示此处未提供，不能断言用户从未说过或做过。保持角色口吻，不朗读这些分类或规则。'
+    )
+
+
+def contract(envelope, scope_digest, review_request_basis, *, version=VERSION):
+    selected_policy = policy(version)
     if (envelope['definition_basis'] != DEFINITION or envelope['runtime_asset_sha'] != ASSET
         or scope_digest != SCOPE or review_request_basis != USE_REVIEW):
         raise ValueError('exact approved Memorie definition and use required')
-    return dict(version=VERSION, definition_basis=DEFINITION, runtime_asset_sha=ASSET,
+    result = dict(version=version, definition_basis=DEFINITION, runtime_asset_sha=ASSET,
         scope_digest=SCOPE, review_request_basis=USE_REVIEW, consolidated_review=REVIEW,
         model='deepseek-flash', thinking='disabled', max_tokens=4096,
         timeout_seconds=30, automatic_retries=0, recent_turns=2, recent_chars=4000,
         max_current_chars=1000, max_reply_chars=1200, call_limit=None,
-        policy_sha256=sha256(POLICY.encode()).hexdigest())
+        policy_sha256=sha256(selected_policy.encode()).hexdigest())
+    if version == ATTRIBUTION_VERSION:
+        result['technical_parent_version'] = VERSION
+    return result
 
 
 def validate_approval(value):
@@ -73,11 +93,12 @@ class MemorieCallAudit(DevelopmentCallAudit):
 @dataclass(frozen=True)
 class MemorieReplyProjection:
     payload_json: str
+    version: str = VERSION
 
 
-def projection(envelope, message, dialogue, history_enabled):
+def projection(envelope, message, dialogue, history_enabled, *, version=VERSION):
     from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
-    contract(envelope, SCOPE, USE_REVIEW)
+    contract(envelope, SCOPE, USE_REVIEW, version=version)
     asset = envelope['runtime_asset']
     if digest(asset) != ASSET:
         raise ValueError('sealed Memorie asset changed')
@@ -89,13 +110,12 @@ def projection(envelope, message, dialogue, history_enabled):
         for item in asset['eligible']]), personality=asset['personality'],
         exchange=[dict(user_text=t.user_text, assistant_text=t.assistant_text) for t in dialogue.recent_dialogue],
         current_message=message)
-    result = MemorieReplyProjection(canonical_json(payload))
+    result = MemorieReplyProjection(canonical_json(payload), version)
     wire(result)
     return result
 
 
 def wire(value):
-    from dynamic_subject_agent.memorie_companion_preparation import POLICY
     if type(value) is not MemorieReplyProjection or len(value.payload_json.encode()) > 60000:
         raise ValueError('typed bounded Memorie projection required')
     payload = json.loads(value.payload_json)
@@ -109,7 +129,7 @@ def wire(value):
             raise ValueError('complete bounded exchange required')
     if sum(len(t['user_text']) + len(t['assistant_text']) for t in payload['exchange']) > 4000:
         raise ValueError('complete exchange exceeds disclosure limit')
-    body = dict(model='deepseek-flash', messages=[dict(role='system', content=POLICY),
+    body = dict(model='deepseek-flash', messages=[dict(role='system', content=policy(value.version)),
         dict(role='user', content=canonical_json(payload))], thinking={'type': 'disabled'},
         max_tokens=4096, stream=False)
     raw = canonical_json(body).encode()

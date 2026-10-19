@@ -676,9 +676,9 @@ class _CognitionAssemblySlot:
                 "cognition-assembly-mismatch",
                 "QRI and cognition do not form one exact supported slot",
             )
-        from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+        from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
         cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
-            and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION)
+            and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS)
         return cls(
             qualification_id=qri.qualification_id,
             qri_integrity_digest=qri.integrity_digest,
@@ -1181,10 +1181,10 @@ class _CognitionAssembly:
         if self._single_cognition is not None:
             cognition = self._single_cognition
             if cognition.provider_authority == qri.provider_authority:
-                from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+                from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
                 cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
                     and qri.reviewed_chat_contract is not None
-                    and qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION)
+                    and qri.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS)
                 return cognition
             raise RuntimeHostRejected(
                 "cognition-assembly-mismatch",
@@ -7612,10 +7612,11 @@ class RuntimeHost:
     def supports_memorie_request_lookup(self, binding):
         if type(binding) is not RuntimeAuthorityBinding or binding.provider_authority != CHAT_AUTHORITY:
             return False
-        from dynamic_subject_agent.memorie_companion_contract import VERSION, contract, SCOPE, USE_REVIEW
+        from dynamic_subject_agent.memorie_companion_contract import VERSIONS, contract, SCOPE, USE_REVIEW
         qri = self._qri_for_binding(binding)
-        return (qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == VERSION
-            and qri.reviewed_chat_contract == contract(qri.reviewed_chat_contract, SCOPE, USE_REVIEW))
+        return (qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') in VERSIONS
+            and qri.reviewed_chat_contract == contract(qri.reviewed_chat_contract, SCOPE, USE_REVIEW,
+                version=qri.reviewed_chat_contract['version']))
 
     def _read_shared_activity(self, binding, request=None):
         from dynamic_subject_agent.timeline import _validate_idempotency_key

@@ -203,8 +203,8 @@ def _open_loaded_local_product(
         elif loaded.qri.provider_authority == LIFE_DORMANT_AUTHORITY:
             cognition = FirstLifeDormantCognition()
         elif loaded.qri.provider_authority == CHAT_AUTHORITY:
-            from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
-            if loaded.qri.reviewed_chat_contract.get('version') == MEMORIE_VERSION:
+            from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
+            if loaded.qri.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS:
                 from dynamic_subject_agent.memorie_companion_cognition import MemorieCompanionSession
                 if getattr(cognition, 'gateway', None) is not None and (type(cognition) is not ReviewedCharacterChatCognition
                     or type(cognition.companion) is not MemorieCompanionSession
@@ -1011,14 +1011,18 @@ def open_shared_activity_product_live(config, *, identity_id, grant, audit_path,
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
-def open_or_create_memorie_companion_product(config, *, approval_path, audit_path, preparation_json, _transport=None):
+def open_or_create_memorie_companion_product(config, *, approval_path, audit_path, preparation_json,
+                                             contract_version=None, _transport=None):
     """Recovery precedes generic opening when a successor Host swap is pending."""
-    from dynamic_subject_agent.memorie_companion_contract import load_approval, DEFINITION
+    from dynamic_subject_agent.memorie_companion_contract import load_approval, DEFINITION, VERSION, VERSIONS
     from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
     from dynamic_subject_agent.source_character_authoring import LocalIdentitySelectRequest
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     approval = load_approval(approval_path)
-    options = dict(approval_path=approval_path, audit_path=audit_path, _transport=_transport)
+    contract_version = VERSION if contract_version is None else contract_version
+    if contract_version not in VERSIONS:
+        raise ValueError('unknown Memorie technical version')
+    options = dict(approval_path=approval_path, audit_path=audit_path, contract_version=contract_version, _transport=_transport)
     if config.state_path.exists():
         try:
             return open_memorie_companion_product(config, **options)
@@ -1036,18 +1040,21 @@ def open_or_create_memorie_companion_product(config, *, approval_path, audit_pat
     return open_memorie_companion_product(config, **options)
 
 
-def open_memorie_companion_product(config, *, approval_path, audit_path, _transport=None):
+def open_memorie_companion_product(config, *, approval_path, audit_path, contract_version=None, _transport=None):
     """Compose the approved S160 lane. Opening performs zero credential/model calls."""
     from dynamic_subject_agent.memorie_companion_contract import (
-        load_approval, DEFINITION, SCOPE, USE_REVIEW, MemorieCallAudit,
+        load_approval, DEFINITION, SCOPE, USE_REVIEW, MemorieCallAudit, VERSION, VERSIONS,
     )
     from dynamic_subject_agent.memorie_companion_cognition import MemorieCompanionSession
     from dynamic_subject_agent.memorie_companion_provider import DeepSeekMemorieAdapter
     from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
     approval = load_approval(approval_path)
+    contract_version = VERSION if contract_version is None else contract_version
+    if contract_version not in VERSIONS:
+        raise ValueError('unknown Memorie technical version')
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_reviewed_chat(definition_basis=DEFINITION, scope_digest=SCOPE,
-        review_request_basis=USE_REVIEW, budget_path=audit_path, memorie_approval=approval)
+        review_request_basis=USE_REVIEW, budget_path=audit_path, memorie_approval=approval, memorie_version=contract_version)
     gateway = ModelGateway(DeepSeekMemorieAdapter(
         transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)))

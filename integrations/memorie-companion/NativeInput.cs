@@ -138,9 +138,16 @@ internal sealed class NativeInput : IDisposable
     }
     public void Dispose()
     {
-        field.onValueChanged.RemoveListener(changedListener);
+        // Unity may destroy the native Canvas/children before this injected
+        // MonoBehaviour's OnDestroy. A managed wrapper can then still exist.
+        if (root == null) return;
+        if (field != null) field.onValueChanged.RemoveListener(changedListener);
         foreach (var item in buttons)
-            item.Value.gameObject.GetComponent<Button>().onClick.RemoveListener(buttonListeners[item.Key]);
+        {
+            if (item.Value == null) continue;
+            var button = item.Value.GetComponent<Button>();
+            if (button != null) button.onClick.RemoveListener(buttonListeners[item.Key]);
+        }
         UnityEngine.Object.Destroy(root);
     }
 }

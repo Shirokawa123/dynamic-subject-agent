@@ -14,7 +14,7 @@ APPLICATION_ID = 'memorie-companion-s160'
 class MemorieCompanionAdapter(OriginalWholeChatAdapter):
     def __init__(self, product, *, reopen):
         witness = getattr(product, '_memorie_composition_witness', None)
-        if witness != contract(witness or {}, SCOPE, USE_REVIEW):
+        if witness != contract(witness or {}, SCOPE, USE_REVIEW, version=(witness or {}).get('version')):
             raise ValueError('qualified Memorie production composition required')
         super().__init__(product, reopen=reopen)
 

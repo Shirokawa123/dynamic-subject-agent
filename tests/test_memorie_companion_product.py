@@ -15,7 +15,7 @@ from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
 from dynamic_subject_agent.source_character_authoring import LocalIdentitySelectRequest
 from dynamic_subject_agent.memorie_companion_contract import (
-    MemorieCallAudit, DEFINITION, SCOPE, USE_REVIEW, contract, projection, wire,
+    MemorieCallAudit, DEFINITION, SCOPE, USE_REVIEW, contract, projection, wire, VERSION, ATTRIBUTION_VERSION,
 )
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.application import ApplicationQuery, ApplicationQueryKind
@@ -255,3 +255,72 @@ def test_original_chat_scope_cannot_qualify_memorie_and_changed_approval_does_no
     with pytest.raises(ValueError):
         open_memorie_companion_product(config, approval_path=wrong, audit_path=audit_path, _transport=MemorieTransport())
     assert config.state_path.read_bytes() == before
+
+
+def test_attribution_version_uses_same_approved_material_and_persists_exact_qualification(memorie_product):
+    from dynamic_subject_agent.application import ApplicationFacade, SubjectRequestLookupRequest
+    from dynamic_subject_agent.memorie_companion_preparation import MemoriePreparationView
+    from dynamic_subject_agent.timeline import SubjectCommand
+    opening, config, private, audit_path = memorie_product
+    transport = MemorieTransport()
+    product = opening(transport, contract_version=ATTRIBUTION_VERSION)
+    before = product.application.reviewed_character_chat_status()
+    assert before.status == 'active' and before.budget_used == 0 and not transport.calls
+    prepared = MemoriePreparationView(**json.loads((private / 'preparation.json').read_text('utf-8')))
+    message = '合成：你刚才的建议，我还没决定采用。'
+    expected = ApplicationFacade.preview_memorie_companion_message(prepared, message, contract_version=ATTRIBUTION_VERSION)
+    legacy = json.loads(ApplicationFacade.preview_memorie_companion_message(prepared, message))
+    assert send(product, message, 'attribution-first').status == 'terminal'
+    actual = json.loads(transport.calls[0]['body'])
+    assert transport.calls[0]['body'] == expected
+    assert actual['messages'][0]['content'].startswith(legacy['messages'][0]['content'])
+    assert actual['messages'][0]['content'] != legacy['messages'][0]['content']
+    actual['messages'][0]['content'] = legacy['messages'][0]['content']
+    assert actual == legacy  # No new fields, sources, dialogue, stages or limits.
+    scope = (product.profile_id, product.timeline_id)
+    product.close()
+    next_transport = MemorieTransport()
+    restored = opening(next_transport, contract_version=ATTRIBUTION_VERSION)
+    assert (restored.profile_id, restored.timeline_id) == scope
+    command = SubjectCommand.contribute_utterance(target_profile_id=restored.profile_id,
+        target_timeline_id=restored.timeline_id, declared_intent='ask-collaborator-status', utterance=message,
+        language='zh', provenance='project-original')
+    found = restored.application.lookup_subject_request(SubjectRequestLookupRequest(command, 'reviewed-character-test-attribution-first'))
+    assert found.query_status == 'found' and found.operation.status == 'terminal' and not next_transport.calls
+    assert send(restored, '继续合成接话。', 'attribution-next').status == 'terminal'
+    payload = json.loads(json.loads(next_transport.calls[0]['body'])['messages'][1]['content'])
+    assert payload['exchange'] == [dict(user_text=message, assistant_text='合成回复。')]
+    assert MemorieCallAudit(audit_path).counts() == (None, 2, None)
+
+
+def test_attribution_never_upgrades_existing_baseline_or_creates_unknown_version(memorie_product):
+    opening, config, _, audit_path = memorie_product
+    product = opening(); product.close()
+    before = config.state_path.read_bytes()
+    with pytest.raises(RuntimeError, match='activation-conflict'):
+        opening(contract_version=ATTRIBUTION_VERSION)
+    with pytest.raises(ValueError, match='unknown Memorie'):
+        opening(contract_version='unreviewed-future-policy')
+    assert config.state_path.read_bytes() == before and MemorieCallAudit(audit_path).counts() == (None, 0, None)
+    restored = opening()
+    assert restored._memorie_composition_witness['version'] == VERSION
+
+
+def test_attribution_final_guard_and_cold_recovery_keep_terminal_without_redelivery(memorie_product, monkeypatch):
+    from dynamic_subject_agent.timeline import TimelineEngine, FaultPoint
+    opening, _, _, _ = memorie_product
+    transport = MemorieTransport(); product = opening(transport, contract_version=ATTRIBUTION_VERSION)
+    original = TimelineEngine._hit
+    def hit(engine, point):
+        if point is FaultPoint.BEFORE_PUBLICATION_COMMIT:
+            assert product.application.set_reviewed_character_history(False).history_enabled is False
+            assert product.application.set_reviewed_character_history(True).history_enabled is True
+        return original(engine, point)
+    monkeypatch.setattr(TimelineEngine, '_hit', hit)
+    assert send(product, '合成提交前撤回。', 'attribution-guard').status == 'failed-closed'
+    assert len(transport.calls) == 1 and not history(product).projection.turns
+    product.close()
+    monkeypatch.setattr(TimelineEngine, '_hit', original)
+    next_transport = MemorieTransport(); restored = opening(next_transport, contract_version=ATTRIBUTION_VERSION)
+    assert send(restored, '合成提交前撤回。', 'attribution-guard').status == 'failed-closed'
+    assert not next_transport.calls

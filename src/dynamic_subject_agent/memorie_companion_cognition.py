@@ -27,7 +27,8 @@ class MemorieCompanionSession:
         try:
             authorization = self.authorization()
             dialogue = context.load_character_dialogue(authorization['history_enabled'])
-            payload = projection(self.envelope, command.utterance, dialogue, authorization['history_enabled'])
+            payload = projection(self.envelope, command.utterance, dialogue, authorization['history_enabled'],
+                version=self.contract['version'])
         except Exception:
             raise CognitionFailedClosed('history', 'memorie-history-unverified', 'The current committed dialogue could not be verified.') from None
         # A retry with another attempt ID must not redeliver the same operation.

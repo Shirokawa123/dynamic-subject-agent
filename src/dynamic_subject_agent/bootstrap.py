@@ -253,11 +253,11 @@ def compose_application(
             with host.lease(profile_id=qualified_runtime_input.profile_id, timeline_id=timeline_id) as recovery:
                 recovery.recover_first_life_pending()
         from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITIES, contract_variant
-        from dynamic_subject_agent.memorie_companion_contract import VERSION as MEMORIE_VERSION
+        from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
         from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
         memorie = (qualified_runtime_input.provider_authority == CHAT_AUTHORITY
             and qualified_runtime_input.reviewed_chat_contract is not None
-            and qualified_runtime_input.reviewed_chat_contract.get('version') == MEMORIE_VERSION)
+            and qualified_runtime_input.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS)
         if memorie or (qualified_runtime_input.provider_authority in WHOLE_AUTHORITIES
             and contract_variant(qualified_runtime_input.reviewed_chat_contract) != "followup-legacy"):
             with host.lease(profile_id=qualified_runtime_input.profile_id, timeline_id=timeline_id) as recovery:

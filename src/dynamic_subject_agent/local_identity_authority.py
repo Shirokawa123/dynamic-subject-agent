@@ -65,7 +65,7 @@ from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY, chat_c
 from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
 from dynamic_subject_agent.character_chat_budget import CharacterChatBudget
 from dynamic_subject_agent.memorie_companion_contract import (
-    VERSION as MEMORIE_VERSION, MemorieCallAudit, validate_approval as validate_memorie_approval,
+    VERSION as MEMORIE_VERSION, VERSIONS as MEMORIE_VERSIONS, MemorieCallAudit, validate_approval as validate_memorie_approval,
     contract as memorie_contract, SCOPE as MEMORIE_SCOPE, USE_REVIEW as MEMORIE_USE_REVIEW,
     DEFINITION as MEMORIE_DEFINITION, digest as memorie_digest,
 )
@@ -84,11 +84,12 @@ _LEGACY_AVERY_PUBLICATION_KEY = "local-product-deepseek-qri-v1"
 def _reviewed_chat_ledger(metadata, *, initialize=False):
     if type(metadata) is not dict or type(metadata.get('contract')) is not dict:
         raise RuntimeError('reviewed-chat-activation-metadata-invalid')
-    if metadata['contract'].get('version') == MEMORIE_VERSION:
+    if metadata['contract'].get('version') in MEMORIE_VERSIONS:
         if set(metadata) != {'contract', 'audit_path', 'approval'}:
             raise RuntimeError('memorie-activation-metadata-invalid')
         validate_memorie_approval(metadata['approval'])
-        if metadata['contract'] != memorie_contract(metadata['contract'], MEMORIE_SCOPE, MEMORIE_USE_REVIEW):
+        if metadata['contract'] != memorie_contract(metadata['contract'], MEMORIE_SCOPE, MEMORIE_USE_REVIEW,
+            version=metadata['contract']['version']):
             raise RuntimeError('memorie-activation-contract-invalid')
         return MemorieCallAudit(Path(metadata['audit_path']), initialize=initialize)
     if set(metadata) != {'contract', 'budget_path', 'budget_total', 'initial_budget_used'}:
@@ -1258,7 +1259,10 @@ class LocalIdentityAuthority:
 
     @_registry_mutation
     def activate_reviewed_chat(self, *, definition_basis, scope_digest, review_request_basis,
-                               budget_path, budget_total=200, initial_budget_used=61, memorie_approval=None):
+                               budget_path, budget_total=200, initial_budget_used=61, memorie_approval=None,
+                               memorie_version=MEMORIE_VERSION):
+        if memorie_version not in MEMORIE_VERSIONS or memorie_approval is None and memorie_version != MEMORIE_VERSION:
+            raise ValueError('exact Memorie version and approval required')
         if memorie_approval is not None:
             validate_memorie_approval(memorie_approval)
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
@@ -1267,7 +1271,7 @@ class LocalIdentityAuthority:
         if identity.reviewed_definition is None or identity.reviewed_definition["definition_basis"] != definition_basis:
             raise RuntimeError("reviewed-chat-definition-mismatch")
         contract = chat_contract(identity.reviewed_definition, scope_digest, review_request_basis,
-            **(dict(version=MEMORIE_VERSION) if memorie_approval is not None else {}))
+            **(dict(version=memorie_version) if memorie_approval is not None else {}))
         metadata = (dict(contract=contract, audit_path=str(budget_path.resolve()), approval=memorie_approval)
             if memorie_approval is not None else dict(contract=contract, budget_path=str(budget_path.resolve()),
                 budget_total=budget_total, initial_budget_used=initial_budget_used))
@@ -1835,7 +1839,7 @@ class LocalIdentityAuthority:
                 total, used, remaining = opener(Path(record["whole_chat_activation"]["audit_path"])).counts()
                 return ReviewedCharacterChatStatus("active", identity.display_name, record["history_enabled"], total, used, remaining)
             metadata = record["life_activation"] if identity.qri.provider_authority == LIFE_AUTHORITY else record["chat_activation"]
-            if metadata['contract'].get('version') == MEMORIE_VERSION:
+            if metadata['contract'].get('version') in MEMORIE_VERSIONS:
                 total, used, remaining = _reviewed_chat_ledger(metadata).counts()
                 return ReviewedCharacterChatStatus('active', identity.display_name, record['history_enabled'], total, used, remaining)
             if "live_reply_route" in metadata:
@@ -1879,7 +1883,7 @@ class LocalIdentityAuthority:
         with self._history_lock:
             state, record, identity = self._active_chat_record(expected_identity_id)
             if (identity.qri.provider_authority != CHAT_AUTHORITY or record.get('timeline_id') != expected_timeline_id
-                or identity.qri.reviewed_chat_contract.get('version') != MEMORIE_VERSION):
+                or identity.qri.reviewed_chat_contract.get('version') not in MEMORIE_VERSIONS):
                 raise RuntimeError('memorie-scope-changed')
             revision, identity_revision = record.get('history_revision'), state.get('chat_identity_revision')
             if any(type(v) is not int or v < 0 for v in (revision, identity_revision)):
