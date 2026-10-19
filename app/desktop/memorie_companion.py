@@ -110,7 +110,9 @@ def memorie_companion_server(product, *, reopen, port=0):
             if not self.valid_host():
                 return self.respond(403, dict(error='request-rejected'))
             if self.path == '/health':
-                return self.respond(200, dict(application=APPLICATION_ID, protocol=1))
+                return self.respond(200, dict(application=APPLICATION_ID, protocol=1,
+                    contract_version=adapter.product._memorie_composition_witness['version'],
+                    entry_key=getattr(adapter.product, '_memorie_entry_key', '')))
             if self.path == '/session':
                 return self.respond(200, dict(application=APPLICATION_ID, protocol=1, token=token))
             if self.path == '/status':

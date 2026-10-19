@@ -60,6 +60,9 @@ def call(root, route, payload=None, token='', **headers):
 def test_native_interface_one_send_and_same_request_lookup_after_client_reopen(memorie_http):
     facade, root = memorie_http
     session = call(root, 'session')
+    from dynamic_subject_agent.memorie_companion_contract import VERSION
+    health = call(root, 'health')
+    assert health['contract_version'] == VERSION and health['entry_key'] == ''
     assert session['application'] == entry.APPLICATION_ID
     assert call(root, 'status')['ready']
     assert not facade.submissions
