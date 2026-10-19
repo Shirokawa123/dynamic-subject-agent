@@ -15,7 +15,7 @@ from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
 from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
 from dynamic_subject_agent.source_character_authoring import LocalIdentitySelectRequest
 from dynamic_subject_agent.memorie_companion_contract import (
-    MemorieCallAudit, DEFINITION, SCOPE, USE_REVIEW, contract, projection, wire, VERSION, ATTRIBUTION_VERSION,
+    MemorieCallAudit, DEFINITION, SCOPE, USE_REVIEW, contract, projection, wire, VERSION, ATTRIBUTION_VERSION, INTENT_VERSION,
 )
 from dynamic_subject_agent.frozen_attempt import canonical_json
 from dynamic_subject_agent.application import ApplicationQuery, ApplicationQueryKind
@@ -324,3 +324,23 @@ def test_attribution_final_guard_and_cold_recovery_keep_terminal_without_redeliv
     next_transport = MemorieTransport(); restored = opening(next_transport, contract_version=ATTRIBUTION_VERSION)
     assert send(restored, '合成提交前撤回。', 'attribution-guard').status == 'failed-closed'
     assert not next_transport.calls
+
+
+def test_intent_refinement_preserves_parent_policy_and_exact_source_across_reopen(memorie_product):
+    from dynamic_subject_agent.memorie_companion_contract import policy
+    from dynamic_subject_agent.memorie_companion_preparation import POLICY
+    opening, _, _, _ = memorie_product
+    assert policy(VERSION) == POLICY
+    assert policy(INTENT_VERSION).startswith(policy(ATTRIBUTION_VERSION))
+    transport = MemorieTransport(); product = opening(transport, contract_version=INTENT_VERSION)
+    assert product._memorie_composition_witness['technical_parent_version'] == ATTRIBUTION_VERSION
+    message = '合成：我只是打算整理笔记，具体办法还没定。'
+    assert send(product, message, 'intent-first').status == 'terminal'
+    body = json.loads(transport.calls[0]['body'])
+    assert body['messages'][0]['content'] == policy(INTENT_VERSION)
+    assert set(json.loads(body['messages'][1]['content'])) == {'character', 'personality', 'exchange', 'current_message'}
+    product.close()
+    restored = opening(transport, contract_version=INTENT_VERSION)
+    assert send(restored, '那我现在确定了什么？', 'intent-next').status == 'terminal'
+    payload = json.loads(json.loads(transport.calls[1]['body'])['messages'][1]['content'])
+    assert payload['exchange'] == [dict(user_text=message, assistant_text='合成回复。')]

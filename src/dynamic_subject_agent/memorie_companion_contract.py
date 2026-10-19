@@ -13,7 +13,8 @@ from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 
 VERSION = 'memorie-companion-chat-s160-1'
 ATTRIBUTION_VERSION = 'memorie-companion-attribution-s160-2'
-VERSIONS = (VERSION, ATTRIBUTION_VERSION)
+INTENT_VERSION = 'memorie-companion-intent-s160-3'
+VERSIONS = (VERSION, ATTRIBUTION_VERSION, INTENT_VERSION)
 DEFINITION = '00c2a880579c2aa920f6c7c3440efe4d88a311bc2431523765bfb2e201eca2e2'
 ASSET = '3cb87a26c47ca7f8bd34bd97c3e4a997eb254f00e6cc9fca136beb95382772a4'
 REVIEW = '88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496'
@@ -31,15 +32,23 @@ def policy(version=VERSION):
     from dynamic_subject_agent.memorie_companion_preparation import POLICY
     if version == VERSION:
         return POLICY
-    if version != ATTRIBUTION_VERSION:
+    if version not in (ATTRIBUTION_VERSION, INTENT_VERSION):
         raise ValueError('unknown Memorie technical version')
-    return POLICY + (
+    result = POLICY + (
         '接续交流时区分来源与阶段：exchange的user_text才是用户说过的话，assistant_text是你自己的回复。'
         '你提出的办法仍是你的建议，不能因它出现在历史、用户听懂或觉得有意思，就说成用户的目标、决定或承诺。'
         '用户明确采纳且指代清楚时可以承接，不要一律说未决定或反复索要确认；采纳也不等于已经执行或完成。'
         '回顾时按实际证据自然区分“你说想做”“我刚才建议”“你后来决定”，未提供的采纳、进度或结果不要补造。'
         '窗口里缺少证据只表示此处未提供，不能断言用户从未说过或做过。保持角色口吻，不朗读这些分类或规则。'
     )
+    if version == INTENT_VERSION:
+        result += (
+            '尚未采纳你的具体建议，不等于用户没有表达过自己的意图。回顾时先承接用户已经说过的打算，'
+            '按原话保留“想试试、打算、决定、已开始、已完成”的语气和阶段，不擅自升级，也不要把较弱的意向抹掉。'
+            '即使用户问“已经决定了什么”，也可自然说明他先前想做什么、哪些具体办法还未确定，'
+            '不要只用“没有记录”或“你还没告诉我”顶替已有原话。简短接话即可，不反复播报确认规则或许诺替用户记下计划。'
+        )
+    return result
 
 
 def contract(envelope, scope_digest, review_request_basis, *, version=VERSION):
@@ -55,6 +64,8 @@ def contract(envelope, scope_digest, review_request_basis, *, version=VERSION):
         policy_sha256=sha256(selected_policy.encode()).hexdigest())
     if version == ATTRIBUTION_VERSION:
         result['technical_parent_version'] = VERSION
+    elif version == INTENT_VERSION:
+        result['technical_parent_version'] = ATTRIBUTION_VERSION
     return result
 
 
