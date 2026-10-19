@@ -2,9 +2,11 @@
 
 ### Slice-160：独立梅莫莉聊天资格与游戏面板
 
-2026-10-19新增显式attribution-2技术版本，父审阅/数据用途/limits不变，仅追加system来源与采纳/完成规则。Contract独立version/policy hash/parent；各资格/恢复/查询路径按闭集版本分派，旧baseline默认与字节保持，不自动升级既有root。Facade可生成精确新预览，人物效果待独立真实验证。插件candidate10只修已销毁原生组件的清理访问，已编译并在游戏关闭时换自有DLL，实际退出/UI效果仍未验，见[本日报告](reports/2026-10-19-slice-160/REPORT.md)。
+2026-10-19新增显式attribution-2技术版本，父审阅/数据用途/limits不变，仅追加system来源与采纳/完成规则。Contract独立version/policy hash/parent；各资格/恢复/查询路径按闭集版本分派，旧baseline字节及Python CLI默认保持，不自动升级既有root。Facade可生成精确新预览。插件candidate10只修已销毁原生组件的清理访问，已编译并在游戏关闭时换自有DLL，实际退出/UI效果仍未验，见[本日报告](reports/2026-10-19-slice-160/REPORT.md)。
 
-v2首次5真实完成后，来源/采纳/完成部分成立，漏掉已有意向的失败保留。intent-3继承v2的完整policy后仅补语气层级/承接意向，独立exact版本与开发root，不覆盖旧policy、数据或QRI；仍不写入用户目标、人格或生活域。
+v2首次5真实完成后，来源/采纳/完成部分成立，漏掉已有意向的失败保留。intent-3继承v2的完整policy后仅补语气层级/承接意向，独立exact版本与开发root，不覆盖旧policy、数据或QRI；仍不写入用户目标、人格或生活域。新固定5首次/5canonical/0retry经内容复核，意向、未采纳、明确采纳与未完成四项有限成立，不外推为通用或隔日效果。
+
+日常CMD的PowerShell启动器默认intent-3，严格限定新的experience-intent，旧experience不迁移。只读entry描述核原review/approval，入口key绑定限定绝对root、version与批准摘要；正式health提供key，复用/新启动均须准确匹配，普通开发factory不带key时拒绝复用。key用于入口识别，POST仍用原会话token。8798新正式入口已隐藏启动、准确scope/空canonical/audit0/原生只读probe通过，未启动游戏或发送正式测试消息。
 
 用户已批准exact[审阅](experiments/s160/REVIEW.md)。Facade准备/预览仍只读，批准回执另存；正式`memorie-companion-chat-s160-1`沿reviewed-chat家族发布独立exact QRI，绑定本次definition/asset/scope/use，不升级旧资格。LocalIdentityAuthority持有封存、选择、激活、history/identity版本与Host恢复；production composition经ModelGateway装配单次纯正文DeepSeek请求和独立metadata-only无限次数审计。只投影已批30派生认识/4解释、本次文字与最多2完整已提交轮/4000字符，输出≤1200字符，4096 tokens/thinking disabled/30秒/0retry；无原文或游戏/计时状态外发。
 

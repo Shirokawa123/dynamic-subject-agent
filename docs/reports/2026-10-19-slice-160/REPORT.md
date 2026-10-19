@@ -28,7 +28,11 @@ Python CLI保留baseline默认和旧marker格式；日常CMD调用的PowerShell�
 
 两独立复核发现启动器只核版本可能误接同版本开发Timeline（P2）。现先由只读`--describe-entry`核原批准/review，并派生绑定限定绝对root、准确合同版本与批准摘要的entry key；正式实例的health携带此key，普通开发factory缺省为空。启动器对已有服务复用和新启动均核版本/key，不匹配则保留进程并拒绝。真实Windows PowerShell5负测证实旧脚本错误接受同版本错入口、新脚本拒绝且不执行Start-Process；两复核已关闭该项，无剩余finding。该key用于入口识别，不充当POST会话token。
 
-游戏草稿和输入不触及；尚待本次工程提交后在空闲8798隐藏启动新正式入口，并以只读HTTP/C# probe确认，不向正式入口发送测试消息。
+d2995d7提交推送后，确认8798空闲，真实Windows PowerShell5在未传OpenGame时隐藏启动PID22296，仅监听127.0.0.1:8798。health准确匹配intent-3与entry key，Facade状态人物正确/ready/空交流，scope对应上述新Timeline；同入口启动器复用exit0，实际已编译C#以显式`probe`只读连接，0提交/无草稿文件生成。只读审计0、再查canonical0；旧registry SHA与启动前相同，跟进核对游戏草稿摘要不变。没有启停游戏、模型请求、窗口/键鼠操作、系统服务或计划任务。启动和复用证明此后台入口就绪，不证明游戏面板日用。
+
+首次验证器用PIPE捕获PowerShell输出，后台服务已正常监听但父验证器在PowerShell退出后未收到EOF；这一工具执行问题单独留观察记录，没有模型发送。只终止经精确命令行确认的自有验证器，保留服务与首脚本；后续只读验证改用文件承接命令输出，不重启或补发。`intent-entry-promotion-before/after.json`、初次观察、原日志和跟进日志均只存本机`.artifacts/s160`，不覆盖首次。
+
+最终入口Interface组启用实际C# runtime重新执行，9项通过（含原4项可选客户检查），不是将首组4 skipped改写。intent继承专项4项通过；双复核确认入口P2修复，未留待修发现。
 
 ## 插件后台修复
 
