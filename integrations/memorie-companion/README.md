@@ -14,4 +14,6 @@ S160本地准备：独立BepInEx IL2CPP插件，经loopback HTTP与ApplicationFa
 
 手动重开工具为仓库根目录`start-memorie-companion.cmd`；后端脚本`start_memorie_companion.ps1`本身默认不打开游戏，cmd显式带OpenGame。日常启动默认intent-3/新experience-intent，旧baseline可显式选择且Python CLI默认保持baseline。启动器由只读描述取得绑定准确root、版本和批准摘要的entry key，对复用与新启动均核验，错入口保留进程并拒绝；POST仍用会话token。仅在8798空闲时隐藏启动，初始化不调模型，没有系统服务、开机任务或通知。它不能替代上述待验步骤。
 
+直接从Steam打开游戏，目前不会自动启动聊天后端。如果面板显示无法接通，可运行上述CMD，再在面板点“重新接通”；游戏已经运行时，CMD保留现有游戏进程。2026-10-21已实际遇到本地端口无监听，并在不重开游戏/不发送草稿的情况下恢复后端和只读客户连接；这是运行恢复，Steam直接启动的整合仍未完成。
+
 依赖来源：BepInEx `6.0.0-be.785+6abdba4`官方运行时（LGPL-2.1），Il2CppInterop及Doorstop以该运行时实际版本/上游许可为准；原始构建来源记录在S160报告。上游游戏桥的GPL业务逻辑没有复制到本插件，调查中公开的Unity6000.3.6编译引用仅本机使用；运行时interop由BepInEx在用户机器生成。当前包仅用于本机验证，不发布游戏资源或二进制引用。
