@@ -19,6 +19,7 @@
     <Reference Include="UnityEngine.TextRenderingModule"><HintPath>$(MemorieBuildReferences)/UnityEngine.TextRenderingModule.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.UI"><HintPath>$(MemorieBuildReferences)/UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.TextMeshPro"><HintPath>$(MemorieBuildReferences)/Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="YarnSpinner.Unity"><HintPath>$(MemorieBuildReferences)/YarnSpinner.Unity.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
   <Target Name="CheckPrivateReferences" BeforeTargets="ResolveReferences">
     <Error Condition="!Exists('$(BepCore)/BepInEx.Core.dll')" Text="Set MemorieBepInExDirectory to the reviewed isolated BepInEx runtime." />
