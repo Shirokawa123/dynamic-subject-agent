@@ -27,3 +27,6 @@ schema10新生native路径保持原合同。只有schema11准确回执中有限�
 合成transport经Facade与真实production composition验证旧文字→点击→文字→重开、同身份/Timeline/原store及UUID、原表旧行逐值不变、历史关闭、nonce重用拒绝、源推进/活写者/错同意拒绝、旧未知投递保留、旧发表损坏即使history关闭也fail closed。五阶段异常恢复及数据库提交前/后os._exit硬终止恢复均验证，无模型补发或新canonical覆盖。精确结果由本轮日志与产品记录承接。
 
 只适用准确Memorie intent-3且所有旧操作已完成的冷根；有旧失败/未知操作时需另补保留终态的合同，当前拒绝而不删旧失败。没有实际用户升级回执、实机UI或隔日验证。运行中的旧服务/游戏保持，资料/路径/批准计划/DB/测试输出仅本机忽略目录；不新增Provider字段、凭据、通知或自动生活。
+
+
+2026-10-22更新入口接缝：Facade.verify_memorie_continuation(plan)经Authority仅核已提交receipt/完整前缀，不prepare/apply、不claim写者；未提交返回unavailable，损坏failed-closed。验证在合成闭库上逐文件摘要不变。schema11原请求查读允许合法同身份旧命令核任意原nonce：完整旧claim集合已由receipt封闭，未送达可NOT_FOUND；found仍严格匹配原payload，当前Admission仍拒旧SubjectCommand。这样客户端能明确结束已核无记录的旧等待，不能把旧消息自动改成新输入或重发。相关回归42 passed；本轮仍0真实用户根操作/新真实模型。

@@ -173,3 +173,27 @@ sys.exit(99)
     with opening(config,private,root,transport) as product:
         assert product.application.lookup_subject_request(SubjectRequestLookupRequest(original,'continuation-old-first')).query_status=='found'
         assert len(product.application.query_memorie_interactions().turns)==1 and not transport.calls
+
+
+def test_verify_is_read_only_and_absent_legacy_nonce_never_becomes_submission(legacy):
+    from dynamic_subject_agent.timeline import SubjectCommand
+    old_open,config,private,root=legacy
+    old=old_open(); original=send_old(old,'合成已提交的旧原话。','first'); old.close()
+    plan=prepare(config,private,root); before=files(root)
+    assert ApplicationFacade.verify_memorie_continuation(plan).status=='unavailable'
+    assert files(root)==before
+    assert ApplicationFacade.apply_memorie_continuation(plan,consent(plan)).status=='continued'
+    before=files(root)
+    assert ApplicationFacade.verify_memorie_continuation(plan).status=='verified'
+    assert files(root)==before
+    after=Transport()
+    with opening(config,private,root,after) as product:
+        absent=SubjectCommand.contribute_utterance(target_profile_id=product.profile_id,target_timeline_id=product.timeline_id,
+            declared_intent='ask-collaborator-status',utterance='合成未曾送达的旧原话。',language='zh',provenance='project-original')
+        query=product.application.lookup_subject_request(SubjectRequestLookupRequest(absent,'never-submitted-old-nonce'))
+        assert query.query_status=='not-found',query
+        mismatch=product.application.lookup_subject_request(SubjectRequestLookupRequest(absent,'continuation-old-first'))
+        assert mismatch.query_status!='found'
+        refused=product.application.submit(absent,idempotency_key='never-submitted-old-nonce')
+        assert refused.status not in ('pending','terminal')
+        assert len(product.application.query_memorie_interactions().turns)==1 and not after.calls

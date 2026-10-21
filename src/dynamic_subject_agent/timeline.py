@@ -4260,9 +4260,12 @@ class TimelineEngine:
         if type(command) is SubjectCommand and NATIVE_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.memorie_qualification_continuation import read_receipt
             receipt = read_receipt(self._writer, self._authority)
-            if receipt is None or command.payload_fingerprint not in {
-                r['fingerprint'] for r in receipt['plan']['legacy_requests']}:
-                raise PreAdmissionRejected('legacy-request-not-in-continuation', 'Only frozen original requests can be read')
+            if (receipt is None or command.target_profile_id != self._authority.profile_id
+                or command.target_timeline_id != self._authority.timeline_id):
+                raise PreAdmissionRejected('legacy-request-not-in-continuation', 'Exact continued identity required')
+            # The verified receipt closes the entire old claim set. An absent
+            # original nonce may be reported without admitting or converting
+            # the supplied speech. A found nonce still requires exact payload.
         else:
             self._validate_authority(command)
         key_digest = _validate_idempotency_key(idempotency_key)

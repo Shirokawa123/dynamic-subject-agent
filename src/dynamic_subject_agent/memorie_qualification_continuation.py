@@ -259,6 +259,32 @@ def apply(plan, consent, *, _fault_hook=None):
         return MemorieContinuationResult('failed-closed', getattr(error,'code','') or 'memorie-continuation-not-applied-or-needs-recovery', plan.plan_digest)
 
 
+def verify(plan):
+    """Read the committed receipt; never prepare, apply, lease or open a worker."""
+    if type(plan) is not MemorieContinuationPlan or plan.status != 'available':
+        return MemorieContinuationResult('unavailable', 'exact-continuation-plan-required')
+    try:
+        from dynamic_subject_agent.first_life_authorization import registry_lock
+        body = json.loads(plan.plan_json)
+        if canonical_json(body) != plan.plan_json or _digest(body) != plan.plan_digest or body['version'] != VERSION:
+            raise ValueError('plan digest differs')
+        path = Path(body['request']['state_path'])
+        with registry_lock(path):
+            record = _record(json.loads(path.read_bytes()))
+            if record.get('pending_memorie_continuation') or record.get('memorie_continuation') != plan.plan_digest:
+                return MemorieContinuationResult('unavailable', 'continuation-not-committed', plan.plan_digest)
+            if record['chat_activation'] != body['target_activation']:
+                raise ValueError('committed activation differs')
+            qri = _verify_committed(body, plan.plan_digest, record)
+            if qri.publication_key != record['publication_key']:
+                raise ValueError('committed registry differs')
+        return MemorieContinuationResult('verified', plan_digest=plan.plan_digest)
+    except FileNotFoundError:
+        return MemorieContinuationResult('unavailable', 'continuation-not-committed', plan.plan_digest)
+    except Exception:
+        return MemorieContinuationResult('failed-closed', 'continuation-verification-failed', plan.plan_digest)
+
+
 def _verify_committed(body, digest, record):
     """Reconcile a committed switch, including any later native Publications."""
     from dynamic_subject_agent.host import RuntimeHostRootRef, _connect_readonly, _BINDING_COLUMNS

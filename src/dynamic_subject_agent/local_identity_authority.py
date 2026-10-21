@@ -1227,6 +1227,11 @@ class LocalIdentityAuthority:
         from dynamic_subject_agent.memorie_qualification_continuation import apply
         return apply(plan, consent, _fault_hook=_fault_hook)
 
+    @staticmethod
+    def verify_memorie_continuation(plan):
+        from dynamic_subject_agent.memorie_qualification_continuation import verify
+        return verify(plan)
+
     def __init__(self, config: LocalProductConfig) -> None:
         if not isinstance(config, LocalProductConfig):
             raise TypeError("config must be LocalProductConfig")
