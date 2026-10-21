@@ -159,7 +159,7 @@ def _inspect(request):
         db.row_factory = sqlite3.Row
         schema = db.execute('PRAGMA user_version').fetchone()[0]
         manifest = db.execute('SELECT root_id,store_id,schema_version FROM store_manifest WHERE singleton=1').fetchone()
-        if tuple(manifest) != (timeline.root_id, timeline.timeline_store_id, schema) or schema != (10 if native else 1):
+        if tuple(manifest) != (timeline.root_id, timeline.timeline_store_id, schema) or schema not in ((10,11) if native else (1,)):
             raise ValueError('source schema differs from qualification')
         gate = dict(db.execute('SELECT * FROM admission_gate WHERE singleton=1').fetchone())
         for key in ('binding_id','binding_revision','binding_epoch','authority_scope_id','profile_id','timeline_id','qualification_id','qualification_revision','provider_authority'):

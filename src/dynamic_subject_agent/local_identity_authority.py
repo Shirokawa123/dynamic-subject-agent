@@ -1217,6 +1217,16 @@ def _registry_mutation(method):
 class LocalIdentityAuthority:
     """Small Interface over all persistent local identity authority behaviour."""
 
+    @staticmethod
+    def prepare_memorie_continuation(request):
+        from dynamic_subject_agent.memorie_qualification_continuation import prepare
+        return prepare(request)
+
+    @staticmethod
+    def apply_memorie_continuation(plan, consent, *, _fault_hook=None):
+        from dynamic_subject_agent.memorie_qualification_continuation import apply
+        return apply(plan, consent, _fault_hook=_fault_hook)
+
     def __init__(self, config: LocalProductConfig) -> None:
         if not isinstance(config, LocalProductConfig):
             raise TypeError("config must be LocalProductConfig")
@@ -1225,6 +1235,9 @@ class LocalIdentityAuthority:
 
     @_registry_mutation
     def load_active(self) -> LoadedLocalIdentity:
+        if self._config.state_path.is_file() and any(r.get('pending_memorie_continuation') for r in
+            json.loads(self._config.state_path.read_bytes()).get('identities', ())):
+            raise RuntimeError('memorie-continuation-recovery-required')
         (
             experiment_base,
             studio_location,
@@ -1270,6 +1283,8 @@ class LocalIdentityAuthority:
             (native_approval if memorie_version == NATIVE_VERSION else validate_memorie_approval)(memorie_approval)
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
         record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
+        if record.get('pending_memorie_continuation'):
+            raise RuntimeError('memorie-continuation-recovery-required')
         identity = _validate_identity_record(record, expected_parent=self._config.product_parent)
         if identity.reviewed_definition is None or identity.reviewed_definition["definition_basis"] != definition_basis:
             raise RuntimeError("reviewed-chat-definition-mismatch")

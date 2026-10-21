@@ -1,5 +1,7 @@
 # 产品架构
 
+M002另增加[显式冷资格续接](plans/memorie-qualification-continuation.md)：Facade经LocalIdentityAuthority准备完整旧前缀与另行同意，原Host/Timeline以DELETE多库事务共同切到schema11；保同身份/store/scope/旧UUID与发表，历史绑定像和请求集合仅授予有限旧读取。默认factory/普通非空换绑不隐式升级；当前用户根未应用。
+
 ### M002：梅莫莉typed点击与统一交流
 
 现有记录接入准备新增静态Facade只读元数据观察：不构造Host/Studio，不选择用户正文，不发布资格或升级数据库；只核registry/QRI元数据、唯一active binding/写者记录、gate/版本/头与计数。结果明确非完整Publication证明且`apply_supported=false`。合成旧交流格式预览、切换被拒后文件/身份/原UUID/记录恢复已有检查；不称正向升级成功，见[接入准备合同](plans/memorie-continuation-preparation.md)。

@@ -2872,7 +2872,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4,5,6,7,8,9,10) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5,6,7,8,9,10,11) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2902,7 +2902,9 @@ def _verify_store_integrity(
     *,
     expected_tables: frozenset[str],
 ) -> None:
-    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==10:
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==11:
+        expected_tables = expected_tables | {'memorie_native_input', 'memorie_qualification_continuation'}
+    elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==10:
         expected_tables = expected_tables | {'memorie_native_input'}
     if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==2:
         expected_tables=expected_tables | {'effect_receipt','effect_receipt_head'}
@@ -3407,7 +3409,7 @@ class TimelineEngine:
             )
             gate = _read_admission_gate(writer)
             authority = gate.authority
-            if (writer.execute('PRAGMA user_version').fetchone()[0] == 10) != (NATIVE_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (10,11)) != (NATIVE_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('native-contract-mismatch', 'Native interaction requires independent schema10')
             if (writer.execute('PRAGMA user_version').fetchone()[0] == 9) != ({FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents)):
                 raise AdmissionFailedClosed('integrated-contract-mismatch', 'Combined contract requires independent schema9')
@@ -3454,7 +3456,16 @@ class TimelineEngine:
         except Exception:
             writer.close()
             raise
-        return cls(location, authority, writer, _fault_hook)
+        engine = cls(location, authority, writer, _fault_hook)
+        try:
+            if writer.execute('PRAGMA user_version').fetchone()[0] == 11:
+                from dynamic_subject_agent.memorie_qualification_continuation import read_receipt
+                read_receipt(writer, authority)
+                engine._verified_publications()
+        except Exception:
+            writer.close()
+            raise
+        return engine
 
     def close(self) -> None:
         if not self._closed:
@@ -4246,7 +4257,14 @@ class TimelineEngine:
             or not isinstance(idempotency_key, str)):
             raise PreAdmissionRejected('subject-request-lookup-invalid', 'only the current bounded whole chat request can be looked up')
         type(command)(**_canonical_value(command))
-        self._validate_authority(command)
+        if type(command) is SubjectCommand and NATIVE_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.memorie_qualification_continuation import read_receipt
+            receipt = read_receipt(self._writer, self._authority)
+            if receipt is None or command.payload_fingerprint not in {
+                r['fingerprint'] for r in receipt['plan']['legacy_requests']}:
+                raise PreAdmissionRejected('legacy-request-not-in-continuation', 'Only frozen original requests can be read')
+        else:
+            self._validate_authority(command)
         key_digest = _validate_idempotency_key(idempotency_key)
         if _read_admission_gate(self._writer).authority != self._authority:
             raise AdmissionFailedClosed('subject-request-authority-unverified', 'lookup authority does not match the canonical store')
@@ -7826,11 +7844,24 @@ class TimelineEngine:
             raise ValueError('native history limit must be between 1 and 100')
         from dynamic_subject_agent.memorie_native import validate_reply
         records = []
+        legacy = None
         for outcome, command, _ in self._verified_publications():
-            if type(command) is not NativeInteractionInput:
+            if type(command) is SubjectCommand:
+                if legacy is None:
+                    from dynamic_subject_agent.memorie_qualification_continuation import read_receipt
+                    receipt = read_receipt(self._writer, self._authority)
+                    legacy = {} if receipt is None else {r['operation_id']: r for r in receipt['plan']['legacy_requests']}
+                original = legacy.get(outcome.operation_ref.operation_id)
+                if (original is None or original['fingerprint'] != command.payload_fingerprint
+                    or original['outcome_digest'] != outcome.outcome_digest):
+                    raise PublicationFailedClosed('legacy-prefix-unverified', 'Legacy speech lacks its frozen continuation proof')
+                interaction = _canonical_json(dict(kind='text', text=command.utterance))
+            elif type(command) is NativeInteractionInput:
+                validate_reply(outcome.expression.text, command.interaction)
+                interaction = command.interaction_json
+            else:
                 raise PublicationFailedClosed('native-history-input-invalid', 'Native prefix contains another input type')
-            validate_reply(outcome.expression.text, command.interaction)
-            records.append(NativeTurn(outcome.head_sequence, command.interaction_json, outcome.expression.text))
+            records.append(NativeTurn(outcome.head_sequence, interaction, outcome.expression.text))
         return tuple(records[-limit:])
 
     def native_dialogue_before(self, operation_ref, *, expected_head, enabled):

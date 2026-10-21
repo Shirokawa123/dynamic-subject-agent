@@ -1751,6 +1751,16 @@ class ApplicationFacade:
         return inspect_memorie_source(request)
 
     @staticmethod
+    def prepare_memorie_continuation(request):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.prepare_memorie_continuation(request)
+
+    @staticmethod
+    def apply_memorie_continuation(plan, consent, *, _fault_hook=None):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.apply_memorie_continuation(plan, consent, _fault_hook=_fault_hook)
+
+    @staticmethod
     def preview_original_character_whole_use_preparation(request: object):
         """Pure author review; does not create or open a product authority."""
         from dynamic_subject_agent.original_whole_use_preparation import prepare_original_whole_use

@@ -9853,7 +9853,21 @@ class SubjectStudio:
                 expected_chat = chat_contract(snapshot.reviewed_definition, qri.reviewed_chat_contract["scope_digest"], qri.reviewed_chat_contract["review_request_basis"], version=qri.reviewed_chat_contract.get('version'))
                 if expected_chat != qri.reviewed_chat_contract: raise ValueError("chat scope changed")
                 predecessor = self.query_qri(publication_key="reviewed-character-" + snapshot.reviewed_definition["definition_basis"])
-                if (predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
+                if qri.predecessor_qualification_id != predecessor.qualification_id:
+                    from dynamic_subject_agent.memorie_companion_contract import INTENT_VERSION, NATIVE_VERSION, contract
+                    predecessor = self._query_qri_by_qualification_id(qri.predecessor_qualification_id)
+                    old = predecessor.reviewed_chat_contract
+                    if (predecessor.provider_authority != CHAT_AUTHORITY or old is None
+                        or old != contract(old, old['scope_digest'], old['review_request_basis'], version=INTENT_VERSION)
+                        or expected_chat.get('version') != NATIVE_VERSION
+                        or predecessor.profile_id != qri.profile_id or predecessor.knowledge_snapshot_id != qri.knowledge_snapshot_id):
+                        raise ValueError('only exact Memorie legacy-to-native qualification continuation allowed')
+                    # This qualifies a successor only. Nonempty Timeline
+                    # Admission still requires a separate cold continuation.
+                    expected_predecessor_authority = CHAT_AUTHORITY
+                else:
+                    expected_predecessor_authority = REVIEWED_CHARACTER_AUTHORITY
+                if (predecessor.provider_authority != expected_predecessor_authority
                     or predecessor.genesis_snapshot_id != snapshot.snapshot_id
                     or qri.predecessor_qualification_id != predecessor.qualification_id):
                     raise ValueError("chat lineage changed")

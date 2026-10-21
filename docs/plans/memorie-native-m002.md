@@ -25,3 +25,6 @@ Facade使用`submit(NativeInteractionInput, idempotency_key)`、`lookup_subject_
 随后产品固定三步的合成执行器在第3步拒绝“别把计时状态说成我已经学完了”，首终态保留、0真实请求。原因是旧recent-dialogue把“别…说”一概当历史限制。仅native新增完整闭集计时/学习成果澄清例外；有历史/披露/接收方或混合指令仍沿原边界，旧S160谓词不变、policy与wire样例不变。最终native 11 passed，包含实际Facade澄清接话及拒外发/遗忘混合指令。
 
 本合同不证明原版点击命中、IL2CPP patch、原生视觉、人物自然度或隔日体验通过；实机由游戏产品沿用户“稍后更新”决定承接。此实现不开放自动活动、通知或旧资料迁移。
+
+
+后续新增[显式冷资格续接](memorie-qualification-continuation.md)：仅准确plan与另行数据升级consent可在原库建立schema11的历史资格回执；默认factory/普通rebind拒绝旧非空根的行为保持，用户根未应用。

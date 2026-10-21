@@ -6697,9 +6697,11 @@ class RuntimeHost:
                         "WHERE binding_id = ?",
                         (str(member["binding_id"]),),
                     ).fetchone()
-                    if observed is None or not _branch_governance_member_matches(
-                        member, self._binding_from_row(observed)
-                    ):
+                    matched = observed is not None and _branch_governance_member_matches(member, self._binding_from_row(observed))
+                    if observed is not None and not matched and self._binding_from_row(observed).runtime_contract_version == NATIVE_RUNTIME_CONTRACT:
+                        from dynamic_subject_agent.memorie_qualification_continuation import historical_binding
+                        matched = historical_binding(self._binding_from_row(observed), member=member) is not None
+                    if not matched:
                         raise RuntimeHostFailedClosed(
                             "binding-identity-mismatch",
                             "branch-governance member differs from its binding",
@@ -6873,6 +6875,16 @@ class RuntimeHost:
         finally:
             reader.close()
         others = tuple(self._binding_from_row(row) for row in rows)
+        from dynamic_subject_agent.memorie_qualification_continuation import historical_binding
+        continued_predecessor = historical_binding(binding) if binding.runtime_contract_version == NATIVE_RUNTIME_CONTRACT else None
+        if continued_predecessor is not None:
+            # The stable store/scope keeps original request references; only
+            # this receipt-backed historical image can establish its old QRI.
+            self._qri_for_binding(continued_predecessor)
+            if (qri.predecessor_qualification_id != continued_predecessor.qualification_id
+                or self._derive_binding_branch_classification(continued_predecessor) != _BRANCH_NORMAL):
+                raise RuntimeHostFailedClosed('memorie-continuation-lineage-invalid', 'Continuation lacks its exact normal predecessor')
+            return _BRANCH_NORMAL
         predecessor_qualification_id = qri.predecessor_qualification_id
         if predecessor_qualification_id is None:
             if binding.predecessor_binding_id is not None:
@@ -7606,7 +7618,8 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
                 store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((10,) if binding.runtime_contract_version == NATIVE_RUNTIME_CONTRACT else (9,) if binding.provider_authority in INTEGRATED_AUTHORITIES else (8,) if binding.provider_authority in FEEDBACK_AUTHORITIES else (7,) if binding.provider_authority in WORKING_AUTHORITIES else (6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+            schema = reader.execute('PRAGMA user_version').fetchone()[0]
+            if schema not in ((10,11) if binding.runtime_contract_version == NATIVE_RUNTIME_CONTRACT else (9,) if binding.provider_authority in INTEGRATED_AUTHORITIES else (8,) if binding.provider_authority in FEEDBACK_AUTHORITIES else (7,) if binding.provider_authority in WORKING_AUTHORITIES else (6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its exact qualified schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
