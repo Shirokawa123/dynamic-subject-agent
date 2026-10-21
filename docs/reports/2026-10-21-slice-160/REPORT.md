@@ -1,5 +1,19 @@
 # S160：原版HUD与文字交流整合
 
+## 独立产品迁移交付
+
+用户同日明确要求：“那拆分一个新项目，放在e盘，和当前项目并列，新开设一个项目，先把已有成果迁移过去，然后在新项目里再开一个github项目”。现已建立`E:/memorie-companion`与私有[Shirokawa123/memorie-companion](https://github.com/Shirokawa123/memorie-companion)，初始提交`730344d45332cca6372bf37106b83976af9ad151`已推送main；创建回执确认private=true。项目名称/默认私有/固定底座是助手实施选择，用户创建授权不扩大Provider或游戏数据用途。
+
+迁入16份原生插件、HTTP适配、启动/构建/安装脚本和产品检查/harness源码，并建立产品目标、架构、能力地图、决定与当前任务。`engine/`以Git子模块固定本仓`afc80123a04695b2719a38ece56b528f18c5dcd0`，未分叉另一套Domain。新源码加载只来自新项目及其engine；原源码留作历史和固定依赖，后续游戏产品代码在新项目维护。运行所需本机构建SDK/Bep及interop路径显式配置，不能称完全摆脱原本机工具目录。
+
+原review/approval/preparation/可读人物包4文件逐字节复制到忽略的`.local/qualification`；活跃canonical、身份、SQLite/聊天、草稿、凭据、游戏资源均未搬迁或发布。新入口仍由原冻结review派生原准确root/key；先独占端口再打开Host，避免端口冲突时先开第二写者。新PowerShell入口已只读复用原8798进程48972，前后PID一致；准确health/key/scope/ready与新C#显式probe通过，0发送/草稿动作。真实游戏与后端保持原进程，没有新增模型请求。
+
+本项目原生候选和C# harness从新目录构建均0警告0错误；首组36 passed/4可选C# skipped后，显式设置新harness补跑13 passed（部分重叠，含原4项跳过），全部40项均有通过结果。合成Interface/故障检查与正式只读probe分开，未向体验入口发送测试消息。两独立只读复核无剩余发现：唯一源码清单P2为NativeChatView的LF/CRLF摘要命名，已区分Git blob/初始复制/归一化源码并逐项重核16文件关闭。36个发布条目已核，私有数据、二进制、引用及token均排除。
+
+迁移M001阶段已完成，游戏后续由新项目`docs/slices/current.md`承接；本仓保共享底座与S160历史，不并行再开游戏产品工作。整个人物闭环未完成：点击/状态生成、原生Presenter共存、学习事件、长期与隔日等仍保原未达；候选15及新项目candidate-001均未安装，按用户决定保持当前游戏。新项目[迁移说明](https://github.com/Shirokawa123/memorie-companion/blob/main/docs/MIGRATION.md)记录精确来源、接口、限度和本机证据位置。
+
+以下为本日迁移前的原生改版/接通/目标澄清记录，历史终态保留。
+
 2026-10-21用户要求系统尽可能融入原版互动，新增按钮/界面贴近原版。沿此前后台约定，本轮完成原生UI改版候选、原素材离线样稿、编译/接口验证及自有DLL更新；没有启动或操作游戏，没有新增模型请求。**尚未验证真实Unity视觉与交互，不称整个游戏陪伴系统已经完成。** [开工设计与一手依据](../../research/2026-10-21-memorie-native-ui.md)保留取舍与数据边界。
 
 ## 本轮落地

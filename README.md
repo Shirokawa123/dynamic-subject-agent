@@ -1,5 +1,7 @@
 # Dynamic Subject Agent
 
+2026-10-21：梅莫莉游戏产品已独立到`E:/memorie-companion`及[私有仓库memorie-companion](https://github.com/Shirokawa123/memorie-companion)，插件与游戏整合后续在新项目维护；本仓提供固定版本的共用底座，保留S160源码/报告与原运行数据。[迁移交付](docs/reports/2026-10-21-slice-160/REPORT.md#独立产品迁移交付)只完成项目拆分，未将点击/状态生成等尚缺能力称为完成。
+
 2026-10-02：当前提供独立角色聊天试用；有来源人物、连续生活和自然分享的完整目标仍未全部实现。最新实际能力与限制见[当前工作](docs/slices/current.md)和[连续十片结果](docs/reports/2026-10-02-batch-128-137/REPORT.md)，目标见[产品定义](docs/PRODUCT.md)。
 
 ## 当前角色聊天试用
