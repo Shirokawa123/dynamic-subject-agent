@@ -1746,6 +1746,11 @@ class ApplicationFacade:
         return preview_wire(prepared, interaction, situation, exchange)
 
     @staticmethod
+    def inspect_memorie_continuation_source(request):
+        from dynamic_subject_agent.memorie_continuation import inspect_memorie_source
+        return inspect_memorie_source(request)
+
+    @staticmethod
     def preview_original_character_whole_use_preparation(request: object):
         """Pure author review; does not create or open a product authority."""
         from dynamic_subject_agent.original_whole_use_preparation import prepare_original_whole_use

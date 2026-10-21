@@ -2,6 +2,8 @@
 
 ### M002：梅莫莉typed点击与统一交流
 
+现有记录接入准备新增静态Facade只读元数据观察：不构造Host/Studio，不选择用户正文，不发布资格或升级数据库；只核registry/QRI元数据、唯一active binding/写者记录、gate/版本/头与计数。结果明确非完整Publication证明且`apply_supported=false`。合成旧交流格式预览、切换被拒后文件/身份/原UUID/记录恢复已有检查；不称正向升级成功，见[接入准备合同](plans/memorie-continuation-preparation.md)。
+
 游戏产品M002获准确新用途批准后，共用底座增加独立native qualification/schema10及NativeInteractionInput，点击没有伪造用户原话；同一Timeline原子发表、typed历史/只读原请求/冷恢复沿既有Facade/Authority/Runtime/Gateway。五字段精确投影和原样例hash、单次审计及history/identity终审隔离旧S160；旧root不自动升级。具体范围、Interface、来源比较和验证见[合同](plans/memorie-native-m002.md)。当前游戏和真实用户canonical未切换，实机与人物效果由独立产品验证。
 
 ### Slice-160：独立梅莫莉聊天资格与游戏面板
