@@ -56,6 +56,7 @@ from dynamic_subject_agent.timeline import (
 from dynamic_subject_agent.participant_goals import ParticipantGoalCommitmentRecord
 from dynamic_subject_agent.subject_tasks import SubjectTaskCommand, SubjectTaskRecord, TASK_INTENT
 from dynamic_subject_agent.text_artifacts import TextSaveApproval, TextArtifactResponse, TEXT_EFFECT_INTENT
+from dynamic_subject_agent.memorie_native import NativeInteractionInput
 from dynamic_subject_agent.situated_state import SituatedStateRecord, usable_state
 from dynamic_subject_agent.medium_state import MediumStateRecord
 from dynamic_subject_agent.knowledge_entries import KnowledgeEntry
@@ -525,7 +526,7 @@ class _ApplicationRouter:
         idempotency_key: str,
     ) -> ApplicationOperationResponse:
         self._require_open()
-        if type(command) is not SubjectCommand:
+        if type(command) not in (SubjectCommand, NativeInteractionInput):
             return _unavailable("typed-subject-command-required")
         if (
             command.target_profile_id != self._binding.profile_id
@@ -573,7 +574,7 @@ class _ApplicationRouter:
 
     def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
         self._require_open()
-        if type(request) is not SubjectRequestLookupRequest or type(request.command) is not SubjectCommand:
+        if type(request) is not SubjectRequestLookupRequest or type(request.command) not in (SubjectCommand, NativeInteractionInput):
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
                 problem=ApplicationProblemView('typed-subject-request-lookup-required'))
         command = request.command
@@ -586,13 +587,13 @@ class _ApplicationRouter:
         except Exception:
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.FAILED_CLOSED,
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
-        if (self._binding.provider_authority not in WHOLE_AUTHORITIES and not memorie or command.declared_intent != 'ask-collaborator-status'
+        if (self._binding.provider_authority not in WHOLE_AUTHORITIES and not memorie or command.declared_intent != ('memorie-native-interaction' if type(command) is NativeInteractionInput else 'ask-collaborator-status')
             or command.language != 'zh' or command.provenance != 'project-original' or len(command.utterance) > 1000
             or not isinstance(request.idempotency_key, str)):
             return SubjectRequestLookupResponse(SubjectRequestLookupStatus.UNAVAILABLE,
                 problem=ApplicationProblemView('subject-request-lookup-invalid'))
         try:
-            SubjectCommand(**asdict(command))
+            type(command)(**asdict(command))
             observed = self._host.lookup_subject_request(self._binding, command, request.idempotency_key)
             if observed is None:
                 return SubjectRequestLookupResponse(SubjectRequestLookupStatus.NOT_FOUND,
@@ -618,6 +619,17 @@ class _ApplicationRouter:
             return self._host.query_shared_activity(self._binding, request=request)
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='shared-state-unverified')
+
+    def query_memorie_interactions(self, *, limit=20):
+        self._require_open()
+        from dynamic_subject_agent.memorie_native import NativeDialogueBasis
+        try:
+            with self._lease() as lease:
+                return NativeDialogueBasis('available', lease.list_native_interactions(limit=limit))
+        except (PreAdmissionRejected, RuntimeHostRejected, ValueError):
+            return NativeDialogueBasis('unavailable')
+        except Exception:
+            return NativeDialogueBasis('failed-closed')
 
     def _working_request_valid(self, request):
         from dynamic_subject_agent.working_understanding import WorkingUnderstandingRequest, validate_sources
@@ -1634,6 +1646,9 @@ class ApplicationFacade:
     def lookup_subject_request(self, request: object) -> SubjectRequestLookupResponse:
         return self.__router.lookup_subject_request(request)
 
+    def query_memorie_interactions(self, *, limit=20):
+        return self.__router.query_memorie_interactions(limit=limit)
+
     def query_shared_activity(self, request=None):
         return self.__router.query_shared_activity(request)
 
@@ -1724,6 +1739,11 @@ class ApplicationFacade:
     def preview_memorie_companion_message(prepared: object, message: str, exchange=(), *, contract_version=None):
         from dynamic_subject_agent.memorie_companion_preparation import preview_memorie_wire
         return preview_memorie_wire(prepared, message, exchange, contract_version=contract_version)
+
+    @staticmethod
+    def preview_memorie_native_message(prepared, interaction, situation, exchange=()):
+        from dynamic_subject_agent.memorie_native import preview_wire
+        return preview_wire(prepared, interaction, situation, exchange)
 
     @staticmethod
     def preview_original_character_whole_use_preparation(request: object):

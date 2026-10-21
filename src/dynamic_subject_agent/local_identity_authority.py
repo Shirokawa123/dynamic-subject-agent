@@ -87,11 +87,13 @@ def _reviewed_chat_ledger(metadata, *, initialize=False):
     if metadata['contract'].get('version') in MEMORIE_VERSIONS:
         if set(metadata) != {'contract', 'audit_path', 'approval'}:
             raise RuntimeError('memorie-activation-metadata-invalid')
-        validate_memorie_approval(metadata['approval'])
-        if metadata['contract'] != memorie_contract(metadata['contract'], MEMORIE_SCOPE, MEMORIE_USE_REVIEW,
+        from dynamic_subject_agent.memorie_native import VERSION as NATIVE_VERSION, validate_approval as native_approval, NativeCallAudit
+        native = metadata['contract']['version'] == NATIVE_VERSION
+        (native_approval if native else validate_memorie_approval)(metadata['approval'])
+        if metadata['contract'] != memorie_contract(metadata['contract'], metadata['contract']['scope_digest'], metadata['contract']['review_request_basis'],
             version=metadata['contract']['version']):
             raise RuntimeError('memorie-activation-contract-invalid')
-        return MemorieCallAudit(Path(metadata['audit_path']), initialize=initialize)
+        return (NativeCallAudit if native else MemorieCallAudit)(Path(metadata['audit_path']), initialize=initialize)
     if set(metadata) != {'contract', 'budget_path', 'budget_total', 'initial_budget_used'}:
         raise RuntimeError('reviewed-chat-activation-metadata-invalid')
     return CharacterChatBudget(Path(metadata['budget_path']), total=metadata['budget_total'],
@@ -1264,7 +1266,8 @@ class LocalIdentityAuthority:
         if memorie_version not in MEMORIE_VERSIONS or memorie_approval is None and memorie_version != MEMORIE_VERSION:
             raise ValueError('exact Memorie version and approval required')
         if memorie_approval is not None:
-            validate_memorie_approval(memorie_approval)
+            from dynamic_subject_agent.memorie_native import VERSION as NATIVE_VERSION, validate_approval as native_approval
+            (native_approval if memorie_version == NATIVE_VERSION else validate_memorie_approval)(memorie_approval)
         state = _state_v2(json.loads(self._config.state_path.read_text(encoding="utf-8")))
         record = next(item for item in state["identities"] if item["identity_id"] == state["active_identity_id"])
         identity = _validate_identity_record(record, expected_parent=self._config.product_parent)

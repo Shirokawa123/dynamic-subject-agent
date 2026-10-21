@@ -1,5 +1,9 @@
 # 产品架构
 
+### M002：梅莫莉typed点击与统一交流
+
+游戏产品M002获准确新用途批准后，共用底座增加独立native qualification/schema10及NativeInteractionInput，点击没有伪造用户原话；同一Timeline原子发表、typed历史/只读原请求/冷恢复沿既有Facade/Authority/Runtime/Gateway。五字段精确投影和原样例hash、单次审计及history/identity终审隔离旧S160；旧root不自动升级。具体范围、Interface、来源比较和验证见[合同](plans/memorie-native-m002.md)。当前游戏和真实用户canonical未切换，实机与人物效果由独立产品验证。
+
 ### Slice-160：独立梅莫莉聊天资格与游戏面板
 
 同日用户最终目标进一步明确为角色点击、当前状态、统一语言生成与原生呈现的整体融合，见[整链设计](plans/memorie-companion-integration.md#2026-10-21最终目标与整条互动链)。这是目标设计，当前合同仍仅已批文字聊天；没有启用点击触发、游戏状态投影、自动动作或新人物记忆写入。纯图标candidate15已备，用户明确保持当前游戏、稍后更新，当前已装14不变。

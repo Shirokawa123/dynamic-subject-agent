@@ -1226,6 +1226,9 @@ class SubjectRuntime:
                 fault_hook=lambda stage:self._hit(RuntimeFaultPoint.AFTER_EFFECT_FILE,ref) if stage=='after-file' else None)
             self._engine._append_effect_receipt(preview,ref,result)
 
+    def list_native_interactions(self, *, limit=20):
+        return self._engine.list_native_interactions(limit=limit)
+
     def list_conversation_turns(
         self,
         *,

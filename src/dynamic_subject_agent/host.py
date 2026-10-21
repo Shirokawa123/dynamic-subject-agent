@@ -105,6 +105,7 @@ from dynamic_subject_agent.runtime_identity import RuntimeIdentityProjection
 from dynamic_subject_agent.reviewed_character_definition import REVIEWED_CHARACTER_AUTHORITY
 from dynamic_subject_agent.first_life import LIFE_AUTHORITY, LIFE_DORMANT_AUTHORITY, LIFE_RUNTIME_CONTRACT, LIFE_SYSTEM_INTENT
 from dynamic_subject_agent.first_life_cognition import FirstLifeCognition, FirstLifeDormantCognition
+from dynamic_subject_agent.memorie_native import INTENT as NATIVE_INTENT, RUNTIME_CONTRACT as NATIVE_RUNTIME_CONTRACT, VERSION as NATIVE_VERSION
 from dynamic_subject_agent.reviewed_character_chat import CHAT_AUTHORITY
 from dynamic_subject_agent.original_whole_chat import WHOLE_AUTHORITY, WHOLE_AUTHORITIES
 from dynamic_subject_agent.whole_context_boundary import CONTEXT_AUTHORITY, CONTEXT_RUNTIME_CONTRACT, CONTEXT_INTENT
@@ -148,6 +149,8 @@ TEXT_EFFECT_INTENTS = (*SUBJECT_TASK_INTENTS, 'confirmed-text-save-v1')
 
 
 def _intents_for_contract(version: str) -> tuple[str, ...]:
+    if version == NATIVE_RUNTIME_CONTRACT:
+        return (*ALLOWED_INTENTS, NATIVE_INTENT)
     if version == INTEGRATED_RUNTIME_CONTRACT:
         return (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT, LIVING_INTENT)
     if version == FEEDBACK_RUNTIME_CONTRACT:
@@ -172,6 +175,8 @@ def _intents_for_contract(version: str) -> tuple[str, ...]:
 
 
 def _contract_for_intents(intents: tuple[str, ...]) -> str:
+    if intents == (*ALLOWED_INTENTS, NATIVE_INTENT):
+        return NATIVE_RUNTIME_CONTRACT
     if intents == (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT, LIVING_INTENT):
         return INTEGRATED_RUNTIME_CONTRACT
     if intents == (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT):
@@ -677,6 +682,7 @@ class _CognitionAssemblySlot:
                 "QRI and cognition do not form one exact supported slot",
             )
         from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
+        cognition.supports_native_interaction = (qri.provider_authority == CHAT_AUTHORITY and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == NATIVE_VERSION)
         cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
             and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS)
         return cls(
@@ -1182,6 +1188,7 @@ class _CognitionAssembly:
             cognition = self._single_cognition
             if cognition.provider_authority == qri.provider_authority:
                 from dynamic_subject_agent.memorie_companion_contract import VERSIONS as MEMORIE_VERSIONS
+                cognition.supports_native_interaction = (qri.provider_authority == CHAT_AUTHORITY and qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') == NATIVE_VERSION)
                 cognition._memorie_qualified = (qri.provider_authority == CHAT_AUTHORITY
                     and qri.reviewed_chat_contract is not None
                     and qri.reviewed_chat_contract.get('version') in MEMORIE_VERSIONS)
@@ -3469,6 +3476,13 @@ class RuntimeLease:
             active_only=active_only,
             limit=limit,
         )
+
+    def list_native_interactions(self, *, limit=20):
+        self._require_active()
+        self._host._require_binding_permit(self.binding)
+        if self.binding.runtime_contract_version != NATIVE_RUNTIME_CONTRACT:
+            raise RuntimeHostRejected('native-history-unavailable', 'Native qualification required')
+        return self._lane.worker.call('list_native_interactions', limit=limit)
 
     def list_conversation_turns(
         self,
@@ -6971,7 +6985,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=timeline_id,
-            allowed_intents=((*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT, LIVING_INTENT) if getattr(cognition, 'supports_integrated_character', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT) if getattr(cognition, 'supports_natural_feedback', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, WORKING_INTENT) if getattr(cognition, 'supports_working_understanding', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, LIVING_INTENT) if getattr(cognition, "supports_living_activity", False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT) if getattr(cognition, "supports_shared_activity", False) else (*ALLOWED_INTENTS, CONTEXT_INTENT) if getattr(cognition, "supports_whole_context", False) else (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT) if getattr(cognition, "supports_first_life", False) else TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
+            allowed_intents=((*ALLOWED_INTENTS, NATIVE_INTENT) if getattr(cognition, 'supports_native_interaction', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT, LIVING_INTENT) if getattr(cognition, 'supports_integrated_character', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, FEEDBACK_INTENT) if getattr(cognition, 'supports_natural_feedback', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, WORKING_INTENT) if getattr(cognition, 'supports_working_understanding', False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT, LIVING_INTENT) if getattr(cognition, "supports_living_activity", False) else (*ALLOWED_INTENTS, CONTEXT_INTENT, SHARED_INTENT) if getattr(cognition, "supports_shared_activity", False) else (*ALLOWED_INTENTS, CONTEXT_INTENT) if getattr(cognition, "supports_whole_context", False) else (*ALLOWED_INTENTS, LIFE_SYSTEM_INTENT) if getattr(cognition, "supports_first_life", False) else TEXT_EFFECT_INTENTS if getattr(cognition,'supports_text_effects',False) else SUBJECT_TASK_INTENTS if getattr(cognition,"supports_subject_tasks",False) else ALLOWED_INTENTS),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=1,
@@ -7083,7 +7097,7 @@ class RuntimeHost:
             ),
             profile_id=qri.profile_id,
             timeline_id=active.timeline_id,
-            allowed_intents=_intents_for_contract(active.runtime_contract_version),
+            allowed_intents=_intents_for_contract(NATIVE_RUNTIME_CONTRACT if getattr(successor_cognition, 'supports_native_interaction', False) else active.runtime_contract_version),
             allowed_provenance=ALLOWED_PROVENANCE,
             binding_id=binding_id,
             binding_revision=revision,
@@ -7369,7 +7383,7 @@ class RuntimeHost:
             expected != (str(row[23]), str(row[24]), str(row[25]))
             or binding.runtime_kind != RUNTIME_KIND
             or binding.provider_authority not in _SUPPORTED_PROVIDER_AUTHORITIES
-            or binding.runtime_contract_version not in {RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION, LIFE_RUNTIME_CONTRACT, CONTEXT_RUNTIME_CONTRACT, SHARED_RUNTIME_CONTRACT, LIVING_RUNTIME_CONTRACT, WORKING_RUNTIME_CONTRACT, FEEDBACK_RUNTIME_CONTRACT, INTEGRATED_RUNTIME_CONTRACT}
+            or binding.runtime_contract_version not in {NATIVE_RUNTIME_CONTRACT, RUNTIME_CONTRACT_VERSION, SUBJECT_TASK_CONTRACT_VERSION, TEXT_EFFECT_CONTRACT_VERSION, LIFE_RUNTIME_CONTRACT, CONTEXT_RUNTIME_CONTRACT, SHARED_RUNTIME_CONTRACT, LIVING_RUNTIME_CONTRACT, WORKING_RUNTIME_CONTRACT, FEEDBACK_RUNTIME_CONTRACT, INTEGRATED_RUNTIME_CONTRACT}
             or binding.studio_root_id != self._studio_location.root_id
             or binding.studio_store_id != self._studio_location.profile_store_id
             or binding.host_root_id != self._location.root_id
@@ -7592,7 +7606,7 @@ class RuntimeHost:
             reader.execute('BEGIN')
             _verify_timeline_manifest(reader, root_id=location.root_id, store_id=location.timeline_store_id,
                 store_kind='timeline', schema_family=TIMELINE_SCHEMA_FAMILY)
-            if reader.execute('PRAGMA user_version').fetchone() != ((9,) if binding.provider_authority in INTEGRATED_AUTHORITIES else (8,) if binding.provider_authority in FEEDBACK_AUTHORITIES else (7,) if binding.provider_authority in WORKING_AUTHORITIES else (6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
+            if reader.execute('PRAGMA user_version').fetchone() != ((10,) if binding.runtime_contract_version == NATIVE_RUNTIME_CONTRACT else (9,) if binding.provider_authority in INTEGRATED_AUTHORITIES else (8,) if binding.provider_authority in FEEDBACK_AUTHORITIES else (7,) if binding.provider_authority in WORKING_AUTHORITIES else (6,) if binding.provider_authority in LIVING_AUTHORITIES else (5,) if binding.provider_authority in SHARED_AUTHORITIES else (4,) if binding.provider_authority == CONTEXT_AUTHORITY else (1,)):
                 raise RuntimeHostFailedClosed('subject-request-schema-unverified', 'whole request lookup requires its exact qualified schema')
             _verify_timeline_store_integrity(reader, expected_tables=_TIMELINE_TABLES)
             authority = self._authority_for_binding(binding)
@@ -7615,7 +7629,7 @@ class RuntimeHost:
         from dynamic_subject_agent.memorie_companion_contract import VERSIONS, contract, SCOPE, USE_REVIEW
         qri = self._qri_for_binding(binding)
         return (qri.reviewed_chat_contract is not None and qri.reviewed_chat_contract.get('version') in VERSIONS
-            and qri.reviewed_chat_contract == contract(qri.reviewed_chat_contract, SCOPE, USE_REVIEW,
+            and qri.reviewed_chat_contract == contract(qri.reviewed_chat_contract, qri.reviewed_chat_contract['scope_digest'], qri.reviewed_chat_contract['review_request_basis'],
                 version=qri.reviewed_chat_contract['version']))
 
     def _read_shared_activity(self, binding, request=None):

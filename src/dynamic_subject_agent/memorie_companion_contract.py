@@ -14,7 +14,8 @@ from dynamic_subject_agent.development_model_calls import DevelopmentCallAudit
 VERSION = 'memorie-companion-chat-s160-1'
 ATTRIBUTION_VERSION = 'memorie-companion-attribution-s160-2'
 INTENT_VERSION = 'memorie-companion-intent-s160-3'
-VERSIONS = (VERSION, ATTRIBUTION_VERSION, INTENT_VERSION)
+NATIVE_VERSION = 'memorie-native-interaction-m002-1'
+VERSIONS = (VERSION, ATTRIBUTION_VERSION, INTENT_VERSION, NATIVE_VERSION)
 DEFINITION = '00c2a880579c2aa920f6c7c3440efe4d88a311bc2431523765bfb2e201eca2e2'
 ASSET = '3cb87a26c47ca7f8bd34bd97c3e4a997eb254f00e6cc9fca136beb95382772a4'
 REVIEW = '88ae7f75f194ccfc3cf5b34e12f8a1d83b5c6ed908e31ee4650db17c90924496'
@@ -52,6 +53,9 @@ def policy(version=VERSION):
 
 
 def contract(envelope, scope_digest, review_request_basis, *, version=VERSION):
+    if version == NATIVE_VERSION:
+        from dynamic_subject_agent.memorie_native import contract as native_contract
+        return native_contract(envelope, scope_digest, review_request_basis)
     selected_policy = policy(version)
     if (envelope['definition_basis'] != DEFINITION or envelope['runtime_asset_sha'] != ASSET
         or scope_digest != SCOPE or review_request_basis != USE_REVIEW):
@@ -127,7 +131,7 @@ def projection(envelope, message, dialogue, history_enabled, *, version=VERSION)
 
 
 def wire(value):
-    if type(value) is not MemorieReplyProjection or len(value.payload_json.encode()) > 60000:
+    if type(value) is not MemorieReplyProjection or value.version == NATIVE_VERSION or len(value.payload_json.encode()) > 60000:
         raise ValueError('typed bounded Memorie projection required')
     payload = json.loads(value.payload_json)
     if (set(payload) != {'character', 'personality', 'exchange', 'current_message'}

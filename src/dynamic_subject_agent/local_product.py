@@ -1048,10 +1048,13 @@ def open_memorie_companion_product(config, *, approval_path, audit_path, contrac
     from dynamic_subject_agent.memorie_companion_cognition import MemorieCompanionSession
     from dynamic_subject_agent.memorie_companion_provider import DeepSeekMemorieAdapter
     from dynamic_subject_agent.reviewed_character_chat_cognition import ReviewedCharacterChatCognition
-    approval = load_approval(approval_path)
     contract_version = VERSION if contract_version is None else contract_version
     if contract_version not in VERSIONS:
         raise ValueError('unknown Memorie technical version')
+    from dynamic_subject_agent.memorie_native import VERSION as NATIVE_VERSION
+    if contract_version == NATIVE_VERSION:
+        from dynamic_subject_agent.memorie_native import load_approval, SCOPE, REVIEW as USE_REVIEW, NativeCallAudit as MemorieCallAudit
+    approval = load_approval(approval_path)
     authority = LocalIdentityAuthority(config)
     loaded = authority.activate_reviewed_chat(definition_basis=DEFINITION, scope_digest=SCOPE,
         review_request_basis=USE_REVIEW, budget_path=audit_path, memorie_approval=approval, memorie_version=contract_version)
@@ -1067,6 +1070,13 @@ def open_memorie_companion_product(config, *, approval_path, audit_path, contrac
     product = _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
     product._memorie_composition_witness = loaded.qri.reviewed_chat_contract
     return product
+
+
+def open_memorie_native_product(config, *, approval_path, audit_path, _transport=None):
+    """Open an independently qualified native lane; never upgrades an S160 root."""
+    from dynamic_subject_agent.memorie_native import VERSION
+    return open_memorie_companion_product(config, approval_path=approval_path, audit_path=audit_path,
+        contract_version=VERSION, _transport=_transport)
 
 
 def open_reviewed_character_chat_product(config, *, definition_basis, scope_digest, review_request_basis,

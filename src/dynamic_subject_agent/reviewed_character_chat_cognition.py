@@ -31,6 +31,10 @@ class ReviewedCharacterChatCognition(CognitionEngine):
 
     def preflight(self, *, context, command):
         if self.gateway is None: raise PreAdmissionRejected("reviewed-character-chat-unavailable", "The character chat provider is not assembled.")
+        if getattr(self, 'supports_native_interaction', False):
+            from dynamic_subject_agent.memorie_native import NativeInteractionInput
+            if type(command) is not NativeInteractionInput:
+                raise PreAdmissionRejected('typed-native-input-required', 'Native input cannot impersonate speech')
         if command.language != "zh" or len(command.utterance) > 1000:
             raise PreAdmissionRejected("reviewed-character-message-invalid", "Chinese character messages accept at most 1000 characters.")
     def _call(self, plan, stage, projection):

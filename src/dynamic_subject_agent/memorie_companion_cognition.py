@@ -24,11 +24,17 @@ class MemorieCompanionSession:
 
     def propose(self, engine, *, plan, context, command, basis):
         self._publication = None
+        from dynamic_subject_agent.memorie_companion_contract import NATIVE_VERSION
+        native = self.contract['version'] == NATIVE_VERSION
+        projection_fn, wire_fn, purpose, task_kind = projection, wire, PURPOSE, ModelTaskKind.MEMORIE_COMPANION_REPLY
+        if native:
+            from dynamic_subject_agent.memorie_native import projection as projection_fn, wire as wire_fn, PURPOSE as purpose
+            task_kind = ModelTaskKind.MEMORIE_NATIVE_REPLY
         try:
             authorization = self.authorization()
             dialogue = context.load_character_dialogue(authorization['history_enabled'])
-            payload = projection(self.envelope, command.utterance, dialogue, authorization['history_enabled'],
-                version=self.contract['version'])
+            payload = (projection_fn(self.envelope, command, dialogue, authorization['history_enabled']) if native else
+                projection_fn(self.envelope, command.utterance, dialogue, authorization['history_enabled'], version=self.contract['version']))
         except Exception:
             raise CognitionFailedClosed('history', 'memorie-history-unverified', 'The current committed dialogue could not be verified.') from None
         # A retry with another attempt ID must not redeliver the same operation.
@@ -36,11 +42,15 @@ class MemorieCompanionSession:
         claimed = False
         try:
             with self.guard(authorization):
-                self.audit.claim(operation, sha256(wire(payload)).hexdigest(), purpose=PURPOSE,
+                self.audit.claim(operation, sha256(wire_fn(payload)).hexdigest(), purpose=purpose,
                     run_digest=authorization['contract_digest'])
                 claimed = True
-                value = self.gateway.execute(ModelTask(ModelTaskKind.MEMORIE_COMPANION_REPLY, payload)).value
-                text = validate_reply(value)
+                value = self.gateway.execute(ModelTask(task_kind, payload)).value
+                if native:
+                    from dynamic_subject_agent.memorie_native import validate_reply as native_reply
+                    text = native_reply(value, command.interaction)
+                else:
+                    text = validate_reply(value)
             self.audit.record(operation, status='complete', output_digest=sha256(text.encode()).hexdigest())
         except Exception as error:
             safe = (REVIEW_DIAGNOSTIC_CODES - {'review-schema', 'review-quote', 'review-label'}) | {
