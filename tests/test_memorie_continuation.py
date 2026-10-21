@@ -52,7 +52,8 @@ def test_inspection_reads_only_metadata_and_opens_no_host_or_studio(legacy, monk
     monkeypatch.setattr(SubjectStudio, 'open', lambda *a, **k: pytest.fail('inspection opened writable Studio'))
     connect = host._connect_readonly
     allowed = {'qri_publication', 'host_manifest', 'runtime_authority_binding', 'runtime_instance_lease',
-        'timeline_registration', 'store_manifest', 'admission_gate', 'timeline_head', 'subject_operation', 'timeline_outcome', 'subject_event'}
+        'timeline_registration', 'store_manifest', 'admission_gate', 'timeline_head', 'subject_operation',
+        'operation_publication_state', 'operation_failure', 'timeline_outcome', 'subject_event'}
     def readonly(path):
         db = connect(path)
         def authorize(action, table, *rest):
@@ -65,6 +66,8 @@ def test_inspection_reads_only_metadata_and_opens_no_host_or_studio(legacy, monk
     metadata = json.loads(result.metadata_json)
     assert metadata['head_sequence'] == metadata['publication_count'] == 1
     assert metadata['schema_version'] == 1 and metadata['first_subject_event_sealed'] is True
+    assert metadata['operation_counts'] == {'completed': 1}
+    assert metadata['admission_record_counts'] == {'admitted-pending': 1}
     assert metadata['transcript_read'] is False and 'SYNTHETIC_PRIVATE_OLD_TEXT' not in result.metadata_json
     assert result.apply_supported is False and result.publication_prefix_verified is False
     assert 'nonempty-timeline-binding-sealed' in metadata['blockers']
@@ -90,6 +93,25 @@ def test_native_source_is_a_noop_without_any_requalification(native):
     assert result.status == 'no-op', result
     assert json.loads(result.metadata_json)['schema_version'] == 10
     assert not result.apply_supported and files(root) == before
+
+
+def test_a_lagging_seal_flag_does_not_make_nonempty_history_eligible(legacy):
+    opening, config, _, root = legacy
+    product = opening(); send_old(product, '合成已有事件。', 'sealed')
+    product.close()
+    state = json.loads(config.state_path.read_bytes())
+    record = next(r for r in state['identities'] if r['identity_id'] == state['active_identity_id'])
+    path = Path(record['host_location']['root_path']) / 'control/host.sqlite3'
+    with sqlite3.connect(path) as db:
+        db.execute("UPDATE runtime_authority_binding SET first_subject_event_sealed=0 WHERE state='active' AND profile_id=?",
+            (record['identity_id'],))
+    before = files(root)
+    result = ApplicationFacade.inspect_memorie_continuation_source(MemorieSourceInspectionRequest(config.state_path, config.product_parent))
+    assert result.status == 'available', result
+    metadata = json.loads(result.metadata_json)
+    assert metadata['first_subject_event_sealed'] is False and metadata['subject_event_count'] == 1
+    assert 'nonempty-timeline-binding-sealed' in metadata['blockers'] and result.apply_supported is False
+    assert files(root) == before
 
 
 def test_legacy_history_can_be_typed_for_preview_but_failed_upgrade_preserves_records_and_requests(legacy):

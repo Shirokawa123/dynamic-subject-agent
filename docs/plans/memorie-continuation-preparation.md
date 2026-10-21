@@ -23,3 +23,5 @@ SQLite机制按context7-mcp核[官方URI参数](https://www.sqlite.org/capi3ref.
 两条合成旧交流可经Facade审阅为typed `kind=text`，新点击仍无text；这仅证明格式可以表达，不是把外部历史注入运行资格。尝试native factory被activation-conflict拒绝，旧文件不变；重开旧入口仍同identity/Timeline、旧UUID只读查询与原记录逐值保持、0额外模型请求。此为兼容与拒绝后恢复检查，不是schema1→10正向升级或回滚成功。
 
 下一工程需设计并实现适用于非空Memorie Timeline的显式资格续接/历史读取合同，再验证成功与中断恢复；完成准确可执行变更方案后才承接用户数据变更批准。本观察不可作为该方案的替代。
+
+实际产品首观察提示两个容易混淆的元数据：Host封存flag可能尚未同步，但Timeline已有事件时仍必须按非空处理；Admission原始行固定为admitted-pending，不能作为当前操作状态。观察v2沿正式query的Publication/Failure来源统计当前状态，原Admission计数另列；初观察文件保留，不把观察器的统计误差说成用户有未完成请求。合成检查补强完成态统计和滞后封存flag，当前5项通过；精确源文件路径仅留本机观察，不作为迁移前静止文件摘要。

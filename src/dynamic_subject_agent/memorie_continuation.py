@@ -166,19 +166,37 @@ def _inspect(request):
             if gate[key] != binding[key]:
                 raise ValueError('source gate differs from binding')
         head = db.execute('SELECT head_sequence,hex(published_outcome_digest) FROM timeline_head WHERE singleton=1').fetchone()
-        operations = dict(db.execute('SELECT operation_state,COUNT(*) FROM subject_operation GROUP BY operation_state').fetchall())
+        admissions = dict(db.execute('SELECT operation_state,COUNT(*) FROM subject_operation GROUP BY operation_state').fetchall())
+        # Admission rows are immutable and remain admitted-pending after a
+        # successful Publication. Follow the existing query() terminal sources.
+        operations = dict(db.execute('''SELECT CASE
+            WHEN publication.operation_id IS NOT NULL AND failure.operation_id IS NOT NULL THEN 'conflict'
+            WHEN publication.operation_id IS NOT NULL THEN publication.operation_state
+            WHEN failure.operation_id IS NOT NULL THEN 'failed-closed'
+            ELSE 'admitted-pending' END AS state, COUNT(*)
+            FROM subject_operation operation
+            LEFT JOIN operation_publication_state publication USING(operation_id)
+            LEFT JOIN operation_failure failure USING(operation_id)
+            GROUP BY state''').fetchall())
+        if 'conflict' in operations:
+            raise ValueError('source has conflicting terminal metadata')
         count, first, last = db.execute('SELECT COUNT(*),MIN(head_sequence),MAX(head_sequence) FROM timeline_outcome').fetchone()
         if count != head[0] or count and (first != 1 or last != count):
             raise ValueError('source head count differs')
         events = db.execute('SELECT COUNT(*) FROM subject_event').fetchone()[0]
-        metadata = dict(version='memorie-source-observation-m002-1', identity_id=record['identity_id'],
+        metadata = dict(version='memorie-source-observation-m002-2', identity_id=record['identity_id'],
             timeline_id=record['timeline_id'], scope_key=sha256((record['identity_id'] + ':' + record['timeline_id']).encode()).hexdigest(),
             contract_version=grant['version'], binding_id=binding['binding_id'], authority_scope_id=binding['authority_scope_id'],
             qualification_id=publication[0], qri_integrity_digest=publication[2],
+            source_files=dict(registry=str(state_path), studio_database=str(studio.profile_database),
+                host_database=str(host.control_database), timeline_control_database=str(timeline.control_database),
+                timeline_database=str(timeline.timeline_database)),
             timeline_path=str(timeline.timeline_database), schema_version=schema, head_sequence=head[0],
             published_outcome_digest=str(head[1]).lower(), publication_count=count, subject_event_count=events,
             first_subject_event_sealed=bool(binding['first_subject_event_sealed']), gate_state=gate['gate_state'],
-            operation_counts=operations, writer_leases=[dict(r) for r in leases], history_enabled=record['history_enabled'],
+            operation_counts=operations, admission_record_counts=admissions,
+            operation_counts_basis='publication-or-failure-else-admission',
+            writer_leases=[dict(r) for r in leases], history_enabled=record['history_enabled'],
             history_revision=record.get('history_revision'), identity_revision=state.get('chat_identity_revision'),
             registry_sha256=sha256(before).hexdigest(), transcript_read=False,
             qualification_metadata_checked=True, publication_prefix_verified=False,
