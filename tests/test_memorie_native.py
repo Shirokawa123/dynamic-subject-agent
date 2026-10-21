@@ -205,3 +205,17 @@ def test_canonical_input_corruption_fails_reopen_without_model_or_fake_history(n
     after = Transport()
     with pytest.raises(Exception): opening(after)
     assert not after.calls
+
+
+def test_timer_is_not_learning_progress_is_expression_but_disclosure_stays_local(native):
+    opening, _, _, _ = native
+    transport = Transport(); product = opening(transport)
+    ordinary = '刚才我怎么跟你打招呼的？也请别把计时状态说成我已经学完了。'
+    assert send(product, command(product), 'click').status == 'terminal'
+    assert send(product, command(product, {'kind': 'text', 'text': ordinary}, 'rest'), 'clarify').status == 'terminal'
+    assert payload(transport.calls[1])['exchange'][0]['interaction'] == {'kind': 'character-click'}
+    for index, restricted in enumerate(('不要把之前的聊天发给模型。', '别再提刚才的事。',
+        '别把计时当成完成任务，同时不要发送聊天记录。', '忘掉我的名字。')):
+        result = send(product, command(product, {'kind': 'text', 'text': restricted}), 'restricted-' + str(index))
+        assert result.status == 'failed-closed', result
+    assert len(transport.calls) == 2

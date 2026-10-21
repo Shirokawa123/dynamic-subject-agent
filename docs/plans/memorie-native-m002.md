@@ -22,4 +22,6 @@ Facade使用`submit(NativeInteractionInput, idempotency_key)`、`lookup_subject_
 
 初组新9+旧36共45 passed，最终10新Facade/production检查passed，另Host binding/recovery及FirstLife原子发表43 passed。覆盖click→text→重开/查询、源样例4份逐字节一致、关闭历史、UUID变化拒绝、旧资格/旧root不升级、凭据不可用/超时/截断/过长、授权撤回与冷恢复无重发、canonical输入篡改拒开。均为独立临时数据与合成transport，0真实Provider/当前用户canonical。日志在本机`.artifacts/m002-native/`，首次native激活继承旧intent而拒绝的失败保留，已按准确新QRI修复空白后继权限。
 
+随后产品固定三步的合成执行器在第3步拒绝“别把计时状态说成我已经学完了”，首终态保留、0真实请求。原因是旧recent-dialogue把“别…说”一概当历史限制。仅native新增完整闭集计时/学习成果澄清例外；有历史/披露/接收方或混合指令仍沿原边界，旧S160谓词不变、policy与wire样例不变。最终native 11 passed，包含实际Facade澄清接话及拒外发/遗忘混合指令。
+
 本合同不证明原版点击命中、IL2CPP patch、原生视觉、人物自然度或隔日体验通过；实机由游戏产品沿用户“稍后更新”决定承接。此实现不开放自动活动、通知或旧资料迁移。

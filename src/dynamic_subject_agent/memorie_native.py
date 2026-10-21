@@ -6,6 +6,8 @@ Admission/Publication and reconstructs this type from its independent schema10.
 from dataclasses import dataclass
 from hashlib import sha256
 import json
+import re
+import unicodedata
 from pathlib import Path
 from uuid import UUID
 
@@ -106,6 +108,26 @@ def validate_situation(value):
         or value['timer_phase'] not in ('idle', 'work', 'rest', 'paused')):
         raise ValueError('minimal observed timer phase or null required')
     return value
+
+
+def is_dialogue_control(message):
+    """Keep disclosure controls; a timer/achievement distinction is expression.
+
+    This closed exception cannot name dialogue, a memory, a source, or a
+    recipient. Mixed instructions still pass through the original boundary.
+    """
+    from dynamic_subject_agent.memorie_companion_contract import is_memorie_dialogue_control
+    from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
+    if whole_dialogue_scope(message) in (WITHDRAWAL, UNRESOLVED):
+        return True
+    text = re.sub(r'\s+', '', unicodedata.normalize('NFKC', message))
+    clarification = re.compile(
+        r'(?:也)?(?:请)?(?:你)?(?:别|不要)(?:把|将)'
+        r'(?:计时(?:器|状态)?|(?:开始|专注|休息)计时)(?:当成|当作|说成)'
+        r'(?:我|你|已经|已|就|真的|实际)*(?:学完|学会|掌握|完成)(?:知识|任务|学习)?(?:了|吧|呀)?')
+    remaining = '。'.join(clause for clause in re.split(r'[。.!?！？,，;；]', text)
+        if clause and clarification.fullmatch(clause) is None)
+    return bool(remaining) and is_memorie_dialogue_control(remaining)
 
 
 @dataclass(frozen=True)

@@ -7834,7 +7834,7 @@ class TimelineEngine:
         return tuple(records[-limit:])
 
     def native_dialogue_before(self, operation_ref, *, expected_head, enabled):
-        from dynamic_subject_agent.memorie_companion_contract import is_memorie_dialogue_control
+        from dynamic_subject_agent.memorie_native import is_dialogue_control as is_memorie_dialogue_control
         if type(enabled) is not bool:
             raise PublicationFailedClosed('native-history-policy-invalid', 'Explicit disclosure preference required')
         verified = self._verified_dialogue_prefix(operation_ref, expected_head=expected_head)
@@ -8331,6 +8331,9 @@ class TimelineEngine:
             from dynamic_subject_agent.first_life_dialogue import is_first_life_dialogue_control as is_dialogue_control
         if getattr(self, '_memorie_qualified', False):
             from dynamic_subject_agent.memorie_companion_contract import is_memorie_dialogue_control as is_dialogue_control
+
+        if NATIVE_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.memorie_native import is_dialogue_control
 
         snapshot = self.query(operation_ref)
         frozen_row = self._writer.execute('''SELECT attempt_id, head_sequence, published_outcome_digest,
