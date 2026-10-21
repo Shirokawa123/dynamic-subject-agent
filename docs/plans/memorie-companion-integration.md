@@ -1,5 +1,53 @@
 # 梅莫莉学习陪伴：最小接入方案
 
+## 2026-10-21：最终目标与整条互动链
+
+用户最新明确，目标是把整个系统融入游戏：点击梅莫莉时按她当前状态生成回应，也能通过对话框自由交流，采用游戏内弹窗/字体。辅助入口去字、保留图标。当前同一S160的交付门槛以这条整链为准；以下2026-10-18盘点是历史起点，不能把首份面板当最终产品。
+
+### 目标体验与当前缺口
+
+1. **点击就是和同一个人互动。** 点击她，由人物当前处境、关注和共同经历决定是否回应、说什么；短回应使用原生文字表现。输入对话框后，仍是同一人接续这次相处。当前仅文字聊天接到Facade，点击尚未进入人物生成。
+2. **状态确实改变行为。** 原游戏的剧情/计时/动作状态与角色运行时的认识/经历分别有来源，组合成当前处境；忙碌、休息或刚才发生过事应产生合情境的回应，而非只随机换一句模板。当前Memorie路径主要是封存定义和最多2完整轮，已有项目的生活/关系/长期共同经历尚未整体挂接。
+3. **语言由角色生成能力承载。** 语言生成消费她的状态和获准经历，经ModelGateway提议、Python裁决。用户没有选定专门训练/独立权重或本地部署；具体后端可比较，但同一个角色运行时须同时服务点击和文字输入，不能为两入口维护互相矛盾的“人格”。
+4. **反馈属于游戏原本的交互节奏。** 短回应、完整对话、必要弹窗使用原游戏Presenter/原生组件、字体、开合与输入习惯；角色视线/动作在有据的闭集机制下协调。聊天窗口和纯图标入口是其中的视图，不另拥有角色事实。当前候选只复用了原Sprite/TMP/Canvas，尚未完成原Presenter生命周期的整合。
+5. **一轮体验能接续。** 点击招呼→自由交流→各自专注→休息时接话→重开/次日继续，原剧情、生成表达和真实共同经历各自可辨；原剧情关键节点仍由游戏权威管理。生成式剧情分支、后台通知、自动人格改写均不由这个目标自动启用。
+
+### 本次已证本机接缝
+
+本轮只读本机BepInEx生成interop的PE元数据，未调用这些方法或订阅运行中事件；发现可供后续验证的真实符号：
+
+| 职责 | 已证接口 | 如何进入整体方案 / 尚未证明 |
+| --- | --- | --- |
+| 角色点击 | `App.YarnSpinner.CharacterClickReceiver.OnClickObservable`、`IsHit`、`IsUIOverCapsuleCenter`；`App.Main.ScenarioManager.ClickAction`、`OnClickEnabled`、`IsTapWait`、`IsPlaying` | 优先核原版点击命中/遮挡及点击分支，避免另造全屏鼠标轮询。原逻辑已有订阅，单纯再订阅会有双重回应风险；原剧情等待点击时不能抢走。接管日常分支的互斥机制尚未验证 |
+| 当前场景/活动 | `ScenarioManager.m_state/m_currentTimerState`；`PomodoroTimerView.OnStateChange/CurrentState/CurrentWorkSec`；`YarnCharacterControl.GetCurrentState/GetCurrentGroupForRestore` | 游戏状态与角色自身认识组合，先核枚举语义/来源/鲜度；不能把动画名直接当情绪，也不能从当前计时快照补造过去。没有读取运行中的计时/私人待办 |
+| 原生文字 | `SonityVoiceAndLinePresenter.lineText/characterNameText/canvasGroup`、`IsRunningLine/IsPlayingStory/IsStopping`；`TelopUI.Exec(string)` | 分别核短句/完整对话的原生呈现。原Presenter包含声音、逐字、取消和故事生命周期，不能只改lineText或强塞新Runner假装已经融合 |
+| 动作/表情 | `YarnCharacterControl.PlayFaceAnimation/PlayLookAnimation/ActAfterDelay/TalkOn/TalkOff`；`ScenarioManager.SnapshotCharacterAnime` | 可作为日后有界表现候选，需动作拥有者、原状态恢复与剧情优先；当前没有调用，不允许模型输出任意字符串指挥它们 |
+
+完整元数据仅保本机`character-integration-api.txt`、`character-world-api.txt`，不提交游戏实现或资源。本轮Context7未暴露可调用接口（上一次可用不代表本轮可用），按该技能官方回退：重核[Yarn Presenter源码](https://github.com/YarnSpinnerTool/YarnSpinner-Unity/blob/main/Runtime/Views/DialoguePresenterBase.cs)、[DialogueRunner源码](https://github.com/YarnSpinnerTool/YarnSpinner-Unity/blob/main/Runtime/DialogueRunner/DialogueRunner.cs)与[R3作者文档](https://github.com/Cysharp/R3)。Presenter任务有开始/逐行/完成与取消合同；R3订阅要随对象销毁释放。它们解释接缝机制，不证明本机IL2CPP订阅或原版副作用已通过。
+
+### 建议接法与验收
+
+```mermaid
+flowchart LR
+    C[原生角色点击] --> E[有来源的互动事件]
+    T[明确发送的文字] --> E
+    G[游戏当前状态] --> P[当前处境投影]
+    E --> F[ApplicationFacade裁决]
+    P --> F
+    R[同一人物定义与有效经历] --> F
+    F --> M[ModelGateway语言生成]
+    M --> V[Python接纳与单Timeline发表]
+    V --> U[游戏原生文字呈现与有界表现]
+```
+
+图是目标接法，当前只实现了文字聊天的一部分。下一内部结果是“原生点击→有来源的当前处境→一条生成短回应→原生呈现”，同时保住原剧情的点击优先和现有输入/送达。点击应记录为真实非言语互动，不伪造成用户说了一句文字；多个入口共用单写者与canonical。人物状态由游戏事实/人物域分别裁决，模型不能直接写持久状态。
+
+实施准备先验证原点击与原故事订阅的互斥、当前状态的准确语义及Presenter无语音生成时的运行合同；再形成精确新增出站样例/资格/消费记录。新用途激活后才能把真实点击/游戏状态送入模型。示例验收至少包括：原剧情等待点击照常继续；空闲与忙碌时同一次轻触回应合理不同；快速连点不堆积回复；原生短句后打字仍能接续；原剧情接管/场景销毁时迟到回复不抢回界面；重开保同人物和真实经历。工程/合成通过与人物体验分开，不以状态字段或样稿数量替代。
+
+这次的纯图标小改已编译为candidate15并看离线局部。用户明确“先保持当前游戏，稍后更新”，所以没有覆盖当前运行的candidate14，也没有启停或操作窗口。本次目标澄清和静态准备不扩大旧review的四字段出站合同；尚未自动生成点击回应，也未训练/下载新模型。
+
+---
+
 2026-10-18。依据用户已确认“前者，我想先注重梅莫莉”，以及本轮“接下来怎么做”整理。本文是已核事实与助手建议，供具体实施任务承接；不把人物选择扩展为游戏安装、启动、存档修改或新Provider数据用途批准。
 
 后续用户明确已全部通关并允许查看本地游戏目录。[S159只读勘察](../reports/2026-10-18-slice-159/REPORT.md)已实际找到中文台词、55话与对话组件，替代下文初步盘点时的资源未知；本地研究授权已成立，插件安装、启动和新Provider用途未由此扩展。助手建议从通关后处境接续，未自动freeze人物或改写剧情。

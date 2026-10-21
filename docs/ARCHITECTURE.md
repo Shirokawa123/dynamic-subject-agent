@@ -2,6 +2,8 @@
 
 ### Slice-160：独立梅莫莉聊天资格与游戏面板
 
+同日用户最终目标进一步明确为角色点击、当前状态、统一语言生成与原生呈现的整体融合，见[整链设计](plans/memorie-companion-integration.md#2026-10-21最终目标与整条互动链)。这是目标设计，当前合同仍仅已批文字聊天；没有启用点击触发、游戏状态投影、自动动作或新人物记忆写入。纯图标candidate15已备，用户明确保持当前游戏、稍后更新，当前已装14不变。
+
 2026-10-21原生UI候选14：游戏Adapter沿原HUD同一Canvas增加自有入口/下方对话/按需记录，借原Sprite/字体和原生uGUI/TMP，不再混用IMGUI与透明点击捕获。只读原剧情/遮罩/HUD状态，打开仅本地Connect读取，发送/原UUID查询仍显式；开合按自有焦点所有权处理，不调原剧情/计时/存档方法。字体只查资源与已知HUD的font元数据，不读笔记/待办文字。定义/出站/Facade/Timeline不变；已关闭游戏时仅换自有DLL，实际Unity视图与动态实例共存仍未验，[报告](reports/2026-10-21-slice-160/REPORT.md)。
 
 2026-10-19新增显式attribution-2技术版本，父审阅/数据用途/limits不变，仅追加system来源与采纳/完成规则。Contract独立version/policy hash/parent；各资格/恢复/查询路径按闭集版本分派，旧baseline字节及Python CLI默认保持，不自动升级既有root。Facade可生成精确新预览。插件candidate10只修已销毁原生组件的清理访问，已编译并在游戏关闭时换自有DLL，实际退出/UI效果仍未验，见[本日报告](reports/2026-10-19-slice-160/REPORT.md)。

@@ -45,9 +45,8 @@ internal sealed class NativeChatView : IDisposable
             colors.fadeDuration = .1f;
             entryButton.colors = colors;
             Listen(entryButton, () => { if (Game.CanInteract) setOpen(!opened); });
-            var icon = Box(entry, "TalkIcon", 21, 10, 48, 42);
+            var icon = Box(entry, "TalkIcon", 21, 24, 48, 42);
             game.Image(icon, "CompanionTalkIcon").color = NativeGameUi.Ink;
-            Label(Box(entry, "Caption", 0, 51, 90, 26), "聊聊", 19, TextAlignmentOptions.Center);
 
             root = Child(game.Hud, "MemorieCompanion.Conversation");
             Stretch(root);

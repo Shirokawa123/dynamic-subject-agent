@@ -4,6 +4,8 @@ S160本地准备：独立BepInEx IL2CPP插件，经loopback HTTP与ApplicationFa
 
 当前状态：candidate14已在确认游戏关闭时仅替换自有DLL，编译0警告错误、9项既有接口/C#检查通过，原生样稿经一轮看图细化；**尚未验证新视图的真实Unity画面、点击或IME，不称已可日用**。原10/18与10/19真实模型/旧面板结果全保，不能迁移为新UI验收。用户仍要求仅后台，本轮没有启动/操作游戏或新增产品模型调用，[本轮报告](../../docs/reports/2026-10-21-slice-160/REPORT.md)。
 
+后续纯图标candidate15已构建：移除“聊聊”Caption并居中图标，点击区不变；用户明确保持当前游戏、稍后更新，**15尚未安装，14仍为运行版本**。最终目标已明确为原生点击/当前状态/统一角色生成/原生弹窗的整链，当前视图只是其中一部分，见[整体接入设计](../../docs/plans/memorie-companion-integration.md#2026-10-21最终目标与整条互动链)。
+
 构建使用仓库脚本`build_memorie_companion.ps1`，明确传入隔离SDK、BepInEx目录、本机生成interop和新的`.artifacts`输出目录。Core/UI/TMP/YarnSpinner.Unity编译引用均Private=false，不进入安装包。脚本只生成包和逐文件SHA256，不安装或启动游戏。编译引用DLL、官方运行时、原字体和游戏素材不提交本仓。
 
 `NativeGameUi`只读定位原MainUI的Left_DownArea、HUD/遮罩状态及Yarn.IsDialogueRunning，借原Sprite和字体元数据；不读取待办/笔记文字，不调用原业务按钮或Yarn命令。`NativeChatView`新建自己的原生按钮/ScrollRect/TMP输入，沿原Canvas缩放；原HUD隐藏、原剧情/遮罩占用时收起并保草稿，不自动抢回焦点。原素材缺失时保持不可用而非叠回旧工具窗。实例缓存与实际场景加载/动态弹窗的共存仍待验。
