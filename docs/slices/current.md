@@ -1,5 +1,7 @@
 # 当前工作
 
+2026-10-22仅为独立产品M010/M011交付[LOCAL共同经历/有限活动共用接缝](../plans/independent-local-activity.md)：独立sealed对象、药草笔记文字编排、原有来源/版本/分享裁决；不复制Domain或继承旧人物远程资格，不接用户schema11/8798/游戏。产品执行仍由`E:/memorie-companion/docs/slices/current.md`承接，旧失败与本轮资源告警保留。
+
 2026-10-21为独立产品M002提供[显式冷资格续接候选](../plans/memorie-qualification-continuation.md)：原store/scope/旧UUID/Publication保留，准确计划另行数据升级同意后方可切换；合成11最终/41相关回归通过。本仓仅交付共用实现，不对用户根、现有8798或游戏应用，不并行另起游戏任务。
 
 2026-10-21迁移阶段已交付：`E:/memorie-companion`及私有[GitHub仓库](https://github.com/Shirokawa123/memorie-companion)已建，首提交730344d已推送；固定本仓afc8012作engine，迁入游戏产品源码/启动构建/测试，40项有通过结果、新构建0警告错误、双复核关闭。新启动器同PID只读复用原入口，canonical和当前游戏保持、0发送/新模型请求、纯图标仍待更新。后续游戏整合由新项目`docs/slices/current.md`承接；本仓不并行执行另一条游戏任务，保共享底座及S160历史。整个人物/游戏目标仍未完成，以下为迁移前阶段记录，详见[交付报告](../reports/2026-10-21-slice-160/REPORT.md#独立产品迁移交付)。

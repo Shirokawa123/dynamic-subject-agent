@@ -922,7 +922,7 @@ def _compose_integrated_character(config, *, authority, loaded, gateway, deliver
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
-def open_living_activity_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None):
+def open_living_activity_product_local(config, *, gateway, identity_id, binding=None, clock=None, day=None, activity_kind='composition-text'):
     """Independent schema6 LOCAL composition; reject remote before registry access."""
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     from dynamic_subject_agent.shared_activity import LIVING_AUTHORITY
@@ -931,7 +931,8 @@ def open_living_activity_product_local(config, *, gateway, identity_id, binding=
     if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
         raise ValueError('LOCAL-only living gateway required before any identity access')
     authority = LocalIdentityAuthority(config)
-    loaded = authority.activate_living_activity_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id)
+    loaded = authority.activate_living_activity_local(binding=dict(APPROVED_BINDING if binding is None else binding), identity_id=identity_id,
+        activity_kind=activity_kind)
     cognition = SharedActivityCognition(envelope=loaded.reviewed_definition, gateway=gateway,
         contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_AUTHORITY,
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)

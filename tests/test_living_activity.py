@@ -1,5 +1,6 @@
 """S142 Facade results with deterministic LOCAL proposals, never character QA."""
 import json
+from contextlib import closing
 from dataclasses import asdict, replace
 
 import pytest
@@ -398,14 +399,14 @@ def test_corrupt_canonical_share_record_closes_queries_and_previews_without_mode
     assert act(product).status == 'committed'
     database = None
     for candidate in living_fixture.config.product_parent.rglob('timeline.sqlite3'):
-        with sqlite3.connect(candidate) as probe:
+        with closing(sqlite3.connect(candidate)) as probe:
             if (probe.execute('PRAGMA user_version').fetchone() == (6,)
                 and candidate.parent.name == product.timeline_id
                 and probe.execute('SELECT COUNT(*) FROM shared_activity_record').fetchone()[0] > 0):
                 database = candidate
                 break
     assert database is not None
-    with sqlite3.connect(database) as connection:
+    with closing(sqlite3.connect(database)) as connection, connection:
         assert connection.execute("UPDATE shared_activity_record SET record_json='{}'").rowcount > 0
     calls = len(adapter.calls)
     assert product.application.query_living_activity().status == 'failed-closed'

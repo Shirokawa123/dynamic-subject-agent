@@ -67,15 +67,24 @@ def living_variant_for_contract(contract):
     return 'baseline'
 
 
-def living_contract(binding):
+def living_contract(binding, *, activity_kind='composition-text', independent=False):
     from dynamic_subject_agent.shared_activity import shared_contract
-    base = shared_contract(binding)
-    return dict(base, version=LIVING_VERSION, excluded='remote-background-service-notifications-offline-catchup-persona-rewrite-cloud-migration',
+    base = shared_contract(binding, independent=independent)
+    result = dict(base, version=LIVING_VERSION, excluded='remote-background-service-notifications-offline-catchup-persona-rewrite-cloud-migration',
         technical_variant=dict(name='living-local', timeline_schema=6,
             choice_policy_sha=sha256(shared_choice_policy('self-directed-activity').encode()).hexdigest(),
             share_policy_sha=sha256(SHARE_POLICY.encode()).hexdigest(), reply_policy_sha=sha256(REPLY_POLICY.encode()).hexdigest(),
             opportunity_seconds=900, session_lease_seconds=15, max_new_topics_per_utc8_day=2,
             max_share_chars=400, max_followup_turns=2))
+    if activity_kind == 'composition-text':
+        return result
+    if activity_kind != 'herb-note-outline':
+        raise ValueError('closed LOCAL text activity required')
+    from dynamic_subject_agent.local_activity_contract import herb_policies
+    choice, share, reply = herb_policies()
+    return dict(result, local_activity=activity_kind, technical_variant=dict(result['technical_variant'],
+        choice_policy_sha=sha256(choice.encode()).hexdigest(), share_policy_sha=sha256(share.encode()).hexdigest(),
+        reply_policy_sha=sha256(reply.encode()).hexdigest()))
 
 
 def validate_permission(value):
@@ -178,9 +187,11 @@ def living_valid_sources(record, valid_sources, *, enabled, cutoff):
 def build_living_choice_preview(envelope, identity, view, contract):
     from dynamic_subject_agent.shared_activity import shared_contract
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-    old = shared_contract({key: contract[key] for key in APPROVED_BINDING})
-    result = build_choice_preview(envelope, identity, view, old)
-    result['policy'] = living_policies(living_variant_for_contract(contract))[0]
+    old = shared_contract({key: contract[key] for key in APPROVED_BINDING}, independent=contract.get('local_preparation') is True)
+    result = build_choice_preview(envelope, identity, view, old, selection_message=(
+        '整理药草笔记的文字编排方案。' if contract.get('local_activity') == 'herb-note-outline' else '考虑日常构图文字方案。'))
+    from dynamic_subject_agent.local_activity_contract import policies_for_contract
+    result['policy'] = policies_for_contract(contract)[0]
     return result
 
 
@@ -189,7 +200,8 @@ def build_share_preview(envelope, identity, view, contract):
     result = view['visible_result']
     if result is None or result.plan is None or result.event.kind not in ('start', 'revise'):
         raise ValueError('actual new plan required for share preview')
-    return dict(policy=living_policies(living_variant_for_contract(contract))[1], payload=dict(background=choice['payload']['background'],
+    from dynamic_subject_agent.local_activity_contract import policies_for_contract
+    return dict(policy=policies_for_contract(contract)[1], payload=dict(background=choice['payload']['background'],
         shared_experience=choice['payload']['shared_experience'],
         activity_result=dict(action=result.event.kind, plan=asdict(result.plan))))
 
@@ -197,9 +209,10 @@ def build_share_preview(envelope, identity, view, contract):
 def build_living_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):
     from dynamic_subject_agent.shared_activity import shared_contract
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-    old = shared_contract({key: contract[key] for key in APPROVED_BINDING})
+    old = shared_contract({key: contract[key] for key in APPROVED_BINDING}, independent=contract.get('local_preparation') is True)
     result = build_reply_preview(envelope, identity, message, dialogue, enabled, view, old)
-    result['policy'] = living_policies(living_variant_for_contract(contract))[2]
+    from dynamic_subject_agent.local_activity_contract import policies_for_contract
+    result['policy'] = policies_for_contract(contract)[2]
     share = latest_share(view, enabled)
     result['payload']['evidence']['latest_share'] = None if share is None else dict(text=share['text'])
     return result

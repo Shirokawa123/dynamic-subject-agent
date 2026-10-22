@@ -1453,9 +1453,10 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(working_live_contract_for_variant(APPROVED_BINDING,technical_variant=variant),audit_path,identity_id)
 
     @_registry_mutation
-    def activate_living_activity_local(self, *, binding, identity_id):
+    def activate_living_activity_local(self, *, binding, identity_id, activity_kind='composition-text'):
         from dynamic_subject_agent.living_activity import living_contract
-        return self._activate_context_identity(living_contract(binding), self._config.state_path.parent / 'living-local-audit', identity_id)
+        from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+        return self._activate_context_identity(living_contract(binding, activity_kind=activity_kind, independent=binding != APPROVED_BINDING), self._config.state_path.parent / 'living-local-audit', identity_id)
 
     @_registry_mutation
     def activate_living_activity_live(self, *, grant, audit_path, identity_id):

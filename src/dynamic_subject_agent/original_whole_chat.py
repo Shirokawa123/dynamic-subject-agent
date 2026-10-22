@@ -98,6 +98,13 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
+    if contract.get('local_preparation') is True and contract.get('version') in (
+        'original-character-whole-chat-grounded-s130-1', 'original-character-whole-context-s132-1'):
+        from dynamic_subject_agent.local_activity_contract import local_whole_contract
+        variant = 'grounded' if contract['version'] == 'original-character-whole-chat-grounded-s130-1' else 'context-boundary'
+        if contract != local_whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant=variant):
+            raise ValueError('exact LOCAL object projection required')
+        return variant
     if contract.get('version') in ('integrated-character-live-s158-1', 'integrated-character-live-focused-s158-1', 'integrated-character-live-conversation-s158-1', 'integrated-character-live-intent-text-s158-1', 'integrated-character-live-change-evidence-s158-1'):
         from dynamic_subject_agent.integrated_character_live import integrated_live_contract
         mode = ('change-evidence' if contract['version'] == 'integrated-character-live-change-evidence-s158-1'
@@ -165,7 +172,8 @@ def contract_variant(contract):
         return 'working-fact-faithful-live'
     if contract.get('version') == 'living-activity-local-s142-1':
         from dynamic_subject_agent.living_activity import living_contract
-        if contract != living_contract({key: contract[key] for key in APPROVED_BINDING}):
+        if contract != living_contract({key: contract[key] for key in APPROVED_BINDING}, activity_kind=contract.get('local_activity', 'composition-text'),
+            independent=contract.get('local_preparation') is True):
             raise ValueError('exact living LOCAL contract required')
         return 'living-local'
     if contract.get('version') == 'living-activity-live-s142-1':
@@ -191,7 +199,7 @@ def contract_variant(contract):
             raise ValueError('exact approved shared activity contract required')
         return 'shared-live'
     if contract.get("version") == "shared-activity-s139-1":
-        if contract != shared_contract({key: contract[key] for key in APPROVED_BINDING}):
+        if contract != shared_contract({key: contract[key] for key in APPROVED_BINDING}, independent=contract.get('local_preparation') is True):
             raise ValueError("exact local shared activity contract required")
         return "shared-local"
     variant = "baseline"
@@ -336,7 +344,12 @@ def projection_for_contract(envelope, identity, message, dialogue, enabled, cont
     from dynamic_subject_agent.original_whole_followup import select_followup_context
     model = sealed_model(envelope)
     context, _, _ = select_followup_context(model, message, dialogue, enabled)
-    return _projection_from_context(envelope, identity, message, dialogue, enabled, model, context)
+    result = _projection_from_context(envelope, identity, message, dialogue, enabled, model, context)
+    if contract.get('local_preparation') is True:
+        result.background['encounter'] = ('本地隔离的角色活动验证', context.encounter.world_context,
+            '本轮来自显式本地测试，不连接游戏或代表正式用户相处。',
+            '已有本分支已提交交流。' if dialogue.has_prior_committed_exchange else '本分支尚无已提交交流。')
+    return result
 
 
 def _projection_from_context(envelope, identity, message, dialogue, enabled, model, context):

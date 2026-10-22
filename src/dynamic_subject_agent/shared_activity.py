@@ -149,9 +149,10 @@ def shared_variant_for_contract(contract):
         SHARED_SELF_DIRECTED_VERSION: 'self-directed-activity'}.get(contract['version'], 'baseline')
 
 
-def shared_contract(binding):
+def shared_contract(binding, *, independent=False):
     from dynamic_subject_agent.original_whole_chat import whole_contract
-    base = whole_contract(binding, technical_variant="context-boundary")
+    from dynamic_subject_agent.local_activity_contract import local_whole_contract
+    base = (local_whole_contract if independent else whole_contract)(binding, technical_variant="context-boundary")
     return dict(base, version=SHARED_VERSION, authorization="local-preparation-only-no-remote-grant",
         provider="local", credential_use="none", excluded="remote-automatic-life-sharing-persona-rewrite-cloud-migration",
         technical_variant=dict(name="shared-local", timeline_schema=5,
@@ -441,14 +442,16 @@ def choice_from_record(record):
         reason_code=decision.reason_code, basis_refs=list(decision.basis_refs), decision_note=decision.decision_note)
 
 
-def build_choice_preview(envelope, identity, view, contract):
+def build_choice_preview(envelope, identity, view, contract, *, selection_message='考虑日常构图文字方案。'):
     from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING
     from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
     technical_variant = shared_variant_for_contract(contract)
     # The same deterministic minimal character selection feeds local execution
     # and the review artifact. No sender or credential path is constructed.
-    original = whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
-    projection = projection_for_contract(envelope, identity, '考虑日常构图文字方案。', CharacterDialogueBasis('available'), False, original)
+    from dynamic_subject_agent.local_activity_contract import local_whole_contract
+    original = (local_whole_contract if contract.get('local_preparation') else whole_contract)(
+        {key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
+    projection = projection_for_contract(envelope, identity, selection_message, CharacterDialogueBasis('available'), False, original)
     source, plan = view['visible_source'], view['current_plan']
     payload = dict(background=projection.background, shared_experience=None if source is None else dict(label='E1', quote=source.quote),
         current_activity=dict(phase=view['phase'], allowed_actions=allowed_actions(view['phase'])),
@@ -459,7 +462,9 @@ def build_choice_preview(envelope, identity, view, contract):
 def build_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):
     from dynamic_subject_agent.original_whole_chat import whole_contract, projection_for_contract, APPROVED_BINDING
     technical_variant = shared_variant_for_contract(contract)
-    original = whole_contract({key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
+    from dynamic_subject_agent.local_activity_contract import local_whole_contract
+    original = (local_whole_contract if contract.get('local_preparation') else whole_contract)(
+        {key: contract[key] for key in APPROVED_BINDING}, technical_variant='grounded')
     projection = projection_for_contract(envelope, identity, message, dialogue, enabled, original)
     payload = asdict(projection)
     source, result = view['visible_source'], view['visible_result']

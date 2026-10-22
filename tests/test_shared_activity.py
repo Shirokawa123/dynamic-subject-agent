@@ -1,4 +1,5 @@
 import json
+from contextlib import closing
 from dataclasses import asdict
 
 import pytest
@@ -234,7 +235,7 @@ def test_corrupt_shared_source_record_closes_query_and_model_disclosure(shared_f
     adapter = LocalAdapter(); product = shared_fixture(adapter)
     assert send(product, '合成来源。', 'corrupt-source').status == 'terminal'
     assert select(product, '合成来源').status == 'committed'
-    with sqlite3.connect(canonical_path(product)) as writer:
+    with closing(sqlite3.connect(canonical_path(product))) as writer, writer:
         writer.execute("UPDATE shared_activity_record SET record_json='{}'")
     assert product.application.query_shared_activity().status == 'failed-closed'
     assert send(product, '继续当前话题。', 'corrupt-shared-after').status == 'failed-closed'
