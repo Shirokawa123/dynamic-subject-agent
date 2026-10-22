@@ -1,5 +1,6 @@
 """Facade/production tests with explicit private definition and synthetic transport."""
 from dataclasses import replace
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -205,7 +206,7 @@ def test_canonical_input_corruption_fails_reopen_without_model_or_fake_history(n
     product.close()
     changed = False
     for path in root.rglob('timeline.sqlite3'):
-        with sqlite3.connect(path) as db:
+        with closing(sqlite3.connect(path)) as db, db:
             if db.execute('PRAGMA user_version').fetchone() != (10,): continue
             row = db.execute('SELECT operation_id,input_json FROM memorie_native_input').fetchone()
             if row is None: continue

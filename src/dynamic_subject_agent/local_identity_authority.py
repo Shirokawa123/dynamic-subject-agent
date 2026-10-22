@@ -1223,6 +1223,11 @@ class LocalIdentityAuthority:
         return prepare(request)
 
     @staticmethod
+    def prepare_memorie_activity_continuation(request):
+        from dynamic_subject_agent.memorie_activity_continuation import prepare
+        return prepare(request)
+
+    @staticmethod
     def apply_memorie_continuation(plan, consent, *, _fault_hook=None):
         from dynamic_subject_agent.memorie_qualification_continuation import apply
         return apply(plan, consent, _fault_hook=_fault_hook)

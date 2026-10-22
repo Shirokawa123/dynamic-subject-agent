@@ -633,6 +633,11 @@ class _ApplicationRouter:
         except Exception:
             return NativeDialogueBasis('failed-closed')
 
+    def preview_memorie_experience_selection(self, request):
+        self._require_open()
+        from dynamic_subject_agent.memorie_experience_preview import preview
+        return preview(self, self._binding, request)
+
     def _working_request_valid(self, request):
         from dynamic_subject_agent.working_understanding import WorkingUnderstandingRequest, validate_sources
         if (type(request) is not WorkingUnderstandingRequest or request.target_profile_id != self._binding.profile_id
@@ -1651,6 +1656,9 @@ class ApplicationFacade:
     def query_memorie_interactions(self, *, limit=20):
         return self.__router.query_memorie_interactions(limit=limit)
 
+    def preview_memorie_experience_selection(self, request):
+        return self.__router.preview_memorie_experience_selection(request)
+
     def query_shared_activity(self, request=None):
         return self.__router.query_shared_activity(request)
 
@@ -1746,6 +1754,21 @@ class ApplicationFacade:
     def preview_memorie_native_message(prepared, interaction, situation, exchange=()):
         from dynamic_subject_agent.memorie_native import preview_wire
         return preview_wire(prepared, interaction, situation, exchange)
+
+    @staticmethod
+    def preview_memorie_activity_message(prepared, purpose, **kwargs):
+        from dynamic_subject_agent.memorie_activity_use import preview
+        return preview(prepared, purpose, **kwargs)
+
+    @staticmethod
+    def prepare_memorie_activity_use(prepared):
+        from dynamic_subject_agent.memorie_activity_use import prepare
+        return prepare(prepared)
+
+    @staticmethod
+    def prepare_memorie_activity_continuation(request):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)
 
     @staticmethod
     def inspect_memorie_continuation_source(request):

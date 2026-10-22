@@ -1,0 +1,11 @@
+# M012–014 原生新用途、续接蓝图和经历选择预览
+
+这是独立产品下一批的共用准备接缝，不是已启用的活动资格或schema升级。
+
+M012复用M002五字段最小人物/typed输入校验和原请求参数，精确预览reply/choice/share：reply新增experience、activity_result、latest_share；非语言点击不伪造文字；choice/share没有interaction、exchange或计时输入。仅选定原话≤400字、有限三字段文字编排及分享≤120字；旧Sender拒新字段。策略/七份合成字节示例/限制及摘要绑定pending review。无Gateway/ModelTask/Sender/凭据；样例不能作为运行时来源。拟定在线900秒、15秒租约、推进4/日/分享2/日与开发审计仅是待实现、待批准准入合同。
+
+M013由Facade经Authority复用原schema11观察器和原已提交续接verify，完整验证前缀后只输出所有旧UUID/claim/outcome证明与元数据。活源或任一未终态/变更/错scope不能当冷源。schema12/协议3与shared两表是蓝图：同profile/Timeline/scope/store、原schema11续接receipt、旧只读权限和全部旧行/原nonce保持；旧nonce不重发，草稿不转换。没有apply函数，不接受旧M002 apply入口。生产native+shared组合、schema12恢复、精确冷字节plan与独立数据同意仍缺；不把LOCAL schema6复制给用户。
+
+M014只从同目标、已启用历史、最近20条已核native记录匹配明确确认的逐字用户原话；点击和助手回复不成为来源。preview状态不是记忆写入，can_apply/canonical_eligibility_verified始终false；实际提交仍需新资格、cutoff/撤回/来源复核和原子Publication。当前产品不注册新HTTP写入口，不扩大旧资格。
+
+来源为固定M002、续接和shared/living源码/合同。这里只做显式来源、序列化、只读证明及资格准备，没有自动心理或关系机制。26项严格回归包含新14项及旧native12项通过；首轮24通过/2失败分别为测试命令遗漏旧review环境与旧native损坏测试SQLite未显式close，保留原日志；补准确环境及closing，不改断言或屏蔽告警。产品完整验收另行记录。
