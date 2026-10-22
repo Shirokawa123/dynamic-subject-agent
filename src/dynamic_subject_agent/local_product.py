@@ -997,7 +997,7 @@ def open_memorie_native_activity_product(config, *, identity_id, approval_path, 
 def _open_memorie_activity_product(config, *, identity_id, approval_path, _transport, observations, clock, native):
     """New unserved dev identity only. Never upgrades a served native/local root."""
     from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,NativeActivityDelivery,open_audit
-    from dynamic_subject_agent.memorie_activity_provider import DeepSeekNativeActivityAdapter
+    from dynamic_subject_agent.memorie_activity_provider import DeepSeekNativeActivityAdapter,guarded_native_activity_opener
     from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
     from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY
     from dynamic_subject_agent.living_activity import LivingClock,utc8_day
@@ -1005,7 +1005,7 @@ def _open_memorie_activity_product(config, *, identity_id, approval_path, _trans
     authority=LocalIdentityAuthority(config)
     loaded=authority.activate_memorie_activity_development(identity_id=identity_id,grant=grant,native=native)
     delivery=NativeActivityDelivery(grant=grant,audit=audit,contract=loaded.qri.reviewed_chat_contract,state_path=config.state_path)
-    adapter=DeepSeekNativeActivityAdapter(transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
+    adapter=DeepSeekNativeActivityAdapter(transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver(),_opener=guarded_native_activity_opener(delivery)),
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),delivery=delivery,observations=observations)
     cognition=SharedActivityCognition(envelope=loaded.reviewed_definition,gateway=ModelGateway(adapter),contract=loaded.qri.reviewed_chat_contract,
         provider_authority=LIVING_LIVE_AUTHORITY,delivery=delivery,snapshot_loader=lambda:authority.try_whole_scope_snapshot(loaded.qri.profile_id,loaded.timeline_id),

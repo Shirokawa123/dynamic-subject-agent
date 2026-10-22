@@ -28,8 +28,8 @@ def native_activity(tmp_path,monkeypatch):
         frozen=p.application.freeze_source_identity(ReviewedCharacterFreezeRequest(prepared['definition_json'],DEFINITION,True,True))
         assert frozen.status=='created'
     opened=[]
-    def opening(model=None,*,clock=None):
-        p=open_memorie_native_activity_product(config,identity_id=frozen.view.identity_id,approval_path=approval,_transport=model or Transport(),clock=clock)
+    def opening(model=None,*,clock=None,live_transport=False):
+        p=open_memorie_native_activity_product(config,identity_id=frozen.view.identity_id,approval_path=approval,_transport=None if live_transport else model or Transport(),clock=clock)
         opened.append(p);return p
     opening.config=config
     yield opening
@@ -163,3 +163,50 @@ def test_native_timer_clarification_keeps_history_but_disclosure_control_never_s
     value=p.application.submit(command,idempotency_key='m018-native-privacy-control-1')
     if value.status=='pending':value=p.application.wait(value.operation_ref,timeout_seconds=30)
     assert value.projection.failure_code is not None and len(model.calls)==2
+
+
+def test_source_revocation_after_ticket_consumption_is_rechecked_at_transport(native_activity,monkeypatch):
+    from dynamic_subject_agent.memorie_activity_live import NativeActivityDelivery
+    model=Transport();p=native_activity(model);assert control(p).status=='committed'
+    original=NativeActivityDelivery.consume
+    def consume(self,task):
+        actual=original(self,task)
+        assert p.application.set_reviewed_character_history(False).history_enabled is False
+        return actual
+    monkeypatch.setattr(NativeActivityDelivery,'consume',consume)
+    value=act(p,'m020-revoke-after-consumption-1')
+    assert value.status=='failed-closed' and not model.calls
+    assert p.application.query_living_controls().view['needs_attention'] is True
+
+
+def test_revocation_during_credential_resolution_never_enters_https_opener(native_activity,monkeypatch):
+    from dynamic_subject_agent import local_product,memorie_activity_provider
+    from dynamic_subject_agent.deepseek import DeepSeekCredentialResolver
+    class DelayedResolver(DeepSeekCredentialResolver):
+        def resolve(self,ref):
+            assert p.application.set_reviewed_character_history(False).history_enabled is False
+            return 'synthetic-non-secret'
+    monkeypatch.setattr(local_product,'_WindowsLabResolver',DelayedResolver)
+    monkeypatch.setattr(memorie_activity_provider,'urlopen',lambda *a,**k:pytest.fail('revoked projection entered real HTTPS'))
+    p=native_activity(live_transport=True);assert control(p).status=='committed'
+    result=act(p,'m020-revoked-during-key-read-1')
+    assert result.status=='failed-closed' and p.application.query_living_controls().view['needs_attention'] is True
+
+
+def test_default_https_composition_rechecks_then_delivers_without_real_credentials(native_activity,monkeypatch):
+    from io import BytesIO
+    from dynamic_subject_agent import local_product,memorie_activity_provider
+    from dynamic_subject_agent.deepseek import DeepSeekCredentialResolver
+    class Resolver(DeepSeekCredentialResolver):
+        def resolve(self,ref):return 'synthetic-non-secret'
+    class Response(BytesIO):status=200
+    model=Transport()
+    def opening(request,*,timeout):
+        value=model.post_json(body=request.data)
+        return Response(value.body)
+    monkeypatch.setattr(local_product,'_WindowsLabResolver',Resolver)
+    monkeypatch.setattr(memorie_activity_provider,'urlopen',opening)
+    p=native_activity(live_transport=True)
+    send_native(p,'m020-default-https-typed-click-1')
+    assert control(p).status=='committed'
+    assert act(p,'m020-default-https-choice-1').status=='committed' and len(model.calls)==2

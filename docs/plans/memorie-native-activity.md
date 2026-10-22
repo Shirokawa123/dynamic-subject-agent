@@ -18,4 +18,6 @@ Facade合成链：点击→文字→确认原话→方案→分享→点击接�
 
 兼容定向59 passed（317.96秒、-W error、无skip），含旧M002、M015、living-live和shared；最后只在新native分支复用M002计时澄清例外后，新native全部7项严格通过（64.67秒），明确披露控制0外发。普通subject文字的边界不变，全部首次日志保留在`.artifacts/native-activity-018-*`。
 
+随后按实际DeepSeekUrlLibTransport调用顺序收紧出站：消费票据之后及Windows凭据解析之后、进入最终HTTPS opener之前，分别重建同一canonical权限/材料/日期并核准确字节。只有ScopeTransport入口复核不能覆盖其内部的凭据解析等待，故默认生产composition明确装配受控opener；没有更改通用transport或凭据用途。合成撤权分别发生在consume后与凭据解析中，两者均0下层投递，默认URLLIB正向路径用假凭据/假opener验证。最终新native10项＋原M015九项共19 passed（132.01秒、-W error、无skip）；0真实凭据/网络用于这些假opener用例，日志`native-activity-018-https-final.log`。
+
 生产组合可用于上述隔离开发；不证明用户旧schema11的迁移/旧资格读取权限已经实现。schema12旧库治理、原生客户端协议3/UI/呈现和真实人物效果由独立产品后续承接；原两次真实defer不改、不重跑，不以合成分享冒充真实分享。

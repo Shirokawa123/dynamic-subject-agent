@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-22收紧M012 Sender到票据消费后及凭据解析后的最终HTTPS opener，两处实际重建canonical/日期/字节，覆盖等待期间撤权；新native10＋旧M015九项严格通过，含默认URLLIB假凭据正向路径及撤权0投递。用途/policy不变，独立产品固定版本后再验接口。
+
 - 2026-10-22独立产品[M018–020原生活动组合](plans/memorie-native-activity.md)：新unserved schema12/typed点击文字＋单Timeline活动、来源/派生过滤、prepared/原UUID恢复及瞬时presence暂停；兼容59严格通过，最终native7严格通过。M012字段/policy不变，0真实模型/用户旧根升级；产品协议桥/安装与实机另记。
 
 - 2026-10-22用户批准M012准确用途后新增[专属同Timeline开发组合](plans/memorie-approved-activity-development.md)：M012最小wire/原子一次票据/同Windows用户跨根4choice+2share日账、来源停用与prepared恢复；新9＋旧living-live14严格通过。只新unserved schema6开发身份，typed点击/schema12/用户根升级/安装仍未做，真实实验由产品承接。

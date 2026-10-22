@@ -251,3 +251,16 @@ class NativeActivityDelivery:
             try:self.audit.record(self.pending[0],status=status,output_digest=None if value is None else digest(value))
             except Exception:self.poisoned=True;raise
             self.pending=None
+
+    def check_before_send(self,task=None):
+        """Credential resolution may block after consume; recheck at transport."""
+        with self.lock:
+            ticket=self.pending
+            if ticket is None or self.ticket is not None or self.poisoned or ticket[1]!=get_ident():
+                raise ValueError('current consumed same-thread claim required')
+            self.grant.validate();self._validate_contract()
+            actual=deepcopy(ticket[4]())
+            if (digest(actual)!=ticket[3] or self._day()!=ticket[5]
+                or task is not None and (task.kind!=ticket[2] or actual!=task.payload)):
+                raise ValueError('source or day changed before HTTPS send')
+            return wire(ModelTask(ticket[2],actual))
