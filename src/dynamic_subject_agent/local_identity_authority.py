@@ -401,7 +401,10 @@ def _validate_identity_record(record: object, *, expected_parent: Path | None = 
                 or set(value) != {'digest'} or type(value['digest']) is not str
                 or re.fullmatch('[0-9a-f]{64}', value['digest']) is None for key, value in receipts.items())):
                 raise RuntimeError('living-control-receipts-invalid')
-        if qri.provider_authority == INTEGRATED_LIVE_AUTHORITY:
+        if qri.reviewed_chat_contract.get('memorie_activity_development') is True:
+            from dynamic_subject_agent.memorie_activity_live import NativeActivityAudit
+            NativeActivityAudit(Path(metadata['audit_path'])).counts()
+        elif qri.provider_authority == INTEGRATED_LIVE_AUTHORITY:
             from dynamic_subject_agent.integrated_character_live import open_integrated_character_audit
             open_integrated_character_audit(Path(metadata['audit_path'])).counts()
         elif qri.provider_authority in WORKING_LIVE_AUTHORITIES:
@@ -1464,6 +1467,20 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(living_contract(binding, activity_kind=activity_kind, independent=binding != APPROVED_BINDING), self._config.state_path.parent / 'living-local-audit', identity_id)
 
     @_registry_mutation
+    def activate_memorie_activity_development(self, *, identity_id, grant):
+        from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,REVIEW,contract,open_audit
+        if type(grant) is not ApprovedNativeActivityGrant:raise ValueError('exact M012 grant required')
+        grant.validate()
+        state=_state_v2(json.loads(self._config.state_path.read_bytes()))
+        target=identity_id or state['active_identity_id']
+        record=next(r for r in state['identities'] if r['identity_id']==target)
+        identity=_validate_identity_record(record,expected_parent=self._config.product_parent)
+        envelope=identity.reviewed_definition;asset=envelope['runtime_asset']
+        binding=dict(definition_basis=envelope['definition_basis'],runtime_asset_sha=envelope['runtime_asset_sha'],persona_digest=asset['persona_digest'],
+            subject_id=asset['subject']['subject_id'],anchor_id=asset['anchor']['anchor_id'],review_basis=REVIEW,scope_digest=REVIEW)
+        return self._activate_context_identity(contract(binding),open_audit(grant).path,target)
+
+    @_registry_mutation
     def activate_living_activity_live(self, *, grant, audit_path, identity_id):
         from dynamic_subject_agent.living_activity_live import living_grant_variant, living_live_contract_for_variant
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
@@ -1510,7 +1527,10 @@ class LocalIdentityAuthority:
             return self.load_active()
         if (identity.qri.provider_authority != REVIEWED_CHARACTER_AUTHORITY or existing is None and record.get('host_location') is not None):
             raise RuntimeError('whole-context-requires-new-unserved-identity')
-        if integrated_live:
+        if contract.get('memorie_activity_development') is True:
+            from dynamic_subject_agent.memorie_activity_live import NativeActivityAudit
+            NativeActivityAudit(audit_path)
+        elif integrated_live:
             from dynamic_subject_agent.integrated_character_live import open_integrated_character_audit
             open_integrated_character_audit(audit_path, initialize=existing is None)
         elif feedback_live:
@@ -1848,7 +1868,10 @@ class LocalIdentityAuthority:
                 return ReviewedCharacterChatStatus("dormant", identity.display_name, record.get("history_enabled", False))
             if identity.qri.provider_authority in WHOLE_AUTHORITIES:
                 opener = open_original_whole_audit
-                if identity.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY:
+                if identity.qri.reviewed_chat_contract.get('memorie_activity_development') is True:
+                    from dynamic_subject_agent.memorie_activity_live import NativeActivityAudit
+                    opener=NativeActivityAudit
+                elif identity.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY:
                     from dynamic_subject_agent.integrated_character_live import open_integrated_character_audit
                     opener = open_integrated_character_audit
                 elif identity.qri.provider_authority in WORKING_LIVE_AUTHORITIES:

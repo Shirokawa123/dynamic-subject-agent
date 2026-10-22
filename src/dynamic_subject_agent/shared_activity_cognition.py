@@ -64,8 +64,10 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             live = self.provider_authority in LIVING_LIVE_AUTHORITIES
             if live:
                 from dynamic_subject_agent.living_activity_live import LivingActivityDelivery
+                from dynamic_subject_agent.memorie_activity_live import NativeActivityDelivery,is_contract
+                expected_delivery=NativeActivityDelivery if is_contract(self.contract) else LivingActivityDelivery
                 if (self.gateway is None or self.gateway.capabilities.local is not False
-                    or self.gateway.capabilities.provider_id != 'deepseek' or type(self.delivery) is not LivingActivityDelivery
+                    or self.gateway.capabilities.provider_id != 'deepseek' or type(self.delivery) is not expected_delivery
                     or self.snapshot_loader is None or contract_variant(self.contract) != ('living-final-text-live' if self.provider_authority == LIVING_FINAL_TEXT_AUTHORITY else 'living-live')
                     or self.contract != self.delivery.contract):
                     raise PreAdmissionRejected('living-approved-gateway-required', 'exact S142 live composition required')
@@ -109,6 +111,8 @@ class SharedActivityCognition(OriginalWholeChatCognition):
         if self._context_revision_at(plan.expected_basis.head_sequence) != record.context_revision:
             raise ShareAuthorizationChanged('shared-context-revision-changed')
         with self.guard(OriginalWholeAuthorization(**record.authorization)):
+            if self.contract.get('memorie_activity_development') is True:
+                self.delivery.grant.validate()
             if self.provider_authority in LIVING_AUTHORITIES:
                 if record.living is None or record.living['permission'] != self.living_permission():
                     raise ShareAuthorizationChanged('living-permission-changed')

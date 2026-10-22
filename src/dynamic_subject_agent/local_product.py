@@ -174,6 +174,8 @@ def _open_loaded_local_product(
                 from dynamic_subject_agent.natural_feedback_live import NaturalFeedbackDelivery
                 from dynamic_subject_agent.integrated_character_live import IntegratedCharacterDelivery
                 expected_delivery = IntegratedCharacterDelivery if loaded.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY else NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
+                from dynamic_subject_agent.memorie_activity_live import is_contract,NativeActivityDelivery
+                if is_contract(loaded.qri.reviewed_chat_contract):expected_delivery=NativeActivityDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -981,6 +983,33 @@ def open_living_activity_product_live(config, *, identity_id, grant, audit_path,
     cognition.living_day = utc8_day if day is None else day
     cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_memorie_activity_development_product(config, *, identity_id, approval_path, _transport=None, observations=None, clock=None):
+    """New unserved dev identity only. Never upgrades a served native/local root."""
+    from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,NativeActivityDelivery,open_audit
+    from dynamic_subject_agent.memorie_activity_provider import DeepSeekNativeActivityAdapter
+    from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+    from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY
+    from dynamic_subject_agent.living_activity import LivingClock,utc8_day
+    grant=ApprovedNativeActivityGrant(approval_path);grant.validate();audit=open_audit(grant)
+    authority=LocalIdentityAuthority(config)
+    loaded=authority.activate_memorie_activity_development(identity_id=identity_id,grant=grant)
+    delivery=NativeActivityDelivery(grant=grant,audit=audit,contract=loaded.qri.reviewed_chat_contract,state_path=config.state_path)
+    adapter=DeepSeekNativeActivityAdapter(transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
+        credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),delivery=delivery,observations=observations)
+    cognition=SharedActivityCognition(envelope=loaded.reviewed_definition,gateway=ModelGateway(adapter),contract=loaded.qri.reviewed_chat_contract,
+        provider_authority=LIVING_LIVE_AUTHORITY,delivery=delivery,snapshot_loader=lambda:authority.try_whole_scope_snapshot(loaded.qri.profile_id,loaded.timeline_id),
+        authorization=lambda:authority.original_whole_authorization(loaded.qri.profile_id),guard=authority.original_whole_guard)
+    cognition.try_authorization=lambda:authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.living_permission=lambda:authority.living_permission(loaded.qri.profile_id)
+    cognition.living_presence_permission=lambda:authority.living_permission(loaded.qri.profile_id,loaded.timeline_id)
+    cognition.living_controls=lambda request:authority.change_living_permission(loaded.qri.profile_id,request)
+    cognition.living_failure=lambda:authority.change_living_permission(loaded.qri.profile_id,attention=True)
+    cognition.living_revoke=lambda block_source=None:authority.change_living_permission(loaded.qri.profile_id,revoke=True,block_source=block_source)
+    cognition.living_clock=LivingClock() if clock is None else clock;cognition.living_day=utc8_day
+    cognition._whole_composition_witness=loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config,authority=authority,loaded=loaded,cognition=cognition,source_authoring=None)
 
 
 def open_shared_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None,

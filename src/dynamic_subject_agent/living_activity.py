@@ -185,6 +185,9 @@ def living_valid_sources(record, valid_sources, *, enabled, cutoff):
 
 
 def build_living_choice_preview(envelope, identity, view, contract):
+    if contract.get('memorie_activity_development') is True:
+        from dynamic_subject_agent.memorie_activity_live import build_preview
+        return build_preview(envelope,view,'choice')
     from dynamic_subject_agent.shared_activity import shared_contract
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     old = shared_contract({key: contract[key] for key in APPROVED_BINDING}, independent=contract.get('local_preparation') is True)
@@ -196,6 +199,9 @@ def build_living_choice_preview(envelope, identity, view, contract):
 
 
 def build_share_preview(envelope, identity, view, contract):
+    if contract.get('memorie_activity_development') is True:
+        from dynamic_subject_agent.memorie_activity_live import build_preview
+        return build_preview(envelope,view,'share')
     choice = build_living_choice_preview(envelope, identity, view, contract)
     result = view['visible_result']
     if result is None or result.plan is None or result.event.kind not in ('start', 'revise'):
@@ -207,6 +213,9 @@ def build_share_preview(envelope, identity, view, contract):
 
 
 def build_living_reply_preview(envelope, identity, message, dialogue, enabled, view, contract):
+    if contract.get('memorie_activity_development') is True:
+        from dynamic_subject_agent.memorie_activity_live import build_preview
+        return build_preview(envelope,view,'reply',message=message,dialogue=dialogue,enabled=enabled)
     from dynamic_subject_agent.shared_activity import shared_contract
     from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
     old = shared_contract({key: contract[key] for key in APPROVED_BINDING}, independent=contract.get('local_preparation') is True)

@@ -8079,6 +8079,10 @@ class RuntimeHost:
                 return SharedActivityResponse('no-op', problem_code=code)
         if permission['paused'] or permission['needs_attention']:
             return SharedActivityResponse('no-op', problem_code='living-paused-or-needs-attention')
+        if cognition.contract.get('memorie_activity_development') is True:
+            purpose='share' if request.action=='share' else 'choice'
+            if not cognition.delivery.available(purpose):
+                return SharedActivityResponse('no-op',problem_code='native-'+purpose+'-daily-limit')
         lane = self._lanes.get((binding.profile_id, binding.timeline_id))
         if lane is None or not lane.lock.acquire(blocking=False):
             return SharedActivityResponse('busy', problem_code='living-operation-pending')

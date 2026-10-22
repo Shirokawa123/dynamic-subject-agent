@@ -1,0 +1,11 @@
+# M015–017 批准后的同Timeline文字、方案与分享开发组合
+
+用户已对M012 basis70b74893…89f1022c准确包答“同意这份新增模型用途”；回执独立于原pending审阅，data_upgrade/installation=false。原生typed点击/schema12仍缺组合合同，本次不伪造点击或转换用户根。专属M012 contract经Authority只激活新unserved人物，复用schema6 SharedActivityCognition/Publication/来源依赖/恢复；旧LOCAL或已服务native根保持冲突拒绝。
+
+新contract仍复用living-live能力族，但材料、用途basis、policy、thinking disabled、凭据/endpoint及投影全部独立准确校验；不借旧S142批准。runtime从sealed envelope、同Timeline实际原话/plan/share重建，不发送authoring样例。新增NativeActivityDelivery/Provider只消费当前同线程一次票据，发送前再次核完整canonical/权限/日期和准确wire，输出只提议；Python依旧裁决有限阶段、实际差异与来源。
+
+同Windows用户LOCALAPPDATA下按M012 review固定metadata审计；切换开发数据根不能重置4次choice/2次share尝试的UTC+8日上限，失败/unknown仍计，回复仅显式请求。claim原子且按原operation唯一，不因新attempt重送；不能重建丢失审计。所有状态/来源/文本只留canonical，审计仅摘要/状态，凭据仍原Windows slot。
+
+新unserved development composition只处理显式文字＋三类批准用途，不开原HTTP或游戏桥；启动/重开零模型、默认paused/share-off。在线触发仍沿现有LivingClock/单session lease；开发仅显式simulation，不新增后台轮询/离线补进度。原生scene/phase共享与schema12/旧根续接/新客户端绑定仍待实现，不能把该开发组合冒称原游戏整合完成。
+
+23项严格回归：新9项（same Timeline/来源停用/恢复不重送/跨根计数/日限额NoOp/endpoint和slot守卫/原生点击拒绝等）及旧living-live14项通过。首轮错误保留：加载审计时误走旧S142读者已精确分派；测试短key和错误视图字段改用真实Interface合同；恢复重放保持原revision而非用新revision改旧请求；来源竞态时真实返回failed-closed/无view，未伪装空结果。没有真实Provider请求或用户根写入由此上游验证发生，实际新用途开发实验由独立产品记录。
