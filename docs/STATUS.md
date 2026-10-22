@@ -1,6 +1,6 @@
 # 当前状态
 
-- 2026-10-22为独立产品M010/M011增加[独立人物LOCAL经历/有限文字活动接缝](plans/independent-local-activity.md)，复用schema6/单Timeline；原远程binding/用途与Memorie schema11不变。独立对象与旧whole27项、remote拒绝专项、资源修复4项均严格通过；首轮shared/living72中70通过、2项旧测试连接告警及修复证据保留，不声称该首轮全绿。
+- 2026-10-22为独立产品M010/M011增加[独立人物LOCAL经历/有限文字活动接缝](plans/independent-local-activity.md)，复用schema6/单Timeline；原远程binding/用途与Memorie schema11不变。独立对象/旧whole27项、remote拒绝专项、资源修复4项及无shared资格/真损坏区分2项严格通过；首轮shared/living72中70通过、2项旧测试连接告警及修复证据保留，不声称该首轮全绿。
 
 - 2026-10-22共用M002更新接缝完成：Facade/Authority提供零写入已提交续接验证，schema11完整旧claim证明允许核未送达原nonce（不授Admission/重发）；native/续接/只读/Host相关42 passed。游戏产品负责正式入口/客户端与包准备，未操作真实用户根或服务，[合同](plans/memorie-qualification-continuation.md)。
 

@@ -16,4 +16,6 @@ LOCAL闭集增加herb-note-outline：仍使用CompositionPlan的subject/composit
 
 test_independent_local_activity通过新sealed对象、无APPROVED_BINDING替换验证来源重开/修正/停用、无来源/助手台词/过期revision拒绝、实际方案/分享/接话及远程gateway在根访问前拒绝。既有shared/living和remote合同回归另记结果。没有Memorie schema11接入、数据升级、原UUID重发、通知、后台服务或离线推进。
 
+产品负例另发现未具shared资格的native查询被旧Facade宽泛捕获成failed-closed。Facade现先按当前binding拒绝为typed unavailable，真实来源/完整性故障仍沿failed-closed；不授予任何能力、不写数据或调用模型。
+
 严格首轮72项中70通过、1失败/1setup错误均为旧损坏注入测试的未关闭SQLite连接，保留原失败日志。Context7核[CPython 3.13 sqlite3文档](https://github.com/python/cpython/blob/v3.13.9/Doc/library/sqlite3.rst)：Connection上下文仅处理事务，不关闭连接。只在两项旧测试补closing，保留原事务提交和全部损坏/拒绝断言；不屏蔽ResourceWarning，也不改生产判据。独立对象/旧whole回归27通过，新增remote反例专项通过，修复后两项损坏及原受影响后续4项严格通过（25.67秒）。不是重新宣称首轮72全绿；产品批次另跑自身完整验收。

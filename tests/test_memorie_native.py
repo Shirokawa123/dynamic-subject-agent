@@ -68,6 +68,17 @@ def send(product, value, key):
 def payload(call): return json.loads(json.loads(call['body'])['messages'][1]['content'])
 
 
+def test_native_qualification_has_typed_unavailable_activity_without_model(native):
+    opening,_,_,_=native
+    transport=Transport()
+    with opening(transport) as product:
+        shared=product.application.query_shared_activity()
+        assert shared.status=='unavailable' and shared.problem_code=='independent-shared-authority-required'
+        assert shared.view is None and shared.receipt is None
+        assert product.application.query_living_activity().status=='unavailable'
+        assert not transport.calls
+
+
 def test_typed_click_text_same_timeline_restart_exact_request_and_no_fake_speech(native):
     opening, _, private, root = native
     transport = Transport(); product = opening(transport)

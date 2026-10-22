@@ -608,8 +608,10 @@ class _ApplicationRouter:
                 problem=ApplicationProblemView('subject-request-lookup-unverified'))
 
     def query_shared_activity(self, request=None):
-        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest, SharedActivityStepRequest, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES
+        from dynamic_subject_agent.shared_activity import SharedActivityResponse, SharedExperienceRequest, SharedActivityStepRequest, FEEDBACK_LIVE_AUTHORITY, FEEDBACK_AUTHORITIES, SHARED_AUTHORITIES
         self._require_open()
+        if self._binding.provider_authority not in SHARED_AUTHORITIES:
+            return SharedActivityResponse('unavailable', problem_code='independent-shared-authority-required')
         if request is not None and (type(request) not in (SharedExperienceRequest, SharedActivityStepRequest)
             or request.target_profile_id != self._binding.profile_id or request.target_timeline_id != self._binding.timeline_id
             or type(request.expected_revision) is not int or request.expected_revision < 0
