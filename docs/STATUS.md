@@ -1,5 +1,7 @@
 # 当前状态
 
+- 2026-10-22独立产品[M018–020原生活动组合](plans/memorie-native-activity.md)：新unserved schema12/typed点击文字＋单Timeline活动、来源/派生过滤、prepared/原UUID恢复及瞬时presence暂停；兼容59严格通过，最终native7严格通过。M012字段/policy不变，0真实模型/用户旧根升级；产品协议桥/安装与实机另记。
+
 - 2026-10-22用户批准M012准确用途后新增[专属同Timeline开发组合](plans/memorie-approved-activity-development.md)：M012最小wire/原子一次票据/同Windows用户跨根4choice+2share日账、来源停用与prepared恢复；新9＋旧living-live14严格通过。只新unserved schema6开发身份，typed点击/schema12/用户根升级/安装仍未做，真实实验由产品承接。
 
 - 2026-10-22为独立产品M012–014提供[原生新用途/续接蓝图/来源预览](plans/memorie-activity-preparation.md)；静态准确请求和pending review、schema11原前缀/UUID只读证明、同目标逐字原话预览均无Sender/新资格/apply。26项-W error严格通过；首轮环境缺项及旧测试连接告警保留，旧用途/用户根不改。

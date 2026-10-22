@@ -44,6 +44,8 @@ class DeepSeekNativeActivityAdapter(ProviderAdapter):
             if purpose=='reply':
                 value=dict(reply_text=_post_text_reply_content(observed,self.credential_ref,raw,max_output_tokens=4096),language='zh')
                 validate_whole_reply(value)
+                from dynamic_subject_agent.memorie_native import validate_reply
+                validate_reply(value['reply_text'],actual.payload['payload']['interaction'])
             else:
                 value=_post_json_reply_content(observed,self.credential_ref,raw,max_output_tokens=4096,require_complete=True,discard_reasoning=True,safe_diagnostics=True)
                 if purpose=='share':

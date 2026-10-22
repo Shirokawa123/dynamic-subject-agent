@@ -2688,7 +2688,7 @@ def _bootstrap_timeline(
         if life and effects:
             raise AdmissionFailedClosed('life-effect-contract-conflict', 'life authority does not enable file effects')
         shared = SHARED_INTENT in authority.allowed_intents
-        schema_version = 10 if NATIVE_INTENT in authority.allowed_intents else 9 if {FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents) else 8 if FEEDBACK_INTENT in authority.allowed_intents else 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
+        schema_version = 12 if {NATIVE_INTENT,LIVING_INTENT} <= set(authority.allowed_intents) else 10 if NATIVE_INTENT in authority.allowed_intents else 9 if {FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents) else 8 if FEEDBACK_INTENT in authority.allowed_intents else 7 if WORKING_INTENT in authority.allowed_intents else 6 if LIVING_INTENT in authority.allowed_intents else 5 if shared else 4 if whole_context else 3 if life else 2 if effects else SCHEMA_VERSION
         for statement in _TIMELINE_DDL:
             if life or whole_context or NATIVE_INTENT in authority.allowed_intents:
                 statement = statement.replace("CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))")
@@ -2872,7 +2872,7 @@ def _verify_manifest(
             "unsupported-schema-version",
             "schema version cannot be read",
         ) from error
-    if user_version not in ((1,2,3,4,5,6,7,8,9,10,11) if store_kind=='timeline' else (SCHEMA_VERSION,)):
+    if user_version not in ((1,2,3,4,5,6,7,8,9,10,11,12) if store_kind=='timeline' else (SCHEMA_VERSION,)):
         raise AdmissionFailedClosed(
             "unsupported-schema-version",
             f"expected schema version {SCHEMA_VERSION}, found {user_version}",
@@ -2902,7 +2902,9 @@ def _verify_store_integrity(
     *,
     expected_tables: frozenset[str],
 ) -> None:
-    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==11:
+    if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==12:
+        expected_tables = expected_tables | {'memorie_native_input','whole_context_input','whole_context_boundary','shared_activity_input','shared_activity_record','prepared_cycle_plan'}
+    elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==11:
         expected_tables = expected_tables | {'memorie_native_input', 'memorie_qualification_continuation'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==10:
         expected_tables = expected_tables | {'memorie_native_input'}
@@ -3170,6 +3172,14 @@ def _basis_matches(left: TimelineBasis, right: TimelineBasis) -> bool:
     return left == right
 
 
+def _is_dialogue_input(command):
+    return type(command) in (SubjectCommand,NativeInteractionInput)
+
+
+def _is_user_text_input(command):
+    return type(command) is SubjectCommand or type(command) is NativeInteractionInput and command.interaction['kind']=='text'
+
+
 class TimelineEngine:
     """The only M0-A writer boundary for Admission in one timeline store."""
 
@@ -3409,7 +3419,7 @@ class TimelineEngine:
             )
             gate = _read_admission_gate(writer)
             authority = gate.authority
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (10,11)) != (NATIVE_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (10,11,12)) != (NATIVE_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('native-contract-mismatch', 'Native interaction requires independent schema10')
             if (writer.execute('PRAGMA user_version').fetchone()[0] == 9) != ({FEEDBACK_INTENT, LIVING_INTENT} <= set(authority.allowed_intents)):
                 raise AdmissionFailedClosed('integrated-contract-mismatch', 'Combined contract requires independent schema9')
@@ -3417,11 +3427,11 @@ class TimelineEngine:
                 raise AdmissionFailedClosed('effect-contract-mismatch','Timeline version differs from effect authority')
             if (writer.execute('PRAGMA user_version').fetchone()[0]==3) != (LIFE_SYSTEM_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('life-contract-mismatch', 'Timeline version differs from life authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7,8,9)) != (CONTEXT_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (4,5,6,7,8,9,12)) != (CONTEXT_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('whole-context-contract-mismatch', 'Timeline version differs from whole context authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8,9)) != (SHARED_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (5,6,7,8,9,12)) != (SHARED_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('shared-contract-mismatch', 'Timeline version differs from shared activity authority')
-            if (writer.execute('PRAGMA user_version').fetchone()[0] in (6, 9)) != (LIVING_INTENT in authority.allowed_intents):
+            if (writer.execute('PRAGMA user_version').fetchone()[0] in (6, 9,12)) != (LIVING_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('living-contract-mismatch', 'Living requires its independent schema6')
             if (writer.execute('PRAGMA user_version').fetchone()[0] in (8, 9)) != (FEEDBACK_INTENT in authority.allowed_intents):
                 raise AdmissionFailedClosed('feedback-contract-mismatch', 'Feedback requires independent schema8')
@@ -3613,18 +3623,26 @@ class TimelineEngine:
                 "OperationRef does not belong to this Timeline authority",
             )
         if operation_ref.operation_kind is OperationKind.SYSTEM:
+            if {NATIVE_INTENT,SHARED_INTENT} <= set(self._authority.allowed_intents):
+                count=sum(self._writer.execute('SELECT COUNT(*) FROM '+table+' WHERE operation_id=?',
+                    (UUID(operation_ref.operation_id).bytes,)).fetchone()[0]
+                    for table in ('memorie_native_input','shared_activity_input','whole_context_input'))
+                if count!=1:raise AdmissionFailedClosed('native-system-input-ambiguous','One exact typed canonical input required')
             if NATIVE_INTENT in self._authority.allowed_intents:
                 row = self._writer.execute('SELECT input_json,payload_fingerprint FROM memorie_native_input WHERE operation_id=?',
                     (UUID(operation_ref.operation_id).bytes,)).fetchone()
-                try:
-                    command = NativeInteractionInput(**json.loads(row[0]))
-                    self._validate_authority(command)
-                    if (_canonical_json(command) != row[0] or bytes(row[1]).hex() != command.payload_fingerprint
-                        or command.payload_fingerprint != operation_ref.admitted_payload_fingerprint):
-                        raise ValueError('native admission differs')
-                    return command
-                except Exception:
-                    raise AdmissionFailedClosed('native-input-unverified', 'Native canonical input is invalid') from None
+                if row is None and SHARED_INTENT not in self._authority.allowed_intents:
+                    raise AdmissionFailedClosed('native-input-unverified','Native canonical input is missing')
+                if row is not None:
+                    try:
+                        command = NativeInteractionInput(**json.loads(row[0]))
+                        self._validate_authority(command)
+                        if (_canonical_json(command) != row[0] or bytes(row[1]).hex() != command.payload_fingerprint
+                            or command.payload_fingerprint != operation_ref.admitted_payload_fingerprint):
+                            raise ValueError('native admission differs')
+                        return command
+                    except Exception:
+                        raise AdmissionFailedClosed('native-input-unverified', 'Native canonical input is invalid') from None
             if SHARED_INTENT in self._authority.allowed_intents:
                 row = self._writer.execute('SELECT input_json,payload_fingerprint FROM shared_activity_input WHERE operation_id=?', (UUID(operation_ref.operation_id).bytes,)).fetchone()
                 if row is not None:
@@ -3813,8 +3831,6 @@ class TimelineEngine:
                 raise PreAdmissionRejected('native-input-unavailable', 'Native input requires its exact authority')
             NativeInteractionInput(**_canonical_value(command))
             return
-        if NATIVE_INTENT in self._authority.allowed_intents:
-            raise PreAdmissionRejected('typed-native-input-required', 'Native interactions cannot be submitted as speech')
         if type(command) is SharedActivityInput:
             if SHARED_INTENT not in self._authority.allowed_intents or command.target_profile_id != self._authority.profile_id or command.target_timeline_id != self._authority.timeline_id:
                 raise PreAdmissionRejected("shared-input-unavailable", "shared input requires its exact authority")
@@ -3833,6 +3849,8 @@ class TimelineEngine:
             if command.target_profile_id != self._authority.profile_id or command.target_timeline_id != self._authority.timeline_id:
                 raise PreAdmissionRejected('whole-context-target-mismatch', 'whole boundary belongs to another binding')
             return
+        if NATIVE_INTENT in self._authority.allowed_intents:
+            raise PreAdmissionRejected('typed-native-input-required', 'Native interactions cannot be submitted as speech')
         if type(command) is FirstLifeInput:
             self._validate_first_life_input(command)
             return
@@ -4708,7 +4726,7 @@ class TimelineEngine:
                 source = current.source
                 candidates = [cmd for out, cmd, _ in publications if out.head_sequence == source.source_head_sequence]
                 if (source.selection_revision != current.revision or source.source_head_sequence >= outcome.head_sequence
-                    or len(candidates) != 1 or type(candidates[0]) is not SubjectCommand
+                    or len(candidates) != 1 or not _is_user_text_input(candidates[0])
                     or not source.quote.strip() or len(source.quote) > 400 or source.quote not in candidates[0].utterance):
                     raise PublicationFailedClosed('shared-source-invalid', 'source is not one committed user quote')
             if FEEDBACK_INTENT in self._authority.allowed_intents:
@@ -4826,7 +4844,7 @@ class TimelineEngine:
     def _shared_dialogue_lineage(self, publications):
         earlier, result = set(), {}
         for outcome, command, _ in publications:
-            if type(command) is SubjectCommand:
+            if _is_dialogue_input(command):
                 deps = outcome.shared_record.dialogue_dependencies
                 # Earlier unapproved LOCAL preparation records remain readable.
                 # Missing lineage is conservatively all earlier user turns,
@@ -4851,7 +4869,7 @@ class TimelineEngine:
         for operation_id, head in rows:
             ref = self._admitted_for_operation(self._writer, bytes(operation_id), replayed=True).operation_ref
             command = self._query_command(ref)
-            if type(command) is SubjectCommand and whole_dialogue_scope(command.utterance) == WITHDRAWAL:
+            if _is_dialogue_input(command) and whole_dialogue_scope(command.utterance) == WITHDRAWAL:
                 cutoff = max(cutoff, head)
         return cutoff
 
@@ -4882,7 +4900,7 @@ class TimelineEngine:
                     raise ValueError('shared admission basis changed')
                 if command.input_kind == 'select':
                     source = next((cmd for out, cmd, _ in self._verified_publications() if out.head_sequence == command.source_head_sequence), None)
-                    if (type(source) is not SubjectCommand or command.quote not in source.utterance
+                    if (not _is_user_text_input(source) or command.quote not in source.utterance
                         or command.source_head_sequence <= view['cutoff_sequence']):
                         raise ValueError('source unavailable after disclosure cutoff')
             expected = None
@@ -6392,7 +6410,7 @@ class TimelineEngine:
             published_at = _utc_microseconds()
             self._validate_life_plan(plan)
             self._validate_shared_plan(plan)
-            if NATIVE_INTENT in self._authority.allowed_intents:
+            if NATIVE_INTENT in self._authority.allowed_intents and type(self._query_command(plan.operation_ref)) is NativeInteractionInput:
                 from dynamic_subject_agent.memorie_native import validate_reply
                 command = self._query_command(plan.operation_ref)
                 try:
@@ -7862,6 +7880,8 @@ class TimelineEngine:
             elif type(command) is NativeInteractionInput:
                 validate_reply(outcome.expression.text, command.interaction)
                 interaction = command.interaction_json
+            elif type(command) in (SharedActivityInput,WholeContextInput) and SHARED_INTENT in self._authority.allowed_intents:
+                continue
             else:
                 raise PublicationFailedClosed('native-history-input-invalid', 'Native prefix contains another input type')
             records.append(NativeTurn(outcome.head_sequence, interaction, outcome.expression.text))
@@ -7876,6 +7896,8 @@ class TimelineEngine:
             return NativeDialogueBasis('unavailable')
         records, cutoff = verified
         command = self._query_command(operation_ref)
+        if SHARED_INTENT in self._authority.allowed_intents:
+            return self._whole_dialogue_selection_from_prefix(command.utterance,enabled,verified)[0]
         if command.utterance and is_memorie_dialogue_control(command.utterance):
             return NativeDialogueBasis('restricted')
         if not enabled:
@@ -8435,7 +8457,7 @@ class TimelineEngine:
         if _read_admission_gate(self._writer).authority != self._authority:
             raise PublicationFailedClosed('whole-preview-authority-unverified', 'whole scope no longer matches the exact canonical authority')
         self._verified_publications()
-        records = self.list_conversation_turns(limit=2)
+        records = self.list_native_interactions(limit=2) if NATIVE_INTENT in self._authority.allowed_intents else self.list_conversation_turns(limit=2)
         context_cutoff = self.whole_context_basis(expected_head=basis.head_sequence)['cutoff_sequence'] if CONTEXT_INTENT in self._authority.allowed_intents else 0
         cutoff = context_cutoff
         if CONTEXT_INTENT not in self._authority.allowed_intents and (records[-1].head_sequence if records else 0) != basis.head_sequence:
@@ -8482,15 +8504,18 @@ class TimelineEngine:
         from dynamic_subject_agent.reviewed_character_chat import CharacterDialogueBasis
         from dynamic_subject_agent.whole_dialogue_scope import is_whole_dialogue_control
         from dynamic_subject_agent.recent_dialogue import select_recent_dialogue_records, RecentDialogueTurn
+        native=NATIVE_INTENT in self._authority.allowed_intents
+        if native:
+            from dynamic_subject_agent.memorie_native import is_dialogue_control as is_whole_dialogue_control
         if verified is None:
-            return CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved'), ()
+            return (NativeDialogueBasis('unavailable') if native else CharacterDialogueBasis('unavailable', problem_code='character-history-unresolved')), ()
         records, cutoff = verified
         # Source/lineage filtering controls which words may be disclosed. It
         # does not erase the verified fact that a prior exchange committed.
         has_prior = bool(records)
         if (is_whole_dialogue_control(message)
             or records and records[-1].head_sequence > cutoff and is_whole_dialogue_control(records[-1].user_text)):
-            return CharacterDialogueBasis('restricted', has_prior, problem_code='character-history-restricted'), ()
+            return (NativeDialogueBasis('restricted') if native else CharacterDialogueBasis('restricted', has_prior, problem_code='character-history-restricted')), ()
         if SHARED_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.shared_activity import initial_record, visible_state
             publications = self._verified_publications()
@@ -8505,12 +8530,16 @@ class TimelineEngine:
                 if out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
             if {LIVING_INTENT, FEEDBACK_INTENT} & set(self._authority.allowed_intents):
                 blocked_heads.update(out.head_sequence for out, command, _ in publications
-                    if type(command) is SubjectCommand and not set(out.shared_record.reply_dependencies) <= valid)
+                    if _is_dialogue_input(command) and not set(out.shared_record.reply_dependencies) <= valid)
             if WORKING_INTENT in self._authority.allowed_intents:
                 blocked_heads.update(self._working_blocked_heads(publications, valid))
             lineage = self._shared_dialogue_lineage(publications)
             records = tuple(row for row in records if set(dependencies[row.head_sequence]) <= valid
                 and row.head_sequence not in blocked_heads and not lineage[row.head_sequence] & blocked_heads)
+        if NATIVE_INTENT in self._authority.allowed_intents:
+            from dynamic_subject_agent.memorie_native import select_native_turns
+            selected=select_native_turns(records,cutoff=cutoff,enabled=enabled)
+            return NativeDialogueBasis('available',tuple(selected)),selected
         selected = select_recent_dialogue_records(records, after_sequence=cutoff,
             control_predicate=is_whole_dialogue_control) if enabled else ()
         texts = tuple(RecentDialogueTurn(record.user_text, record.assistant_text) for record in selected)

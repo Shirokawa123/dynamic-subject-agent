@@ -782,6 +782,12 @@ class _ApplicationRouter:
             return SharedActivityResponse('failed-closed', problem_code='living-operation-unverified')
 
     def heartbeat_living_presence(self, request):
+        return self._living_presence(request,suspend=False)
+
+    def suspend_living_presence(self, request):
+        return self._living_presence(request,suspend=True)
+
+    def _living_presence(self, request, *, suspend):
         from dynamic_subject_agent.shared_activity import SharedActivityResponse
         from dynamic_subject_agent.living_activity import LivingPresenceRequest
         self._require_open()
@@ -790,7 +796,7 @@ class _ApplicationRouter:
             or not 16 <= len(request.session_id) <= 256 or '\x00' in request.session_id):
             return SharedActivityResponse('unavailable', problem_code='living-presence-invalid')
         try:
-            return self._host.heartbeat_living_presence(self._binding, request)
+            return self._host.heartbeat_living_presence(self._binding, request,suspend=suspend)
         except Exception:
             return SharedActivityResponse('failed-closed', problem_code='living-presence-unverified')
 
@@ -1694,6 +1700,9 @@ class ApplicationFacade:
 
     def heartbeat_living_presence(self, request):
         return self.__router.heartbeat_living_presence(request)
+
+    def suspend_living_presence(self, request):
+        return self.__router.suspend_living_presence(request)
 
     def set_living_controls(self, request):
         return self.__router.set_living_controls(request)

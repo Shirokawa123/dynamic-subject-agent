@@ -98,9 +98,9 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
-    if contract.get('version')=='memorie-activity-development-m015-1':
+    if contract.get('version') in ('memorie-activity-development-m015-1','memorie-native-activity-m018-1'):
         from dynamic_subject_agent.memorie_activity_live import contract as native_activity_contract
-        if contract!=native_activity_contract({key:contract[key] for key in APPROVED_BINDING}):
+        if contract!=native_activity_contract({key:contract[key] for key in APPROVED_BINDING},native=contract['version']=='memorie-native-activity-m018-1'):
             raise ValueError('exact approved M012 development contract required')
         return 'living-live'
     if contract.get('local_preparation') is True and contract.get('version') in (

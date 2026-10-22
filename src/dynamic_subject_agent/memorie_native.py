@@ -188,6 +188,18 @@ class NativeDialogueBasis:
     turns: tuple[NativeTurn, ...] = ()
 
 
+def select_native_turns(records,*,cutoff=0,enabled=True):
+    """Select typed, fully verified interactions without a speech projection."""
+    if not enabled:return ()
+    selected=[];count=0
+    for record in reversed(records):
+        if record.head_sequence<=cutoff or is_dialogue_control(record.user_text):break
+        size=len(record.user_text)+len(record.assistant_text)
+        if len(selected)>=2 or count+size>4000:break
+        selected.append(record);count+=size
+    return tuple(reversed(selected))
+
+
 @dataclass(frozen=True)
 class NativeReplyProjection:
     payload_json: str

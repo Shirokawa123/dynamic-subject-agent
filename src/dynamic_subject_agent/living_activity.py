@@ -382,6 +382,12 @@ class LivingClock:
             self.seconds = 0.0
             self.last = self.clock()
 
+    def suspend(self,session):
+        with self.lock:
+            if self.owner is not None and self.owner!=session:return 'another-life-window'
+            self.reset_session()
+            return 'presence-suspended'
+
     def reset_session(self):
         """Composition reopen discards presence as well as elapsed opportunity."""
         with self.lock:

@@ -1467,7 +1467,7 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(living_contract(binding, activity_kind=activity_kind, independent=binding != APPROVED_BINDING), self._config.state_path.parent / 'living-local-audit', identity_id)
 
     @_registry_mutation
-    def activate_memorie_activity_development(self, *, identity_id, grant):
+    def activate_memorie_activity_development(self, *, identity_id, grant, native=False):
         from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,REVIEW,contract,open_audit
         if type(grant) is not ApprovedNativeActivityGrant:raise ValueError('exact M012 grant required')
         grant.validate()
@@ -1478,7 +1478,7 @@ class LocalIdentityAuthority:
         envelope=identity.reviewed_definition;asset=envelope['runtime_asset']
         binding=dict(definition_basis=envelope['definition_basis'],runtime_asset_sha=envelope['runtime_asset_sha'],persona_digest=asset['persona_digest'],
             subject_id=asset['subject']['subject_id'],anchor_id=asset['anchor']['anchor_id'],review_basis=REVIEW,scope_digest=REVIEW)
-        return self._activate_context_identity(contract(binding),open_audit(grant).path,target)
+        return self._activate_context_identity(contract(binding,native=native),open_audit(grant).path,target)
 
     @_registry_mutation
     def activate_living_activity_live(self, *, grant, audit_path, identity_id):
@@ -1576,6 +1576,8 @@ class LocalIdentityAuthority:
         dormant = ReviewedCharacterDormantCognition()
         dormant.supports_whole_context = True
         dormant.supports_shared_activity = shared
+        from dynamic_subject_agent.memorie_activity_live import is_native_contract
+        dormant.supports_native_activity = is_native_contract(contract)
         dormant.supports_integrated_character = integrated
         dormant.supports_natural_feedback = feedback or integrated
         dormant.supports_living_activity = living

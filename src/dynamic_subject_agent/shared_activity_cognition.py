@@ -8,6 +8,7 @@ from dynamic_subject_agent.original_whole_chat_cognition import OriginalWholeCha
 from dynamic_subject_agent.original_whole_chat import OriginalWholeAuthorization, validate_whole_reply
 from dynamic_subject_agent.first_life_authorization import ShareAuthorizationChanged
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind, ModelGatewayFailure
+from dynamic_subject_agent.memorie_native import NativeInteractionInput
 from dynamic_subject_agent.whole_context_boundary import WholeContextInput, CONTEXT_RECEIPT
 from dynamic_subject_agent.whole_dialogue_scope import whole_dialogue_scope, WITHDRAWAL, UNRESOLVED
 from dynamic_subject_agent.shared_activity import (
@@ -79,6 +80,10 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                     raise PreAdmissionRejected('living-permission-required', 'living action requires exact permission')
                 if live and command.input_kind == 'advance' and command.living_trigger not in ('online', 'simulation'):
                     raise PreAdmissionRejected('living-approved-opportunity-trigger-required', 'exact approved S142 opportunity required')
+                return
+            if type(command) is NativeInteractionInput and getattr(self,'supports_native_interaction',False):
+                if command.interaction['kind']=='text':
+                    return OriginalWholeChatCognition.preflight(self,context=context,command=command)
                 return
             return OriginalWholeChatCognition.preflight(self, context=context, command=command)
         live = self.provider_authority == SHARED_LIVE_AUTHORITY
@@ -295,7 +300,8 @@ class SharedActivityCognition(OriginalWholeChatCognition):
             build_living_record, build_share_preview, build_living_reply_preview, validate_share)
         if type(command) not in (SharedActivityInput, WholeContextInput):
             scope = whole_dialogue_scope(command.utterance)
-            if scope in (WITHDRAWAL, UNRESOLVED):
+            from dynamic_subject_agent.memorie_native import is_dialogue_control as native_control
+            if scope in (WITHDRAWAL, UNRESOLVED) and (type(command) is not NativeInteractionInput or native_control(command.utterance)):
                 code = 'original-whole-history-withdrawn' if scope == WITHDRAWAL else 'original-whole-history-control-unresolved'
                 raise CognitionFailedClosed('history', code, 'No disclosure control is sent.')
         try:
@@ -323,7 +329,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                     text = '本次活动取舍已提交。'
             else:
                 dialogue = context.load_character_dialogue(effective.history_enabled)
-                preview = build_living_reply_preview(self.envelope, context.runtime_identity, command.utterance,
+                preview = build_living_reply_preview(self.envelope, context.runtime_identity, command if type(command) is NativeInteractionInput else command.utterance,
                     dialogue, effective.history_enabled, view, self.contract)
                 text = validate_whole_reply(self._execute_living(ModelTask(ModelTaskKind.LIVING_ACTIVITY_REPLY, preview),
                     plan=plan, context=context, command=command, authorization=authorization, permission=permission))
@@ -380,7 +386,7 @@ class SharedActivityCognition(OriginalWholeChatCognition):
                 if task.kind is not ModelTaskKind.LIVING_ACTIVITY_REPLY:
                     raise ValueError('closed living purpose required')
                 dialogue = context.load_character_dialogue(effective.history_enabled)
-                return build_living_reply_preview(snapshot['envelope'], snapshot['identity'], command.utterance,
+                return build_living_reply_preview(snapshot['envelope'], snapshot['identity'], command if type(command) is NativeInteractionInput else command.utterance,
                     dialogue, effective.history_enabled, view, snapshot['contract'])
             try:
                 self.delivery.claim(plan.operation_ref.operation_id+':'+plan.attempt_id, task, rebuild)

@@ -1,5 +1,7 @@
 # 当前工作
 
+2026-10-22独立产品M018–020共用接缝见[原生互动/活动组合](../plans/memorie-native-activity.md)：新unserved schema12合并typed互动与shared/living、完整来源/派生过滤、prepared恢复/原UUID及presence暂停。固定M012用途/policy，不执行用户旧根升级/安装或真实模型；具体产品接口/游戏验收由独立产品承接。
+
 2026-10-22为独立产品M015–017提供[已批准用途的开发组合](../plans/memorie-approved-activity-development.md)：三个用途在同一schema6开发Timeline运行，真实来源/实际文字方案/分享接续，固定跨根metadata限额与恢复。23项严格验证通过；不升用户schema11，不用文字冒充点击，原生组合/schema12仍待做。
 
 2026-10-22仅交付独立产品M012–014的[共用准备接缝](../plans/memorie-activity-preparation.md)：准确未发送请求、原schema11续接蓝图和经历选择只读预览。26项严格通过；没有新Provider批准、运行资格、schema12执行器、游戏动作或用户根写入。执行由`E:/memorie-companion/docs/slices/current.md`承接。

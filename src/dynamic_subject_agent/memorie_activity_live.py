@@ -1,7 +1,7 @@
 """Approved M012 development composition contracts and three-purpose delivery.
 
-One canonical schema6 development Timeline is reused, never upgraded/copied
-from the user's schema11. Typed native clicks/schema12 remain unavailable.
+One canonical development Timeline is reused: schema6 text or the independently
+qualified schema12 native composition. Neither upgrades/copies the user's root.
 """
 from copy import deepcopy
 from dataclasses import dataclass,asdict
@@ -20,6 +20,8 @@ from dynamic_subject_agent.model_gateway import ModelTask,ModelTaskKind
 REVIEW='70b74893b4b3be2258c0ade092396dcd5ba720cace42dd105404748589f1022c'
 REVIEW_SHA='c82f227aa8cf6f04bba03c27da5ef7e85ef8db915fdcbef97b3518ab130e8ada'
 VERSION='memorie-activity-development-m015-1'
+NATIVE_VERSION='memorie-native-activity-m018-1'
+NATIVE_RUNTIME='memorie-native-activity-cycle-m018-1'
 KINDS={ModelTaskKind.LIVING_ACTIVITY_REPLY:'reply',ModelTaskKind.LIVING_ACTIVITY_CHOICE:'choice',ModelTaskKind.LIVING_ACTIVITY_SHARE:'share'}
 
 
@@ -55,7 +57,7 @@ class ApprovedNativeActivityGrant:
 POLICY_HASHES = {'choice': 'd4ecbf35332d582b23d790e78569461cf2c0bc8f0bf502792df1087757f78e2e', 'reply': '9b0beb02aa0d9478da792d804998d625a6f00ac5e2b265f2bf2824aef85a72ba', 'share': 'd9ff9bd3acdf08a41532db4507e74d9a1c6c1e3dfafb99f542cfa856feaf6eb1'}
 
 
-def contract(binding):
+def contract(binding,*,native=False):
     from dynamic_subject_agent.memorie_companion_contract import DEFINITION,ASSET
     from dynamic_subject_agent.living_activity import living_contract
     if (binding.get('definition_basis')!=DEFINITION or binding.get('runtime_asset_sha')!=ASSET
@@ -64,13 +66,17 @@ def contract(binding):
     base=living_contract(binding,independent=True,activity_kind='herb-note-outline')
     base.pop('local_preparation',None)
     base.pop('reasoning_effort',None)
-    return dict(base,version=VERSION,authorization=REVIEW,scope_digest=REVIEW,review_basis=REVIEW,
+    if type(native) is not bool:raise ValueError('explicit native composition required')
+    return dict(base,version=NATIVE_VERSION if native else VERSION,authorization=REVIEW,scope_digest=REVIEW,review_basis=REVIEW,
         provider='deepseek',credential_use='existing-Windows-slot-HTTPS-Bearer-only',thinking='disabled',policy_sha=POLICY_HASHES.get('reply'),
-        memorie_activity_development=True,technical_variant=dict(base['technical_variant'],name='living-live',timeline_schema=6,
+        memorie_activity_development=True,technical_variant=dict(base['technical_variant'],name='living-live',timeline_schema=12 if native else 6,
             max_share_chars=120,choice_policy_sha=POLICY_HASHES.get('choice'),share_policy_sha=POLICY_HASHES.get('share'),reply_policy_sha=POLICY_HASHES.get('reply')))
 
 
-def is_contract(value):return type(value) is dict and value.get('version')==VERSION
+def is_contract(value):return type(value) is dict and value.get('version') in (VERSION,NATIVE_VERSION)
+
+
+def is_native_contract(value):return type(value) is dict and value.get('version')==NATIVE_VERSION
 
 
 def build_preview(envelope,view,purpose,*,message=None,dialogue=None,enabled=False):
@@ -88,8 +94,15 @@ def build_preview(envelope,view,purpose,*,message=None,dialogue=None,enabled=Fal
     activity=None if result is None or result.plan is None else dict(kind='herb-note-outline',plan=asdict(result.plan))
     if purpose=='reply':
         if dialogue.status!='available':raise ValueError('verified dialogue required')
-        exchange=[dict(interaction=dict(kind='text',text=t.user_text),assistant_text=t.assistant_text) for t in dialogue.recent_dialogue]
-        base=dict(material,interaction=dict(kind='text',text=message),situation=None,exchange=exchange)
+        from dynamic_subject_agent.memorie_native import NativeInteractionInput,NativeDialogueBasis,projection
+        if type(message) is NativeInteractionInput:
+            base=json.loads(projection(envelope,message,dialogue,enabled).payload_json)
+        elif type(dialogue) is NativeDialogueBasis:
+            base=dict(material,interaction=dict(kind='text',text=message),situation=None,
+                exchange=[dict(interaction=json.loads(t.interaction_json),assistant_text=t.assistant_text) for t in dialogue.turns])
+        else:
+            exchange=[dict(interaction=dict(kind='text',text=t.user_text),assistant_text=t.assistant_text) for t in dialogue.recent_dialogue]
+            base=dict(material,interaction=dict(kind='text',text=message),situation=None,exchange=exchange)
         old_wire(NativeReplyProjection(canonical_json(base)))
         share=latest_share(view,enabled)
         payload=dict(base,experience=experience,activity_result=activity,latest_share=None if share is None else dict(text=share['text']))
@@ -200,7 +213,7 @@ class NativeActivityDelivery:
 
     def _validate_contract(self):
         from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
-        if self.contract!=contract({key:self.contract[key] for key in APPROVED_BINDING}) or self.audit.path.resolve()!=audit_path().resolve():
+        if self.contract!=contract({key:self.contract[key] for key in APPROVED_BINDING},native=is_native_contract(self.contract)) or self.audit.path.resolve()!=audit_path().resolve():
             raise ValueError('exact approved contract and shared account audit required')
 
     def _day(self):

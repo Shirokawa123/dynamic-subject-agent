@@ -986,6 +986,15 @@ def open_living_activity_product_live(config, *, identity_id, grant, audit_path,
 
 
 def open_memorie_activity_development_product(config, *, identity_id, approval_path, _transport=None, observations=None, clock=None):
+    return _open_memorie_activity_product(config,identity_id=identity_id,approval_path=approval_path,_transport=_transport,observations=observations,clock=clock,native=False)
+
+
+def open_memorie_native_activity_product(config, *, identity_id, approval_path, _transport=None, observations=None, clock=None):
+    """Approved M012 native/schema12 composition; only new unserved roots."""
+    return _open_memorie_activity_product(config,identity_id=identity_id,approval_path=approval_path,_transport=_transport,observations=observations,clock=clock,native=True)
+
+
+def _open_memorie_activity_product(config, *, identity_id, approval_path, _transport, observations, clock, native):
     """New unserved dev identity only. Never upgrades a served native/local root."""
     from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,NativeActivityDelivery,open_audit
     from dynamic_subject_agent.memorie_activity_provider import DeepSeekNativeActivityAdapter
@@ -994,7 +1003,7 @@ def open_memorie_activity_development_product(config, *, identity_id, approval_p
     from dynamic_subject_agent.living_activity import LivingClock,utc8_day
     grant=ApprovedNativeActivityGrant(approval_path);grant.validate();audit=open_audit(grant)
     authority=LocalIdentityAuthority(config)
-    loaded=authority.activate_memorie_activity_development(identity_id=identity_id,grant=grant)
+    loaded=authority.activate_memorie_activity_development(identity_id=identity_id,grant=grant,native=native)
     delivery=NativeActivityDelivery(grant=grant,audit=audit,contract=loaded.qri.reviewed_chat_contract,state_path=config.state_path)
     adapter=DeepSeekNativeActivityAdapter(transport=_transport if _transport is not None else DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver()),
         credential_ref=CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID,key_id=DEEPSEEK_CREDENTIAL_KEY_ID),delivery=delivery,observations=observations)
@@ -1009,7 +1018,9 @@ def open_memorie_activity_development_product(config, *, identity_id, approval_p
     cognition.living_revoke=lambda block_source=None:authority.change_living_permission(loaded.qri.profile_id,revoke=True,block_source=block_source)
     cognition.living_clock=LivingClock() if clock is None else clock;cognition.living_day=utc8_day
     cognition._whole_composition_witness=loaded.qri.reviewed_chat_contract
-    return _open_loaded_local_product(config,authority=authority,loaded=loaded,cognition=cognition,source_authoring=None)
+    product=_open_loaded_local_product(config,authority=authority,loaded=loaded,cognition=cognition,source_authoring=None)
+    if native:product._memorie_composition_witness=loaded.qri.reviewed_chat_contract
+    return product
 
 
 def open_shared_activity_product_live(config, *, identity_id, grant, audit_path, _transport=None, observations=None,
