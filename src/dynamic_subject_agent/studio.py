@@ -27,6 +27,7 @@ import shutil
 import sqlite3
 import tempfile
 import unicodedata
+from functools import wraps
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from enum import Enum
@@ -2952,6 +2953,23 @@ def _require_profile_active(connection: sqlite3.Connection) -> None:
 
 
 _FaultHook = Callable[[StudioFaultPoint], None]
+
+
+def _qualification_read_scope(method):
+    """Share verified immutable snapshots only within one QRI read transaction."""
+    @wraps(method)
+    def read(self,*args,**kwargs):
+        self._require_open()
+        if getattr(self,'_qualification_snapshots',None) is not None:
+            return method(self,*args,**kwargs)
+        owns_transaction=not self._writer.in_transaction
+        if owns_transaction:self._writer.execute('BEGIN')
+        self._qualification_snapshots={}
+        try:return method(self,*args,**kwargs)
+        finally:
+            self._qualification_snapshots=None
+            if owns_transaction:self._writer.execute('ROLLBACK')
+    return read
 
 
 class SubjectStudio:
@@ -9378,6 +9396,13 @@ class SubjectStudio:
             raise StudioFailedClosed("reviewed-definition-integrity-failed", "reviewed definition or source binding is invalid") from error
 
     def query_snapshot(self, snapshot_id: str) -> GenesisSnapshot:
+        cache=getattr(self,'_qualification_snapshots',None)
+        if cache is None:return self._query_snapshot_verified(snapshot_id)
+        key=(self._writer.total_changes,snapshot_id)
+        if key not in cache:cache[key]=self._query_snapshot_verified(snapshot_id)
+        return cache[key]
+
+    def _query_snapshot_verified(self, snapshot_id: str) -> GenesisSnapshot:
         self._require_open()
         canonical_id = _canonical_uuid(snapshot_id, "snapshot_id")
         row = self._writer.execute(
@@ -9852,8 +9877,10 @@ class SubjectStudio:
                 if type(qri.reviewed_chat_contract) is not dict: raise ValueError("chat contract missing")
                 expected_chat = chat_contract(snapshot.reviewed_definition, qri.reviewed_chat_contract["scope_digest"], qri.reviewed_chat_contract["review_request_basis"], version=qri.reviewed_chat_contract.get('version'))
                 if expected_chat != qri.reviewed_chat_contract: raise ValueError("chat scope changed")
-                predecessor = self.query_qri(publication_key="reviewed-character-" + snapshot.reviewed_definition["definition_basis"])
-                if qri.predecessor_qualification_id != predecessor.qualification_id:
+                root_key = "reviewed-character-" + snapshot.reviewed_definition["definition_basis"]
+                root_id = self._writer.execute('SELECT qualification_id FROM qri_publication WHERE publication_key=?',(root_key,)).fetchone()
+                if root_id is None:raise ValueError('sealed reviewed root required')
+                if qri.predecessor_qualification_id != root_id[0]:
                     from dynamic_subject_agent.memorie_companion_contract import INTENT_VERSION, NATIVE_VERSION, contract
                     predecessor = self._query_qri_by_qualification_id(qri.predecessor_qualification_id)
                     old = predecessor.reviewed_chat_contract
@@ -9866,6 +9893,7 @@ class SubjectStudio:
                     # Admission still requires a separate cold continuation.
                     expected_predecessor_authority = CHAT_AUTHORITY
                 else:
+                    predecessor = self.query_qri(publication_key=root_key)
                     expected_predecessor_authority = REVIEWED_CHARACTER_AUTHORITY
                 if (predecessor.provider_authority != expected_predecessor_authority
                     or predecessor.genesis_snapshot_id != snapshot.snapshot_id
@@ -9923,10 +9951,12 @@ class SubjectStudio:
             shared = contract_variant(contract) == "shared-local"
             live = contract_variant(contract) == "shared-live"
             expected_manifest = CapabilityManifest.integrated_character_live() if contract_variant(contract) == "integrated-live" else CapabilityManifest.integrated_character_local() if contract_variant(contract) == "integrated-local" else CapabilityManifest.natural_feedback_scoped_live() if feedback_scoped else CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
-            predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
+            root_key = "reviewed-character-" + contract["definition_basis"]
+            root_id = self._writer.execute('SELECT qualification_id FROM qri_publication WHERE publication_key=?',(root_key,)).fetchone()
+            if root_id is None:raise ValueError('sealed reviewed root required')
             predecessor_authority = REVIEWED_CHARACTER_AUTHORITY
             from dynamic_subject_agent.memorie_activity_live import is_native_contract
-            if is_native_contract(contract) and qri.predecessor_qualification_id != predecessor.qualification_id:
+            if is_native_contract(contract) and qri.predecessor_qualification_id != root_id[0]:
                 # Publication only prepares this exact same-snapshot successor.
                 # Admission of a served Timeline requires separate cold consent.
                 from dynamic_subject_agent.memorie_native import SCOPE as NATIVE_SCOPE, VERSION as NATIVE_VERSION
@@ -9934,6 +9964,8 @@ class SubjectStudio:
                 if predecessor.reviewed_chat_contract.get('version') != NATIVE_VERSION:
                     raise ValueError('exact native predecessor required')
                 predecessor_authority = CHAT_AUTHORITY
+            else:
+                predecessor = self.query_qri(publication_key=root_key)
             if (qri.provider_authority != (INTEGRATED_LIVE_AUTHORITY if contract_variant(contract) == "integrated-live" else INTEGRATED_AUTHORITY if contract_variant(contract) == "integrated-local" else FEEDBACK_SCOPED_AUTHORITY if feedback_scoped else FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
@@ -9994,6 +10026,7 @@ class SubjectStudio:
             raise StudioFailedClosed("first-life-qualification-invalid", "life source, scope or qualification is invalid") from error
         return qri
 
+    @_qualification_read_scope
     def query_qri(self, *, publication_key: str) -> QualifiedRuntimeInput:
         self._require_open()
         if not isinstance(publication_key, str):
@@ -10013,6 +10046,7 @@ class SubjectStudio:
             raise StudioRejected("qri-not-found", "QRI publication does not exist")
         return self._read_qri_row(row)
 
+    @_qualification_read_scope
     def _query_qri_by_qualification_id(
         self, qualification_id: str
     ) -> QualifiedRuntimeInput:

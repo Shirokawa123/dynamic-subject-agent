@@ -158,3 +158,20 @@ def test_disabled_history_survives_upgrade_and_old_corruption_is_closed(upgrade)
     assert ApplicationFacade.verify_memorie_activity_upgrade(plan).status=='failed-closed'
     with pytest.raises(ValueError):open_continued_memorie_activity_product(config,plan=plan,approval_path=request.approval_path,_transport=fresh)
     assert not fresh.calls
+
+
+def test_qualification_read_rechecks_snapshots_on_every_call(upgrade):
+    p,config,root,request,_=upgrade;p.close()
+    plan=ApplicationFacade.prepare_memorie_activity_upgrade(request);assert plan.status=='available'
+    assert ApplicationFacade.apply_memorie_activity_upgrade(plan,NativeActivityUpgradeConsent(plan.plan_digest,True)).status=='continued'
+    from dynamic_subject_agent.studio import SubjectStudio,StudioRootRef,PolicyKernel
+    body=json.loads(plan.plan_json);registry=json.loads(config.state_path.read_bytes())
+    record=next(r for r in registry['identities'] if r['identity_id']==registry['active_identity_id'])
+    studio=SubjectStudio.open(StudioRootRef.from_dict(record['studio_location']),policy_kernel=PolicyKernel())
+    try:
+        qri=studio.query_qri(publication_key=record['publication_key'])
+        with closing(sqlite3.connect(body['source_files']['studio_database'])) as db:
+            db.execute('UPDATE genesis_snapshot SET snapshot_digest=? WHERE snapshot_id=?',('0'*64,qri.genesis_snapshot_id));db.commit()
+        with pytest.raises(Exception):studio.query_qri(publication_key=record['publication_key'])
+    finally:studio.close()
+    assert ApplicationFacade.verify_memorie_activity_upgrade(plan).status=='failed-closed'

@@ -11,3 +11,5 @@
 复用原M002事务执行器，分别绑定新版request/consent和registry fence；提交后移存旧chat activation、启用新whole activation，历史开关不改，整理暂停/分享关闭。原子多库日志/原文件basis/无活动lease条件保持，不复制store或写旧Outcome。重复apply仅验证后NoOp，不重新初始化权限。
 
 41项严格回归通过（357.28秒，-W error、无skip）：M027完整混合链、活源/错同意/错计划拒绝、五异常点和两处os._exit恢复、历史关闭与损坏拒绝，以及旧M002/M015/M018兼容。首轮源字段/治理历史版本/manifest/旧prepared假设、测试短nonce/缺cognition/rowid及旧SQLite未close告警全部保留；修正来源与读取路径、补显式close，未改断言或屏蔽告警。所有模型transport合成，用户原根未调用apply。
+
+产品HTTP接续发现来源确认超出5秒期限；读取分析定位到多层QRI重复验证同一封存快照。先按已存资格ID选择准确父路径（实际选中的QRI仍完整验证），再仅在一次资格读取事务内复用已验证快照，事务结束即丢弃，当前事务自身写入计数改变也失效。没有跨请求缓存或跳过损坏检查。追加同一个Studio对象下一次查询发现快照篡改的用例后，42项严格回归通过（347.21秒，无skip）；HTTP最终时限仍由产品继续验证，未延长超时。
