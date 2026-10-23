@@ -1,5 +1,7 @@
 # 当前工作
 
+2026-10-23独立产品M027–029的底座结果见[原身份活动续接](../plans/memorie-activity-upgrade.md)：独立新plan/consent、双层历史资格和有证明的旧前缀、同store原子切换/恢复及已提交续接factory。41项严格通过，原用户schema11未apply，旧失败留存；产品入口/原生表现由E:/memorie-companion承接。
+
 2026-10-22独立产品M018–020共用接缝见[原生互动/活动组合](../plans/memorie-native-activity.md)：新unserved schema12合并typed互动与shared/living、完整来源/派生过滤、prepared恢复/原UUID及presence暂停。固定M012用途/policy，不执行用户旧根升级/安装或真实模型；具体产品接口/游戏验收由独立产品承接。
 
 2026-10-22为独立产品M015–017提供[已批准用途的开发组合](../plans/memorie-approved-activity-development.md)：三个用途在同一schema6开发Timeline运行，真实来源/实际文字方案/分享接续，固定跨根metadata限额与恢复。23项严格验证通过；不升用户schema11，不用文字冒充点击，原生组合/schema12仍待做。

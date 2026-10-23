@@ -6704,7 +6704,7 @@ class RuntimeHost:
                         (str(member["binding_id"]),),
                     ).fetchone()
                     matched = observed is not None and _branch_governance_member_matches(member, self._binding_from_row(observed))
-                    if observed is not None and not matched and self._binding_from_row(observed).runtime_contract_version == NATIVE_RUNTIME_CONTRACT:
+                    if observed is not None and not matched and self._binding_from_row(observed).runtime_contract_version in (NATIVE_RUNTIME_CONTRACT,NATIVE_ACTIVITY_RUNTIME):
                         from dynamic_subject_agent.memorie_qualification_continuation import historical_binding
                         matched = historical_binding(self._binding_from_row(observed), member=member) is not None
                     if not matched:
@@ -6882,7 +6882,7 @@ class RuntimeHost:
             reader.close()
         others = tuple(self._binding_from_row(row) for row in rows)
         from dynamic_subject_agent.memorie_qualification_continuation import historical_binding
-        continued_predecessor = historical_binding(binding) if binding.runtime_contract_version == NATIVE_RUNTIME_CONTRACT else None
+        continued_predecessor = historical_binding(binding) if binding.runtime_contract_version in (NATIVE_RUNTIME_CONTRACT,NATIVE_ACTIVITY_RUNTIME) else None
         if continued_predecessor is not None:
             # The stable store/scope keeps original request references; only
             # this receipt-backed historical image can establish its old QRI.

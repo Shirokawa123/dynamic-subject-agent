@@ -1,4 +1,5 @@
 """Positive continuation through the sole Facade and production composition."""
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -28,7 +29,7 @@ def opening(config, private, root, transport):
 
 
 def canonical_rows(path):
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db, db:
         tables = [r[0] for r in db.execute("SELECT name FROM sqlite_schema WHERE type='table'")
             if r[0] not in ('store_manifest','admission_gate','timeline_head')]
         return {name: set(db.execute('SELECT * FROM ' + name)) for name in tables}
@@ -141,7 +142,7 @@ def test_corrupt_old_publication_is_closed_before_model_even_with_history_off(le
     with opening(config,private,root,Transport()) as product:
         product.application.set_reviewed_character_history(False)
     canonical=Path(json.loads(plan.plan_json)['source_files']['timeline_database'])
-    with sqlite3.connect(canonical) as db:
+    with closing(sqlite3.connect(canonical)) as db, db:
         db.execute("UPDATE expression_record SET expression_text='SYNTHETIC_CORRUPTION'")
     transport=Transport()
     with pytest.raises(Exception): opening(config,private,root,transport)

@@ -1,5 +1,7 @@
 # 产品架构
 
+M027增加[原身份活动续接](plans/memorie-activity-upgrade.md)：新schema12可携带不可变的schema11原回执和第二层续接证明，Host逐层核QRI/绑定，Timeline仅对准确旧前缀允许无shared/prepared记录；不补造旧活动。新独立plan/数据同意通过原DELETE多库治理和pending fence切换，旧UUID/原表行保持，默认暂停/关闭分享。只通过Facade与已提交续接factory暴露，M002和新生schema12保持原行为；41严格合成回归通过，未应用用户根。
+
 M002另增加[显式冷资格续接](plans/memorie-qualification-continuation.md)：Facade经LocalIdentityAuthority准备完整旧前缀与另行同意，原Host/Timeline以DELETE多库事务共同切到schema11；保同身份/store/scope/旧UUID与发表，历史绑定像和请求集合仅授予有限旧读取。默认factory/普通非空换绑不隐式升级；当前用户根未应用。
 
 ### M002：梅莫莉typed点击与统一交流

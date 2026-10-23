@@ -994,6 +994,16 @@ def open_memorie_native_activity_product(config, *, identity_id, approval_path, 
     return _open_memorie_activity_product(config,identity_id=identity_id,approval_path=approval_path,_transport=_transport,observations=observations,clock=clock,native=True)
 
 
+def open_continued_memorie_activity_product(config, *, plan, approval_path, _transport=None, observations=None, clock=None):
+    """Open an explicitly committed same-store continuation, never apply it."""
+    from dynamic_subject_agent.memorie_activity_upgrade import _checked_plan,request_from_body,verify
+    body=_checked_plan(plan);request=request_from_body(body)
+    if (config.state_path.resolve()!=request.state_path.resolve() or config.product_parent.resolve()!=request.product_parent.resolve()
+        or Path(approval_path).resolve()!=request.approval_path.resolve() or verify(plan).status!='verified'):
+        raise ValueError('exact committed activity continuation required')
+    return open_memorie_native_activity_product(config,identity_id=None,approval_path=approval_path,_transport=_transport,observations=observations,clock=clock)
+
+
 def _open_memorie_activity_product(config, *, identity_id, approval_path, _transport, observations, clock, native):
     """New unserved dev identity only. Never upgrades a served native/local root."""
     from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,NativeActivityDelivery,open_audit

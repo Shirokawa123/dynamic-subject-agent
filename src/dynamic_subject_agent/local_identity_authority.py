@@ -1221,6 +1221,21 @@ class LocalIdentityAuthority:
     """Small Interface over all persistent local identity authority behaviour."""
 
     @staticmethod
+    def prepare_memorie_activity_upgrade(request):
+        from dynamic_subject_agent.memorie_activity_upgrade import prepare
+        return prepare(request)
+
+    @staticmethod
+    def apply_memorie_activity_upgrade(plan, consent, *, _fault_hook=None):
+        from dynamic_subject_agent.memorie_activity_upgrade import apply
+        return apply(plan,consent,_fault_hook=_fault_hook)
+
+    @staticmethod
+    def verify_memorie_activity_upgrade(plan):
+        from dynamic_subject_agent.memorie_activity_upgrade import verify
+        return verify(plan)
+
+    @staticmethod
     def prepare_memorie_continuation(request):
         from dynamic_subject_agent.memorie_qualification_continuation import prepare
         return prepare(request)
@@ -1248,7 +1263,7 @@ class LocalIdentityAuthority:
 
     @_registry_mutation
     def load_active(self) -> LoadedLocalIdentity:
-        if self._config.state_path.is_file() and any(r.get('pending_memorie_continuation') for r in
+        if self._config.state_path.is_file() and any(r.get('pending_memorie_continuation') or r.get('pending_memorie_activity_continuation') for r in
             json.loads(self._config.state_path.read_bytes()).get('identities', ())):
             raise RuntimeError('memorie-continuation-recovery-required')
         (

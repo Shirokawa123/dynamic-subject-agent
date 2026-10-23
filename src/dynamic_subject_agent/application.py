@@ -1780,6 +1780,21 @@ class ApplicationFacade:
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)
 
     @staticmethod
+    def prepare_memorie_activity_upgrade(request):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.prepare_memorie_activity_upgrade(request)
+
+    @staticmethod
+    def apply_memorie_activity_upgrade(plan, consent, *, _fault_hook=None):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.apply_memorie_activity_upgrade(plan,consent,_fault_hook=_fault_hook)
+
+    @staticmethod
+    def verify_memorie_activity_upgrade(plan):
+        from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+        return LocalIdentityAuthority.verify_memorie_activity_upgrade(plan)
+
+    @staticmethod
     def inspect_memorie_continuation_source(request):
         from dynamic_subject_agent.memorie_continuation import inspect_memorie_source
         return inspect_memorie_source(request)

@@ -2904,6 +2904,8 @@ def _verify_store_integrity(
 ) -> None:
     if expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==12:
         expected_tables = expected_tables | {'memorie_native_input','whole_context_input','whole_context_boundary','shared_activity_input','shared_activity_record','prepared_cycle_plan'}
+        if connection.execute("SELECT 1 FROM sqlite_schema WHERE type='table' AND name IN ('memorie_qualification_continuation','memorie_activity_continuation')").fetchone():
+            expected_tables = expected_tables | {'memorie_qualification_continuation','memorie_activity_continuation'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==11:
         expected_tables = expected_tables | {'memorie_native_input', 'memorie_qualification_continuation'}
     elif expected_tables == _TIMELINE_TABLES and connection.execute('PRAGMA user_version').fetchone()[0]==10:
@@ -3468,9 +3470,11 @@ class TimelineEngine:
             raise
         engine = cls(location, authority, writer, _fault_hook)
         try:
-            if writer.execute('PRAGMA user_version').fetchone()[0] == 11:
+            if writer.execute('PRAGMA user_version').fetchone()[0] in (11,12):
                 from dynamic_subject_agent.memorie_qualification_continuation import read_receipt
                 read_receipt(writer, authority)
+                from dynamic_subject_agent.memorie_activity_upgrade import read_receipt as read_activity_receipt
+                read_activity_receipt(writer,authority)
                 engine._verified_publications()
         except Exception:
             writer.close()
@@ -4699,6 +4703,10 @@ class TimelineEngine:
             return None
         row = self._writer.execute('SELECT record_json,record_digest FROM shared_activity_record WHERE plan_id=?', (plan_id,)).fetchone()
         if row is None:
+            from dynamic_subject_agent.memorie_activity_upgrade import read_receipt
+            receipt = read_receipt(self._writer,self._authority)
+            if receipt is not None and str(UUID(bytes=bytes(plan_id))) in {r['plan_id'] for r in receipt['plan']['original_requests']}:
+                return None
             raise PublicationFailedClosed('shared-record-missing', 'shared publication has no atomic record')
         try:
             record = decode_shared_record(json.loads(row[0]))
@@ -4720,7 +4728,10 @@ class TimelineEngine:
         plan_origin_head = result_before_plan_head = None
         for outcome, command, _ in publications:
             current = outcome.shared_record
-            if current is None or current.revision != record.revision + 1:
+            if current is None:  # Only a verified continuation prefix can lack this record.
+                dependencies[outcome.head_sequence] = ()
+                continue
+            if current.revision != record.revision + 1:
                 raise PublicationFailedClosed('shared-prefix-invalid', 'shared record sequence differs from publications')
             if current.kind == 'select':
                 source = current.source
@@ -4845,7 +4856,7 @@ class TimelineEngine:
         earlier, result = set(), {}
         for outcome, command, _ in publications:
             if _is_dialogue_input(command):
-                deps = outcome.shared_record.dialogue_dependencies
+                deps = None if outcome.shared_record is None else outcome.shared_record.dialogue_dependencies
                 # Earlier unapproved LOCAL preparation records remain readable.
                 # Missing lineage is conservatively all earlier user turns,
                 # never a fabricated proof of independence or an in-place edit.
@@ -8519,18 +8530,18 @@ class TimelineEngine:
         if SHARED_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.shared_activity import initial_record, visible_state
             publications = self._verified_publications()
-            current = publications[-1][0].shared_record if publications else initial_record()
+            current = (publications[-1][0].shared_record if publications else None) or initial_record()
             source_cutoff = self._shared_source_cutoff(self.whole_context_basis()['cutoff_sequence'])
             valid = visible_state(current, enabled=enabled, cutoff=source_cutoff)['valid_sources']
             if LIVING_INTENT in self._authority.allowed_intents:
                 from dynamic_subject_agent.living_activity import living_valid_sources
                 valid = living_valid_sources(current, valid, enabled=enabled, cutoff=source_cutoff)
-            dependencies = {out.head_sequence: out.shared_record.reply_dependencies for out, _, _ in publications}
+            dependencies = {out.head_sequence: (() if out.shared_record is None else out.shared_record.reply_dependencies) for out, _, _ in publications}
             blocked_heads = {out.shared_record.source.source_head_sequence for out, _, _ in publications
-                if out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
+                if out.shared_record is not None and out.shared_record.kind == 'select' and out.shared_record.source.source_key not in valid}
             if {LIVING_INTENT, FEEDBACK_INTENT} & set(self._authority.allowed_intents):
                 blocked_heads.update(out.head_sequence for out, command, _ in publications
-                    if _is_dialogue_input(command) and not set(out.shared_record.reply_dependencies) <= valid)
+                    if _is_dialogue_input(command) and out.shared_record is not None and not set(out.shared_record.reply_dependencies) <= valid)
             if WORKING_INTENT in self._authority.allowed_intents:
                 blocked_heads.update(self._working_blocked_heads(publications, valid))
             lineage = self._shared_dialogue_lineage(publications)
@@ -8735,7 +8746,7 @@ class TimelineEngine:
                     "canonical-publication-integrity-mismatch",
                     "CycleCommitPlanReceipt digest does not match composing records",
                 )
-            if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents) and self.prepared_plan(operation_ref) != plan:
+            if (LIFE_SYSTEM_INTENT in self._authority.allowed_intents or SHARED_INTENT in self._authority.allowed_intents and shared_record is not None) and self.prepared_plan(operation_ref) != plan:
                 raise PublicationFailedClosed('prepared-publication-mismatch', 'published plan differs from durable preparation')
             claim = self._writer.execute(
                 """

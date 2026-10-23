@@ -166,7 +166,10 @@ def read_receipt(db, authority=None):
 
 def _read_receipt(db, authority=None):
     """A bounded old read authority, never permission to admit old speech."""
-    if db.execute('PRAGMA user_version').fetchone()[0] != 11:
+    if db.execute('PRAGMA user_version').fetchone()[0] not in (11,12):
+        return None
+    if not db.execute("SELECT 1 FROM sqlite_schema WHERE type='table' AND name='memorie_qualification_continuation'").fetchone():
+        if db.execute('PRAGMA user_version').fetchone()[0] == 11: raise ValueError('native receipt missing')
         return None
     row = db.execute('SELECT receipt_json,receipt_digest FROM memorie_qualification_continuation WHERE singleton=1').fetchone()
     receipt = json.loads(row[0])
@@ -198,7 +201,10 @@ def _read_receipt(db, authority=None):
         raise ValueError('continuation identity changed')
     if authority is not None and any(getattr(authority, k) != new[k] for k in (
         'binding_id','binding_revision','binding_epoch','qualification_id','qualification_revision','authority_scope_id','profile_id','timeline_id')):
-        raise ValueError('receipt is not current authority')
+        from dynamic_subject_agent.memorie_activity_upgrade import read_receipt as read_activity_receipt
+        activity = read_activity_receipt(db, authority)
+        if activity is None or activity['plan']['source_binding'] != new:
+            raise ValueError('receipt is not current authority')
     legacy = plan['legacy_requests']
     if len(legacy) != plan['source_basis']['head_sequence'] or [r['head_sequence'] for r in legacy] != list(range(1,len(legacy)+1)):
         raise ValueError('incomplete old prefix')
@@ -218,6 +224,10 @@ def _read_receipt(db, authority=None):
 def historical_binding(current, *, member=None):
     from dynamic_subject_agent.host import RuntimeHostFailedClosed
     try:
+        from dynamic_subject_agent.memorie_activity_live import NATIVE_RUNTIME
+        if current.runtime_contract_version == NATIVE_RUNTIME:
+            from dynamic_subject_agent.memorie_activity_upgrade import historical_binding as activity_binding
+            return activity_binding(current,member=member)
         return _historical_binding(current, member=member)
     except Exception as error:
         raise RuntimeHostFailedClosed('memorie-continuation-lineage-unverified', 'Historical qualification is unverified') from error
@@ -320,7 +330,7 @@ def _verify_committed(body, digest, record):
         return qri
 
 
-def _apply(body, digest, consent, hit):
+def _apply(body, digest, consent, hit, *, _activity=False):
     from dynamic_subject_agent.first_life_authorization import registry_lock
     from dynamic_subject_agent.host import (RuntimeHostRootRef, _connect_existing, _claim_process_registry,
         _release_process_registry, _intents_for_contract, _verify_control, _verify_forward_governance_regular_paths)
@@ -329,23 +339,32 @@ def _apply(body, digest, consent, hit):
     from dynamic_subject_agent.local_identity_authority import _write_state, _reviewed_chat_ledger
     from dynamic_subject_agent.memorie_native import DDL as NATIVE_DDL, RUNTIME_CONTRACT
     from dynamic_subject_agent.timeline import _TIMELINE_DDL
-    request = MemorieContinuationRequest(**{k: Path(v) for k,v in body['request'].items()})
+    from dynamic_subject_agent import memorie_activity_upgrade as activity
+    request = activity.request_from_body(body) if _activity else MemorieContinuationRequest(**{k: Path(v) for k,v in body['request'].items()})
+    record_key = 'memorie_activity_continuation' if _activity else 'memorie_continuation'
+    pending_key = 'pending_' + record_key
+    activation_key = 'whole_chat_activation' if _activity else 'chat_activation'
+    verify_committed = activity._verify_committed if _activity else _verify_committed
+    prepare_body = activity._prepare if _activity else _prepare
+    runtime_contract = activity.RUNTIME_CONTRACT if _activity else RUNTIME_CONTRACT
+    before_schema, after_schema = (11, 12) if _activity else (1, 11)
+    receipt_table = 'memorie_activity_continuation' if _activity else 'memorie_qualification_continuation'
     token = str(uuid4())
     with registry_lock(request.state_path):
         state = json.loads(request.state_path.read_bytes()); record = _record(state)
         hostref = RuntimeHostRootRef.from_dict(record['host_location'])
         studio_ref = StudioRootRef.from_dict(record['studio_location'])
         _verify_forward_governance_regular_paths(tuple(Path(p) for p in body['source_files'].values()))
-        if record.get('memorie_continuation') == digest:
-            if record['chat_activation'] != body['target_activation'] or record.get('pending_memorie_continuation'):
+        if record.get(record_key) == digest:
+            if record[activation_key] != body['target_activation'] or record.get(pending_key):
                 raise ValueError('committed registry differs')
-            qri = _verify_committed(body, digest, record)
+            qri = verify_committed(body, digest, record)
             if qri.publication_key != record['publication_key']:
                 raise ValueError('committed registry qualification differs')
             return MemorieContinuationResult('no-op', plan_digest=digest)
-        pending = record.get('pending_memorie_continuation')
+        pending = record.get(pending_key)
         if pending is None:
-            if _prepare(request) != body:
+            if prepare_body(request) != body:
                 raise ValueError('source advanced after consent')
         elif pending != dict(plan_digest=digest, plan=body):
             raise ValueError('another continuation pending')
@@ -359,7 +378,7 @@ def _apply(body, digest, consent, hit):
                 if leases:
                     raise ValueError('writer must explicitly close before continuation')
                 if pending is None:
-                    record['pending_memorie_continuation'] = dict(plan_digest=digest, plan=body)
+                    record[pending_key] = dict(plan_digest=digest, plan=body)
                     _write_state(request.state_path, state)
                 hit('after-pending')
                 studio = SubjectStudio.open(studio_ref, policy_kernel=PolicyKernel()); stack.callback(studio.close)
@@ -367,13 +386,13 @@ def _apply(body, digest, consent, hit):
                 if oldq.integrity_digest != body['source_binding']['qri_integrity_digest']:
                     raise ValueError('source qualification changed')
                 target_contract = body['target_activation']['contract']
-                key = 'reviewed-character-chat-' + target_contract['definition_basis'] + '-' + target_contract['scope_digest']
+                key = activity.publication_key(target_contract) if _activity else 'reviewed-character-chat-' + target_contract['definition_basis'] + '-' + target_contract['scope_digest']
                 try:
                     successor = studio.query_qri(publication_key=key)
                 except Exception as error:
                     if getattr(error,'code',None) != 'qri-not-found': raise
                     snapshot = studio.query_snapshot(oldq.genesis_snapshot_id)
-                    policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.reviewed_character_chat(),
+                    policy = studio.decide_policy(snapshot.draft_id, CapabilityManifest.living_activity_live() if _activity else CapabilityManifest.reviewed_character_chat(),
                         validity_us=300_000_000, reviewed_chat_contract=body['target_activation']['contract'])
                     successor = studio.publish(snapshot.snapshot_id, policy_decision_id=policy.decision_id,
                         publication_key=key, predecessor_qualification_id=oldq.qualification_id,
@@ -397,11 +416,11 @@ def _apply(body, digest, consent, hit):
                     if db.execute("SELECT 1 FROM runtime_instance_lease WHERE lease_state!='closed'").fetchone():
                         raise ValueError('source writer reappeared')
                     current = db.execute('PRAGMA canonical.user_version').fetchone()[0]
-                    if current == 11:
-                        raw = db.execute('SELECT receipt_json FROM canonical.memorie_qualification_continuation WHERE singleton=1').fetchone()[0]
+                    if current == after_schema:
+                        raw = db.execute(f'SELECT receipt_json FROM canonical.{receipt_table} WHERE singleton=1').fetchone()[0]
                         if json.loads(raw)['plan_digest'] != digest:
                             raise ValueError('wrong committed continuation')
-                    elif current == 1:
+                    elif current == before_schema:
                         # Holding both write locks fences reopen and final source
                         # verification. No file copying or second runtime exists.
                         db.row_factory = sqlite3.Row
@@ -418,26 +437,30 @@ def _apply(body, digest, consent, hit):
                         new = dict(old, binding_revision=old['binding_revision']+1, binding_epoch=old['binding_epoch']+1,
                             qualification_id=successor.qualification_id, qualification_revision=successor.qualification_revision,
                             qri_publication_key=successor.publication_key, qri_integrity_digest=successor.integrity_digest,
-                            policy_decision_ids_json=canonical_json(successor.policy_decision_ids), runtime_contract_version=RUNTIME_CONTRACT)
+                            policy_decision_ids_json=canonical_json(successor.policy_decision_ids), runtime_contract_version=runtime_contract,
+                            provider_authority=successor.provider_authority,capability_manifest_version=successor.capabilities.manifest_version)
                         # SQLite's safe table-rebuild order keeps original values
                         # and all foreign-key names intact (no old-table rename).
-                        event_ddl = next(s for s in _TIMELINE_DDL if 'CREATE TABLE subject_event (' in s)
-                        db.execute(event_ddl.replace('CREATE TABLE subject_event (','CREATE TABLE canonical.subject_event_new (').replace(
-                            "CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))"))
-                        db.execute('INSERT INTO canonical.subject_event_new SELECT * FROM canonical.subject_event')
-                        db.execute('DROP TABLE canonical.subject_event')
-                        db.execute('ALTER TABLE canonical.subject_event_new RENAME TO subject_event')
-                        db.execute(NATIVE_DDL.replace('CREATE TABLE memorie_native_input', 'CREATE TABLE canonical.memorie_native_input'))
-                        db.execute(DDL.replace('CREATE TABLE memorie_qualification_continuation','CREATE TABLE canonical.memorie_qualification_continuation'))
-                        receipt = dict(version=VERSION, plan=body, plan_digest=digest, consent=vars(consent), target_binding=new)
+                        if _activity:
+                            activity.upgrade_store(db)
+                        else:
+                            event_ddl = next(s for s in _TIMELINE_DDL if 'CREATE TABLE subject_event (' in s)
+                            db.execute(event_ddl.replace('CREATE TABLE subject_event (','CREATE TABLE canonical.subject_event_new (').replace(
+                                "CHECK (event_kind = 'command-admitted')", "CHECK (event_kind IN ('command-admitted','system-input-admitted'))"))
+                            db.execute('INSERT INTO canonical.subject_event_new SELECT * FROM canonical.subject_event')
+                            db.execute('DROP TABLE canonical.subject_event')
+                            db.execute('ALTER TABLE canonical.subject_event_new RENAME TO subject_event')
+                            db.execute(NATIVE_DDL.replace('CREATE TABLE memorie_native_input', 'CREATE TABLE canonical.memorie_native_input'))
+                            db.execute(DDL.replace('CREATE TABLE memorie_qualification_continuation','CREATE TABLE canonical.memorie_qualification_continuation'))
+                        receipt = dict(version=activity.VERSION if _activity else VERSION, plan=body, plan_digest=digest, consent=vars(consent), target_binding=new)
                         raw = canonical_json(receipt)
-                        db.execute('INSERT INTO canonical.memorie_qualification_continuation VALUES(1,?,?)', (raw,_digest(receipt)))
-                        db.execute('UPDATE canonical.store_manifest SET schema_version=11')
-                        db.execute('PRAGMA canonical.user_version=11')
+                        db.execute(f'INSERT INTO canonical.{receipt_table} VALUES(1,?,?)', (raw,_digest(receipt)))
+                        db.execute('UPDATE canonical.store_manifest SET schema_version=?', (after_schema,))
+                        db.execute(f'PRAGMA canonical.user_version={after_schema}')
                         db.execute('''UPDATE canonical.admission_gate SET allowed_intents_json=?,binding_revision=?,binding_epoch=?,
-                            qualification_id=?,qualification_revision=?,gate_epoch=gate_epoch+1 WHERE singleton=1''',
-                            (canonical_json(_intents_for_contract(RUNTIME_CONTRACT)), new['binding_revision'], new['binding_epoch'],
-                             successor.qualification_id,successor.qualification_revision))
+                            qualification_id=?,qualification_revision=?,provider_authority=?,gate_epoch=gate_epoch+1 WHERE singleton=1''',
+                            (canonical_json(_intents_for_contract(runtime_contract)), new['binding_revision'], new['binding_epoch'],
+                             successor.qualification_id,successor.qualification_revision,successor.provider_authority))
                         changed = [k for k in new if new[k]!=old[k]]
                         db.execute('UPDATE runtime_authority_binding SET '+','.join(k+'=?' for k in changed)+' WHERE binding_id=?',
                             tuple(new[k] for k in changed)+(old['binding_id'],))
@@ -454,12 +477,15 @@ def _apply(body, digest, consent, hit):
                 db.execute('PRAGMA foreign_keys=ON')
                 hit('after-database-commit')
                 # Verify committed authority/old proofs before registry activation.
-                _verify_committed(body, digest, record)
-                _reviewed_chat_ledger(body['target_activation'], initialize=True)
+                verify_committed(body, digest, record)
+                if _activity:
+                    activity.finish_registry(body, record)
+                else:
+                    _reviewed_chat_ledger(body['target_activation'], initialize=True)
                 record['publication_key'] = successor.publication_key
-                record['chat_activation'] = body['target_activation']
-                record['memorie_continuation'] = digest
-                record.pop('pending_memorie_continuation', None)
+                record[activation_key] = body['target_activation']
+                record[record_key] = digest
+                record.pop(pending_key, None)
                 hit('before-registry-commit')
                 _write_state(request.state_path, state)
                 return MemorieContinuationResult('continued', plan_digest=digest)

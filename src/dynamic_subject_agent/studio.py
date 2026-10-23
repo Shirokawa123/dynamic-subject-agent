@@ -9924,10 +9924,20 @@ class SubjectStudio:
             live = contract_variant(contract) == "shared-live"
             expected_manifest = CapabilityManifest.integrated_character_live() if contract_variant(contract) == "integrated-live" else CapabilityManifest.integrated_character_local() if contract_variant(contract) == "integrated-local" else CapabilityManifest.natural_feedback_scoped_live() if feedback_scoped else CapabilityManifest.natural_feedback_live() if feedback_live else CapabilityManifest.natural_feedback_local() if feedback else CapabilityManifest.working_fact_faithful_live() if working_fact else CapabilityManifest.working_understanding_live() if working_live else CapabilityManifest.working_understanding_local() if working else CapabilityManifest.living_final_text_live() if final_text else CapabilityManifest.living_activity_live() if living_live else CapabilityManifest.living_activity_local() if living else CapabilityManifest.shared_activity_live() if live else CapabilityManifest.shared_activity_local() if shared else CapabilityManifest.original_whole_context() if context else CapabilityManifest.original_whole_chat()
             predecessor = self.query_qri(publication_key="reviewed-character-" + contract["definition_basis"])
+            predecessor_authority = REVIEWED_CHARACTER_AUTHORITY
+            from dynamic_subject_agent.memorie_activity_live import is_native_contract
+            if is_native_contract(contract) and qri.predecessor_qualification_id != predecessor.qualification_id:
+                # Publication only prepares this exact same-snapshot successor.
+                # Admission of a served Timeline requires separate cold consent.
+                from dynamic_subject_agent.memorie_native import SCOPE as NATIVE_SCOPE, VERSION as NATIVE_VERSION
+                predecessor = self.query_qri(publication_key="reviewed-character-chat-" + contract['definition_basis'] + '-' + NATIVE_SCOPE)
+                if predecessor.reviewed_chat_contract.get('version') != NATIVE_VERSION:
+                    raise ValueError('exact native predecessor required')
+                predecessor_authority = CHAT_AUTHORITY
             if (qri.provider_authority != (INTEGRATED_LIVE_AUTHORITY if contract_variant(contract) == "integrated-live" else INTEGRATED_AUTHORITY if contract_variant(contract) == "integrated-local" else FEEDBACK_SCOPED_AUTHORITY if feedback_scoped else FEEDBACK_LIVE_AUTHORITY if feedback_live else FEEDBACK_AUTHORITY if feedback else WORKING_FACT_FAITHFUL_AUTHORITY if working_fact else WORKING_LIVE_AUTHORITY if working_live else WORKING_AUTHORITY if working else LIVING_FINAL_TEXT_AUTHORITY if final_text else LIVING_LIVE_AUTHORITY if living_live else LIVING_AUTHORITY if living else SHARED_LIVE_AUTHORITY if live else SHARED_AUTHORITY if shared else CONTEXT_AUTHORITY if context else WHOLE_AUTHORITY) or qri.capabilities != expected_manifest
                 or qri.first_life_contract is not None or snapshot.first_life_contract is not None
                 or qri.publication_key != whole_publication_key(contract)
-                or predecessor.provider_authority != REVIEWED_CHARACTER_AUTHORITY
+                or predecessor.provider_authority != predecessor_authority
                 or predecessor.genesis_snapshot_id != snapshot.snapshot_id
                 or qri.predecessor_qualification_id != predecessor.qualification_id
                 or qri.profile_id != snapshot.profile_id or qri.genesis_snapshot_id != snapshot.snapshot_id
