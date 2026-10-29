@@ -1,4 +1,5 @@
 from hashlib import sha256
+from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -47,7 +48,8 @@ def test_facade_runs_ten_frozen_examples_and_second_run_cannot_resend(prepared,m
     result=ApplicationFacade.run_memorie_natural_experience_trial(prepared)
     assert result['status']=='complete' and result['attempts']==10 and len(fake.calls)==10
     assert not result['user_canonical_opened'] and not result['runtime_memory_implemented']
-    with pytest.raises(ValueError):ApplicationFacade.run_memorie_natural_experience_trial(prepared)
+    with pytest.raises(ValueError,match='already started'):
+        ApplicationFacade.run_memorie_natural_experience_trial(replace(prepared,output=prepared.output.with_name('another-run')))
     assert len(fake.calls)==10
 
 

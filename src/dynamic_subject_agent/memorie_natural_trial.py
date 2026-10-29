@@ -44,7 +44,8 @@ def validate_material(request):
     expected = dict(version=review['version'], review_sha256=REVIEW, human_confirmed=True,
         data_upgrade_included=False, installation_included=False, user_reply='agree',
         authorization_source='direct-user-reply:2026-10-29-current-chat')
-    if approval != expected:
+    if (approval != expected or approval.get('human_confirmed') is not True
+            or approval.get('data_upgrade_included') is not False or approval.get('installation_included') is not False):
         raise ValueError('exact human approval required')
     if sha256(request.preparation_path.read_bytes()).hexdigest() != review['preparation_sha256']:
         raise ValueError('reviewed character preparation changed')
