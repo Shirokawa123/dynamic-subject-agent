@@ -34,7 +34,8 @@ class Fake(DeepSeekTransport):
         self.expected=json.loads((request.review_directory/'authored-expectations.NOT-MODEL-RESULTS.json').read_bytes())
     def post_json(self,**kwargs):
         name=self.names[sha256(kwargs['body']).hexdigest()];self.calls.append(name)
-        if name in self.expected:value=self.expected[name]['proposal']
+        if name in trial.DIAGNOSTIC_SELECTIONS:value=dict(action='remember',duration='today',reason_code='temporary' if name.endswith('temporary') else 'correction')
+        elif name in self.expected:value=self.expected[name]['proposal']
         elif name=='choice_after_memory':value=dict(action='defer',plan=None,reason_code='defer-comparison',basis_refs=['E1'],decision_note='合成暂缓。')
         elif name=='share_after_memory':value=dict(share=False,reply_text='',language='zh')
         else:value='合成回复；没有真实用户输入。'
@@ -73,3 +74,41 @@ def test_approval_change_during_secret_resolution_blocks_final_send(prepared,mon
     result=ApplicationFacade.run_memorie_natural_experience_trial(prepared)
     assert result['status']=='stopped' and result['attempts']==1
     assert resolved==[True]
+
+
+@pytest.fixture
+def diagnostic(prepared):
+    product=Path(os.environ['MEMORIE_M030_PRODUCT'])
+    folder=prepared.review_directory.with_name('diagnostic')
+    shutil.copytree(product/'.artifacts/natural-experience-m030-diagnostic-002',folder)
+    approval=prepared.approval_path.with_name('natural-experience-diagnostic-approval.json')
+    first=prepared.approval_path.with_name('first-results.json')
+    shutil.copyfile(product/'.local/qualification/natural-experience-diagnostic-approval.json',approval)
+    shutil.copyfile(product/'.artifacts/natural-experience-m030-live-001/results.json',first)
+    return replace(prepared,diagnostic_directory=folder,diagnostic_approval_path=approval,first_results_path=first)
+
+
+def test_diagnostic_runs_only_its_six_requests_and_cannot_replay_in_new_root(diagnostic,monkeypatch):
+    fake=Fake(diagnostic)
+    monkeypatch.setattr(trial,'DeepSeekUrlLibTransport',lambda **kw:fake)
+    result=ApplicationFacade.run_memorie_natural_experience_trial(diagnostic)
+    assert result['status']=='complete' and result['attempts']==6
+    assert tuple(fake.calls)==trial.DIAGNOSTIC_SELECTIONS+trial.DIAGNOSTIC_REPLIES
+    with pytest.raises(ValueError,match='already started'):
+        ApplicationFacade.run_memorie_natural_experience_trial(replace(diagnostic,output=diagnostic.output.with_name('diagnostic-retry')))
+    assert len(fake.calls)==6
+
+
+def test_parent_approval_cannot_authorize_diagnostic(diagnostic,monkeypatch):
+    diagnostic.diagnostic_approval_path.write_bytes(diagnostic.approval_path.read_bytes())
+    monkeypatch.setattr(local_product,'_WindowsLabResolver',lambda:pytest.fail('no credentials before exact diagnostic consent'))
+    with pytest.raises(ValueError,match='diagnostic approval'):
+        ApplicationFacade.run_memorie_natural_experience_trial(diagnostic)
+    assert not diagnostic.output.exists()
+
+
+def test_diagnostic_request_change_is_rejected_before_credentials(diagnostic,monkeypatch):
+    p=diagnostic.diagnostic_directory/'B_correction.request.json';p.write_bytes(p.read_bytes()+b' ')
+    monkeypatch.setattr(local_product,'_WindowsLabResolver',lambda:pytest.fail('changed request must not reach credentials'))
+    with pytest.raises(ValueError,match='diagnostic request changed'):
+        ApplicationFacade.run_memorie_natural_experience_trial(diagnostic)

@@ -25,6 +25,9 @@ from dynamic_subject_agent.natural_experience import NaturalExperience, adjudica
 REVIEW = 'e593155cb74ad823414f95cf7d6ea7e4259932e0a60806bb392fa30ebaf65477'
 SELECTIONS = ('temporary', 'ongoing', 'correction', 'forget', 'irrelevant', 'unclear')
 DOWNSTREAM = ('reply_after_memory', 'choice_after_memory', 'share_after_memory', 'reply_after_forget')
+DIAGNOSTIC_REVIEW = '5847a962eab987bbb72c3e36e8d4d4de8dab676733371f2e6a883d65a05c1152'
+DIAGNOSTIC_SELECTIONS = ('A_temporary', 'A_correction', 'B_temporary', 'B_correction')
+DIAGNOSTIC_REPLIES = ('C_change_topic', 'C_recent_activity')
 
 
 @dataclass(frozen=True)
@@ -33,6 +36,15 @@ class NaturalExperienceTrialRequest:
     approval_path: Path
     preparation_path: Path
     output: Path
+    diagnostic_directory: Path | None = None
+    diagnostic_approval_path: Path | None = None
+    first_results_path: Path | None = None
+
+
+def trial_scope(request):
+    if request.diagnostic_directory is not None:
+        return DIAGNOSTIC_REVIEW, DIAGNOSTIC_SELECTIONS, DIAGNOSTIC_REPLIES
+    return REVIEW, SELECTIONS, DOWNSTREAM
 
 
 def validate_material(request):
@@ -57,6 +69,34 @@ def validate_material(request):
         if sha256(body).hexdigest() != expected_sha or len(body) > 65536:
             raise ValueError('reviewed request changed')
         bodies[name] = body
+    diagnostic_fields = (request.diagnostic_directory, request.diagnostic_approval_path, request.first_results_path)
+    if any(value is not None for value in diagnostic_fields):
+        if any(value is None for value in diagnostic_fields):
+            raise ValueError('complete diagnostic binding required')
+        if request.diagnostic_directory.resolve().parent != request.review_directory.resolve().parent:
+            raise ValueError('diagnostic review must share the isolated artifact parent')
+        raw = (request.diagnostic_directory / 'review.json').read_bytes()
+        if sha256(raw).hexdigest() != DIAGNOSTIC_REVIEW:
+            raise ValueError('diagnostic review changed')
+        diagnostic = json.loads(raw)
+        if (diagnostic['parent_review_sha256'] != REVIEW
+                or sha256(request.first_results_path.read_bytes()).hexdigest() != diagnostic['first_results_sha256']
+                or set(diagnostic['cases_sha256']) != set(DIAGNOSTIC_SELECTIONS + DIAGNOSTIC_REPLIES)):
+            raise ValueError('preserved first results and exact six follow-ups required')
+        approval = json.loads(request.diagnostic_approval_path.read_bytes())
+        expected = dict(version='memorie-natural-experience-diagnostic-r2', review_sha256=DIAGNOSTIC_REVIEW,
+            human_confirmed=True, user_reply='同意', authorization_source='direct-user-reply:2026-10-29-current-chat',
+            maximum_new_requests=6, automatic_retries=0, data_upgrade_included=False, installation_included=False)
+        if (approval != expected or approval.get('human_confirmed') is not True
+                or approval.get('data_upgrade_included') is not False or approval.get('installation_included') is not False
+                or type(approval.get('maximum_new_requests')) is not int or type(approval.get('automatic_retries')) is not int):
+            raise ValueError('separate exact diagnostic approval required')
+        bodies = {}
+        for name, expected_sha in diagnostic['cases_sha256'].items():
+            body = (request.diagnostic_directory / (name + '.request.json')).read_bytes()
+            if sha256(body).hexdigest() != expected_sha or len(body) > 65536:
+                raise ValueError('diagnostic request changed')
+            bodies[name] = body
     return bodies
 
 
@@ -70,17 +110,18 @@ class _FrozenAdapter(ProviderAdapter):
 
     def invoke(self, task):
         name = task.payload
-        if task.kind is not ModelTaskKind.MEMORIE_NATURAL_EXPERIENCE or name not in SELECTIONS + DOWNSTREAM:
+        review_id, selections, downstream = trial_scope(self.request)
+        if task.kind is not ModelTaskKind.MEMORIE_NATURAL_EXPERIENCE or name not in selections + downstream:
             raise ModelGatewayFailure('trial-task-invalid')
         bodies = validate_material(self.request)
         raw = bodies[name]
         request_digest = sha256(raw).hexdigest()
         self.journal.claim(request_digest)  # persisted before resolving any secret
-        purpose = None if name in SELECTIONS else 'reply' if name.startswith('reply_') else 'choice' if name.startswith('choice_') else 'share'
+        purpose = None if name in selections else 'reply' if name.startswith('reply_') or name in DIAGNOSTIC_REPLIES else 'choice' if name.startswith('choice_') else 'share'
         day = datetime.now(timezone(timedelta(hours=8))).date().isoformat()
-        attempt = sha256((REVIEW + ':' + name).encode()).hexdigest()
+        attempt = sha256((review_id + ':' + name).encode()).hexdigest()
         if purpose:
-            self.activity_audit.claim_daily(attempt, request_digest, purpose=purpose, day=day, run=REVIEW)
+            self.activity_audit.claim_daily(attempt, request_digest, purpose=purpose, day=day, run=review_id)
         sent = False
         def opener(request, *, timeout):
             nonlocal sent
@@ -95,7 +136,7 @@ class _FrozenAdapter(ProviderAdapter):
         ref = CredentialRef.reference(backend_id=DEEPSEEK_CREDENTIAL_BACKEND_ID, key_id=DEEPSEEK_CREDENTIAL_KEY_ID)
         value, selected, code, status = None, None, None, 'failed-closed'
         try:
-            if name.startswith('reply_'):
+            if purpose == 'reply':
                 value = _post_text_reply_content(observed, ref, raw, max_output_tokens=4096)
                 from dynamic_subject_agent.original_whole_chat import validate_whole_reply
                 validate_whole_reply(dict(reply_text=value, language='zh'))
@@ -103,7 +144,7 @@ class _FrozenAdapter(ProviderAdapter):
                 value = _post_json_reply_content(observed, ref, raw, max_output_tokens=4096,
                     require_complete=True, discard_reasoning=True, safe_diagnostics=True)
                 payload = json.loads(json.loads(raw)['messages'][1]['content'])
-                if name in SELECTIONS:
+                if name in selections:
                     old = payload['current_experience']
                     previous = None if old is None else NaturalExperience(old['quote'], old['duration'], 1, '2026-10-29')
                     selected = encode_experience(adjudicate_experience(value, current_text=payload['current_user_text'],
@@ -150,6 +191,7 @@ def run_trial(request, *, _transport=None, _audit_parent=None):
     if type(request) is not NaturalExperienceTrialRequest:
         raise ValueError('typed trial request required')
     validate_material(request)
+    review_id, selections, downstream = trial_scope(request)
     if (request.output.resolve().parent != request.review_directory.resolve().parent
             or request.review_directory.resolve().parent.name != '.artifacts'):
         raise ValueError('isolated sibling artifact root required')
@@ -160,7 +202,7 @@ def run_trial(request, *, _transport=None, _audit_parent=None):
         raise ValueError('live audit root cannot be overridden')
     audit_parent = _audit_parent if _transport is not None else Path(os.environ['LOCALAPPDATA']) / 'DynamicSubjectAgent' / 'memorie-natural-experience-m030'
     audit_parent.mkdir(parents=True, exist_ok=True)
-    journal = FrozenAttemptRun(audit_parent, REVIEW, approved=True)
+    journal = FrozenAttemptRun(audit_parent, review_id, approved=True)
     if journal.resumed:
         raise ValueError('first trial already started; no resend or replay')
     request.output.mkdir(parents=True)
@@ -173,12 +215,12 @@ def run_trial(request, *, _transport=None, _audit_parent=None):
             if frozen.status != 'created':
                 raise ValueError('independent reviewed development identity required')
         write_once(request.output / 'scope.json', dict(identity_id=frozen.view.identity_id, synthetic_messages=True,
-            user_canonical_opened=False, runtime_memory_implemented=False, review_sha256=REVIEW))
+            user_canonical_opened=False, runtime_memory_implemented=False, review_sha256=review_id))
         factory = (lambda opener: _transport) if _transport is not None else (
             lambda opener: DeepSeekUrlLibTransport(credential_resolver=_WindowsLabResolver(), _opener=opener))
         activity_audit = open_audit(ApprovedNativeActivityGrant(request.approval_path.with_name('native-activity-approval.json')))
         gateway = ModelGateway(_FrozenAdapter(request, journal, factory, activity_audit))
-        for name in SELECTIONS + DOWNSTREAM:
+        for name in selections + downstream:
             try:
                 row = gateway.execute(ModelTask(ModelTaskKind.MEMORIE_NATURAL_EXPERIENCE, name)).value
             except ModelGatewayFailure as error:
@@ -186,7 +228,7 @@ def run_trial(request, *, _transport=None, _audit_parent=None):
                 rows.append(dict(case=name, status='stopped', error_code=error.code))
                 break
             rows.append(row)
-        summary = dict(status='complete' if len(rows) == 10 and all(r['status'] == 'complete' for r in rows) else 'stopped',
+        summary = dict(status='complete' if len(rows) == len(selections + downstream) and all(r['status'] == 'complete' for r in rows) else 'stopped',
             attempts=journal.next, user_canonical_opened=False, runtime_memory_implemented=False, results=rows)
         write_once(request.output / 'results.json', summary)
         return summary
