@@ -32,3 +32,19 @@ def test_correction_replaces_source_keep_does_not_rewrite_and_forget_disables():
 @pytest.mark.parametrize('value,text',[(dict(proposal(),quote='模型杜撰'),'今天想休息'),(proposal(duration='until_changed'),'今天想休息'),(proposal(),'字'*401)])
 def test_rejects_rewritten_quotes_oversize_and_temporary_promotion(value,text):
     with pytest.raises(ValueError):adjudicate_experience(value,current_text=text,previous=None,source_head_sequence=1,local_day='2026-10-29')
+
+
+def test_explicit_day_qualifier_caps_wrong_model_duration_without_changing_original():
+    old=NaturalExperience('我想和你一起比较观察笔记里的不同排法。','until_changed',1,'2026-10-29')
+    for text in ('刚才说错了，今天只是想自己比较，不是要你替我安排。',
+            '这项调整仅限今天，后面的安排另说。'):
+        selected=adjudicate_experience(proposal(duration='until_changed',reason='correction'),
+            current_text=text,previous=old,source_head_sequence=2,local_day='2026-10-29')
+        assert selected.quote==text and selected.duration=='today'
+        assert visible_experience(selected,'2026-10-30') is None
+    durable=adjudicate_experience(proposal(duration='until_changed',reason='ongoing'),
+        current_text='我一直喜欢把观察差异放在一起比较。',previous=old,source_head_sequence=2,local_day='2026-10-29')
+    assert durable.duration=='until_changed' and visible_experience(durable,'2026-10-30')==durable
+    # A time marker is not by itself a reason to create a memory.
+    assert adjudicate_experience(proposal('keep',None,'irrelevant'),current_text='只限今天的按钮在哪里？',
+        previous=None,source_head_sequence=1,local_day='2026-10-29') is None

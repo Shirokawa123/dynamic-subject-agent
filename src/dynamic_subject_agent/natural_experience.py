@@ -3,6 +3,13 @@ from dataclasses import dataclass, asdict
 from datetime import date
 
 
+# A conservative cap for explicit Chinese day qualifiers in this product's
+# current language. It never selects a memory or lengthens its lifetime, and
+# is not a general semantic parser (quoted qualifiers may shorten retention).
+_TODAY_LIMITS = ('只限今天', '仅限今天', '今天只是', '只是今天', '就今天',
+    '仅今天', '只在今天', '仅在今天', '明天不一定')
+
+
 @dataclass(frozen=True)
 class NaturalExperience:
     quote: str
@@ -54,6 +61,8 @@ def adjudicate_experience(proposal, *, current_text, previous, source_head_seque
             or reason == 'temporary' and duration != 'today'
             or reason == 'correction' and old is None):
         raise ValueError('unsupported source decision')
+    if duration == 'until_changed' and any(marker in current_text for marker in _TODAY_LIMITS):
+        duration = 'today'
     return NaturalExperience(current_text, duration, source_head_sequence, local_day)
 
 
