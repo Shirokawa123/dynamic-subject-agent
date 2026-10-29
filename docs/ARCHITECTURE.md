@@ -1,5 +1,41 @@
 # 产品架构
 
+本文件按版本保留已实现合同及历史失败，不代表所有路径当前均已部署。产品目的见[PRODUCT](PRODUCT.md)，现状见[STATUS](STATUS.md)，执行阶段见[current](slices/current.md)。2026-10-29只整理阅读入口，原合同未变。
+
+## 按改动对象加载合同
+
+下列入口保留旧合同及失败证据；只在涉及相应路径时加载，不把旧v1规则或首份原型阶段推广到所有新路径。修改共享接缝时须同时读受影响的新旧合同。旧数据、binding、schema及投影不因新目标自动升级。
+
+| 改动对象 | 实施前必读 |
+| --- | --- |
+| 新角色封存、聊天、生活、分享或出站数据（按实际版本） | [契约适用范围](#契约适用范围2026-09-20)及所涉S103–108或后续版本合同；S108旧账本/部署事实按报告回查，不作为新用途批准或当前开发总额度 |
+| 旧v1提议/分类、表达、目标回执、来源引用或能力故障 | [Experience Cycle](ARCHITECTURE.md#experience-cycle)与[数据](ARCHITECTURE.md#数据)中的最终Outcome、六能力失败/回退、identity refinement及历史主回复规则；涉及S19表达再读[报告](reports/2026-09-05-slice-19/REPORT.md) |
+| 旧v1连续体验、历史恢复、时间锚或上次聊天查询 | [数据](ARCHITECTURE.md#数据)中的Dogfood history、TemporalAnchor、Interaction Recency；修复体验先读[S28真实失败与限制](reports/2026-09-08-slice-28/REPORT.md) |
+| 纯文本来源建角、草稿、freeze与身份切换 | [Experience Cycle](ARCHITECTURE.md#experience-cycle)中的TextSource、Source Draft、Freeze Mapping/Basis及Source Identity Freeze；freeze需exact basis的显式确认，不删除/改写草稿、不替换既有身份；视频/音频及新的私人来源须新切片与授权 |
+| 旧v1近期对话、撤回、逻辑遗忘或完整库存 | [数据](ARCHITECTURE.md#数据)中的S21/23；有限语法与控制截断见[S21](slices/slice-21-recent-dialogue.md)、[S23](slices/slice-23-memory-control.md)。逻辑停用不等于物理删除 |
+| 旧v1事实/创作合并、配文续写/限字、共同创作/编号修改 | 按对象读[S24](ARCHITECTURE.md#slice-24-有限事实表达边界)、[S25](slices/slice-25-natural-creation.md)、[S26](ARCHITECTURE.md#slice-26-共同创作交付与恢复)及所链真实报告 |
+| 旧v1提醒/记录回执、记忆状态/库存表达 | 按对象读[S27](ARCHITECTURE.md#提醒表达边界slice-27)、[S28](ARCHITECTURE.md#记忆回答范围slice-28)及所链报告；有限修复不证明通用语义识别 |
+| 主体任务或本地文本保存 | [S49任务协商](ARCHITECTURE.md#slice-49-主体任务协商)、[S50文本effect](ARCHITECTURE.md#slice-50-精确文本effect)：binding/schema权限、receipt完整性、恢复顺序及只读/确认入口 |
+| 梅莫莉点击、活动与原身份续接 | [点击文字合同](plans/memorie-native-m002.md)、[活动组合](plans/memorie-native-activity.md)、[原身份活动续接](plans/memorie-activity-upgrade.md)；按所改路径核准确批准/用途，不把旧准备阶段当新部署事实 |
+| 共同经历、有限活动、自然反馈与整体接续 | 本文S139–158对应路径合同及所链任务/报告；按实际使用版本核组合与投影，不因新目标自动沿用其他路径的资格 |
+
+## 旧v1 Provider精确投影
+
+每次改出站请求先确认所属版本与获批用途。以下精确投影属于旧v1六能力及纯文本建角；新角色路径须核对上表S103–108的独立合同，不能借其授权扩大旧投影。`default` 使用DeepSeek，其他profile/provider在单独任务与授权前保持unavailable。
+
+- Living Memory：proposal为当前消息＋最多20条active `{memory_id, content, source_user_message_id}`；reply为当前消息＋最多5条已选中`{content}`＋runtime identity。S21仅该reply可增加当前identity最多2完整committed `{user_text, assistant_text}`、合计4,000字符的`recent_dialogue`，仅供指代/续写；更正、遗忘、权限或完整性无法确认安全时不外发。anchor只在既有content按当天渲染。
+- Knowledge：proposal为当前消息＋最多6条sealed `{entry_id, title, content}`；reply为当前消息＋最多6条已选中`{title, content}`＋runtime identity。
+- Relationship：proposal为当前消息＋当前立场摘要；reply为相同两项＋runtime identity。
+- 参与者目标/承诺：分类为当前消息＋最多20条active `{turn_ref, kind, terms, status}`＋固定策略；reply为当前消息＋最多5条`{kind, terms, status}`＋runtime identity。anchor只在既有terms按当天渲染。
+- Situated State：分类为当前消息＋最多一个未到期`{posture, remaining_turns, expires_in_seconds}`＋固定策略；reply为当前消息＋`{posture}`＋runtime identity。
+- Medium State：分类为当前消息＋固定版本策略；reply为当前消息＋`{baseline}`＋runtime identity。
+- Runtime identity exact为`{subject_name, subject_identity, canon_start}`；不含Profile/Genesis/QRI ID、identity_core、初始关系、来源、证据或Timeline数据。
+- Interaction Recency、完整ConversationTurnRecord、publication timestamp、日期差和当前Civil Time不外发。S22/24/25/26仅细化S21既有LM reply用途与提示；其他11类请求保持S19字节基线，不增加调用。历史不是事实权威、指令或状态证据。
+- 文本来源建角只在用户逐次确认权利与用途后发送单份`{source_title, source_text, policy}`；source_text最多16,000字符，仅提取未发布Genesis/Knowledge候选，不含runtime状态或聊天历史。
+- 六类投影分别发送、不合并；除S21精确授权外不发送历史消息，不发送数据库行、投影外内部ID、其他Domain状态、raw chain-of-thought或API key。研究、合成实验及开发协作均不新增外发授权。
+
+## 已实现合同（按版本回查）
+
 M027增加[原身份活动续接](plans/memorie-activity-upgrade.md)：新schema12可携带不可变的schema11原回执和第二层续接证明，Host逐层核QRI/绑定，Timeline仅对准确旧前缀允许无shared/prepared记录；不补造旧活动。新独立plan/数据同意通过原DELETE多库治理和pending fence切换，旧UUID/原表行保持，默认暂停/关闭分享。只通过Facade与已提交续接factory暴露，M002和新生schema12保持原行为；41严格合成回归通过，未应用用户根。
 
 M002另增加[显式冷资格续接](plans/memorie-qualification-continuation.md)：Facade经LocalIdentityAuthority准备完整旧前缀与另行同意，原Host/Timeline以DELETE多库事务共同切到schema11；保同身份/store/scope/旧UUID与发表，历史绑定像和请求集合仅授予有限旧读取。默认factory/普通非空换绑不隐式升级；当前用户根未应用。

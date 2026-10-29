@@ -1,10 +1,14 @@
 # Dynamic Subject Agent
 
-2026-10-21：梅莫莉游戏产品已独立到`E:/memorie-companion`及[私有仓库memorie-companion](https://github.com/Shirokawa123/memorie-companion)，插件与游戏整合后续在新项目维护；本仓提供固定版本的共用底座，保留S160源码/报告与原运行数据。[迁移交付](docs/reports/2026-10-21-slice-160/REPORT.md#独立产品迁移交付)只完成项目拆分，未将点击/状态生成等尚缺能力称为完成。
+独立角色产品：支持长期相处，让人物依据、记忆、共同经历、状态和自身目标影响行为；成长、坚持与拒绝都取决于具体角色。完整体验尚未交付。
 
-2026-10-02：当前提供独立角色聊天试用；有来源人物、连续生活和自然分享的完整目标仍未全部实现。最新实际能力与限制见[当前工作](docs/slices/current.md)和[连续十片结果](docs/reports/2026-10-02-batch-128-137/REPORT.md)，目标见[产品定义](docs/PRODUCT.md)。
+2026-10-29确认：近期集中推进 `E:/memorie-companion` 的游戏体验，dynamic保留独立发展目标，等梅莫莉需要补充共用能力时再回来。本仓本轮只完成目标、状态与协作规则整理。
 
-## 当前角色聊天试用
+从[当前工作](docs/slices/current.md)开始；[产品定义](docs/PRODUCT.md)说明长期目标，[当前状态](docs/STATUS.md)区分已实现与未完成，[用户决定](docs/plans/character-chat-direction.md)保留本轮确认和历史入口。
+
+## 历史角色聊天试用（2026-10-02）
+
+以下启动方法属于对应旧版本，保留供按需回查；本轮未启动或复测这些入口，不能从历史说明推断当前服务在线。
 
 本机双击 [Start-OriginalContextChat.cmd](app/desktop/Start-OriginalContextChat.cmd)，打开[新交流入口](http://127.0.0.1:8788)。首次是一段空的独立聊天，以后从同一份本地记录继续；启动、查看依据、查旧聊天与重开不会生成回复。该入口包含新交流边界、人物依据、本轮参考内容和完整已提交历史的本地查找；等待回复时可继续写下一条，结束后仍须自己点击发送。
 
@@ -47,7 +51,7 @@
 
 当前范围包括 Windows 隔离身份真实长链、原创纯文本建角封存、多身份切换、主体任务与一种受控本地执行。视频/音频、私人来源、人格发展、Reflection、主动消息、任意工具与对外执行仍不在范围内。旧身份保持原格式与权限，不自动迁移；新功能以新建身份验收。
 
-## 安装与测试
+## 旧v1安装与测试
 
 ```powershell
 python -m venv .venv
@@ -55,7 +59,7 @@ python -m venv .venv
 powershell -ExecutionPolicy Bypass -File scripts\test.ps1
 ```
 
-## 启动
+## 旧v1启动
 
 直接运行：
 
