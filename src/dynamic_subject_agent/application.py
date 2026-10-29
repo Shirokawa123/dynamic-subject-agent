@@ -1775,6 +1775,11 @@ class ApplicationFacade:
         return prepare(prepared)
 
     @staticmethod
+    def run_memorie_natural_experience_trial(request):
+        from dynamic_subject_agent.memorie_natural_trial import run_trial
+        return run_trial(request)
+
+    @staticmethod
     def prepare_memorie_activity_continuation(request):
         from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)

@@ -1,0 +1,17 @@
+# M030：自然经历裁决与首轮隔离试验
+
+来源：梅莫莉用户2026-10-29对准确新增用途答“agree”。审阅SHA为e593155cb74ad823414f95cf7d6ea7e4259932e0a60806bb392fa30ebaf65477；产品确认稿见memorie-companion的docs/NATURAL-EXPERIENCE-USE.md。
+
+用户结果：交流自然留下相关经历，影响后续提问/表达/选择；可纠正、到期、停用和重开接续。此次先做获批的有限模型试验及裁决，不宣称完整运行接线或游戏体验完成。
+
+复用ApplicationFacade、ModelGateway、Windows凭据transport、FrozenAttemptRun、原人物freeze及M012日账。新增纯NaturalExperience值裁决和一个正式Facade隔离试验入口。试验固定10份已审合成请求，原背景不变，6选择+4后续请求；一次占号在凭据解析前，解析后最终HTTPS再核批准/准确字节/目的地址，0自动重试。后续choice/share计入已有共享日限额。
+
+试验只在与审阅目录并列的新.artifacts根创建独立已审人物；没有用户Timeline、游戏/草稿入口。试验结果是合成情景的真实模型输出，不能说是用户已发生的经历，也不能当自然记忆持久化验收。
+
+NaturalExperience保完整≤400字原话、来源head、期限及本地来源日。today次日不再投影；until_changed仍可纠正或停用。模型不输出引文，Python复制原话；错误字段、超长、倒退来源或时间拒绝。该值尚未纳入新RuntimeTimeline Publication合同，序列化单测不冒充真实冷恢复。
+
+准备验证：8项通过，包括正式Facade十请求合成路径、重复试验拒绝、请求篡改拒绝、凭据解析期间撤销后禁止出站、期限与更正裁决。初次凭据引用构造错误、随后fake选择keep不符合drafted阶段的失败保留；修复后重新验证。真实试验尚未运行。
+
+运行接线仍需复用原单写者/Publication事务与失效过滤，不能新建第二个人物store或用试验JSON代替canonical。现用户数据升级和安装未被此次用途批准覆盖。
+
+依据沿用已核一手研究：[Generative Agents](https://arxiv.org/abs/2304.03442)作为经历影响行为的设计参照；[LongMemEval](https://arxiv.org/abs/2410.10813)提示分别验证时间、更新与未知情况。单段原话和两期限是本阶段选择，非永久容量或论文结论。
