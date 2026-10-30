@@ -10,6 +10,7 @@ from dynamic_subject_agent.model_gateway import ProviderAdapter,ProviderCapabili
 from dynamic_subject_agent.timeline import TimelineEngine,FaultPoint
 
 BAD='我刚完成了一个没有记录的实验。'
+BAD_REPAIR='我刚完成了另一个没有记录的实验。'
 GOOD='我想和你一起找个轻松的切入点。你想从哪里开始？'
 
 
@@ -28,11 +29,11 @@ class Adapter(ProviderAdapter):
             value=BAD if self.reject_draft else GOOD
         elif task.kind is ModelTaskKind.MEMORIE_REPLY_REPAIR:
             assert p['rejected_reply']==BAD and p['review_issues'][0]['quote']==BAD
-            value=BAD if self.reject_repair else GOOD
+            value=BAD_REPAIR if self.reject_repair else GOOD
         elif task.kind is ModelTaskKind.ACTIVITY_REPLY_REVIEW:
             value=dict(verdict='uncertain',issues=[]) if self.uncertain else (
-                dict(verdict='unsupported',issues=[dict(quote=BAD,kind='unsupported_event',basis_labels=[])])
-                if p['candidate_text']==BAD else dict(verdict='supported',issues=[]))
+                dict(verdict='unsupported',issues=[dict(quote=p['candidate_text'],kind='unsupported_event',basis_labels=[])])
+                if p['candidate_text'] in (BAD,BAD_REPAIR) else dict(verdict='supported',issues=[]))
         else:raise AssertionError(task.kind)
         return ModelResult(task.kind,value)
 

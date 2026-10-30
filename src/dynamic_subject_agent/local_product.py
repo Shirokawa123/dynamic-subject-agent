@@ -178,7 +178,10 @@ def _open_loaded_local_product(
                 expected_delivery = IntegratedCharacterDelivery if loaded.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY else NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 from dynamic_subject_agent.memorie_activity_live import is_contract,NativeActivityDelivery
                 if is_contract(loaded.qri.reviewed_chat_contract):expected_delivery=NativeActivityDelivery
-                from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION
+                from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION,CHECKED_LIVE_VERSION
+                if loaded.qri.reviewed_chat_contract['version']==CHECKED_LIVE_VERSION:
+                    from dynamic_subject_agent.reviewed_natural_live import ReviewedNaturalDelivery
+                    expected_delivery=ReviewedNaturalDelivery
                 if loaded.qri.reviewed_chat_contract['version'] == LIVE_VERSION:
                     from dynamic_subject_agent.natural_conversation_live import NaturalConversationDelivery
                     expected_delivery = NaturalConversationDelivery
@@ -983,9 +986,11 @@ def open_natural_experience_product_local(config, *, gateway, identity_id, bindi
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
-def open_natural_conversation_product_live(config, *, request, journal, identity_id, binding, _transport_factory=None):
+def open_natural_conversation_product_live(config, *, request, journal, identity_id, binding, _transport_factory=None, reviewed=False):
     """Only the approved fresh trial root; exact LIVE qualification, never LOCAL."""
     from dynamic_subject_agent.natural_conversation_live import validate_material, NaturalConversationDelivery
+    if reviewed:
+        from dynamic_subject_agent.reviewed_natural_live import validate_material,ReviewedNaturalDelivery as NaturalConversationDelivery
     from dynamic_subject_agent.natural_experience_cognition import NaturalExperienceCognition
     from dynamic_subject_agent.natural_experience_cycle import local_day
     from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY
@@ -996,7 +1001,7 @@ def open_natural_conversation_product_live(config, *, request, journal, identity
             or config.state_path.resolve() != (request.output / 'identity/state.json').resolve()):
         raise ValueError('only the approved isolated conversation root is allowed')
     authority = LocalIdentityAuthority(config)
-    loaded = authority.activate_natural_conversation_live(request=request, binding=binding, identity_id=identity_id)
+    loaded = authority.activate_natural_conversation_live(request=request, binding=binding, identity_id=identity_id,reviewed=reviewed)
     delivery = NaturalConversationDelivery(request, journal, loaded.qri.reviewed_chat_contract, transport_factory=_transport_factory)
     cognition = NaturalExperienceCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(delivery),
         contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_LIVE_AUTHORITY, delivery=delivery,

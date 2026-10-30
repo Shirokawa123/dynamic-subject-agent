@@ -5028,9 +5028,9 @@ class TimelineEngine:
                     contract as make_natural_contract, build_natural_record, local_day)
                 from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
                 from dynamic_subject_agent.shared_activity import digest
-                from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION, CHECKED_VERSION
-                if (natural_contract != make_natural_contract({k: natural_contract[k] for k in APPROVED_BINDING}, live=natural_contract['version'] == LIVE_VERSION,
-                        reviewed=natural_contract['version']==CHECKED_VERSION)
+                from dynamic_subject_agent.natural_experience_cycle import is_live_version, is_reviewed_version
+                if (natural_contract != make_natural_contract({k: natural_contract[k] for k in APPROVED_BINDING}, live=is_live_version(natural_contract['version']),
+                        reviewed=is_reviewed_version(natural_contract['version']))
                         or digest(natural_contract) != authorization.contract_digest or record.natural is None):
                     raise ValueError('exact natural contract required')
                 admitted = self._writer.execute('SELECT admitted_at_us FROM subject_operation WHERE operation_id=?',

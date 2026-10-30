@@ -16,6 +16,8 @@ from dynamic_subject_agent.whole_context_boundary import WholeContextInput
 VERSION = 'natural-experience-local-m031-1'
 LIVE_VERSION = 'natural-conversation-live-m032-1'
 CHECKED_VERSION = 'natural-conversation-reviewed-local-m034-1'
+CHECKED_LIVE_VERSION = 'natural-conversation-reviewed-live-m034-1'
+CHECKED_REVIEW = 'e5bca3c1b0b727a58947baabd3c726edd5625137579e1ce0e6382122a1f2b245'
 LIVE_REVIEW = 'd077bebe7d0c9dd32c0ae8473cb2af491818c4e8841dedcc5fea282d32b8ce48'
 RENDER_VERSION = 'source-bound-speech-m031-1'
 ACTS = ('ask', 'wish_compare', 'recall_user', 'discuss_plan', 'unknown_past', 'acknowledge_change')
@@ -28,16 +30,22 @@ def local_day(observed_at_us):
 
 
 def contract(binding, *, live=False, reviewed=False):
-    if live and reviewed:
-        raise ValueError('reviewed LIVE use is not qualified by a LOCAL contract')
     base = living_contract(binding, activity_kind='herb-note-outline', independent=True)
-    return dict(base, version=CHECKED_VERSION if reviewed else LIVE_VERSION if live else VERSION, natural_experience_local=not live,
+    return dict(base, version=(CHECKED_LIVE_VERSION if live else CHECKED_VERSION) if reviewed else LIVE_VERSION if live else VERSION, natural_experience_local=not live,
         technical_variant=dict(base['technical_variant'], natural_record_version=1,
-            natural_render_version='reviewed-natural-reply-m034-1' if reviewed else LIVE_REVIEW if live else RENDER_VERSION, natural_timezone='Asia/Shanghai', automatic_source_limit=1))
+            natural_render_version=(CHECKED_REVIEW if live else 'reviewed-natural-reply-m034-1') if reviewed else LIVE_REVIEW if live else RENDER_VERSION, natural_timezone='Asia/Shanghai', automatic_source_limit=1))
+
+
+def is_reviewed_version(version):
+    return version in (CHECKED_VERSION,CHECKED_LIVE_VERSION)
+
+
+def is_live_version(version):
+    return version in (LIVE_VERSION,CHECKED_LIVE_VERSION)
 
 
 def is_contract(value):
-    return type(value) is dict and value.get('version') in (VERSION, LIVE_VERSION, CHECKED_VERSION)
+    return type(value) is dict and value.get('version') in (VERSION,LIVE_VERSION,CHECKED_VERSION,CHECKED_LIVE_VERSION)
 
 
 def validate_speech(value, *, live=False, reviewed=False):
@@ -62,7 +70,7 @@ def validate_speech(value, *, live=False, reviewed=False):
 
 def validate_natural(value):
     if (type(value) is not dict or set(value) != {'version', 'experience', 'selection', 'speech', 'day'}
-            or value['version'] not in (VERSION, LIVE_VERSION, CHECKED_VERSION)):
+            or value['version'] not in (VERSION,LIVE_VERSION,CHECKED_VERSION,CHECKED_LIVE_VERSION)):
         raise ValueError('exact natural record required')
     from datetime import date
     if type(value['day']) is not str or date.fromisoformat(value['day']).isoformat() != value['day']:
@@ -71,7 +79,7 @@ def validate_natural(value):
     if experience is not None and experience.local_day > value['day']:
         raise ValueError('source from future day')
     if value['speech'] is not None:
-        validate_speech(value['speech'], live=value['version'] == LIVE_VERSION, reviewed=value['version']==CHECKED_VERSION)
+        validate_speech(value['speech'], live=is_live_version(value['version']), reviewed=is_reviewed_version(value['version']))
     if value['selection'] is not None and (type(value['selection']) is not dict
             or set(value['selection']) != {'action', 'duration', 'reason_code'}):
         raise ValueError('exact stored selection required')
@@ -193,10 +201,10 @@ def build_natural_record(view, *, command, authorization, permission, head_seque
         dialogue_dependencies=())
     record = build_living_record(effective_view, command=command, authorization=authorization,
         permission=permission, head_sequence=head_sequence, choice=choice)
-    if version not in (VERSION, LIVE_VERSION, CHECKED_VERSION):
+    if version not in (VERSION,LIVE_VERSION,CHECKED_VERSION,CHECKED_LIVE_VERSION):
         raise ValueError('exact natural version required')
-    reviewed = version == CHECKED_VERSION
-    live = version == LIVE_VERSION
+    reviewed = is_reviewed_version(version)
+    live = is_live_version(version)
     natural = dict(version=version, experience=encode_experience(selected), selection=deepcopy(selection),
         speech=None if speech is None else validate_speech(speech, live=live, reviewed=reviewed), day=day)
     record = replace(record, source=source, natural=validate_natural(natural))

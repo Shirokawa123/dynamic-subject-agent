@@ -1785,6 +1785,11 @@ class ApplicationFacade:
         return run_trial(request)
 
     @staticmethod
+    def run_memorie_reviewed_conversation_trial(request):
+        from dynamic_subject_agent.natural_conversation_live import run_trial
+        return run_trial(request,reviewed=True)
+
+    @staticmethod
     def run_memorie_activity_reply_review_trial(request):
         from dynamic_subject_agent.activity_reply_review_trial import run_trial
         return run_trial(request)

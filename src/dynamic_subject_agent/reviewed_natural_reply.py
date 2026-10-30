@@ -70,6 +70,9 @@ def generate_reviewed_reply(gateway, projection, *, execute=None):
         if repaired or proposal['verdict']!='unsupported':
             raise ValueError('final reply not accepted; no further repair')
         repair=dict(original,rejected_reply=candidate,review_issues=deepcopy(proposal['issues']))
+        rejected=candidate
         candidate=invoke(ModelTaskKind.MEMORIE_REPLY_REPAIR,repair)
         validate_whole_reply(dict(reply_text=candidate,language='zh'))
+        if candidate==rejected:
+            raise ValueError('unchanged rejected draft cannot be resubmitted for another verdict')
     raise AssertionError('bounded reply loop exhausted')

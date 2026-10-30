@@ -277,8 +277,8 @@ def _cognition_contract_supported(cognition: object) -> bool:
         from dynamic_subject_agent.natural_experience_cognition import NaturalExperienceCognition
         from dynamic_subject_agent.natural_experience_cycle import is_contract as is_natural_contract
         if is_natural_contract(getattr(cognition, 'contract', None)):
-            from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION
-            expected = LIVING_LIVE_AUTHORITY if cognition.contract['version'] == LIVE_VERSION else LIVING_AUTHORITY
+            from dynamic_subject_agent.natural_experience_cycle import is_live_version
+            expected = LIVING_LIVE_AUTHORITY if is_live_version(cognition.contract['version']) else LIVING_AUTHORITY
             return type(cognition) is NaturalExperienceCognition and cognition.provider_authority == expected
         return type(cognition) is SharedActivityCognition
     if cognition.provider_authority in WHOLE_AUTHORITIES:

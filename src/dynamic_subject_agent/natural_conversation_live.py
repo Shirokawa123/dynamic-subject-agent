@@ -149,23 +149,27 @@ class NaturalConversationDelivery(ProviderAdapter):
         return ModelResult(task.kind, value)
 
 
-def run_trial(request, *, _transport_factory=None, _audit_parent=None):
+def run_trial(request, *, _transport_factory=None, _audit_parent=None, reviewed=False):
     import os
+    from time import monotonic
     from dynamic_subject_agent.frozen_attempt import FrozenAttemptRun
     from dynamic_subject_agent.local_product import LocalProductConfig, open_local_product, open_natural_conversation_product_live
     from dynamic_subject_agent._deepseek_activation import DormantDeepSeekCognition
     from dynamic_subject_agent.reviewed_character_definition import ReviewedCharacterFreezeRequest
     from dynamic_subject_agent.memorie_companion_contract import DEFINITION
     from dynamic_subject_agent.timeline import SubjectCommand
-    review, _ = validate_material(request)
+    validator=validate_material;review_id=REVIEW
+    if reviewed:
+        from dynamic_subject_agent.reviewed_natural_live import validate_material as validator, REVIEW as review_id
+    review, _ = validator(request)
     if (request.output.exists() or request.output.resolve().parent != request.review_directory.resolve().parent
             or request.output.resolve().parent.name != '.artifacts'):
         raise ValueError('fresh isolated sibling output required')
     if _audit_parent is not None and _transport_factory is None:
         raise ValueError('real attempt journal cannot be redirected')
-    parent = _audit_parent if _transport_factory is not None else Path(os.environ['LOCALAPPDATA']) / 'DynamicSubjectAgent/memorie-natural-conversation-m032'
+    parent = _audit_parent if _transport_factory is not None else Path(os.environ['LOCALAPPDATA']) / ('DynamicSubjectAgent/reviewed-natural-conversation-m034' if reviewed else 'DynamicSubjectAgent/memorie-natural-conversation-m032')
     parent.mkdir(parents=True, exist_ok=True)
-    journal = FrozenAttemptRun(parent, REVIEW, approved=True)
+    journal = FrozenAttemptRun(parent, review_id, approved=True)
     if journal.resumed:
         raise ValueError('this review already started; no rerun or new-root resend')
     request.output.mkdir()
@@ -181,11 +185,11 @@ def run_trial(request, *, _transport_factory=None, _audit_parent=None):
         asset = json.loads(definition['runtime_asset_json'])
         binding = dict(definition_basis=DEFINITION, runtime_asset_sha=definition['runtime_asset_sha'],
             persona_digest=asset['persona_digest'], subject_id=asset['subject']['subject_id'],
-            anchor_id=asset['anchor']['anchor_id'], review_basis=REVIEW, scope_digest=REVIEW)
+            anchor_id=asset['anchor']['anchor_id'], review_basis=review_id, scope_digest=review_id)
 
         def opening():
             return open_natural_conversation_product_live(config, request=request, journal=journal,
-                identity_id=frozen.view.identity_id, binding=binding, _transport_factory=_transport_factory)
+                identity_id=frozen.view.identity_id, binding=binding, _transport_factory=_transport_factory,reviewed=reviewed)
 
         product = opening()
         scope = product.profile_id, product.timeline_id
@@ -203,8 +207,9 @@ def run_trial(request, *, _transport_factory=None, _audit_parent=None):
             command = SubjectCommand.contribute_utterance(target_profile_id=product.profile_id,
                 target_timeline_id=product.timeline_id, declared_intent='ask-collaborator-status',
                 utterance=step['text'], language='zh', provenance='project-original')
-            result = product.application.submit(command, idempotency_key='natural-conversation-m032-' + step['id'])
-            for _ in range(3):
+            started=monotonic();before_calls=journal.next
+            result = product.application.submit(command, idempotency_key=('reviewed-conversation-m034-' if reviewed else 'natural-conversation-m032-') + step['id'])
+            for _ in range(6 if reviewed else 3):
                 if result.status != 'pending':
                     break
                 result = product.application.wait(result.operation_ref, timeout_seconds=30)
@@ -214,6 +219,7 @@ def run_trial(request, *, _transport_factory=None, _audit_parent=None):
                 failure_code=getattr(result.projection, 'failure_code', None),
                 reply_text=getattr(result.projection, 'expression_text', None),
                 experience=state.view.get('natural_experience') if state.status == 'available' else None)
+            if reviewed:row.update(elapsed_seconds=round(monotonic()-started,3),model_calls=journal.next-before_calls)
             rows.append(row)
             write_once(request.output / (step['id'] + '.turn.json'), row)
             if result.status != 'terminal' or row['failure_code']:
