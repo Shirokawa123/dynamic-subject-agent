@@ -112,7 +112,7 @@ def render_speech(speech, frame, *, changed):
         source = frame['experience']
         if source is None:
             raise ValueError('no valid user source for this utterance')
-        return '你说过：' + _quoted(source['quote']) + ('。现在还是这样想的吗？' if gentle else '。想接着聊这件事吗？')
+        return '你说过：' + _quoted(source['quote']) + ('\n现在还是这样想的吗？' if gentle else '\n想接着聊这件事吗？')
     if act == 'discuss_plan':
         result = frame['activity_result']
         if result is None:
