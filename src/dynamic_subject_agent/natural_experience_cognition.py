@@ -1,5 +1,6 @@
 """LOCAL two-stage proposals with source-bound expression, no remote sender."""
 from dataclasses import replace
+from contextlib import contextmanager
 from time import time_ns
 import re
 
@@ -10,7 +11,7 @@ from dynamic_subject_agent.runtime import CognitionFailedClosed, ExpressionCandi
 from dynamic_subject_agent.timeline import PreAdmissionRejected
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.natural_experience_cycle import (
-    is_contract, local_day, natural_view, expression_frame, build_natural_record)
+    is_contract, local_day, natural_view, expression_frame, build_natural_record, LIVE_VERSION)
 from dynamic_subject_agent.natural_experience import selection_projection, encode_experience
 
 
@@ -20,11 +21,20 @@ class NaturalExperienceCognition(SharedActivityCognition):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.adapter_version = 'natural-experience-local-cognition-m031-1'
+        self.adapter_version = 'natural-conversation-live-cognition-m032-1' if self.contract['version'] == LIVE_VERSION else 'natural-experience-local-cognition-m031-1'
         self.natural_now_us = lambda: time_ns() // 1000
 
     def preflight(self, *, context, command):
-        if not is_contract(self.contract) or self.gateway is None or self.gateway.capabilities.local is not True:
+        live = is_contract(self.contract) and self.contract['version'] == LIVE_VERSION
+        if live:
+            from dynamic_subject_agent.natural_conversation_live import NaturalConversationDelivery
+            if (type(self.delivery) is not NaturalConversationDelivery or self.gateway is None
+                    or self.gateway.capabilities.local is not False or self.delivery.contract != self.contract):
+                raise PreAdmissionRejected('natural-live-required', 'exact approved conversation delivery required')
+            self.delivery.validate()
+            if type(command) in (SharedActivityInput, WholeContextInput):
+                raise PreAdmissionRejected('natural-trial-text-only', 'this trial only admits its fixed user turns')
+        elif not is_contract(self.contract) or self.gateway is None or self.gateway.capabilities.local is not True:
             raise PreAdmissionRejected('natural-local-required', 'no remote or existing-root activation')
         if type(command) is SharedActivityInput:
             if command.input_kind not in ('disable', 'advance'):
@@ -47,6 +57,46 @@ class NaturalExperienceCognition(SharedActivityCognition):
     def prepare_natural_view(self, view):
         return natural_view(view, local_day(self.natural_now_us()))
 
+    @contextmanager
+    def publication_guard(self, plan):
+        with super().publication_guard(plan):
+            if self.contract['version'] == LIVE_VERSION:
+                self.delivery.validate()
+            yield
+
+    def _propose_conversation(self, *, plan, context, command, basis, authorization, permission, effective, view, day):
+        def projection(selection=None, *, reply=False):
+            if self.authorization() != authorization or self.living_permission() != permission:
+                raise ValueError('authority changed')
+            current = context.load_shared_activity(effective)
+            if current['basis'] != view['basis'] or local_day(self.natural_now_us()) != day:
+                raise ValueError('conversation basis or day changed')
+            current = natural_view(current, day)
+            if not reply:
+                return dict(current_user_text=command.utterance,
+                    current_experience=selection_projection(current['natural_experience'], day))
+            proposed, _ = build_natural_record(current, command=command, authorization=authorization,
+                permission=permission, head_sequence=plan.expected_basis.head_sequence + 1, day=day,
+                selection=selection, speech=dict(reply_text='临时构造，不发表。'), version=LIVE_VERSION)
+            changed = proposed.natural['experience'] != encode_experience(current['natural_experience'])
+            from dynamic_subject_agent.natural_experience import decode_experience
+            return dict(current_user_text=command.utterance,
+                experience=selection_projection(decode_experience(proposed.natural['experience']), day),
+                exchange=[] if changed else current.get('natural_exchange', []), activity_evidence=None)
+        with self.delivery.frame(projection):
+            selection = self.gateway.execute(ModelTask(ModelTaskKind.MEMORIE_NATURAL_EXPERIENCE, projection())).value
+        reply_projection = lambda: projection(selection, reply=True)
+        with self.delivery.frame(reply_projection):
+            reply = self.gateway.execute(ModelTask(ModelTaskKind.MEMORIE_GROUNDED_EXPRESSION, reply_projection())).value
+        record, text = build_natural_record(view, command=command, authorization=authorization,
+            permission=permission, head_sequence=plan.expected_basis.head_sequence + 1, day=day,
+            selection=selection, speech=dict(reply_text=reply), version=LIVE_VERSION)
+        projection(selection, reply=True)
+        proposal = self._bounded_noop_proposal(context=context, basis=basis,
+            experience_summary='隔离自然交流试验；真实模型提议，来源与期限由Python裁决。',
+            expression_candidate=ExpressionCandidate(text, 'zh'))
+        return replace(proposal, shared_record=record)
+
     def _propose_living(self, *, plan, context, command, basis):
         try:
             authorization = self.authorization()
@@ -55,6 +105,9 @@ class NaturalExperienceCognition(SharedActivityCognition):
             view = context.load_shared_activity(effective)
             day = local_day(context.observed_at_us)
             view = natural_view(view, day)
+            if self.contract['version'] == LIVE_VERSION:
+                return self._propose_conversation(plan=plan, context=context, command=command, basis=basis,
+                    authorization=authorization, permission=permission, effective=effective, view=view, day=day)
             selection = speech = choice = None
             ordinary = type(command) not in (SharedActivityInput, WholeContextInput)
             if ordinary:

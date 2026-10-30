@@ -1487,6 +1487,14 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(contract(binding), self._config.state_path.parent / 'natural-local-audit', identity_id)
 
     @_registry_mutation
+    def activate_natural_conversation_live(self, *, request, binding, identity_id):
+        from dynamic_subject_agent.natural_conversation_live import validate_material
+        from dynamic_subject_agent.natural_experience_cycle import contract
+        validate_material(request)
+        return self._activate_context_identity(contract(binding, live=True),
+            self._config.state_path.parent / 'natural-conversation-live-audit', identity_id)
+
+    @_registry_mutation
     def activate_memorie_activity_development(self, *, identity_id, grant, native=False):
         from dynamic_subject_agent.memorie_activity_live import ApprovedNativeActivityGrant,REVIEW,contract,open_audit
         if type(grant) is not ApprovedNativeActivityGrant:raise ValueError('exact M012 grant required')

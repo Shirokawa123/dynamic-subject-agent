@@ -178,6 +178,10 @@ def _open_loaded_local_product(
                 expected_delivery = IntegratedCharacterDelivery if loaded.qri.provider_authority == INTEGRATED_LIVE_AUTHORITY else NaturalFeedbackDelivery if loaded.qri.provider_authority in (FEEDBACK_LIVE_AUTHORITY,FEEDBACK_SCOPED_AUTHORITY) else WorkingUnderstandingDelivery if loaded.qri.provider_authority in WORKING_LIVE_AUTHORITIES else LivingActivityDelivery if loaded.qri.provider_authority in LIVING_LIVE_AUTHORITIES else SharedActivityDelivery
                 from dynamic_subject_agent.memorie_activity_live import is_contract,NativeActivityDelivery
                 if is_contract(loaded.qri.reviewed_chat_contract):expected_delivery=NativeActivityDelivery
+                from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION
+                if loaded.qri.reviewed_chat_contract['version'] == LIVE_VERSION:
+                    from dynamic_subject_agent.natural_conversation_live import NaturalConversationDelivery
+                    expected_delivery = NaturalConversationDelivery
                 if type(cognition.delivery) is not expected_delivery or cognition.delivery.contract != loaded.qri.reviewed_chat_contract:
                     raise ValueError('live shared activity requires its exact approved delivery')
         elif loaded.qri.provider_authority in WHOLE_AUTHORITIES:
@@ -967,6 +971,36 @@ def open_natural_experience_product_local(config, *, gateway, identity_id, bindi
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     if now_us is not None:
         cognition.natural_now_us = now_us
+    cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
+    cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
+    cognition.living_presence_permission = lambda: authority.living_permission(loaded.qri.profile_id, loaded.timeline_id)
+    cognition.living_controls = lambda request: authority.change_living_permission(loaded.qri.profile_id, request)
+    cognition.living_failure = lambda: authority.change_living_permission(loaded.qri.profile_id, attention=True)
+    cognition.living_revoke = lambda block_source=None: authority.change_living_permission(loaded.qri.profile_id, revoke=True, block_source=block_source)
+    cognition.living_clock = LivingClock()
+    cognition.living_day = lambda: local_day(cognition.natural_now_us())
+    cognition._whole_composition_witness = loaded.qri.reviewed_chat_contract
+    return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
+
+
+def open_natural_conversation_product_live(config, *, request, journal, identity_id, binding, _transport_factory=None):
+    """Only the approved fresh trial root; exact LIVE qualification, never LOCAL."""
+    from dynamic_subject_agent.natural_conversation_live import validate_material, NaturalConversationDelivery
+    from dynamic_subject_agent.natural_experience_cognition import NaturalExperienceCognition
+    from dynamic_subject_agent.natural_experience_cycle import local_day
+    from dynamic_subject_agent.shared_activity import LIVING_LIVE_AUTHORITY
+    from dynamic_subject_agent.living_activity import LivingClock
+    from dynamic_subject_agent.model_gateway import ModelGateway
+    validate_material(request)
+    if (config.product_parent.resolve() != (request.output / 'identity/DynamicSubjectAgent/m0/experiments').resolve()
+            or config.state_path.resolve() != (request.output / 'identity/state.json').resolve()):
+        raise ValueError('only the approved isolated conversation root is allowed')
+    authority = LocalIdentityAuthority(config)
+    loaded = authority.activate_natural_conversation_live(request=request, binding=binding, identity_id=identity_id)
+    delivery = NaturalConversationDelivery(request, journal, loaded.qri.reviewed_chat_contract, transport_factory=_transport_factory)
+    cognition = NaturalExperienceCognition(envelope=loaded.reviewed_definition, gateway=ModelGateway(delivery),
+        contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_LIVE_AUTHORITY, delivery=delivery,
+        authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)
     cognition.try_authorization = lambda: authority.try_original_whole_authorization(loaded.qri.profile_id)
     cognition.living_permission = lambda: authority.living_permission(loaded.qri.profile_id)
     cognition.living_presence_permission = lambda: authority.living_permission(loaded.qri.profile_id, loaded.timeline_id)

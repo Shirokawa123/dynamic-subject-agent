@@ -1780,6 +1780,11 @@ class ApplicationFacade:
         return run_trial(request)
 
     @staticmethod
+    def run_memorie_natural_conversation_trial(request):
+        from dynamic_subject_agent.natural_conversation_live import run_trial
+        return run_trial(request)
+
+    @staticmethod
     def prepare_memorie_activity_continuation(request):
         from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)

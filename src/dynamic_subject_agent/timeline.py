@@ -4826,7 +4826,22 @@ class TimelineEngine:
         if WORKING_INTENT in self._authority.allowed_intents:
             from dynamic_subject_agent.working_understanding import visible_understanding
             working_visible = visible_understanding(record, authorization.history_enabled, cutoff)
-        return dict(revision=record.revision, source=record.source, visible_source=visible['source'], phase=record.phase,
+        natural_fields = {}
+        if record.natural is not None or getattr(self, '_natural_experience_contract', None) is not None:
+            # This approved lane uses its own source-revision boundary. The
+            # legacy selector intentionally suppresses correction/control turns.
+            boundary, previous = cutoff, None
+            for out, _, _ in publications:
+                value = None if out.shared_record is None or out.shared_record.natural is None else out.shared_record.natural['experience']
+                if value != previous:
+                    boundary = max(boundary, out.head_sequence - 1)
+                previous = value
+            rows = [dict(user_text=row.user_text, assistant_text=row.assistant_text)
+                for row in verified[0] if row.head_sequence > max(boundary, verified[1])][-2:] if authorization.history_enabled else []
+            while sum(len(row['user_text']) + len(row['assistant_text']) for row in rows) > 4000:
+                rows.pop(0)
+            natural_fields['natural_exchange'] = rows
+        return dict(**natural_fields, revision=record.revision, source=record.source, visible_source=visible['source'], phase=record.phase,
             current_plan=visible['current_plan'], result=record.result, visible_result=visible['result'],
             result_before_dependencies=result_before_dependencies,
             result_before_plan_head=result_before_plan_head,
@@ -5013,7 +5028,8 @@ class TimelineEngine:
                     contract as make_natural_contract, build_natural_record, local_day)
                 from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
                 from dynamic_subject_agent.shared_activity import digest
-                if (natural_contract != make_natural_contract({k: natural_contract[k] for k in APPROVED_BINDING})
+                from dynamic_subject_agent.natural_experience_cycle import LIVE_VERSION
+                if (natural_contract != make_natural_contract({k: natural_contract[k] for k in APPROVED_BINDING}, live=natural_contract['version'] == LIVE_VERSION)
                         or digest(natural_contract) != authorization.contract_digest or record.natural is None):
                     raise ValueError('exact natural contract required')
                 admitted = self._writer.execute('SELECT admitted_at_us FROM subject_operation WHERE operation_id=?',
@@ -5023,7 +5039,7 @@ class TimelineEngine:
                 expected, expected_text = build_natural_record(view, command=command, authorization=authorization,
                     permission=record.living['permission'], head_sequence=plan.expected_basis.head_sequence+1,
                     day=record.natural['day'], selection=record.natural['selection'], speech=record.natural['speech'],
-                    choice=choice_from_record(record) if record.kind=='decision' else None)
+                    choice=choice_from_record(record) if record.kind=='decision' else None, version=natural_contract['version'])
                 if plan.expression.text != expected_text:
                     raise ValueError('natural expression differs from source-bound rendering')
             elif record.natural is not None:

@@ -98,11 +98,12 @@ def whole_contract(binding, *, technical_variant="baseline"):
 def contract_variant(contract):
     if type(contract) is not dict:
         raise ValueError("exact whole contract required")
-    if contract.get('version') == 'natural-experience-local-m031-1':
+    if contract.get('version') in ('natural-experience-local-m031-1', 'natural-conversation-live-m032-1'):
         from dynamic_subject_agent.natural_experience_cycle import contract as natural_contract
-        if contract != natural_contract({key: contract[key] for key in APPROVED_BINDING}):
+        live = contract['version'] == 'natural-conversation-live-m032-1'
+        if contract != natural_contract({key: contract[key] for key in APPROVED_BINDING}, live=live):
             raise ValueError('exact LOCAL natural experience contract required')
-        return 'living-local'
+        return 'living-live' if live else 'living-local'
     if contract.get('version') in ('memorie-activity-development-m015-1','memorie-native-activity-m018-1'):
         from dynamic_subject_agent.memorie_activity_live import contract as native_activity_contract
         if contract!=native_activity_contract({key:contract[key] for key in APPROVED_BINDING},native=contract['version']=='memorie-native-activity-m018-1'):
