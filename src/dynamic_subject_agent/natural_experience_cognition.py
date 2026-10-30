@@ -11,7 +11,7 @@ from dynamic_subject_agent.runtime import CognitionFailedClosed, ExpressionCandi
 from dynamic_subject_agent.timeline import PreAdmissionRejected
 from dynamic_subject_agent.model_gateway import ModelTask, ModelTaskKind
 from dynamic_subject_agent.natural_experience_cycle import (
-    is_contract, local_day, natural_view, expression_frame, build_natural_record, LIVE_VERSION)
+    is_contract, local_day, natural_view, expression_frame, build_natural_record, LIVE_VERSION, CHECKED_VERSION, checked_reply_frame)
 from dynamic_subject_agent.natural_experience import selection_projection, encode_experience
 
 
@@ -21,7 +21,7 @@ class NaturalExperienceCognition(SharedActivityCognition):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.adapter_version = 'natural-conversation-live-cognition-m032-1' if self.contract['version'] == LIVE_VERSION else 'natural-experience-local-cognition-m031-1'
+        self.adapter_version = 'natural-conversation-reviewed-local-cognition-m034-1' if self.contract['version']==CHECKED_VERSION else 'natural-conversation-live-cognition-m032-1' if self.contract['version'] == LIVE_VERSION else 'natural-experience-local-cognition-m031-1'
         self.natural_now_us = lambda: time_ns() // 1000
 
     def preflight(self, *, context, command):
@@ -36,6 +36,8 @@ class NaturalExperienceCognition(SharedActivityCognition):
                 raise PreAdmissionRejected('natural-trial-text-only', 'this trial only admits its fixed user turns')
         elif not is_contract(self.contract) or self.gateway is None or self.gateway.capabilities.local is not True:
             raise PreAdmissionRejected('natural-local-required', 'no remote or existing-root activation')
+        if self.contract['version']==CHECKED_VERSION and type(command) in (SharedActivityInput,WholeContextInput):
+            raise PreAdmissionRejected('reviewed-conversation-text-only','bounded text experience only')
         if type(command) is SharedActivityInput:
             if command.input_kind not in ('disable', 'advance'):
                 raise PreAdmissionRejected('natural-action-unavailable', 'only existing bounded controls/actions')
@@ -97,6 +99,36 @@ class NaturalExperienceCognition(SharedActivityCognition):
             expression_candidate=ExpressionCandidate(text, 'zh'))
         return replace(proposal, shared_record=record)
 
+    def _propose_reviewed_conversation(self, *, plan, context, command, basis, authorization, permission, effective, view, day):
+        from dynamic_subject_agent.natural_experience import adjudicate_experience
+        from dynamic_subject_agent.reviewed_natural_reply import generate_reviewed_reply
+        asset=self.envelope['runtime_asset']
+        material=dict(character=dict(name=asset['subject']['name'],stage=asset['initial_stage'],
+            knowledge=[{k:row[k] for k in ('dimension','kind','statement','event_time','knowledge_time')} for row in asset['eligible']]),
+            personality=asset['personality'])
+        def current_view():
+            if self.authorization()!=authorization or self.living_permission()!=permission or not effective.history_enabled:
+                raise ValueError('reviewed conversation authority changed')
+            current=context.load_shared_activity(effective)
+            if current['basis']!=view['basis'] or local_day(self.natural_now_us())!=day:
+                raise ValueError('reviewed conversation basis or day changed')
+            return natural_view(current,day)
+        current=current_view()
+        selection=self.gateway.execute(ModelTask(ModelTaskKind.MEMORIE_NATURAL_EXPERIENCE,
+            dict(material,current_user_text=command.utterance,current_experience=selection_projection(current['natural_experience'],day)))).value
+        def projection():
+            current=current_view()
+            selected=adjudicate_experience(selection,current_text=command.utterance,
+                previous=current['natural_experience'],source_head_sequence=plan.expected_basis.head_sequence+1,local_day=day)
+            return dict(material,**checked_reply_frame(current,command.utterance,selected,day))
+        speech=generate_reviewed_reply(self.gateway,projection)
+        projection()
+        record,text=build_natural_record(view,command=command,authorization=authorization,permission=permission,
+            head_sequence=plan.expected_basis.head_sequence+1,day=day,selection=selection,speech=speech,version=CHECKED_VERSION)
+        proposal=self._bounded_noop_proposal(context=context,basis=basis,
+            experience_summary='LOCAL完整审核流程；仅最终合格回复与经历发表。',expression_candidate=ExpressionCandidate(text,'zh'))
+        return replace(proposal,shared_record=record)
+
     def _propose_living(self, *, plan, context, command, basis):
         try:
             authorization = self.authorization()
@@ -105,6 +137,9 @@ class NaturalExperienceCognition(SharedActivityCognition):
             view = context.load_shared_activity(effective)
             day = local_day(context.observed_at_us)
             view = natural_view(view, day)
+            if self.contract['version']==CHECKED_VERSION:
+                return self._propose_reviewed_conversation(plan=plan,context=context,command=command,basis=basis,
+                    authorization=authorization,permission=permission,effective=effective,view=view,day=day)
             if self.contract['version'] == LIVE_VERSION:
                 return self._propose_conversation(plan=plan, context=context, command=command, basis=basis,
                     authorization=authorization, permission=permission, effective=effective, view=view, day=day)

@@ -1482,9 +1482,9 @@ class LocalIdentityAuthority:
         return self._activate_context_identity(living_contract(binding, activity_kind=activity_kind, independent=binding != APPROVED_BINDING), self._config.state_path.parent / 'living-local-audit', identity_id)
 
     @_registry_mutation
-    def activate_natural_experience_local(self, *, binding, identity_id):
+    def activate_natural_experience_local(self, *, binding, identity_id, reviewed=False):
         from dynamic_subject_agent.natural_experience_cycle import contract
-        return self._activate_context_identity(contract(binding), self._config.state_path.parent / 'natural-local-audit', identity_id)
+        return self._activate_context_identity(contract(binding,reviewed=reviewed), self._config.state_path.parent / 'natural-local-audit', identity_id)
 
     @_registry_mutation
     def activate_natural_conversation_live(self, *, request, binding, identity_id):

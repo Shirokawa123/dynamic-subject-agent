@@ -956,7 +956,7 @@ def open_living_activity_product_local(config, *, gateway, identity_id, binding=
     return _open_loaded_local_product(config, authority=authority, loaded=loaded, cognition=cognition, source_authoring=None)
 
 
-def open_natural_experience_product_local(config, *, gateway, identity_id, binding, now_us=None):
+def open_natural_experience_product_local(config, *, gateway, identity_id, binding, now_us=None, reviewed=False):
     """New unserved LOCAL identity only; not a live-M030 or user migration entry."""
     from dynamic_subject_agent.natural_experience_cognition import NaturalExperienceCognition
     from dynamic_subject_agent.natural_experience_cycle import local_day
@@ -965,7 +965,7 @@ def open_natural_experience_product_local(config, *, gateway, identity_id, bindi
     if not isinstance(gateway, ModelGateway) or gateway.capabilities.local is not True:
         raise ValueError('LOCAL natural gateway required before any identity access')
     authority = LocalIdentityAuthority(config)
-    loaded = authority.activate_natural_experience_local(binding=binding, identity_id=identity_id)
+    loaded = authority.activate_natural_experience_local(binding=binding, identity_id=identity_id, reviewed=reviewed)
     cognition = NaturalExperienceCognition(envelope=loaded.reviewed_definition, gateway=gateway,
         contract=loaded.qri.reviewed_chat_contract, provider_authority=LIVING_AUTHORITY,
         authorization=lambda: authority.original_whole_authorization(loaded.qri.profile_id), guard=authority.original_whole_guard)

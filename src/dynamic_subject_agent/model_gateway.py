@@ -36,6 +36,7 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    MEMORIE_REPLY_REPAIR = 'memorie-reply-repair'
     ACTIVITY_REPLY_REVIEW = 'activity-reply-review'
     MEMORIE_NATURAL_EXPERIENCE = 'memorie-natural-experience'
     MEMORIE_GROUNDED_EXPRESSION = 'memorie-grounded-expression'
