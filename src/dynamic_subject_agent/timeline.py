@@ -311,7 +311,7 @@ def _canonical_value(value: Any) -> Any:
             field.name: _canonical_value(getattr(value, field.name))
             for field in fields(value)
             # The optional schema-3 extension must not change schema-1/2 bytes.
-            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies", "living", "living_permission", "living_trigger", "living_day", "target_event_id", "working", "working_sources", "working_permission", "feedback") or getattr(value, field.name) is not None
+            if field.name not in ("life_record", "shared_record", "share_authorization", "chat_authorization", "dialogue_dependencies", "living", "living_permission", "living_trigger", "living_day", "target_event_id", "working", "working_sources", "working_permission", "feedback", "natural") or getattr(value, field.name) is not None
         }
     if isinstance(value, tuple):
         return [_canonical_value(item) for item in value]
@@ -4733,6 +4733,28 @@ class TimelineEngine:
                 continue
             if current.revision != record.revision + 1:
                 raise PublicationFailedClosed('shared-prefix-invalid', 'shared record sequence differs from publications')
+            if current.natural is not None:
+                from dynamic_subject_agent.natural_experience_cycle import validate_natural, local_day
+                from dynamic_subject_agent.natural_experience import decode_experience
+                natural = validate_natural(current.natural)
+                admitted = self._writer.execute('SELECT admitted_at_us FROM subject_operation WHERE operation_id=?',
+                    (UUID(outcome.operation_ref.operation_id).bytes,)).fetchone()
+                if admitted is None or local_day(admitted[0]) != natural['day']:
+                    raise PublicationFailedClosed('natural-day-invalid', 'day differs from trusted admission time')
+                experience = decode_experience(natural['experience'])
+                if experience is not None:
+                    originals = [(out, cmd) for out, cmd, _ in publications if out.head_sequence == experience.source_head_sequence]
+                    if (len(originals) != 1 or experience.source_head_sequence > outcome.head_sequence
+                            or not _is_user_text_input(originals[0][1]) or experience.quote != originals[0][1].utterance
+                            or current.source is None or current.source.quote != experience.quote
+                            or current.source.source_head_sequence != experience.source_head_sequence):
+                        raise PublicationFailedClosed('natural-source-invalid', 'source is not a complete committed user original')
+                    source_time = self._writer.execute('SELECT admitted_at_us FROM subject_operation WHERE operation_id=?',
+                        (UUID(originals[0][0].operation_ref.operation_id).bytes,)).fetchone()
+                    if source_time is None or local_day(source_time[0]) != experience.local_day:
+                        raise PublicationFailedClosed('natural-source-day-invalid', 'source day differs from original admission')
+                elif current.source is not None:
+                    raise PublicationFailedClosed('natural-source-invalid', 'stopped source was retained')
             if current.kind == 'select':
                 source = current.source
                 candidates = [cmd for out, cmd, _ in publications if out.head_sequence == source.source_head_sequence]
@@ -4970,7 +4992,7 @@ class TimelineEngine:
                 expected = build_working_record(view, command=command, authorization=authorization,
                     permission=record.working['permission'], head_sequence=plan.expected_basis.head_sequence+1,
                     choice=choice_from_record(record) if record.kind == 'decision' else None, formation=formation)
-            if LIVING_INTENT in self._authority.allowed_intents and not integrated:
+            if LIVING_INTENT in self._authority.allowed_intents and not integrated and getattr(self, '_natural_experience_contract', None) is None:
                 from dynamic_subject_agent.living_activity import build_living_record
                 if record.living is None:
                     raise ValueError('schema6 living record required')
@@ -4985,6 +5007,27 @@ class TimelineEngine:
                     expected_text = share['reply_text'] if share['share'] else '本次保留分享；已记录这次考虑。'
                     if plan.expression.text != expected_text:
                         raise ValueError('share Publication expression differs from adjudication')
+            natural_contract = getattr(self, '_natural_experience_contract', None)
+            if natural_contract is not None:
+                from dynamic_subject_agent.natural_experience_cycle import (
+                    contract as make_natural_contract, build_natural_record, local_day)
+                from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+                from dynamic_subject_agent.shared_activity import digest
+                if (natural_contract != make_natural_contract({k: natural_contract[k] for k in APPROVED_BINDING})
+                        or digest(natural_contract) != authorization.contract_digest or record.natural is None):
+                    raise ValueError('exact natural contract required')
+                admitted = self._writer.execute('SELECT admitted_at_us FROM subject_operation WHERE operation_id=?',
+                    (UUID(plan.operation_ref.operation_id).bytes,)).fetchone()
+                if admitted is None or local_day(admitted[0]) != record.natural['day']:
+                    raise ValueError('natural day is not the admission day')
+                expected, expected_text = build_natural_record(view, command=command, authorization=authorization,
+                    permission=record.living['permission'], head_sequence=plan.expected_basis.head_sequence+1,
+                    day=record.natural['day'], selection=record.natural['selection'], speech=record.natural['speech'],
+                    choice=choice_from_record(record) if record.kind=='decision' else None)
+                if plan.expression.text != expected_text:
+                    raise ValueError('natural expression differs from source-bound rendering')
+            elif record.natural is not None:
+                raise ValueError('old qualification cannot publish natural experience')
             if record != expected:
                 raise ValueError('shared proposal differs from Python adjudication')
         except Exception as error:

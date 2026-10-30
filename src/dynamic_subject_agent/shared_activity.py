@@ -256,6 +256,7 @@ class SharedActivityRecord:
     living: dict | None = None
     working: dict | None = None
     feedback: dict | None = None
+    natural: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -352,6 +353,9 @@ def decode_record(value):
     if value.get('feedback') is not None:
         from dynamic_subject_agent.natural_feedback import validate_feedback
         validate_feedback(value['feedback'])
+    if value.get('natural') is not None:
+        from dynamic_subject_agent.natural_experience_cycle import validate_natural
+        validate_natural(value['natural'])
     return SharedActivityRecord(**value)
 
 

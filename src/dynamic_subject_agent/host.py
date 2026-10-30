@@ -274,6 +274,10 @@ def _cognition_contract_supported(cognition: object) -> bool:
         return type(cognition) is WorkingUnderstandingCognition
     if cognition.provider_authority in SHARED_AUTHORITIES:
         from dynamic_subject_agent.shared_activity_cognition import SharedActivityCognition
+        from dynamic_subject_agent.natural_experience_cognition import NaturalExperienceCognition
+        from dynamic_subject_agent.natural_experience_cycle import is_contract as is_natural_contract
+        if is_natural_contract(getattr(cognition, 'contract', None)):
+            return type(cognition) is NaturalExperienceCognition and cognition.provider_authority == LIVING_AUTHORITY
         return type(cognition) is SharedActivityCognition
     if cognition.provider_authority in WHOLE_AUTHORITIES:
         return type(cognition) is OriginalWholeChatCognition
@@ -7694,7 +7698,11 @@ class RuntimeHost:
             effective = replace(authorization, history_enabled=False) if permission is not None and permission['source_blocked'] else authorization
             if working_permission is not None and working_permission['source_blocked']:
                 effective = replace(authorization, history_enabled=False)
+            if getattr(cognition, 'supports_natural_experience', False):
+                engine._natural_experience_contract = cognition.contract
             view = engine.shared_activity_basis(effective)
+            if getattr(cognition, 'supports_natural_experience', False):
+                view = cognition.prepare_natural_view(view)
             if binding.provider_authority in (*FEEDBACK_AUTHORITIES, *INTEGRATED_AUTHORITIES):
                 view['_dialogue'] = engine.preview_whole_dialogue('', effective.history_enabled)[0]
             view['_source_texts'] = {out.head_sequence: command.utterance for out, command, _ in engine._verified_publications() if type(command) is SubjectCommand or type(command) is NativeInteractionInput and command.interaction['kind']=='text'}
@@ -8000,6 +8008,9 @@ class RuntimeHost:
                     self._runtime_identity, view, cognition.contract))
             return SharedActivityResponse('previewed', view=build_share_preview(cognition.envelope, self._runtime_identity, view, cognition.contract))
         if preview == 'reply':
+            if getattr(cognition, 'supports_natural_experience', False):
+                from dynamic_subject_agent.natural_experience_cycle import expression_frame
+                return SharedActivityResponse('previewed', view=expression_frame(view, message))
             if binding.provider_authority in INTEGRATED_AUTHORITIES:
                 return self.preview_natural_feedback(binding, message)
             from dynamic_subject_agent.living_activity import build_living_reply_preview
@@ -8015,7 +8026,8 @@ class RuntimeHost:
                 return SharedActivityResponse('failed-closed', problem_code='living-preview-scope-changed')
             return SharedActivityResponse('previewed', view=result)
         state = view['record'].living or dict(shares=[], considered=[])
-        return SharedActivityResponse('available', view=dict(permission=permission, revision=view['revision'],
+        natural_fields = dict(natural_experience=asdict(view['natural_experience']) if view.get('natural_experience') else None) if getattr(cognition, 'supports_natural_experience', False) else {}
+        return SharedActivityResponse('available', view=dict(**natural_fields, permission=permission, revision=view['revision'],
             phase=view['phase'], current_plan=view['current_plan'], visible_result=view['visible_result'],
             source=view['visible_source'], shares=state['shares'], considered=state['considered'],
             latest_share=latest_share(view, cognition.try_authorization().history_enabled),

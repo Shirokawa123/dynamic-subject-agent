@@ -17,7 +17,7 @@ UNRESOLVED = 'unresolved-disclosure'
 HISTORY_FAILURE_CODES = frozenset(('original-whole-history-unverified', 'original-whole-history-withdrawn'))
 KNOWN_REPLY_FAILURE_CODES = frozenset('original-whole-' + code for code in (
     (REVIEW_DIAGNOSTIC_CODES - {'review-schema', 'review-quote', 'review-label', 'transport-timeout', 'transport-delivery-ambiguous'})
-    | {'character-credential-unavailable', 'structured-choice-invalid', 'expression-invalid', 'provider-failed', 'history-changed'}))
+    | {'character-credential-unavailable', 'structured-choice-invalid', 'expression-invalid', 'provider-failed', 'history-changed', 'natural-cycle-invalid'}))
 KNOWN_PUBLICATION_FAILURE_CODES = frozenset(('original-whole-authorization-changed', 'original-whole-unprepared-interruption'))
 
 _PREFIX = r'(?:(?:请(?:你)?|麻烦(?:你)?|帮我|替我|给我|你|我们|我希望(?:你)?|现在|这次|还是|也|就|那|不过|但是)\s*)*'
