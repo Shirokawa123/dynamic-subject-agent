@@ -1,4 +1,4 @@
-"""LOCAL two-stage proposals with source-bound expression, no remote sender."""
+"""Qualified experience/reply proposals; final publication remains Python-owned."""
 from dataclasses import replace
 from contextlib import contextmanager
 from time import time_ns

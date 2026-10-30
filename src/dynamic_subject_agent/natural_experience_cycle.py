@@ -1,7 +1,7 @@
-"""LOCAL natural experience cycle on the existing shared Publication record.
+"""Qualified natural-experience records on the shared atomic Publication.
 
-No transport, sidecar memory store or remote qualification. Model output picks
-bounded speech acts; Python supplies any quoted source or completed-plan fact.
+Pure source/receipt adjudication; transports and audit delivery stay outside.
+Legacy LOCAL speech acts and reviewed free replies have separate qualifications.
 """
 from copy import deepcopy
 from dataclasses import asdict, replace
