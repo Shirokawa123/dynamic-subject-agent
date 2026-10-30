@@ -88,6 +88,23 @@ def test_second_rejection_stops_without_replacing_previous_memory(material):
     assert result['status']=='stopped' and result['attempts']==15
     assert result['rows'][-1]['failure_code'] and result['rows'][-1]['reply_text'] is None
     assert result['rows'][-1]['experience']['quote']==TEXTS[0]
+    from dynamic_subject_agent.local_product import LocalProductConfig,open_natural_conversation_product_live
+    from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
+    from dynamic_subject_agent.original_whole_chat import APPROVED_BINDING
+    from dynamic_subject_agent.frozen_attempt import FrozenAttemptRun
+    from dynamic_subject_agent import reviewed_natural_live as live
+    from test_original_whole_chat import history
+    config=LocalProductConfig(request.output/'identity/DynamicSubjectAgent/m0/experiments',request.output/'identity/state.json')
+    loaded=LocalIdentityAuthority(config).load_active()
+    binding={key:loaded.qri.reviewed_chat_contract[key] for key in APPROVED_BINDING}
+    identity=json.loads(config.state_path.read_bytes())['active_identity_id']
+    journal=FrozenAttemptRun(audit,live.REVIEW,approved=True);assert journal.resumed
+    before=len(transport.calls)
+    with open_natural_conversation_product_live(config,request=request,journal=journal,identity_id=identity,
+            binding=binding,_transport_factory=lambda _:transport,reviewed=True) as reopened:
+        assert len(history(reopened))==2
+        assert reopened.application.query_living_activity().status=='available'
+    assert len(transport.calls)==before
 
 
 def test_approval_revoked_before_draft_delivery_blocks_network(material,monkeypatch):

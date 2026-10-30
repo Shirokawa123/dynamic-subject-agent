@@ -46,6 +46,11 @@ class ReviewedNaturalDelivery(ProviderAdapter):
         self.transport_factory=transport_factory;self._frame=None
         self.turn=0;self.stage='selection';self.base=None;self.candidate=None;self.issues=None
         self.validate()
+        if journal.resumed or journal.stopped:
+            # A stopped/previous process may reopen to read or recover its
+            # committed prefix. It never gets another generation opportunity.
+            self.stage='stopped'
+            return
         if journal.next:
             row=json.loads((request.output/f'{journal.next:02d}.result.json').read_bytes())
             if (row!=journal.read_result(row['request_sha256']) or row['status']!='complete'
