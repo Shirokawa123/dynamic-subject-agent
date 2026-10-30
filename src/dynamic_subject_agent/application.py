@@ -1785,6 +1785,11 @@ class ApplicationFacade:
         return run_trial(request)
 
     @staticmethod
+    def run_memorie_activity_reply_review_trial(request):
+        from dynamic_subject_agent.activity_reply_review_trial import run_trial
+        return run_trial(request)
+
+    @staticmethod
     def prepare_memorie_activity_continuation(request):
         from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)

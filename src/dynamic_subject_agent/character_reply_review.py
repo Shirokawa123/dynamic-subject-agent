@@ -105,20 +105,25 @@ def validate_projection(projection):
 
 def validated_review(value, projection):
     validate_projection(projection)
+    labels = {item.label for item in projection.self_knowledge} | {"S1"} | {item.label for item in projection.interaction_context}
+    return validate_review_result(value, projection.candidate_text, labels)
+
+
+def validate_review_result(value, candidate_text, labels):
+    """Shared closed verdict/quote/reference decoder; no semantic truth claim."""
     if (type(value) is not dict or set(value) != {"verdict", "issues"}
             or value["verdict"] not in ("supported", "unsupported", "uncertain")
             or type(value["issues"]) is not list or len(value["issues"]) > 6
             or (value["verdict"] == "supported" and value["issues"])
             or (value["verdict"] == "unsupported" and not value["issues"])):
         raise ReviewValidationFailure("review-schema")
-    labels = {item.label for item in projection.self_knowledge} | {"S1"} | {item.label for item in projection.interaction_context}
     issues = []
     for item in value["issues"]:
         if (type(item) is not dict or set(item) != {"quote", "kind", "basis_labels"}
                 or not isinstance(item["kind"], str) or item["kind"] not in ISSUE_KINDS):
             raise ReviewValidationFailure("review-schema")
         if (not isinstance(item["quote"], str) or not item["quote"].strip()
-                or len(item["quote"]) > 240 or item["quote"] not in projection.candidate_text):
+                or len(item["quote"]) > 240 or item["quote"] not in candidate_text):
             raise ReviewValidationFailure("review-quote")
         if (type(item["basis_labels"]) is not list or len(item["basis_labels"]) > 6
                 or any(not isinstance(label, str) or label not in labels for label in item["basis_labels"])
