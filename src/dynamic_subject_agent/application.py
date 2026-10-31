@@ -1795,6 +1795,27 @@ class ApplicationFacade:
         return run_trial(request)
 
     @staticmethod
+    def propose_character_understanding_local(gateway, material):
+        from dynamic_subject_agent.model_gateway import ModelGateway
+        from dynamic_subject_agent.character_understanding import propose_understanding
+        if not isinstance(gateway,ModelGateway) or gateway.capabilities.local is not True:
+            raise ValueError('LOCAL understanding gateway required')
+        return propose_understanding(gateway,material)
+
+    @staticmethod
+    def reply_from_character_understanding_local(gateway, material, message, understanding=None):
+        from dynamic_subject_agent.model_gateway import ModelGateway
+        from dynamic_subject_agent.character_understanding import reply_from_understanding
+        if not isinstance(gateway,ModelGateway) or gateway.capabilities.local is not True:
+            raise ValueError('LOCAL understanding gateway required')
+        return reply_from_understanding(gateway,material,message,understanding)
+
+    @staticmethod
+    def run_character_understanding_trial(request):
+        from dynamic_subject_agent.character_understanding_trial import run_trial
+        return run_trial(request)
+
+    @staticmethod
     def prepare_memorie_activity_continuation(request):
         from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)

@@ -36,6 +36,8 @@ class ProviderCapabilities:
 
 
 class ModelTaskKind(str, Enum):
+    CHARACTER_SOURCE_UNDERSTANDING = 'character-source-understanding'
+    CHARACTER_UNDERSTANDING_REPLY = 'character-understanding-reply'
     MEMORIE_REPLY_REPAIR = 'memorie-reply-repair'
     ACTIVITY_REPLY_REVIEW = 'activity-reply-review'
     MEMORIE_NATURAL_EXPERIENCE = 'memorie-natural-experience'
