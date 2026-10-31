@@ -125,10 +125,16 @@ def run_trial(request,*,_transport_factory=None,_audit_parent=None,anchored=Fals
     audit=_audit_parent if _transport_factory is not None else Path(os.environ['LOCALAPPDATA'])/('DynamicSubjectAgent/anchored-understanding-m036' if anchored else 'DynamicSubjectAgent/character-understanding-m035')
     audit.mkdir(parents=True,exist_ok=True);journal=FrozenAttemptRun(audit,review_id,approved=True)
     if journal.resumed:raise ValueError('review already started; no resend or new-root retry')
-    request.output.mkdir();delivery=delivery_type(request,journal,_transport_factory);gateway=ModelGateway(delivery)
-    understandings={};rows=[]
+    request.output.mkdir();delivery=delivery_type(request,journal,_transport_factory)
+    return _run_cases(request,review,materials,journal,delivery,propose,reply,coverage)
+
+
+def _run_cases(request,review,materials,journal,delivery,propose,reply,coverage,*,start_at=0,understandings=None,rows=None,result_name='results.json'):
+    gateway=ModelGateway(delivery)
+    understandings={} if understandings is None else dict(understandings)
+    rows=[] if rows is None else list(rows)
     try:
-        for case in review['cases']:
+        for case in review['cases'][start_at:]:
             material=materials[case['role']]
             try:
                 if case['purpose']=='understanding':
@@ -147,6 +153,6 @@ def run_trial(request,*,_transport_factory=None,_audit_parent=None,anchored=Fals
                 rows.append(dict(case=case['id'],status='stopped',error_code=code));break
         result=dict(status='no-op' if any(r['status']=='no-op' for r in rows) else 'complete' if len(rows)==len(review['cases']) and all(r['status']!='stopped' for r in rows) else 'stopped',
             attempts=journal.next,rows=rows,semantic_acceptance='not-evaluated',persona_activated=False,canonical_writes=0)
-        write_once(request.output/'results.json',result);return result
+        write_once(request.output/result_name,result);return result
     except Exception:
         journal.stop('trial-recording-failed');raise

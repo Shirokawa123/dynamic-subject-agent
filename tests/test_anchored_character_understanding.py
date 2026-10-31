@@ -70,3 +70,20 @@ def test_facade_uses_model_readings_not_handwritten_role_rules():
     result=ApplicationFacade.reply_from_anchored_character_understanding_local(gateway,material(),'想起以前那件事呢？',u)
     assert result.status=='candidate' and not result.persisted
     assert adapter.calls[-1].payload['understanding']['interpretations'][0]['evidence']==proposal()['interpretations'][0]['evidence']
+
+
+def test_exact_single_target_and_extra_valid_quotes_are_losslessly_normalized():
+    source=material();source['source_scenes'][0]['lines'].append(dict(label='temporary',speaker='character',text='再确认另一处连接。'))
+    # Retain ordered global line labels after adding the third first-scene line.
+    source['source_scenes'][0]['lines'][-1]['label']='L3';source['source_scenes'][1]['lines'][0]['label']='L4'
+    value=proposal();value['scene_readings'][1]['observation']['evidence'][0]['label']='L4'
+    o=value['scene_readings'][0]['observation'];o['about']='甲'
+    o['evidence']=[dict(label='L1',quote='是不是整座桥都坏了？'),dict(label='L2',quote='再下结论。'),dict(label='L3',quote='再确认另一处连接。')]
+    original=deepcopy(value);u=validate_understanding(source,value)
+    assert value==original and u.readings[0]['observation']['about']==['甲']
+    assert u.readings[0]['observation']['evidence']==original['scene_readings'][0]['observation']['evidence']
+    import json
+    assert json.loads(u.raw_proposal_json)==original and len(u.normalizations)==2
+    assert reply_projection(source,'现在呢？',u)['understanding']['scene_readings'][0]['observation']['about']==['甲']
+    value['scene_readings'][0]['observation']['about']='乙'
+    with pytest.raises(ValueError):validate_understanding(source,value)

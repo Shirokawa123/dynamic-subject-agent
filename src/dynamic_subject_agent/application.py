@@ -1837,6 +1837,11 @@ class ApplicationFacade:
         return run_trial(request,anchored=True)
 
     @staticmethod
+    def resume_anchored_character_understanding_trial(request, recovery_review_path):
+        from dynamic_subject_agent.anchored_understanding_recovery import resume_trial
+        return resume_trial(request,recovery_review_path)
+
+    @staticmethod
     def prepare_memorie_activity_continuation(request):
         from dynamic_subject_agent.local_identity_authority import LocalIdentityAuthority
         return LocalIdentityAuthority.prepare_memorie_activity_continuation(request)

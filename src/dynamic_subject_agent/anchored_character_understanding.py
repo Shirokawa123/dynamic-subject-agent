@@ -74,6 +74,8 @@ class AnchoredUnderstanding:
     interpretations:tuple
     proposal_json:str
     status:str='unreviewed-model-proposal'
+    raw_proposal_json:str=''
+    normalizations:tuple=()
 
     @property
     def observations(self):
@@ -99,6 +101,15 @@ def validate_understanding(material,value):
     if (type(value) is not dict or set(value)!={'scene_readings','interpretations'} or type(value['scene_readings']) is not list
             or len(value['scene_readings'])!=len(scenes) or type(value['interpretations']) is not list or len(value['interpretations'])>3):
         raise ValueError('every scene must be considered; interpretations remain optional')
+    raw_proposal=canonical_json(value)
+    value=deepcopy(value);normalizations=[]
+    for row in value['scene_readings']:
+        observation=row.get('observation') if type(row) is dict else None
+        if type(observation) is dict and observation.get('about')==material['target']:
+            observation['about']=[material['target']]
+            normalizations.append(row.get('scene_ref','?')+':single-target-string-to-list')
+        if type(observation) is dict and type(observation.get('evidence')) is list and 2<len(observation['evidence'])<=4:
+            normalizations.append(row.get('scene_ref','?')+':additional-exact-references-preserved')
     readings=[]
     for scene,row in zip(scenes,value['scene_readings']):
         if (type(row) is not dict or set(row)!={'scene_ref','status','observation','use_at_anchor','anchor_refs','scope_note'}
@@ -114,7 +125,20 @@ def validate_understanding(material,value):
         else:
             p=EvidenceProjection(material['target'],material['current_anchor']['description'][:200],'source-scene',
                 tuple((x['label'],x['text']) for x in scene['lines']))
-            observations=_candidates(dict(candidates=[row['observation']]),p);observation=observations[0]
+            raw_observation=row['observation']
+            if (type(raw_observation) is not dict or type(raw_observation.get('evidence')) is not list
+                    or not 1<=len(raw_observation['evidence'])<=4):raise ValueError('bounded observation evidence required')
+            evidence=[];seen=set();observation=None
+            # Validate every supplied quote through the existing decoder. Do
+            # not discard an extra valid quote to fit its legacy two-ref DTO.
+            for ref in raw_observation['evidence']:
+                item=dict(raw_observation,evidence=[ref])
+                decoded=_candidates(dict(candidates=[item]),p)[0]
+                key=(decoded.evidence[0].label,decoded.evidence[0].quote)
+                if key in seen:raise ValueError('duplicate observation evidence')
+                seen.add(key);evidence.extend(decoded.evidence);observation=decoded
+            from dataclasses import replace
+            observation=replace(observation,evidence=tuple(evidence))
             if material['target'] not in observation.about or not any(labels[q.label]['speaker']!='other' for q in observation.evidence):
                 raise ValueError('target observation evidence required')
             if any(len(q.quote)>200 for q in observation.evidence):raise ValueError('quote too long')
@@ -128,7 +152,7 @@ def validate_understanding(material,value):
         _evidence(row['evidence'],labels,facts)
         interpretations.append(PersonalityInterpretation(**{k:row[k] for k in fields},basis='model-proposed-interpretation'))
     return AnchoredUnderstanding(material_digest(material),tuple(readings),tuple(interpretations),canonical_json(value),
-        'unreviewed-model-proposal' if interpretations else 'no-op')
+        'unreviewed-model-proposal' if interpretations else 'no-op',raw_proposal,tuple(normalizations))
 
 
 def propose_understanding(gateway,material):
@@ -141,7 +165,7 @@ def propose_understanding(gateway,material):
 def understanding_coverage(material,understanding):
     labels,_=validate_material(material)
     if (type(understanding) is not AnchoredUnderstanding or understanding.source_digest!=material_digest(material)
-            or validate_understanding(material,json.loads(understanding.proposal_json))!=understanding):raise ValueError('bound understanding required')
+            or validate_understanding(material,json.loads(understanding.raw_proposal_json or understanding.proposal_json))!=understanding):raise ValueError('bound understanding required')
     proposal=json.loads(understanding.proposal_json)
     cited={labels[e['label']]['scene'] for i in proposal['interpretations'] for e in i['evidence'] if e['label'] in labels}
     return dict(considered_scenes=[r['scene_ref'] for r in understanding.readings],
