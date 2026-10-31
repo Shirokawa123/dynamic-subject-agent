@@ -51,18 +51,22 @@ def validate_trial(request):
 
 class UnderstandingDelivery(ProviderAdapter):
     capabilities=ProviderCapabilities('deepseek','deepseek-flash',False,(StructuredOutputMode.JSON_OBJECT,StructuredOutputMode.TEXT))
+    validate_inputs=staticmethod(validate_trial)
+    decode_understanding=staticmethod(validate_understanding)
+    project_reply=staticmethod(reply_projection)
+    maximum_requests=10
     def __init__(self,request,journal,transport_factory=None):
         self.request,self.journal,self.transport_factory=request,journal,transport_factory
         self.understandings={}
     def body(self,task,index):
-        review,materials=validate_trial(self.request)
-        if not 0<=index<10:raise ValueError('approved request bound reached')
+        review,materials=self.validate_inputs(self.request)
+        if not 0<=index<self.maximum_requests:raise ValueError('approved request bound reached')
         case=review['cases'][index];material=materials[case['role']]
         if case['purpose']=='understanding':
             expected=material;kind=ModelTaskKind.CHARACTER_SOURCE_UNDERSTANDING
         else:
             derived=self.understandings[case['role']] if case['condition']=='with-understanding' else None
-            expected=reply_projection(material,case['question'],derived);kind=ModelTaskKind.CHARACTER_UNDERSTANDING_REPLY
+            expected=self.project_reply(material,case['question'],derived);kind=ModelTaskKind.CHARACTER_UNDERSTANDING_REPLY
         if task.kind is not kind or task.payload!=expected:raise ValueError('exact source-bound next task required')
         params=dict(review['parameters'])
         if case['purpose']=='understanding':params['response_format']=dict(type='json_object')
@@ -90,7 +94,7 @@ class UnderstandingDelivery(ProviderAdapter):
         try:
             if case['purpose']=='understanding':
                 value=_post_json_reply_content(observed,ref,raw,max_output_tokens=4096,require_complete=True,discard_reasoning=True,safe_diagnostics=True)
-                self.understandings[case['role']]=validate_understanding(material,value)
+                self.understandings[case['role']]=self.decode_understanding(material,value)
             else:
                 from dynamic_subject_agent.original_whole_chat import validate_whole_reply
                 value=_post_text_reply_content(observed,ref,raw,max_output_tokens=4096)
@@ -108,35 +112,40 @@ class UnderstandingDelivery(ProviderAdapter):
         return ModelResult(task.kind,value)
 
 
-def run_trial(request,*,_transport_factory=None,_audit_parent=None):
-    review,materials=validate_trial(request)
+def run_trial(request,*,_transport_factory=None,_audit_parent=None,anchored=False):
+    validator=validate_trial;delivery_type=UnderstandingDelivery;review_id=REVIEW
+    propose=propose_understanding;reply=reply_from_understanding;coverage=understanding_coverage
+    if anchored:
+        from dynamic_subject_agent.anchored_understanding_trial import validate_trial as validator,AnchoredUnderstandingDelivery as delivery_type,REVIEW as review_id
+        from dynamic_subject_agent.anchored_character_understanding import propose_understanding as propose,reply_from_understanding as reply,understanding_coverage as coverage
+    review,materials=validator(request)
     if request.output.exists() or request.output.resolve().parent!=request.review_directory.resolve().parent or request.output.resolve().parent.name!='.artifacts':
         raise ValueError('fresh sibling artifact root required')
     if _audit_parent is not None and _transport_factory is None:raise ValueError('real journal cannot be redirected')
-    audit=_audit_parent if _transport_factory is not None else Path(os.environ['LOCALAPPDATA'])/'DynamicSubjectAgent/character-understanding-m035'
-    audit.mkdir(parents=True,exist_ok=True);journal=FrozenAttemptRun(audit,REVIEW,approved=True)
+    audit=_audit_parent if _transport_factory is not None else Path(os.environ['LOCALAPPDATA'])/('DynamicSubjectAgent/anchored-understanding-m036' if anchored else 'DynamicSubjectAgent/character-understanding-m035')
+    audit.mkdir(parents=True,exist_ok=True);journal=FrozenAttemptRun(audit,review_id,approved=True)
     if journal.resumed:raise ValueError('review already started; no resend or new-root retry')
-    request.output.mkdir();delivery=UnderstandingDelivery(request,journal,_transport_factory);gateway=ModelGateway(delivery)
+    request.output.mkdir();delivery=delivery_type(request,journal,_transport_factory);gateway=ModelGateway(delivery)
     understandings={};rows=[]
     try:
         for case in review['cases']:
             material=materials[case['role']]
             try:
                 if case['purpose']=='understanding':
-                    understanding=propose_understanding(gateway,material);understandings[case['role']]=understanding
+                    understanding=propose(gateway,material);understandings[case['role']]=understanding
                     write_once(request.output/(case['role']+'.understanding.json'),asdict(understanding))
-                    write_once(request.output/(case['role']+'.coverage.json'),understanding_coverage(material,understanding))
+                    write_once(request.output/(case['role']+'.coverage.json'),coverage(material,understanding))
                     row=dict(case=case['id'],status='proposed',observations=len(understanding.observations),interpretations=len(understanding.interpretations))
                     if understanding.status=='no-op':
                         row['status']='no-op';rows.append(row);journal.stop('no-character-interpretation');break
                 else:
-                    value=reply_from_understanding(gateway,material,case['question'],understandings[case['role']] if case['condition']=='with-understanding' else None)
+                    value=reply(gateway,material,case['question'],understandings[case['role']] if case['condition']=='with-understanding' else None)
                     row=dict(case=case['id'],status='candidate',question=case['question'],reply_text=value.reply_text,condition=case['condition'])
                 rows.append(row)
             except Exception as exc:
                 code=getattr(exc,'code','understanding-trial-invalid');journal.stop(code)
                 rows.append(dict(case=case['id'],status='stopped',error_code=code));break
-        result=dict(status='no-op' if any(r['status']=='no-op' for r in rows) else 'complete' if len(rows)==10 and all(r['status']!='stopped' for r in rows) else 'stopped',
+        result=dict(status='no-op' if any(r['status']=='no-op' for r in rows) else 'complete' if len(rows)==len(review['cases']) and all(r['status']!='stopped' for r in rows) else 'stopped',
             attempts=journal.next,rows=rows,semantic_acceptance='not-evaluated',persona_activated=False,canonical_writes=0)
         write_once(request.output/'results.json',result);return result
     except Exception:
