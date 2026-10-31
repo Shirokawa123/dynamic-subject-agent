@@ -73,3 +73,12 @@ def test_insufficient_material_has_no_invented_interpretation():
     result=validate_understanding(material(),dict(observations=[],interpretations=[]))
     assert result.status=='no-op' and not result.observations and not result.interpretations
     with pytest.raises(ValueError,match='no interpretation'):reply_projection(material(),'你好',result)
+
+
+def test_source_coverage_exposes_unrepresented_scenes_without_claiming_semantic_quality():
+    from dynamic_subject_agent.character_understanding import understanding_coverage
+    source=material();understanding=validate_understanding(source,proposal())
+    view=understanding_coverage(source,understanding)
+    assert view['cited_scenes']==['S1'] and view['uncited_scenes']==['S2']
+    assert understanding.status=='unreviewed-model-proposal'
+    with pytest.raises(ValueError):understanding_coverage(material('乙'),understanding)

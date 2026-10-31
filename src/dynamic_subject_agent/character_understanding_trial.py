@@ -6,7 +6,7 @@ from urllib.request import urlopen
 from time import monotonic
 import json,os
 from dynamic_subject_agent.character_understanding import (UNDERSTANDING_POLICY,REPLY_POLICY,validate_material as validate_source,
-    validate_understanding,propose_understanding,reply_projection,reply_from_understanding)
+    validate_understanding,propose_understanding,reply_projection,reply_from_understanding,understanding_coverage)
 from dynamic_subject_agent.frozen_attempt import FrozenAttemptRun,canonical_json,write_once
 from dynamic_subject_agent.model_gateway import ModelGateway,ModelTaskKind,ModelResult,ProviderAdapter,ProviderCapabilities,StructuredOutputMode,ModelGatewayFailure
 from dynamic_subject_agent.deepseek import DeepSeekUrlLibTransport,_post_json_reply_content,_post_text_reply_content,DEEPSEEK_CREDENTIAL_BACKEND_ID,DEEPSEEK_CREDENTIAL_KEY_ID
@@ -125,6 +125,7 @@ def run_trial(request,*,_transport_factory=None,_audit_parent=None):
                 if case['purpose']=='understanding':
                     understanding=propose_understanding(gateway,material);understandings[case['role']]=understanding
                     write_once(request.output/(case['role']+'.understanding.json'),asdict(understanding))
+                    write_once(request.output/(case['role']+'.coverage.json'),understanding_coverage(material,understanding))
                     row=dict(case=case['id'],status='proposed',observations=len(understanding.observations),interpretations=len(understanding.interpretations))
                     if understanding.status=='no-op':
                         row['status']='no-op';rows.append(row);journal.stop('no-character-interpretation');break

@@ -111,6 +111,21 @@ def propose_understanding(gateway,material):
     return validate_understanding(material,result.value)
 
 
+def understanding_coverage(material,understanding):
+    """Mechanical source coverage for review, never a score of semantic quality."""
+    import json
+    labels=validate_material(material)
+    if (type(understanding) is not CharacterUnderstanding or understanding.source_digest!=material_digest(material)
+            or validate_understanding(material,json.loads(understanding.proposal_json))!=understanding):
+        raise ValueError('current source-bound understanding required')
+    scenes={s['label'] for s in material['source_scenes']}
+    observed={f'O{i+1}':sorted({labels[ref.label]['scene'] for ref in observation.evidence})
+        for i,observation in enumerate(understanding.observations)}
+    cited={scene for values in observed.values() for scene in values}
+    return dict(observation_scenes=observed,cited_scenes=sorted(cited),uncited_scenes=sorted(scenes-cited),
+        meaning='citation coverage only; uncited is not automatically irrelevant, cited is not automatically supported')
+
+
 def reply_projection(material,message,understanding=None):
     validate_material(material)
     if type(message) is not str or not message.strip() or len(message)>1000 or '\x00' in message:
